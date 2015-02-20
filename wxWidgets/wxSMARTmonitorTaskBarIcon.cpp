@@ -126,4 +126,6 @@ void MyTaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 {
   bool dialogIsShown = gs_dialog->IsShown();
   gs_dialog->Show( ! dialogIsShown);
+  //TODO bring window to front
+//  gs_dialog->B
 }

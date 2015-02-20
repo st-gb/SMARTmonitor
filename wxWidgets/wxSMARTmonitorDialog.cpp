@@ -45,6 +45,8 @@ END_EVENT_TABLE()
 DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(void * p_v)
 {
   MyDialog * p_myDialog = (MyDialog *) p_v;
+  const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
+    wxGetApp().GetNumberOfMilliSecondsToWaitBetweenSMARTquery();
   if(p_myDialog)
   {
     do
@@ -53,7 +55,8 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(vo
       //https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#.22But_I_don.27t_need_a_whole_new_event_class....22
       wxCommandEvent MyEvent( wxEVT_COMMAND_BUTTON_CLICKED );
       wxPostEvent(p_myDialog, MyEvent);
-      wxMilliSleep(1000);
+      //TODO handle closing of window / app
+      wxMilliSleep(numberOfMilliSecondsToWaitBetweenSMARTquery);
     }while(1);
   }
   return 0;
@@ -80,28 +83,28 @@ MyDialog::MyDialog(const wxString& title, const wxWidgets::wxSMARTreader & smart
     /** Adapted from http://wiki.wxwidgets.org/WxListCtrl#Minimal_example_to_get_started*/
     // Add first column
     wxListItem col0;
-    col0.SetId(0);
+    col0.SetId(COL_IDX_SMART_ID);
     col0.SetText( _("ID") );
     col0.SetWidth(30);
-    m_pwxlistctrl->InsertColumn(0, col0);
+    m_pwxlistctrl->InsertColumn(COL_IDX_SMART_ID, col0);
 
     // Add second column
     wxListItem col1;
-    col1.SetId(1);
+    col1.SetId(COL_IDX_SMARTparameterName);
     col1.SetText( _("parameter name") );
     col1.SetWidth(200);
-    m_pwxlistctrl->InsertColumn(1, col1);
+    m_pwxlistctrl->InsertColumn(COL_IDX_SMARTparameterName, col1);
 
     // Add third column
-    col1.SetId(2);
+    col1.SetId(COL_IDX_rawValue);
     col1.SetText( wxT("raw value") );
     col1.SetWidth(70);
-    m_pwxlistctrl->InsertColumn(2, col1);
+    m_pwxlistctrl->InsertColumn(COL_IDX_rawValue, col1);
 
-    col1.SetId(3);
+    col1.SetId(COL_IDX_lastUpdate);
     col1.SetText( wxT("last update") );
     col1.SetWidth(100);
-    m_pwxlistctrl->InsertColumn(3, col1);
+    m_pwxlistctrl->InsertColumn(COL_IDX_lastUpdate, col1);
 
     sizerTop->Add( m_pwxlistctrl,
       //"in the main orientation of the wxBoxSizer - where 0 stands for not changeable"
@@ -169,9 +172,12 @@ MyDialog::MyDialog(const wxString& title, const wxWidgets::wxSMARTreader & smart
     }
 #endif
 //    m_timer.Start(1000); // 1 second interval
-    ReadSMARTvaluesAndUpdateUI();
-    m_updateSMARTparameterValuesThread.start(
-      UpdateSMARTparameterValuesThreadFunc, this);
+    if( m_oSmartReader.AtLeast1SMARTparameterToRead() > 0 )
+    {
+      ReadSMARTvaluesAndUpdateUI();
+      m_updateSMARTparameterValuesThread.start(
+        UpdateSMARTparameterValuesThreadFunc, this);
+    }
 }
 
 MyDialog::~MyDialog()
@@ -188,7 +194,7 @@ void MyDialog::OnAbout(wxCommandEvent& WXUNUSED(event))
     static const TCHAR * const message
         = _T("a tool to monitor critical S.M.A.R.T. parameters\n"
           "\nsee http://en.wikipedia.org/wiki/S.M.A.R.T."
-          "\n(C) 2013 by Trilobyte Software Engineering GmbH, Germany\n");
+          "\n(C) 2013-2015 by Trilobyte Software Engineering GmbH, Germany\n");
 
 #if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
     m_taskBarIcon->ShowBalloon(title, message, 15000, wxICON_INFORMATION);
@@ -214,10 +220,31 @@ void MyDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
 
 void MyDialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
 {
-  for( unsigned index = 0; index < 5; ++ index)
+//#ifdef _DEBUG
+  const int listItemCount = m_pwxlistctrl->GetItemCount();
+//#endif
+  DWORD tickCountOfCurrentTimeInMilliSeconds;
+  DWORD numberOfMilliSecondsPassedSinceLastSMARTquery;
+  wxString currentTime;
+  for( unsigned index = 0; index < listItemCount; ++ index)
   {
-    m_pwxlistctrl->SetItem(index, 2,  wxString::Format(wxT("%u"),
-        m_arRawValue[index]) );
+    m_pwxlistctrl->SetItem(
+      index,
+      COL_IDX_rawValue /** column #/ index */,
+      wxString::Format(wxT("%u"), m_arRawValue[index]) );
+    tickCountOfCurrentTimeInMilliSeconds = GetTickCount();
+    numberOfMilliSecondsPassedSinceLastSMARTquery =
+      tickCountOfCurrentTimeInMilliSeconds -
+      m_arTickCountOfLastQueryInMilliSeconds[index];
+
+    currentTime = wxNow();
+
+    m_pwxlistctrl->SetItem(
+      index,
+      COL_IDX_lastUpdate /** column #/ index */,
+      //wxString::Format(wxT("%u ms ago"), numberOfMilliSecondsPassedSinceLastSMARTquery )
+      currentTime
+      );
   }
 }
 
@@ -252,6 +279,9 @@ void MyDialog::UpdateSMARTvaluesThreadSafe()
             {
               AtomicExchange( (long int *) & m_arRawValue[lineNumber] //long * Target
                 , pSmartInfo->m_dwAttribValue /*long val*/ );
+              AtomicExchange(
+                & m_arTickCountOfLastQueryInMilliSeconds[lineNumber]
+                , GetTickCount() /*long val*/ );
               //FileTi
 //              OperatingSystem::GetTimeCountInSeconds(timeInS);
 

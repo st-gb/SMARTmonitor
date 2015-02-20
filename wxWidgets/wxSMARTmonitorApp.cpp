@@ -29,6 +29,7 @@
 #include <wx/taskbar.h>
 #include <wx/filefn.h> //wxFILE_SEP_PATH
 #include <iostream> //class std::cerr
+#include <ConfigLoader/ParseConfigFileException.hpp>
 #include <Windows/HideMinGWconsoleWindow.h>
 #include <FileSystem/File/FileException.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
@@ -39,6 +40,9 @@
 
 //class MyDialog;
 /*static*/ MyDialog *gs_dialog = NULL;
+
+const wxString wxSMARTmonitorApp::appName = wxT("wxSMARTmonitor");
+unsigned wxSMARTmonitorApp::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 
 wxSMARTmonitorApp::wxSMARTmonitorApp()
 {
@@ -75,7 +79,7 @@ bool wxSMARTmonitorApp::OnInit()
 #endif
   try
   {
-    wxString workingDirectory = wxGetWorkingDirectory();
+    wxString workingDirectory = wxGetCwd();
     wxString fullFilePathOfThisExecutable = argv[0];
     const int indexOfLastBackSlash = fullFilePathOfThisExecutable.rfind(
       wxFILE_SEP_PATH);
@@ -84,12 +88,21 @@ bool wxSMARTmonitorApp::OnInit()
       fullFilePathOfThisExecutable.substr(indexOfLastBackSlash,
       fileNameLen - 2 /* - 3 chars extension + file separator char */);
 //  wxWidgets::wxSMARTreader smartReader;
+    std::wstring stdwstrWorkingDirWithConfigFilePrefix =
+      wxWidgets::GetStdWstring_Inline(workingDirWithConfigFilePrefix);
 
-  if( ! smartReader.GetSMARTparameterIDsToWatch() )
+  try
   {
-    wxMessageBox(wxT("failed reading config file.") );
-    return false;
+    if( ! smartReader.GetSMARTparameterIDsToWatch(stdwstrWorkingDirWithConfigFilePrefix, this) )
+    {
+      //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));
+      return false;
+    }
+  }catch(const ParseConfigFileException & e)
+  {
+    ShowMessage("There was at least 1 error reading the config file\n->this application will exit now.");
   }
+
   //if( smartReader.m_oSMARTDetails.size())
   DWORD dwRetVal = smartReader.ReadSMARTValuesForAllDrives();
   if( dwRetVal == ERROR_ACCESS_DENIED )
@@ -98,10 +111,18 @@ bool wxSMARTmonitorApp::OnInit()
       " administrator\n->programs exits after closing this message box") );
     return false;
   }
-  m_taskBarIcon = new MyTaskBarIcon();
-  // Create the main window
-  gs_dialog = new MyDialog(wxT("wxS.M.A.R.T. monitor"), smartReader);
-  HideMinGWconsoleWindow();
+  if( smartReader.AtLeast1SMARTparameterToRead() > 0 )
+  {
+    m_taskBarIcon = new MyTaskBarIcon();
+    // Create the main window
+    gs_dialog = new MyDialog(wxT("wxS.M.A.R.T. monitor"), smartReader);
+    HideMinGWconsoleWindow();
+  }
+  else
+  {
+    ShowMessage("0 SMART parameters to read -> exiting");
+    return false;
+  }
   }
   catch(const FileException & fe)
   {
@@ -156,4 +177,10 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
     wxMessageBox( wxT("Loading icon file \n\"") + wxGetCwd() +
       wxFILE_SEP_PATH + wxstrIconFileName + wxT( "\" failed") );
   return bLoadFileRetVal;
+}
+
+void wxSMARTmonitorApp::ShowMessage(const char * const str) const
+{
+  wxString wxstrMessage = wxWidgets::GetwxString_Inline(str);
+  wxMessageBox(wxstrMessage, appName );
 }

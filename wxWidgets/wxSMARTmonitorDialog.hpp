@@ -20,10 +20,13 @@ class wxListCtrl;
 
 class MyDialog: public wxDialog
 {
+  enum columnIndices { COL_IDX_SMART_ID = 0 , COL_IDX_SMARTparameterName,
+    COL_IDX_rawValue, COL_IDX_lastUpdate };
   //  CSmartReader m_oSmartReader;
   wxWidgets::wxSMARTreader & m_oSmartReader;
   enum IDs {TIMER_ID = 0};
   DWORD m_arRawValue[255];
+  long int m_arTickCountOfLastQueryInMilliSeconds[255];
   wxListCtrl * m_pwxlistctrl;
 //  wxTimer m_timer;
   nativeThread_type m_updateSMARTparameterValuesThread;

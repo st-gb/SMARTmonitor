@@ -12,14 +12,17 @@
 #include <wx/dialog.h> //class wxDialog
 //#include "wxSMARTmonitorTaskBarIcon.hpp"
 #include "wxSMARTreader.hpp" //class wxSMARTreader
+#include <UserInterface/UserInterface.hpp> //base class UserInterface
 
 class MyTaskBarIcon;
 
 class wxSMARTmonitorApp
-  : public wxApp
+  : public wxApp, UserInterface
 {
   wxWidgets::wxSMARTreader smartReader;
+  static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
 public:
+  static const wxString appName;
   MyTaskBarIcon * m_taskBarIcon;
   wxSMARTmonitorApp();
   virtual
@@ -27,6 +30,10 @@ public:
   bool OnInit();
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
+  static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
+    return s_numberOfMilliSecondsToWaitBetweenSMARTquery;
+  }
+  void ShowMessage(const char * const ) const;
 };
 
 DECLARE_APP(wxSMARTmonitorApp) //wxGetApp()
