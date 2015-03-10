@@ -74,37 +74,9 @@ MyDialog::MyDialog(const wxString& title, const wxWidgets::wxSMARTreader & smart
     wxSizerFlags flags;
     flags.Border(wxALL, 10);
 
-    m_pwxlistctrl = new wxListCtrl(this, wxID_ANY, wxDefaultPosition,
-      wxDefaultSize, wxLC_REPORT);
-    const wxFont & textControlFont = m_pwxlistctrl->GetFont();
-//    this->GetDC
-//    unsigned numpixels = textControlFont.GetWidth("255");
-
-    /** Adapted from http://wiki.wxwidgets.org/WxListCtrl#Minimal_example_to_get_started*/
-    // Add first column
-    wxListItem col0;
-    col0.SetId(COL_IDX_SMART_ID);
-    col0.SetText( _("ID") );
-    col0.SetWidth(30);
-    m_pwxlistctrl->InsertColumn(COL_IDX_SMART_ID, col0);
-
-    // Add second column
-    wxListItem col1;
-    col1.SetId(COL_IDX_SMARTparameterName);
-    col1.SetText( _("parameter name") );
-    col1.SetWidth(200);
-    m_pwxlistctrl->InsertColumn(COL_IDX_SMARTparameterName, col1);
-
-    // Add third column
-    col1.SetId(COL_IDX_rawValue);
-    col1.SetText( wxT("raw value") );
-    col1.SetWidth(70);
-    m_pwxlistctrl->InsertColumn(COL_IDX_rawValue, col1);
-
-    col1.SetId(COL_IDX_lastUpdate);
-    col1.SetText( wxT("last update") );
-    col1.SetWidth(100);
-    m_pwxlistctrl->InsertColumn(COL_IDX_lastUpdate, col1);
+    m_pwxlistctrl = new SMARTtableListCtrl(this//, wxID_ANY, wxDefaultPosition,
+      //wxDefaultSize, wxLC_REPORT
+      );
 
     sizerTop->Add( m_pwxlistctrl,
       //"in the main orientation of the wxBoxSizer - where 0 stands for not changeable"
@@ -230,7 +202,7 @@ void MyDialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
   {
     m_pwxlistctrl->SetItem(
       index,
-      COL_IDX_rawValue /** column #/ index */,
+      SMARTtableListCtrl::COL_IDX_rawValue /** column #/ index */,
       wxString::Format(wxT("%u"), m_arRawValue[index]) );
     tickCountOfCurrentTimeInMilliSeconds = GetTickCount();
     numberOfMilliSecondsPassedSinceLastSMARTquery =
@@ -241,7 +213,7 @@ void MyDialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
 
     m_pwxlistctrl->SetItem(
       index,
-      COL_IDX_lastUpdate /** column #/ index */,
+      SMARTtableListCtrl::COL_IDX_lastUpdate /** column #/ index */,
       //wxString::Format(wxT("%u ms ago"), numberOfMilliSecondsPassedSinceLastSMARTquery )
       currentTime
       );

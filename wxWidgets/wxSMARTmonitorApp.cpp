@@ -60,11 +60,11 @@ IMPLEMENT_APP(wxSMARTmonitorApp)
 bool wxSMARTmonitorApp::OnInit()
 {
 //  std::cerr << "ggg" << std::endl;
-  if ( ! wxApp::OnInit() )
-  {
-//    std::cerr << "ggg" << std::endl;
-    return false;
-  }
+//  if ( ! wxApp::OnInit() )
+//  {
+////    std::cerr << "ggg" << std::endl;
+//    return false;
+//  }
 
 #if wxMAJOR_VERSION > 2 && wxMINOR_VERSION > 8 // since wxWidgets 2.9.0
   if ( ! wxTaskBarIcon::IsAvailable() )
@@ -79,17 +79,29 @@ bool wxSMARTmonitorApp::OnInit()
 #endif
   try
   {
-    wxString workingDirectory = wxGetCwd();
-    wxString fullFilePathOfThisExecutable = argv[0];
-    const int indexOfLastBackSlash = fullFilePathOfThisExecutable.rfind(
-      wxFILE_SEP_PATH);
-    const int fileNameLen = fullFilePathOfThisExecutable.size() - indexOfLastBackSlash - 1;
-    wxString workingDirWithConfigFilePrefix = workingDirectory +
-      fullFilePathOfThisExecutable.substr(indexOfLastBackSlash,
-      fileNameLen - 2 /* - 3 chars extension + file separator char */);
+    const wxString fullFilePathOfThisExecutable = argv[0];
+    wxString fullConfigFilePath;
+    if(argc == 1)
+    {
+      const int indexOfLastDot = fullFilePathOfThisExecutable.rfind(wxT("."));
+      const wxString fullFilePathOfThisExecutableWoutExt =
+          fullFilePathOfThisExecutable.substr(0, indexOfLastDot + 1);
+      fullConfigFilePath = fullFilePathOfThisExecutableWoutExt;
+    }
+    else
+    {
+      const wxString directoryForConfigFile = /*wxGetCwd()*/ argv[1];
+      const int indexOfLastBackSlash = fullFilePathOfThisExecutable.rfind(
+        wxFILE_SEP_PATH);
+      const int fileNameLen = fullFilePathOfThisExecutable.size() - indexOfLastBackSlash - 1;
+      const wxString workingDirWithConfigFilePrefix = directoryForConfigFile +
+        fullFilePathOfThisExecutable.substr(indexOfLastBackSlash,
+        fileNameLen - 2 /* - 3 chars extension + file separator char */);
+      fullConfigFilePath = workingDirWithConfigFilePrefix;
+    }
 //  wxWidgets::wxSMARTreader smartReader;
     std::wstring stdwstrWorkingDirWithConfigFilePrefix =
-      wxWidgets::GetStdWstring_Inline(workingDirWithConfigFilePrefix);
+      wxWidgets::GetStdWstring_Inline(fullConfigFilePath);
 
   try
   {
