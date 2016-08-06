@@ -26,6 +26,7 @@
 
 #include "wxSMARTmonitorApp.hpp"
 #include "wxSMARTmonitorDialog.hpp" // class MyDialog
+#include "libConfig/ConfigurationLoader.hpp"
 #include <wx/taskbar.h>
 #include <wx/filefn.h> //wxFILE_SEP_PATH
 #include <iostream> //class std::cerr
@@ -71,7 +72,7 @@ bool wxSMARTmonitorApp::OnInit()
   {
     wxMessageBox(
       wxT("There appears to be no system tray support in your current "
-        "environment. This sample may not behave as expected."),
+        "environment. This application may not behave as expected."),
       wxT("Warning")
       , wxOK | wxICON_EXCLAMATION
     );
@@ -79,6 +80,11 @@ bool wxSMARTmonitorApp::OnInit()
 #endif
   try
   {
+    /** Show a dialog. Else when displaying messages no icon appears in the
+     *  task bar and this not able to switch there with alt+Tab.*/
+    gs_dialog = new MyDialog(wxT("wxS.M.A.R.T. monitor"), m_wxSMARTvalueProcessor);
+    gs_dialog->Show(true);
+    m_wxSMARTvalueProcessor.Init();
     const wxString fullFilePathOfThisExecutable = argv[0];
     wxString fullConfigFilePath;
     if(argc == 1)
@@ -103,50 +109,61 @@ bool wxSMARTmonitorApp::OnInit()
     std::wstring stdwstrWorkingDirWithConfigFilePrefix =
       wxWidgets::GetStdWstring_Inline(fullConfigFilePath);
 
-  try
-  {
-    if( ! smartReader.GetSMARTparameterIDsToWatch(stdwstrWorkingDirWithConfigFilePrefix, this) )
+//  std::set<SkSmartAttributeParsedData> smartAttributesToObserve;
+  libConfig::ConfigurationLoader configurationLoader(
+    /*smartAttributesToObserve*/ (SMARTaccessBase::SMARTattributesType &) m_SMARTaccess.getSMARTattributesToObserve(),
+    *this);
+
+    try
     {
-      //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));
+        //TODO just for compilation
+      const bool successfullyLoadedConfigFile = configurationLoader.
+        LoadConfiguration(stdwstrWorkingDirWithConfigFilePrefix);
+  //    ! smartReader.LoadSMARTparameterConfigFile(
+  //            stdwstrWorkingDirWithConfigFilePrefix, this);
+      if( ! successfullyLoadedConfigFile )
+      {
+        //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));
+        return false;
+      }
+    }catch(const ParseConfigFileException & e)
+    {
+      ShowMessage("There was at least 1 error reading the configuration file\n"
+        "->this application will exit now.");
+    }
+
+    //if( smartReader.m_oSMARTDetails.size())
+    DWORD dwRetVal = m_SMARTaccess.ReadSMARTValuesForAllDrives();
+    if( dwRetVal == SMARTaccessBase::accessDenied )
+    {
+      wxMessageBox( wxT("access denied to S.M.A.R.T.\n->restart this program as an"
+        " administrator\n->programs exits after closing this message box") );
       return false;
     }
-  }catch(const ParseConfigFileException & e)
-  {
-    ShowMessage("There was at least 1 error reading the config file\n->this application will exit now.");
-  }
-
-  //if( smartReader.m_oSMARTDetails.size())
-  DWORD dwRetVal = smartReader.ReadSMARTValuesForAllDrives();
-  if( dwRetVal == ERROR_ACCESS_DENIED )
-  {
-    wxMessageBox( wxT("access denied to S.M.A.R.T.\n->restart this program as an"
-      " administrator\n->programs exits after closing this message box") );
-    return false;
-  }
-  if( smartReader.AtLeast1SMARTparameterToRead() > 0 )
-  {
-    m_taskBarIcon = new MyTaskBarIcon();
-    // Create the main window
-    gs_dialog = new MyDialog(wxT("wxS.M.A.R.T. monitor"), smartReader);
-    HideMinGWconsoleWindow();
-  }
-  else
-  {
-    ShowMessage("0 SMART parameters to read -> exiting");
-    return false;
-  }
+    if( m_SMARTaccess.GetNumberOfSMARTparametersToRead() > 0 )
+    {
+      m_taskBarIcon = new MyTaskBarIcon();
+      // Create the main window
+  #ifdef __MINGW32__
+      HideMinGWconsoleWindow();
+  #endif
+    }
+    else
+    {
+      ShowMessage("0 SMART parameters to read -> exiting");
+      return false;
+    }
   }
   catch(const FileException & fe)
   {
     TCHAR * filePath = fe.GetFilePath();
-    wxMessageBox(wxT("failed to open file ") + wxWidgets::getwxString_inline(
+    wxMessageBox(wxT("failed to open file: ") + wxWidgets::getwxString_inline(
       //GetStdWstring( ))
       filePath ) );
     return false;
   }
-//  gs_dialog->Show(true);
-
- return true;
+  //  gs_dialog->Show(true);
+  return true;
 }
 
 bool wxSMARTmonitorApp::GetSMARTokayIcon(wxIcon & icon)
@@ -154,6 +171,8 @@ bool wxSMARTmonitorApp::GetSMARTokayIcon(wxIcon & icon)
 //  wxIcon icon; //(/*smile_xpm*/  );
   #ifdef _WIN32
   wxString wxstrIconFileName = wxT("S.M.A.R.T._OK.ico");
+  #else
+  wxString wxstrIconFileName = wxT("S.M.A.R.T._OK.xpm");
   #endif
   bool bLoadFileRetVal = icon.LoadFile(
     //http://docs.wxwidgets.org/trunk/classwx_bitmap.html:
@@ -162,6 +181,9 @@ bool wxSMARTmonitorApp::GetSMARTokayIcon(wxIcon & icon)
     #ifdef _WIN32
       wxstrIconFileName,
       wxBITMAP_TYPE_ICO
+    #else //#ifdef __WXGTK__ //wxGTK
+      wxstrIconFileName,
+      wxBITMAP_TYPE_XPM
     #endif
     );
   if( ! bLoadFileRetVal)
@@ -175,6 +197,8 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 //  wxIcon icon; //(/*smile_xpm*/  );
   #ifdef _WIN32
   wxString wxstrIconFileName = wxT("S.M.A.R.T._warning.ico");
+  #else
+  wxString wxstrIconFileName = wxT("S.M.A.R.T._warning.xpm");
   #endif
   bool bLoadFileRetVal = icon.LoadFile(
     //http://docs.wxwidgets.org/trunk/classwx_bitmap.html:
@@ -183,6 +207,9 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
     #ifdef _WIN32
       wxstrIconFileName,
       wxBITMAP_TYPE_ICO
+    #else //#ifdef __WXGTK__ //wxGTK
+      wxstrIconFileName,
+      wxBITMAP_TYPE_XPM
     #endif
     );
   if( ! bLoadFileRetVal)

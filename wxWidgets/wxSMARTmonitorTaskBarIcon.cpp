@@ -17,7 +17,7 @@
 #ifndef WX_PRECOMP
     #include "wx/wx.h"
 #endif
-#include "smile.xpm"
+//#include "smile.xpm"
 
 #include "wxSMARTmonitorDialog.hpp"
 //class MyDialog;
@@ -74,10 +74,10 @@ void MyTaskBarIcon::OnMenuUICheckmark(wxUpdateUIEvent &event)
 
 void MyTaskBarIcon::OnMenuSetNewIcon(wxCommandEvent&)
 {
-    wxIcon icon(smile_xpm);
-
-    if ( ! SetIcon(icon, wxT("wxTaskBarIcon Sample - a different icon")))
-        wxMessageBox(wxT("Could not set new icon."));
+//    wxIcon icon(smile_xpm);
+//
+//    if ( ! SetIcon(icon, wxT("wxTaskBarIcon Sample - a different icon")))
+//        wxMessageBox(wxT("Could not set new icon."));
 }
 
 void MyTaskBarIcon::OnMenuSub(wxCommandEvent&)

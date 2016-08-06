@@ -11,15 +11,19 @@
 #include <wx/app.h>
 #include <wx/dialog.h> //class wxDialog
 //#include "wxSMARTmonitorTaskBarIcon.hpp"
-#include "wxSMARTreader.hpp" //class wxSMARTreader
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
+
+#include <libATA_SMART/SMARTaccess.hpp>
+#include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
+//typedef libatasmart::SMARTaccess SMARTaccess_type;
 
 class MyTaskBarIcon;
 
 class wxSMARTmonitorApp
   : public wxApp, UserInterface
 {
-  wxWidgets::wxSMARTreader smartReader;
+  wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
+  SMARTaccess_type m_SMARTaccess;
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
 public:
   static const wxString appName;

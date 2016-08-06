@@ -9,36 +9,37 @@
 #define WXSMARTREADER_HPP_
 
 #include <wx/dynlib.h>
-#include "SmartReader.h" //class CSmartReader
 //#include <Controller/CPUcontrollerDynLib/calling_convention.h>
-
-#define DYN_LIB_CALLING_CONVENTION
-
-typedef DWORD (
-  DYN_LIB_CALLING_CONVENTION
-  * dynlib_OnChangedCriticalSMARTparameters_type)(
-	ST_SMART_INFO * pCurrentSMARTparameter,
-    const ST_DRIVE_INFO & st_drive_info );
+#include <preprocessor_macros/Windows_compatible_typedefs.h> //DWORD
+#include "dynlib_OnChangedCriticalSMARTparameters_type.hpp"
+#include <SMARTvalueProcessorBase.hpp> //base class SMARTvalueProcessorBase
 
 namespace wxWidgets
 {
 
-  class wxSMARTreader : public CSmartReader
+  class wxSMARTvalueProcessor
+    : public SMARTvalueProcessorBase
   {
     dynlib_OnChangedCriticalSMARTparameters_type m_p_OnChangedCriticalSMARTparameters;
     wxDynamicLibrary m_wxdynlib;
   public:
-    wxSMARTreader();
+    wxSMARTvalueProcessor();
     virtual
-    ~wxSMARTreader();
+    ~wxSMARTvalueProcessor();
 
+    void Init();
     void ExecuteChangedCriticalParametersAction(
-      ST_SMART_INFO * pCurrentSMARTparameter,
-      const ST_DRIVE_INFO & st_drive_info
+//      ST_SMART_INFO * pCurrentSMARTparameter,
+      SkSmartAttributeParsedData & skSmartAttributeParsedData,
+//      const ST_DRIVE_INFO & st_drive_info
+      SkIdentifyParsedData & skIdentifyParsedData
       );
     void OnChangedCriticalSMARTparameters(
-      ST_SMART_INFO * pCurrentSMARTparameter,
-      const ST_DRIVE_INFO & st_drive_info);
+//      ST_SMART_INFO * pCurrentSMARTparameter,
+      SkSmartAttributeParsedData & skSmartAttributeParsedData,
+//      const ST_DRIVE_INFO & st_drive_info
+      SkIdentifyParsedData & skIdentifyParsedData
+      );
 
 	/** @brief template function for ease to assign function pointers from a dyn lib
 	 *  @param p_function must be passed in order to get its type */

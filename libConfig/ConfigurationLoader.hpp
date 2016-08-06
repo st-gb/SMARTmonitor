@@ -10,6 +10,8 @@
 
 #include <ConfigurationLoaderBase.hpp>
 #include <UserInterface/UserInterface.hpp>
+#include <set> //class std::set
+#include <string> //class std::string
 
 namespace libConfig
 {
@@ -19,8 +21,11 @@ namespace libConfig
   {
   private:
     const UserInterface & m_r_userInterface;
+    std::set<std::string> attributeNamesFromConfigFile;
   public:
-    ConfigurationLoader(SMARTDETAILSMAP & oSMARTDetails,
+    ConfigurationLoader(
+//      SMARTDETAILSMAP & oSMARTDetails,
+      std::set<SkSmartAttributeParsedData> & smartAttributesToObserve,
       const UserInterface & r_userInterface);
     virtual
     ~ConfigurationLoader();

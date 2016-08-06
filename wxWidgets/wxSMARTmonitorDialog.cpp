@@ -20,8 +20,8 @@
 #include "wxSMARTmonitorTaskBarIcon.hpp"
 #include <compiler/GCC/enable_disable_warning.h>
 GCC_DIAG_OFF(write-strings)
-#include "warning.xpm"
-#include "smile.xpm"
+//#include "warning.xpm"
+//#include "smile.xpm"
 GCC_DIAG_ON(write-strings)
 #include <wx/listctrl.h> //class wxListCtrl
 #include <hardware/CPU/atomic/AtomicExchange.h>
@@ -62,12 +62,15 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(vo
   return 0;
 }
 
-MyDialog::MyDialog(const wxString& title, const wxWidgets::wxSMARTreader & smartReader)
+MyDialog::MyDialog(
+  const wxString& title,
+   const wxWidgets::wxSMARTvalueProcessor & SMARTvalueProcessor)
   : wxDialog(NULL, wxID_ANY, title, wxDefaultPosition, //wxDefaultSize,
       wxSize(400,400),
       wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 //    , m_timer(this, TIMER_ID)
-  , m_oSmartReader( (wxWidgets::wxSMARTreader &) smartReader)
+  , m_SMARTvalueProcessor( (wxWidgets::wxSMARTvalueProcessor &) SMARTvalueProcessor)
+  , m_SMARTaccess(SMARTvalueProcessor.getSMARTaccess() )
 {
     wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
 
@@ -144,7 +147,7 @@ MyDialog::MyDialog(const wxString& title, const wxWidgets::wxSMARTreader & smart
     }
 #endif
 //    m_timer.Start(1000); // 1 second interval
-    if( m_oSmartReader.AtLeast1SMARTparameterToRead() > 0 )
+    if( m_SMARTaccess.GetNumSMARTattributesToObserve() > 0 )
     {
       ReadSMARTvaluesAndUpdateUI();
       m_updateSMARTparameterValuesThread.start(
@@ -162,11 +165,11 @@ MyDialog::~MyDialog()
 
 void MyDialog::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
-    static const TCHAR * const title = _T("About wxS.M.A.R.T.monitor");
-    static const TCHAR * const message
-        = _T("a tool to monitor critical S.M.A.R.T. parameters\n"
-          "\nsee http://en.wikipedia.org/wiki/S.M.A.R.T."
-          "\n(C) 2013-2015 by Trilobyte Software Engineering GmbH, Germany\n");
+    static const wxChar * const title = wxT("About wxS.M.A.R.T.monitor");
+    static const wxChar * const message
+      = _T("a tool to monitor CRITICAL S.M.A.R.T. parameters\n"
+        "\nsee http://en.wikipedia.org/wiki/S.M.A.R.T."
+        "\n(C) 2013-2016 by Trilobyte Software Engineering GmbH, Germany\n");
 
 #if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
     m_taskBarIcon->ShowBalloon(title, message, 15000, wxICON_INFORMATION);
@@ -222,56 +225,82 @@ void MyDialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
 
 void MyDialog::UpdateSMARTvaluesThreadSafe()
 {
-  DWORD dwRetVal = m_oSmartReader.ReadSMARTValuesForAllDrives();
-  if( dwRetVal == ERROR_ACCESS_DENIED )
-    ;
-  else
+  DWORD dwRetVal = m_SMARTaccess.ReadSMARTValuesForAllDrives();
+  if( dwRetVal == SMARTaccessBase::success )
   {
-    ST_DRIVE_INFO * pDriveInfo = NULL;
-    ST_SMART_INFO * pSmartInfo = NULL;
-    ST_SMART_DETAILS * pSmartDetails = NULL;
-    unsigned ucT3;
+//    ST_DRIVE_INFO * pDriveInfo = NULL;
+//    ST_SMART_INFO * pSmartInfo = NULL;
+//    ST_SMART_DETAILS * pSmartDetails = NULL;
+//    unsigned ucT3;
     unsigned lineNumber = 0;
     bool atLeast1NonNullValue = false;
-    //loop over drives
-    long double timeInS;
-    for(unsigned ucT1 = 0, ucT4 = 0; ucT1 < m_oSmartReader.m_ucDrivesWithInfo; ++ ucT1)
-    {
-      pDriveInfo = m_oSmartReader.GetDriveInfo(ucT1);
-      for(unsigned SMARTattributeID = ucT3 = 0; SMARTattributeID < 255; ++ SMARTattributeID)
+//    //loop over drives
+//    long double timeInS;
+//    for(unsigned ucT1 = 0, ucT4 = 0; ucT1 < m_SMARTvalueProcessor.m_ucDrivesWithInfo; ++ ucT1)
+//    {
+//      pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(ucT1);
+//      for(unsigned SMARTattributeID = ucT3 = 0; SMARTattributeID < 255;
+//        ++ SMARTattributeID)
+//      {
+//        pSmartInfo = m_SMARTvalueProcessor.GetSMARTValue(pDriveInfo->m_ucDriveIndex, SMARTattributeID);
+//        if(pSmartInfo)
+//        {
+//          pSmartDetails = m_SMARTvalueProcessor.GetSMARTDetails(
+//            pSmartInfo->m_ucAttribIndex);
+//          if(pSmartDetails)
+//          {
+//            if(pSmartDetails->m_bCritical)
+//            {
+      const fastestUnsignedDataType numberOfDifferentDrives = m_SMARTaccess.
+        GetNumberOfDifferentDrives();
+      std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = m_SMARTaccess.
+        GetSMARTuniqueIDandValues();
+      std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
+        SMARTuniqueIDsAndValues.begin();
+      fastestUnsignedDataType SMARTattributeID;
+      uint64_t SMARTrawValue;
+      const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
+        m_SMARTaccess.getSMARTattributesToObserve();
+      for(fastestUnsignedDataType currentDriveIndex = 0 /*, ucT4 = 0*/;
+        currentDriveIndex < numberOfDifferentDrives; /*++ currentDriveIndex*/
+        SMARTuniqueIDandValuesIter ++)
       {
-        pSmartInfo = m_oSmartReader.GetSMARTValue(pDriveInfo->m_ucDriveIndex, SMARTattributeID);
-        if(pSmartInfo)
+    //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
+        std::set<SkSmartAttributeParsedData>::const_iterator
+          SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
+        for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
+            SMARTattributesToObserveIter ++)
         {
-          pSmartDetails = m_oSmartReader.GetSMARTDetails(
-            pSmartInfo->m_ucAttribIndex);
-          if(pSmartDetails)
-          {
-            if(pSmartDetails->m_bCritical)
-            {
+          SMARTattributeID = SMARTattributesToObserveIter->id;
+          SMARTuniqueIDandValuesIter->m_SMARTrawValues[SMARTattributeID];
+
               AtomicExchange( (long int *) & m_arRawValue[lineNumber] //long * Target
-                , pSmartInfo->m_dwAttribValue /*long val*/ );
+                , /*pSmartInfo->m_dwAttribValue*/
+                * (long int *) SMARTattributesToObserveIter->raw /*long val*/ );
               AtomicExchange(
                 & m_arTickCountOfLastQueryInMilliSeconds[lineNumber]
                 , GetTickCount() /*long val*/ );
               //FileTi
 //              OperatingSystem::GetTimeCountInSeconds(timeInS);
 
-              if( pSmartInfo->m_dwAttribValue )
+              if( /*pSmartInfo->m_dwAttribValue*/
+                SMARTattributesToObserveIter->pretty_value )
                 atLeast1NonNullValue = true;
               ++ lineNumber;
-            }
-          }
+//            }
+//          }
         }
       }
-    }
+//    }
   }
+  else // e.g. SMARTaccessBase::accessDenied
+    ;
 }
 
 void MyDialog::ReadSMARTvaluesAndUpdateUI()
 {
-  DWORD dwRetVal = m_oSmartReader.ReadSMARTValuesForAllDrives();
-  if( dwRetVal == ERROR_ACCESS_DENIED )
+  DWORD dwRetVal = m_SMARTaccess.ReadSMARTValuesForAllDrives();
+  if( dwRetVal == SMARTaccessBase::accessDenied )
   {
     SetTitle( wxT("wxS.M.A.R.T.monitor--access to SMART denied--restart as admin") );
     wxIcon icon;
@@ -283,48 +312,76 @@ void MyDialog::ReadSMARTvaluesAndUpdateUI()
   else
     SetTitle( wxT("wxSMARTmonitor") );
 
-  ST_DRIVE_INFO * pDriveInfo = NULL;
-  ST_SMART_INFO * pSmartInfo = NULL;
-  ST_SMART_DETAILS * pSmartDetails = NULL;
+//  ST_DRIVE_INFO * pDriveInfo = NULL;
+//  ST_SMART_INFO * pSmartInfo = NULL;
+//  ST_SMART_DETAILS * pSmartDetails = NULL;
   unsigned ucT3;
   m_pwxlistctrl->DeleteAllItems();
   unsigned lineNumber = 0;
   bool atLeast1NonNullValue = false;
-  for(unsigned ucT1 = 0, ucT4 = 0; ucT1 < m_oSmartReader.m_ucDrivesWithInfo; ++ ucT1)
+
+  const fastestUnsignedDataType numberOfDifferentDrives = m_SMARTaccess.
+    GetNumberOfDifferentDrives();
+  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = m_SMARTaccess.
+    GetSMARTuniqueIDandValues();
+  std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
+    SMARTuniqueIDsAndValues.begin();
+  fastestUnsignedDataType SMARTattributeID;
+  uint64_t SMARTrawValue;
+  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
+    m_SMARTaccess.getSMARTattributesToObserve();
+  for(fastestUnsignedDataType currentDriveIndex = 0 /*, ucT4 = 0*/;
+    currentDriveIndex < numberOfDifferentDrives; /*++ currentDriveIndex*/
+    SMARTuniqueIDandValuesIter ++)
   {
-    pDriveInfo = m_oSmartReader.GetDriveInfo(ucT1);
-    for(unsigned SMARTattributeID = ucT3 = 0; SMARTattributeID < 255; ++ SMARTattributeID)
+//    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
+    std::set<SkSmartAttributeParsedData>::const_iterator
+      SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
+    for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
+        SMARTattributesToObserveIter ++)
     {
-      pSmartInfo = m_oSmartReader.GetSMARTValue(pDriveInfo->m_ucDriveIndex, SMARTattributeID);
-      if(pSmartInfo)
-      {
-        pSmartDetails = m_oSmartReader.GetSMARTDetails(
-          pSmartInfo->m_ucAttribIndex);
-        if(pSmartDetails)
-        {
-          if(pSmartDetails->m_bCritical)
-          {
+      SMARTattributeID = SMARTattributesToObserveIter->id;
+      SMARTuniqueIDandValuesIter->m_SMARTrawValues[SMARTattributeID];
+
+//    for(unsigned SMARTattributeID = ucT3 = 0; SMARTattributeID < 255;
+//      ++ SMARTattributeID)
+//    {
+//      pSmartInfo = m_SMARTvalueProcessor.GetSMARTValue(
+//        pDriveInfo->m_ucDriveIndex, SMARTattributeID);
+//      if(pSmartInfo)
+//      {
+//        pSmartDetails = m_SMARTvalueProcessor.GetSMARTDetails(
+//          pSmartInfo->m_ucAttribIndex);
+//        if(pSmartDetails)
+//        {
+//          if(pSmartDetails->m_bCritical)
+//          {
             wxListItem item;
             item.SetId(lineNumber); //item line number
             item.SetText( wxString::Format(wxT("%u"),
-              pSmartInfo->m_ucAttribIndex)
+              /*pSmartInfo->m_ucAttribIndex*/ SMARTattributeID)
               );
 //            m_pwxlistctrl->SetItem( item );
             m_pwxlistctrl->InsertItem( item );
 
             m_pwxlistctrl->SetItem(lineNumber, 1, wxString::Format( wxT("%s"),
-                pSmartDetails->m_csAttribName.c_str() ) );
+//                pSmartDetails->m_csAttribName.c_str()
+                SMARTattributesToObserveIter->name
+                ) );
 //            item.SetId(2);
-            m_pwxlistctrl->SetItem(lineNumber, 2,  wxString::Format(wxT("%u"),
-                pSmartInfo->m_dwAttribValue) );
+            m_pwxlistctrl->SetItem(lineNumber, 2,  wxString::Format(wxT("%i64u"),
+              /*pSmartInfo->m_dwAttribValue*/
+              SMARTattributesToObserveIter->pretty_value) );
 
-            if( pSmartInfo->m_dwAttribValue )
+            if( /*pSmartInfo->m_dwAttribValue*/
+              SMARTattributesToObserveIter->pretty_value )
               atLeast1NonNullValue = true;
 //            m_pwxlistctrl->SetItem( item );
             ++ lineNumber;
-          }
-        }
-      }
+//          }
+//        }
+//      }
+//    }
     }
   }
   if( atLeast1NonNullValue )
@@ -332,9 +389,11 @@ void MyDialog::ReadSMARTvaluesAndUpdateUI()
     wxIcon icon;
     if( wxGetApp().GetSMARTwarningIcon(icon) )
     {
-      if ( ! wxGetApp().m_taskBarIcon->SetIcon(icon,
-        wxT("warning:\nraw value for at least 1 critical SMART parameter is > 0")))
-          wxMessageBox(wxT("Could not set new icon."), wxT("wxSMARTmonitor") );
+      if ( ! wxGetApp().m_taskBarIcon->SetIcon(
+        icon,
+        wxT("warning:\nraw value for at least 1 critical SMART parameter is > 0"))
+        )
+        wxMessageBox(wxT("Could not set new icon."), wxT("wxSMARTmonitor") );
       SetIcon(icon);
     }
   }

@@ -13,15 +13,17 @@
 #include <FileSystem/File/FileException.hpp>
 #include <iostream> //std::err
 #include <sstream> //std::ostringstream
+#include <Controller/character_string/stdtstr.hpp> //GetStdString_Inline
 
 namespace libConfig
 {
 
   ConfigurationLoader::ConfigurationLoader(
-    SMARTDETAILSMAP & oSMARTDetails ,
+//    SMARTDETAILSMAP & oSMARTDetails ,
+    std::set<SkSmartAttributeParsedData> & smartAttributesToObserve,
     const UserInterface & r_userInterface
     )
-    : ConfigurationLoaderBase(oSMARTDetails)
+    : ConfigurationLoaderBase(/*oSMARTDetails*/ smartAttributesToObserve)
     , m_r_userInterface(r_userInterface)
   {
     // TODO Auto-generated constructor stub
@@ -38,9 +40,10 @@ namespace libConfig
   {
     TCHAR * szFileNameOfThisExecutable;
     int nC1, nSmartAttribs;
-    ST_SMART_DETAILS stSD;
+//    ST_SMART_DETAILS stSD;
 
-    m_oSMARTDetails.clear();
+//    m_oSMARTDetails.clear();
+    m_smartAttributesToObserve.clear();
 
   //  if(IsDebuggerPresent()==FALSE)
       {
@@ -56,7 +59,8 @@ namespace libConfig
 
       // Get the store name.
       try {
-        ST_SMART_DETAILS stSD;
+//        ST_SMART_DETAILS stSmartDetails;
+        SkSmartAttributeParsedData skSmartAttributeParsedData;
           //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
 
         const libconfig::Setting & root = libConfig.getRoot();
@@ -68,12 +72,12 @@ namespace libConfig
           < numCritical_SMART_parameters; ++ criticalSMARTparameterIndex)
         {
           const libconfig::Setting & critical_SMART_parameter =
-              critical_SMART_parameters[criticalSMARTparameterIndex];
-          stSD.m_bCritical = true;
-          int attribID;
+            critical_SMART_parameters[criticalSMARTparameterIndex];
+//          stSmartDetails.m_bCritical = true;
+          int smartAttributeID;
           std::string std_strAttribName, std_strAttribDetails;
           const bool successfullyLookedUpID = critical_SMART_parameter.
-            lookupValue("Id", attribID);
+            lookupValue("Id", smartAttributeID);
           if( successfullyLookedUpID )
           {
             const bool successfullyLookedUpName = critical_SMART_parameter.
@@ -86,12 +90,25 @@ namespace libConfig
                 //&& successfullyLookedUpDetails
               )
             {
-              stSD.m_ucAttribId = attribID;
-              std_tstr = GetStdTstring_Inline( std_strAttribName.c_str() );
-              stSD.m_csAttribName = CString(std_tstr);
+//              stSmartDetails.m_ucAttribId = smartAttributeID;
+//              std_tstr = GetStdTstring_Inline( std_strAttribName.c_str() );
+//              stSmartDetails.m_csAttribName = CString(std_tstr);
               //stSD.m_csAttribDetails = std_strAttribDetails;
-              m_oSMARTDetails.insert(
-                  SMARTDETAILSMAP::value_type(stSD.m_ucAttribId, stSD));
+//              m_oSMARTDetails.insert(
+//                  SMARTDETAILSMAP::value_type(stSmartDetails.m_ucAttribId,
+//              stSmartDetails
+
+              skSmartAttributeParsedData.id = smartAttributeID;
+              attributeNamesFromConfigFile.insert(std_strAttribName);
+              std::set<std::string>::const_iterator citer =
+                attributeNamesFromConfigFile.find(std_strAttribName);
+              if( citer != attributeNamesFromConfigFile.end() )
+                //use pointer from member var instead of from stack.
+                skSmartAttributeParsedData.name = std_strAttribName.c_str();
+
+              m_smartAttributesToObserve.insert(
+                /*std::make_pair(smartAttributeID,*/ skSmartAttributeParsedData//)
+                );
             }
           }
           else
@@ -110,17 +127,19 @@ namespace libConfig
         //setDefaultValues = true;
       }
     }
-    catch (const libconfig::FileIOException &fioex)
+    catch (const libconfig::FileIOException & libConfigFileIOexc)
     {
-      std::cerr << "I/O error while reading file." << std::endl;
+      std::cerr << "I/O error while reading file \"" <<
+        stdstrFullConfigFilePath << " \"" << std::endl;
       //return(EXIT_FAILURE);
       throw FileException(fullConfigFilePath.c_str() );
     }
-    catch (const libconfig::ParseException &pex)
+    catch (const libconfig::ParseException & libConfigParseException)
     {
       std::ostringstream stdoss;
-      stdoss << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-            << " - " << pex.getError() ;
+      stdoss << "Parse error at " << libConfigParseException.getFile() << ":"
+        << libConfigParseException.getLine()
+        << " - " << libConfigParseException.getError() ;
       std::cerr << stdoss.str() << std::endl;
       //return false;
       m_r_userInterface.ShowMessage(stdoss.str().c_str() );

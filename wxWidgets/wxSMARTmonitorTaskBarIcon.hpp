@@ -9,10 +9,12 @@
 #define WXSMARTMONITORTASKBARICON_HPP_
 
 #include <wx/taskbar.h> //class wxTaskBarIcon
+#ifdef _WIN32
 //#include <shellapi.h> //Shell_NotifyIconGetRect
 //#include <winuser.h> //GetSystemMetrics
 #include <windows.h> //GetSystemMetrics
 #include <wx/msw/winundef.h>
+#endif
 
 class MyTaskBarIcon
   : public wxTaskBarIcon
@@ -40,9 +42,11 @@ public:
 //         _In_   int lims,
 //         _Out_  HICON *phico
 //         );
+#ifdef _WIN32
       int x = GetSystemMetrics(SM_CXICON);
       x = GetSystemMetrics(SM_CXSMICON);
       int y = GetSystemMetrics(SM_CYICON);
+#endif
     }
 
 //    void OnLeftButtonDClick(wxTaskBarIconEvent&);

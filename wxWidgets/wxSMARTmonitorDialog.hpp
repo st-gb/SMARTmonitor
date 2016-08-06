@@ -10,8 +10,10 @@
 
 #include <wx/dialog.h>
 #include <wx/timer.h> //class wxTimer
-#include "SmartReader.h" //class CSmartReader
-#include "wxSMARTreader.hpp" //class wxSMARTreader
+//#ifdef _WINDOWS
+//  #include "SmartReader.h" //class CSmartReader
+//#endif
+#include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
 #include "wxSMARTmonitorTaskBarIcon.hpp"
 #include <multithread/nativeThreadType.hpp>
 #include "SMARTtableListCtrl.hpp"
@@ -23,15 +25,17 @@ using namespace wxWidgets;
 class MyDialog: public wxDialog
 {
   //  CSmartReader m_oSmartReader;
-  wxWidgets::wxSMARTreader & m_oSmartReader;
+  wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
+  SMARTaccess_type & m_SMARTaccess;
   enum IDs {TIMER_ID = 0};
-  DWORD m_arRawValue[255];
+  DWORD m_arRawValue[255]; //provide space for up t 255 SMART attribute values
   long int m_arTickCountOfLastQueryInMilliSeconds[255];
   SMARTtableListCtrl * m_pwxlistctrl;
 //  wxTimer m_timer;
   nativeThread_type m_updateSMARTparameterValuesThread;
 public:
-    MyDialog(const wxString& title, const wxWidgets::wxSMARTreader & smartReader);
+    MyDialog(const wxString& title,
+     const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor);
     virtual ~MyDialog();
     void UpdateSMARTvaluesThreadSafe();
 
