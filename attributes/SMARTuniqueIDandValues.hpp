@@ -9,6 +9,7 @@
 #define ATTRIBUTES_SMARTUNIQUEIDANDVALUES_HPP_
 
 #include "SMARTuniqueID.hpp" //struct SMARTuniqueID
+#include <stdint.h> //uint64_t
 
 class SMARTuniqueIDandValues
 {
@@ -16,7 +17,7 @@ private:
   SMARTuniqueID m_SMARTuniqueID;
 public:
   uint64_t m_SMARTrawValues[255];
-  SMARTuniqueIDandValues ();
+  SMARTuniqueIDandValues (const SMARTuniqueID & _SMARTuniqueID);
   virtual
   ~SMARTuniqueIDandValues ();
 

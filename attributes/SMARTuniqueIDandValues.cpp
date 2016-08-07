@@ -7,10 +7,9 @@
 
 #include <attributes/SMARTuniqueIDandValues.hpp>
 
-SMARTuniqueIDandValues::SMARTuniqueIDandValues ()
+SMARTuniqueIDandValues::SMARTuniqueIDandValues (const SMARTuniqueID & _SMARTuniqueID)
 {
-  // TODO Auto-generated constructor stub
-
+  m_SMARTuniqueID = _SMARTuniqueID;
 }
 
 SMARTuniqueIDandValues::~SMARTuniqueIDandValues ()

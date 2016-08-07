@@ -46,6 +46,8 @@ const wxString wxSMARTmonitorApp::appName = wxT("wxSMARTmonitor");
 unsigned wxSMARTmonitorApp::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 
 wxSMARTmonitorApp::wxSMARTmonitorApp()
+  : m_taskBarIcon(NULL),
+    m_SMARTaccess(m_wxSMARTvalueProcessor.getSMARTaccess() )
 {
   // TODO Auto-generated constructor stub
 
@@ -58,6 +60,62 @@ wxSMARTmonitorApp::~wxSMARTmonitorApp()
 
 IMPLEMENT_APP(wxSMARTmonitorApp)
 
+void wxSMARTmonitorApp::ConstructConfigFilePath(
+  std::wstring & stdwstrConfigPathWithoutExtension)
+{
+  const wxString fullFilePathOfThisExecutable = argv[0];
+  wxString fullConfigFilePathWithoutExtension;
+  if(argc == 1) /** NO program arguments passed. */
+  {
+    const wxString currentWorkingDir = wxGetCwd();
+    wxString fileNameWithoutExtension;
+    const int indexOfLastDot = fullFilePathOfThisExecutable.rfind(wxT("."));
+    const int indexOfLastBackSlash = fullFilePathOfThisExecutable.rfind(
+      wxFILE_SEP_PATH);
+    wxString configFileNameWithoutExtension;
+    wxString exeFileName;
+    if( indexOfLastBackSlash != -1 )
+    {
+      exeFileName = fullFilePathOfThisExecutable.substr(indexOfLastBackSlash,
+        fullFilePathOfThisExecutable.length( ));
+    }
+    if( indexOfLastDot == -1 ) /** If no file name extension like ".exe" */
+    {
+  //        fullConfigFilePath = fullFilePathOfThisExecutable + wxT(".");
+      if( indexOfLastBackSlash != -1 )
+      {
+        fullConfigFilePathWithoutExtension = currentWorkingDir /*+ wxFILE_SEP_PATH */+
+          exeFileName + wxT(".");
+      }
+    }
+    else
+    {
+      const wxString fullFilePathOfThisExecutableWoutExt =
+        fullFilePathOfThisExecutable.substr(0, indexOfLastDot + 1);
+      fullConfigFilePathWithoutExtension = fullFilePathOfThisExecutableWoutExt;
+    }
+  }
+  else /** At least 1 program argument passed. */
+  {
+  //      if( )
+    if( false /*isDirectoryPath(argv[1])*/ )
+    {
+    const wxString directoryForConfigFile = /*wxGetCwd()*/ argv[1];
+    const int indexOfLastBackSlash = fullFilePathOfThisExecutable.rfind(
+      wxFILE_SEP_PATH);
+    const int fileNameLen = fullFilePathOfThisExecutable.size() - indexOfLastBackSlash - 1;
+    const wxString workingDirWithConfigFilePrefix = directoryForConfigFile +
+      fullFilePathOfThisExecutable.substr(indexOfLastBackSlash,
+      fileNameLen - 2 /* - 3 chars extension + file separator char */);
+    fullConfigFilePathWithoutExtension = workingDirWithConfigFilePrefix;
+    }
+    else
+      fullConfigFilePathWithoutExtension = argv[1];
+  }
+  //  wxWidgets::wxSMARTreader smartReader;
+  /*std::wstring*/ stdwstrConfigPathWithoutExtension =
+    wxWidgets::GetStdWstring_Inline(fullConfigFilePathWithoutExtension);
+}
 bool wxSMARTmonitorApp::OnInit()
 {
 //  std::cerr << "ggg" << std::endl;
@@ -80,38 +138,32 @@ bool wxSMARTmonitorApp::OnInit()
 #endif
   try
   {
+//    if( m_SMARTaccess.GetNumberOfSMARTparametersToRead() > 0 )
+    {
+//      m_taskBarIcon = new MyTaskBarIcon();
+      // Create the main window
+  #ifdef __MINGW32__
+      HideMinGWconsoleWindow();
+  #endif
+    }
+//    else
+//    {
+//      ShowMessage("0 SMART parameters to read -> exiting");
+//      return false;
+//    }
     /** Show a dialog. Else when displaying messages no icon appears in the
      *  task bar and this not able to switch there with alt+Tab.*/
     gs_dialog = new MyDialog(wxT("wxS.M.A.R.T. monitor"), m_wxSMARTvalueProcessor);
     gs_dialog->Show(true);
     m_wxSMARTvalueProcessor.Init();
-    const wxString fullFilePathOfThisExecutable = argv[0];
-    wxString fullConfigFilePath;
-    if(argc == 1)
-    {
-      const int indexOfLastDot = fullFilePathOfThisExecutable.rfind(wxT("."));
-      const wxString fullFilePathOfThisExecutableWoutExt =
-          fullFilePathOfThisExecutable.substr(0, indexOfLastDot + 1);
-      fullConfigFilePath = fullFilePathOfThisExecutableWoutExt;
-    }
-    else
-    {
-      const wxString directoryForConfigFile = /*wxGetCwd()*/ argv[1];
-      const int indexOfLastBackSlash = fullFilePathOfThisExecutable.rfind(
-        wxFILE_SEP_PATH);
-      const int fileNameLen = fullFilePathOfThisExecutable.size() - indexOfLastBackSlash - 1;
-      const wxString workingDirWithConfigFilePrefix = directoryForConfigFile +
-        fullFilePathOfThisExecutable.substr(indexOfLastBackSlash,
-        fileNameLen - 2 /* - 3 chars extension + file separator char */);
-      fullConfigFilePath = workingDirWithConfigFilePrefix;
-    }
-//  wxWidgets::wxSMARTreader smartReader;
-    std::wstring stdwstrWorkingDirWithConfigFilePrefix =
-      wxWidgets::GetStdWstring_Inline(fullConfigFilePath);
+
+    std::wstring stdwstrWorkingDirWithConfigFilePrefix;
+    ConstructConfigFilePath(stdwstrWorkingDirWithConfigFilePrefix);
 
 //  std::set<SkSmartAttributeParsedData> smartAttributesToObserve;
   libConfig::ConfigurationLoader configurationLoader(
-    /*smartAttributesToObserve*/ (SMARTaccessBase::SMARTattributesType &) m_SMARTaccess.getSMARTattributesToObserve(),
+    /*smartAttributesToObserve*/ (SMARTaccessBase::SMARTattributesType &)
+    m_SMARTaccess.getSMARTattributesToObserve(),
     *this);
 
     try
@@ -140,19 +192,7 @@ bool wxSMARTmonitorApp::OnInit()
         " administrator\n->programs exits after closing this message box") );
       return false;
     }
-    if( m_SMARTaccess.GetNumberOfSMARTparametersToRead() > 0 )
-    {
-      m_taskBarIcon = new MyTaskBarIcon();
-      // Create the main window
-  #ifdef __MINGW32__
-      HideMinGWconsoleWindow();
-  #endif
-    }
-    else
-    {
-      ShowMessage("0 SMART parameters to read -> exiting");
-      return false;
-    }
+    gs_dialog->StartAsyncUpdateThread();
   }
   catch(const FileException & fe)
   {

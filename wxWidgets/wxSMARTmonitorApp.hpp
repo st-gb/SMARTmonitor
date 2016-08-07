@@ -23,15 +23,16 @@ class wxSMARTmonitorApp
   : public wxApp, UserInterface
 {
   wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
-  SMARTaccess_type m_SMARTaccess;
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
 public:
+  SMARTaccess_type & m_SMARTaccess;
   static const wxString appName;
   MyTaskBarIcon * m_taskBarIcon;
   wxSMARTmonitorApp();
   virtual
   ~wxSMARTmonitorApp();
   bool OnInit();
+  void ConstructConfigFilePath(std::wstring & stdwstrConfigPathWithoutExtension);
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {

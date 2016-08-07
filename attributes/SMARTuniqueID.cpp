@@ -29,3 +29,13 @@ bool operator < (const SMARTuniqueID & left,
   }
   return false;
 }
+
+//see https://en.wikipedia.org/wiki/Assignment_operator_(C%2B%2B)
+SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & l)
+{
+//  SMARTuniqueID copy;
+  strncpy(firmware, l.firmware, 9);
+  strncpy(model, l.model, 41);
+  strncpy(serial, l.serial, 21);
+  return *this;
+}

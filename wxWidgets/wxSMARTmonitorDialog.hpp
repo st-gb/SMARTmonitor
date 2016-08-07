@@ -38,6 +38,7 @@ public:
      const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor);
     virtual ~MyDialog();
     void UpdateSMARTvaluesThreadSafe();
+    void StartAsyncUpdateThread();
 
 protected:
     void OnAbout(wxCommandEvent& event);
