@@ -12,20 +12,23 @@
 #include <stddef.h> // size_t in <atasmart.h>
 #include <set> //class std::set
 #include <attributes/SMARTentry.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN
 
 class ConfigurationLoaderBase
 {
 //protected:
 public:
 //  SMARTDETAILSMAP & m_oSMARTDetails;
-  std::set<SMARTentry> & m_smartAttributesToObserve;
+//  std::set<SMARTentry> & m_smartAttributesToObserve;
+  std::set<SMARTentry> * mp_smartAttributesToObserve;
 
   ConfigurationLoaderBase(/*const*/ //SMARTDETAILSMAP & oSMARTDetails
     std::set<SkSmartAttributeParsedData> & smartAttributesToObserve )
-    : //m_oSMARTDetails(oSMARTDetails)
-      m_smartAttributesToObserve(smartAttributesToObserve)
+//    : //m_oSMARTDetails(oSMARTDetails)
+//      m_smartAttributesToObserve(smartAttributesToObserve)
   {
-
+    LOGN(smartAttributesToObserve.size() )
+    mp_smartAttributesToObserve = & smartAttributesToObserve;
   }
 };
 

@@ -22,7 +22,7 @@ public:
   typedef std::set<SkSmartAttributeParsedData> SMARTattributesType;
   typedef const SMARTattributesType constSMARTattributesType;
 protected:
-  std::set<SkSmartAttributeParsedData> SMARTattributesToObserve;
+  /*std::set<SkSmartAttributeParsedData>*/ SMARTattributesType SMARTattributesToObserve;
   std::set<SMARTuniqueIDandValues> m_SMARTuniqueIDandValues;
 public:
   enum retCodes { success = 0, accessDenied};

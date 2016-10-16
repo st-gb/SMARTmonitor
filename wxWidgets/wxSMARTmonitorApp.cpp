@@ -26,7 +26,7 @@
 
 #include "wxSMARTmonitorApp.hpp"
 #include "wxSMARTmonitorDialog.hpp" // class MyDialog
-#include "libConfig/ConfigurationLoader.hpp"
+//#include "libConfig/ConfigurationLoader.hpp"
 #include <wx/taskbar.h>
 #include <wx/filefn.h> //wxFILE_SEP_PATH
 #include <iostream> //class std::cerr
@@ -40,17 +40,26 @@
 // ----------------------------------------------------------------------------
 
 //class MyDialog;
-/*static*/ MyDialog *gs_dialog = NULL;
+/*static*/ SMARTdialog *gs_dialog = NULL;
 
 const wxString wxSMARTmonitorApp::appName = wxT("wxSMARTmonitor");
 unsigned wxSMARTmonitorApp::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 
 wxSMARTmonitorApp::wxSMARTmonitorApp()
-  : m_taskBarIcon(NULL),
-    m_SMARTaccess(m_wxSMARTvalueProcessor.getSMARTaccess() )
+  : m_taskBarIcon(NULL) //,
+//    m_SMARTaccess(m_wxSMARTvalueProcessor.getSMARTaccess() ),
+//    configurationLoader(
+//      /*smartAttributesToObserve*/ (SMARTaccessBase::SMARTattributesType &)
+//      m_SMARTaccess.getSMARTattributesToObserve(),
+//      * this)
 {
-  // TODO Auto-generated constructor stub
-
+  mp_SMARTaccess = & m_wxSMARTvalueProcessor.getSMARTaccess();
+  mp_configurationLoader = new libConfig::ConfigurationLoader(
+      (SMARTaccessBase::SMARTattributesType &) mp_SMARTaccess->getSMARTattributesToObserve(), * this);
+  LogLevel::CreateLogLevelStringToNumberMapping();
+  std::string stdstrLogFilePath("wxSMARTmonitor.txt");
+  g_logger.OpenFileA(stdstrLogFilePath, "log4j", 4000, LogLevel::debug);
+  LOGN("SMART acc ptr:" << mp_SMARTaccess)
 }
 
 wxSMARTmonitorApp::~wxSMARTmonitorApp()
@@ -125,8 +134,11 @@ bool wxSMARTmonitorApp::OnInit()
 //    return false;
 //  }
 
-#if wxMAJOR_VERSION > 2 && wxMINOR_VERSION > 8 // since wxWidgets 2.9.0
-  if ( ! wxTaskBarIcon::IsAvailable() )
+  /** wxTaskBarIcon::IsAvailable exists since wxWidgets 2.9.0 */
+#if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8
+  if ( wxTaskBarIcon::IsAvailable() )
+    wxGetApp().m_taskBarIcon = new MyTaskBarIcon();
+  else
   {
     wxMessageBox(
       wxT("There appears to be no system tray support in your current "
@@ -135,6 +147,8 @@ bool wxSMARTmonitorApp::OnInit()
       , wxOK | wxICON_EXCLAMATION
     );
   }
+#else
+  wxGetApp().m_taskBarIcon = new MyTaskBarIcon();
 #endif
   try
   {
@@ -153,7 +167,7 @@ bool wxSMARTmonitorApp::OnInit()
 //    }
     /** Show a dialog. Else when displaying messages no icon appears in the
      *  task bar and this not able to switch there with alt+Tab.*/
-    gs_dialog = new MyDialog(wxT("wxS.M.A.R.T. monitor"), m_wxSMARTvalueProcessor);
+    gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), m_wxSMARTvalueProcessor);
     gs_dialog->Show(true);
     m_wxSMARTvalueProcessor.Init();
 
@@ -161,15 +175,15 @@ bool wxSMARTmonitorApp::OnInit()
     ConstructConfigFilePath(stdwstrWorkingDirWithConfigFilePrefix);
 
 //  std::set<SkSmartAttributeParsedData> smartAttributesToObserve;
-  libConfig::ConfigurationLoader configurationLoader(
-    /*smartAttributesToObserve*/ (SMARTaccessBase::SMARTattributesType &)
-    m_SMARTaccess.getSMARTattributesToObserve(),
-    *this);
+//  libConfig::ConfigurationLoader configurationLoader(
+//    /*smartAttributesToObserve*/ (SMARTaccessBase::SMARTattributesType &)
+//    m_SMARTaccess.getSMARTattributesToObserve(),
+//    * this);
 
     try
     {
         //TODO just for compilation
-      const bool successfullyLoadedConfigFile = configurationLoader.
+      const bool successfullyLoadedConfigFile = mp_configurationLoader->
         LoadConfiguration(stdwstrWorkingDirWithConfigFilePrefix);
   //    ! smartReader.LoadSMARTparameterConfigFile(
   //            stdwstrWorkingDirWithConfigFilePrefix, this);
@@ -185,11 +199,11 @@ bool wxSMARTmonitorApp::OnInit()
     }
 
     //if( smartReader.m_oSMARTDetails.size())
-    DWORD dwRetVal = m_SMARTaccess.ReadSMARTValuesForAllDrives();
+    DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
     if( dwRetVal == SMARTaccessBase::accessDenied )
     {
       wxMessageBox( wxT("access denied to S.M.A.R.T.\n->restart this program as an"
-        " administrator\n->programs exits after closing this message box") );
+        " administrator\n->program exits after closing this message box") );
       return false;
     }
     gs_dialog->StartAsyncUpdateThread();

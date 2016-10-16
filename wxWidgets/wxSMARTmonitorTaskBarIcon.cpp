@@ -21,7 +21,7 @@
 
 #include "wxSMARTmonitorDialog.hpp"
 //class MyDialog;
-extern MyDialog * gs_dialog;
+extern SMARTdialog * gs_dialog;
 
 // ----------------------------------------------------------------------------
 // MyTaskBarIcon implementation

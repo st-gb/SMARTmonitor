@@ -9,6 +9,7 @@
 #define LIBATA_SMART_SMARTACCESS_HPP_
 
 #include <SMARTaccessBase.hpp> //base class SMARTreaderBase
+#include <string> //class std::string
 
 namespace libatasmart
 {
@@ -17,6 +18,8 @@ namespace libatasmart
   struct attr_helper {
     uint64_t *value;
     SkBool found;
+    fastestUnsignedDataType IDtoLookFor;
+    std::string attributeName;
   };
 
   static void any_attribute_callback(

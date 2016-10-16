@@ -15,6 +15,7 @@
 
 #include <libATA_SMART/SMARTaccess.hpp>
 #include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
+#include "libConfig/ConfigurationLoader.hpp"
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
 
 class MyTaskBarIcon;
@@ -24,8 +25,13 @@ class wxSMARTmonitorApp
 {
   wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
+  /** Must persist the OnInit() method because the strings are referred from
+   *  libATAsmart's SMART access class. */
+//  libConfig::ConfigurationLoader configurationLoader;
+  libConfig::ConfigurationLoader * mp_configurationLoader;
 public:
-  SMARTaccess_type & m_SMARTaccess;
+  //SMARTaccess_type & m_SMARTaccess;
+  SMARTaccess_type * mp_SMARTaccess;
   static const wxString appName;
   MyTaskBarIcon * m_taskBarIcon;
   wxSMARTmonitorApp();

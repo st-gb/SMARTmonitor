@@ -16,8 +16,9 @@ class SMARTuniqueIDandValues
 private:
   SMARTuniqueID m_SMARTuniqueID;
 public:
-  uint64_t m_SMARTrawValues[255];
+  /*uint64_t*/ long int m_SMARTrawValues[255];
   SMARTuniqueIDandValues (const SMARTuniqueID & _SMARTuniqueID);
+  SMARTuniqueIDandValues( const SMARTuniqueIDandValues &);
   virtual
   ~SMARTuniqueIDandValues ();
 

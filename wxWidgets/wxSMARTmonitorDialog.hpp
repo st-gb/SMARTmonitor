@@ -16,27 +16,32 @@
 #include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
 #include "wxSMARTmonitorTaskBarIcon.hpp"
 #include <multithread/nativeThreadType.hpp>
+#include <wx/thread.h> //class wxCondition
 #include "SMARTtableListCtrl.hpp"
 
 class MyTaskBarIcon;
 class wxListCtrl;
 using namespace wxWidgets;
 
-class MyDialog: public wxDialog
+class SMARTdialog: public wxDialog
 {
   //  CSmartReader m_oSmartReader;
   wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
   SMARTaccess_type & m_SMARTaccess;
   enum IDs {TIMER_ID = 0};
-  DWORD m_arRawValue[255]; //provide space for up t 255 SMART attribute values
+  /*DWORD*/ long int m_arRawValue[255]; //provide space for up t 255 SMART attribute values
   long int m_arTickCountOfLastQueryInMilliSeconds[255];
   SMARTtableListCtrl * m_pwxlistctrl;
+  wxTextCtrl * m_p_wxTextCtrl;
 //  wxTimer m_timer;
   nativeThread_type m_updateSMARTparameterValuesThread;
 public:
-    MyDialog(const wxString& title,
+  wxCondition m_wxCloseCondition;
+  wxMutex m_wxCloseMutex;
+  fastestUnsignedDataType m_updateUI;
+    SMARTdialog(const wxString& title,
      const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor);
-    virtual ~MyDialog();
+    virtual ~SMARTdialog();
     void UpdateSMARTvaluesThreadSafe();
     void StartAsyncUpdateThread();
 

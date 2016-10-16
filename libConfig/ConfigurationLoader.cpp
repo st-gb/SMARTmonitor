@@ -35,6 +35,13 @@ namespace libConfig
     // TODO Auto-generated destructor stub
   }
 
+  /*void Create(
+    std::set<SkSmartAttributeParsedData> & smartAttributesToObserve,
+    const UserInterface & r_userInterface)
+  {
+
+  }*/
+
   bool ConfigurationLoader::LoadConfiguration(
       const std::wstring & fullFilePathOfThisExecutable)
   {
@@ -43,7 +50,8 @@ namespace libConfig
 //    ST_SMART_DETAILS stSD;
 
 //    m_oSMARTDetails.clear();
-    m_smartAttributesToObserve.clear();
+//    m_smartAttributesToObserve.clear();
+    mp_smartAttributesToObserve->clear();
 
   //  if(IsDebuggerPresent()==FALSE)
       {
@@ -106,7 +114,7 @@ namespace libConfig
                 //use pointer from member var instead of from stack.
                 skSmartAttributeParsedData.name = std_strAttribName.c_str();
 
-              m_smartAttributesToObserve.insert(
+              /*m_smartAttributesToObserve.*/ mp_smartAttributesToObserve->insert(
                 /*std::make_pair(smartAttributeID,*/ skSmartAttributeParsedData//)
                 );
             }

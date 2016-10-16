@@ -10,6 +10,9 @@
 #include <errno.h> //errno, EACCES
 #include <string> //class std::string
 #include <string.h> //strcmp(...)
+#include <hardware/CPU/atomic/AtomicExchange.h>
+#include <iostream> //std::cout
+#include <preprocessor_macros/logging_preprocessor_macros.h>
 
 namespace libatasmart
 {
@@ -17,10 +20,10 @@ namespace libatasmart
 
   //TODO sk_disk_smart_parse_attributes calls this callback for all 255 SMART
   //IDs. So the comparison may be
-  static void any_attribute_callback(
-    SkDisk *d,
-    const SkSmartAttributeParsedData *a,
-    struct libatasmart::attr_helper *ah)
+  void any_attribute_callback(
+    SkDisk * d,
+    const SkSmartAttributeParsedData * p_SkSmartAttributeParsedData,
+    struct libatasmart::attr_helper * p_libatasmart_attribHelper)
   {
   //  std::cout << "a->name: " << a->name << " " << g_stdStrAttributeName.c_str() << std::endl;
   //  if (a->pretty_unit != SK_SMART_ATTRIBUTE_UNIT_NONE)
@@ -28,40 +31,52 @@ namespace libatasmart
   //    std::cout << "a->pretty_unit != SK_SMART_ATTRIBUTE_UNIT_NONE" << std::endl;
   //    return;
   //  }
+//    LOGN( "current attrib:" << p_SkSmartAttributeParsedData->name )
 
     /** If strings are identical. */
-    if ( strcmp(a->name, g_stdStrAttributeName.c_str() ) == 0 ) {
+    if( p_libatasmart_attribHelper->IDtoLookFor == p_SkSmartAttributeParsedData->id ||
+        strcmp(p_SkSmartAttributeParsedData->name, /*g_stdStrAttributeName.c_str()*/
+          p_libatasmart_attribHelper->attributeName.c_str() ) == 0
+      )
+    {
+      LOGN( p_SkSmartAttributeParsedData->name << " found")
   //    std::cout << "a->name matches " << g_stdStrAttributeName.c_str() << std::endl;
-      if (!ah->found || a->pretty_value > *ah->value)
-        *ah->value = a->pretty_value;
-
-      ah->found = TRUE;
+      if( ! p_libatasmart_attribHelper->found //||
+//        p_SkSmartAttributeParsedData->pretty_value > *p_libatasmart_attribHelper->value
+        )
+      {
+        *p_libatasmart_attribHelper->value = p_SkSmartAttributeParsedData->pretty_value;
+      p_libatasmart_attribHelper->found = TRUE;
+      }
     }
   }
 
   int readAttribute(const char attributeName [], SkDisk * p_skDisk, uint64_t & value)
   {
     g_stdStrAttributeName = attributeName;
-    struct attr_helper ah;
+    struct attr_helper libatasmart_attribHelper;
 
   //   assert(d);
   //   assert(kelvin);
-     ah.found = FALSE;
-     ah.value = & value;
+     libatasmart_attribHelper.found = FALSE;
+     libatasmart_attribHelper.value = & value;
+     libatasmart_attribHelper.attributeName = attributeName;
+     int retVal = sk_disk_smart_parse_attributes(
+       p_skDisk,
+       (SkSmartAttributeParseCallback) any_attribute_callback,
+       & libatasmart_attribHelper);
      //TODO "sk_disk_smart_parse_attributes" traverses all attributes and calls
      // the callback function
-    if( sk_disk_smart_parse_attributes(
-          p_skDisk,
-          (SkSmartAttributeParseCallback) any_attribute_callback,
-          &ah)
-        < 0
-       )
-     return -1;
-    if (!ah.found) {
+    if( retVal < 0 )
+    {
+      LOGN("sk_disk_smart_parse_attributes retVal:" << retVal)
+      return -1;
+    }
+    if( ! libatasmart_attribHelper.found) {
       errno = ENOENT;
       return -2;
     }
-    value = * ah.value;
+    value = * libatasmart_attribHelper.value;
     return 0;
   }
 
@@ -78,6 +93,7 @@ namespace libatasmart
 
   enum SMARTaccessBase::retCodes SMARTaccess::readSmartForDevice(const char device [])
   {
+    LOGN("begin")
     enum SMARTaccessBase::retCodes retVal = SMARTaccessBase::success;
 //    sk_disk_smart_is_available(& skDisk, & SMARTavailable);
 //    if( SMARTavailable )
@@ -128,8 +144,8 @@ namespace libatasmart
       //    const SkSmartAttributeInfo * p = lookup_attribute(& skDisk, id);
 
               uint64_t rawSMARTattrValue;
-              const char * attributName;
-              constSMARTattributesType::const_iterator citer =
+              const char * attributeName;
+              constSMARTattributesType::const_iterator SMARTattributesToObserveIter =
                 SMARTattributesToObserve.begin();
 
   //            std::pair<std::set<SkIdentifyParsedData>::iterator, bool> insert =
@@ -138,22 +154,50 @@ namespace libatasmart
               //TODO sMARTuniqueIDandValues.SMARTuniqueID is not a 100% copy of
               // "* p_SkIdentifyParsedData" (seems that parts of the "firmware"
               //  string is copied into "serial"
-              SMARTuniqueIDandValues sMARTuniqueIDandValues(
-                *(SMARTuniqueIDandValues*) p_SkIdentifyParsedData);
+              SMARTuniqueID sMARTuniqueID(*p_SkIdentifyParsedData);
+              LOGN("SMART unique ID:" << sMARTuniqueID.str() )
+              SMARTuniqueIDandValues sMARTuniqueIDandValues(sMARTuniqueID);
               SMARTuniqueIDandValues * p_sMARTuniqueIDandValues;
+              fastestUnsignedDataType SMARTattributeID /*= citer->id*/;
+
               std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert =
                   m_SMARTuniqueIDandValues.insert(sMARTuniqueIDandValues);
-              if( insert.second == true )/** If actually inserted into std::set*/
+//              if( insert.second == true )/** If actually inserted into std::set*/
               {
-                for( ; citer != SMARTattributesToObserve.end(); ++ citer )
+                for( ; SMARTattributesToObserveIter !=
+                  SMARTattributesToObserve.end(); ++ SMARTattributesToObserveIter )
                 {
-                  attributName = citer->name;
-                  i = readAttribute(attributName, p_skDisk, rawSMARTattrValue);
-                  if( i == 0)
+                  SMARTattributeID = SMARTattributesToObserveIter->id;
+                  attributeName = SMARTattributesToObserveIter->name;
+                  i = readAttribute(attributeName, p_skDisk, rawSMARTattrValue);
+                  if( i == 0) /** Successfully got SMART attribute value */
+                  {
       //              std::cout << attributName << ":" << rawSMARTattrValue << std::endl;
   //                  insert.first->
-                    p_sMARTuniqueIDandValues = & (SMARTuniqueIDandValues &) insert.first;
-                  p_sMARTuniqueIDandValues->m_SMARTrawValues[citer->id] = rawSMARTattrValue;
+//                    std::set<SMARTuniqueIDandValues>::iterator it = insert.first;
+                    p_sMARTuniqueIDandValues = & (SMARTuniqueIDandValues &) (* insert.first);
+//                    const SMARTuniqueID & currentSMARTuniqueIDandValuesSMARTuniqueID = it->getSMARTuniqueID();
+                  LOGN("SMART unique ID:" << p_sMARTuniqueIDandValues->getSMARTuniqueID().str())
+
+                  //TODO: SIGSEGV here: p_sMARTuniqueIDandValues is NULL (0)
+//                  p_sMARTuniqueIDandValues->m_SMARTrawValues[citer->id] = rawSMARTattrValue;
+                  AtomicExchange( (long int *) & p_sMARTuniqueIDandValues->m_SMARTrawValues[SMARTattributeID] //long * Target
+                    , /*pSmartInfo->m_dwAttribValue*/
+                    //* (long int *) //SMARTattributesToObserveIter->pretty_value /*raw*/ /*long val*/
+                    rawSMARTattrValue);
+
+                  LOGN( (insert.second == true ? "inserted" : "changed")
+                      << " raw value for SMART attribute\"" << attributeName
+                      << "\" (id=" << SMARTattributeID << "):"
+                      << rawSMARTattrValue << " "
+                      << p_sMARTuniqueIDandValues->m_SMARTrawValues[SMARTattributeID])
+                  }
+                  else
+                  {
+                    LOGN( "reading SMART value for SMART attribute\"" << attributeName
+                      << "\" (id=" << SMARTattributeID << ") failed:"
+                      << (fastestSignedDataType) i )
+                  }
       //            else
       //              std::cerr << "Failed to get attribute value for \"" << attributName << "\":"
       //                << strerror(errno) << std::endl;
@@ -175,6 +219,7 @@ namespace libatasmart
       if( errno == EACCES ) /** If access denied */
         retVal = SMARTaccessBase::accessDenied;
     }
+    LOGN("end")
     return retVal;
   }
 
