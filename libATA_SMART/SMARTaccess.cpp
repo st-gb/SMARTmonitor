@@ -185,7 +185,13 @@ namespace libatasmart
                     , /*pSmartInfo->m_dwAttribValue*/
                     //* (long int *) //SMARTattributesToObserveIter->pretty_value /*raw*/ /*long val*/
                     rawSMARTattrValue);
+                  AtomicExchange( (long int *) & p_sMARTuniqueIDandValues->
+                    m_successfullyReadSMARTrawValue[SMARTattributeID], 1 );
 
+#ifdef __linux__
+//                  timeval timevalCurrentTime;
+//                  ::gettimeofday( & timevalCurrentTime, 0);
+#endif
                   LOGN( (insert.second == true ? "inserted" : "changed")
                       << " raw value for SMART attribute\"" << attributeName
                       << "\" (id=" << SMARTattributeID << "):"
@@ -194,6 +200,8 @@ namespace libatasmart
                   }
                   else
                   {
+                    AtomicExchange( (long int *) & p_sMARTuniqueIDandValues->
+                      m_successfullyReadSMARTrawValue[SMARTattributeID], 0 );
                     LOGN( "reading SMART value for SMART attribute\"" << attributeName
                       << "\" (id=" << SMARTattributeID << ") failed:"
                       << (fastestSignedDataType) i )
