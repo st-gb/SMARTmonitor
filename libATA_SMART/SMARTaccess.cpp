@@ -13,15 +13,58 @@
 #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <iostream> //std::cout
 #include <preprocessor_macros/logging_preprocessor_macros.h>
+//#include <attributes/SMARTattributeNameAndID.hpp>
 
 namespace libatasmart
 {
   std::string g_stdStrAttributeName;
 
+  void getDriveSupportedSMART_IDs(
+    SkDisk * p_SkDisk,
+    const SkSmartAttributeParsedData * p_SkSmartAttributeParsedData,
+    std::vector<SMARTattributeNameAndID> * p_SMARTattributeNamesAndIDs)
+  {
+    p_SMARTattributeNamesAndIDs->push_back( SMARTattributeNameAndID(
+      p_SkSmartAttributeParsedData->name, p_SkSmartAttributeParsedData->id) );
+    LOGN(p_SkSmartAttributeParsedData->name << " ID:" <<
+      (fastestUnsignedDataType) p_SkSmartAttributeParsedData->id)
+  }
+
+  int getSupportedSMART_IDs(/*SkDisk * p_skDisk*/ const char * const device,
+     std::vector<SMARTattributeNameAndID> & SMARTattributeNamesAndIDs)
+  {
+    SkDisk * p_skDisk;
+  //  sk_disk_smart_is_enabled(& skDisk);
+
+    /** "sk_disk_open" allocates an p_skDisk and assigns pointer to it.
+     *  (must be freed by caller later)*/
+    int i = sk_disk_open(device, /* SkDisk **_d*/ & p_skDisk);
+    if( i != -1)
+    {
+  //    i = sk_init_smart( & skDisk);
+  //        sk_disk_check_power_mode(p_skDisk);
+      i = sk_disk_smart_read_data(p_skDisk);
+      if( i == 0)
+      {
+        int retVal = sk_disk_smart_parse_attributes(
+           p_skDisk,
+           (SkSmartAttributeParseCallback) getDriveSupportedSMART_IDs,
+           & SMARTattributeNamesAndIDs);
+             //TODO "sk_disk_smart_parse_attributes" traverses all attributes and calls
+             // the callback function
+        if( retVal < 0 )
+        {
+          LOGN("sk_disk_smart_parse_attributes retVal:" << retVal)
+          return -1;
+        }
+      }
+    }
+  }
+
   //TODO sk_disk_smart_parse_attributes calls this callback for all 255 SMART
   //IDs. So the comparison may be
-  void any_attribute_callback(
-    SkDisk * d,
+  void getSMARTrawValueCallback(
+    SkDisk * p_SkDisk,
     const SkSmartAttributeParsedData * p_SkSmartAttributeParsedData,
     struct libatasmart::attr_helper * p_libatasmart_attribHelper)
   {
@@ -63,7 +106,7 @@ namespace libatasmart
      libatasmart_attribHelper.attributeName = attributeName;
      int retVal = sk_disk_smart_parse_attributes(
        p_skDisk,
-       (SkSmartAttributeParseCallback) any_attribute_callback,
+       (SkSmartAttributeParseCallback) getSMARTrawValueCallback,
        & libatasmart_attribHelper);
      //TODO "sk_disk_smart_parse_attributes" traverses all attributes and calls
      // the callback function

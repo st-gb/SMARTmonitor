@@ -28,12 +28,13 @@ class SMARTdialog: public wxDialog
   //  CSmartReader m_oSmartReader;
   wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
   SMARTaccess_type & m_SMARTaccess;
-  enum IDs {TIMER_ID = 0};
+  enum IDs {TIMER_ID = 0, showSupportedSMART_IDs};
   /*DWORD*/ long int m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
 //  long int m_arSMART_ID[255]; //provide space for up t 255 SMART attribute values
   long int m_arTickCountOfLastQueryInMilliSeconds[255];
   SMARTtableListCtrl * m_pwxlistctrl;
   wxTextCtrl * m_p_wxTextCtrl;
+  wxButton * m_p_showSupportedSMART_IDs;
 //  wxTimer m_timer;
   nativeThread_type m_updateSMARTparameterValuesThread;
 public:
@@ -55,6 +56,7 @@ protected:
     void OnAbout(wxCommandEvent& event);
     void OnOK(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
+    void OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event));
     void OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);
     void OnTimer(wxTimerEvent& event);

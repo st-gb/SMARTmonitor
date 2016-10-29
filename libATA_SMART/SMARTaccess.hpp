@@ -10,6 +10,8 @@
 
 #include <SMARTaccessBase.hpp> //base class SMARTreaderBase
 #include <string> //class std::string
+#include <attributes/SMARTattributeNameAndID.hpp>
+#include <vector> //class std::vector
 
 namespace libatasmart
 {
@@ -22,7 +24,10 @@ namespace libatasmart
     std::string attributeName;
   };
 
-  static void any_attribute_callback(
+  int getSupportedSMART_IDs(const char * const,
+                          std::vector<SMARTattributeNameAndID> & );
+
+  static void getSMARTrawValueCallback(
     SkDisk *d,
     const SkSmartAttributeParsedData *a,
     struct libatasmart::attr_helper *ah);
