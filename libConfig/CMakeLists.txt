@@ -1,0 +1,11 @@
+
+set( CONFIGURATION_READER_SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/ConfigurationLoader.cpp
+  PARENT_SCOPE
+)
+
+set( LIBRARIES
+  ${LIBRARIES}
+  config++
+  PARENT_SCOPE
+)

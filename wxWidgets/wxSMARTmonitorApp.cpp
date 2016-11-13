@@ -34,6 +34,8 @@
 #include <Windows/HideMinGWconsoleWindow.h>
 #include <FileSystem/File/FileException.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include <Controller/Logger/LogFileAccessException.hpp>
+#include <FileSystem/File/GetAbsoluteFilePath.hpp> // GetAbsoluteFilePath(...)
 
 // ----------------------------------------------------------------------------
 // global variables
@@ -58,7 +60,14 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
       (SMARTaccessBase::SMARTattributesType &) mp_SMARTaccess->getSMARTattributesToObserve(), * this);
   LogLevel::CreateLogLevelStringToNumberMapping();
   std::string stdstrLogFilePath("wxSMARTmonitor.txt");
-  g_logger.OpenFileA(stdstrLogFilePath, "log4j", 4000, LogLevel::debug);
+  try
+  {
+    g_logger.OpenFileA(stdstrLogFilePath, "log4j", 4000, LogLevel::debug);
+  }
+  catch(const LogFileAccessException & lfae)
+  {
+    std::cout << lfae.GetErrorMessageA() << std::endl;
+  }
   LOGN("SMART acc ptr:" << mp_SMARTaccess)
 }
 
@@ -72,35 +81,55 @@ IMPLEMENT_APP(wxSMARTmonitorApp)
 void wxSMARTmonitorApp::ConstructConfigFilePath(
   std::wstring & stdwstrConfigPathWithoutExtension)
 {
-  const wxString fullFilePathOfThisExecutable = argv[0];
+  // Not necessarily an absolute file path! e.g. also "./executable.elf" is possible
+  const wxString wxstrThisExecutablesFilePath = argv[0];
+  LOGN("this exe's file path: \"" << wxWidgets::GetStdWstring_Inline(
+    wxstrThisExecutablesFilePath) << "\"")
+
+  const wxString currentWorkingDir = wxGetCwd();
+  
+  std::wstring stdwstrAbsoluteFilePath = GetAbsoluteFilePath(
+    wxWidgets::GetStdWstring_Inline(currentWorkingDir), 
+    wxWidgets::GetStdWstring_Inline(wxstrThisExecutablesFilePath) );
+  LOGN("this exe's absolute file path: \"" << stdwstrAbsoluteFilePath << "\"")
+
+  LOGN("this exe's current working dir: \"" << wxWidgets::GetStdWstring_Inline(
+    currentWorkingDir) << "\"")
+  
   wxString fullConfigFilePathWithoutExtension;
   if(argc == 1) /** NO program arguments passed. */
   {
-    const wxString currentWorkingDir = wxGetCwd();
+
+    //wxstrThisExecutablesFilePath
     wxString fileNameWithoutExtension;
-    const int indexOfLastDot = fullFilePathOfThisExecutable.rfind(wxT("."));
-    const int indexOfLastBackSlash = fullFilePathOfThisExecutable.rfind(
+    const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(wxT("."));
+    const int indexOfLastFileSepChar = stdwstrAbsoluteFilePath.rfind(
       wxFILE_SEP_PATH);
     wxString configFileNameWithoutExtension;
     wxString exeFileName;
-    if( indexOfLastBackSlash != -1 )
+    if( indexOfLastFileSepChar != -1
+      //Else this may happen: /home.git/executable"
+      //&& indexOfLastFileSepChar < indexOfLastFileSepChar
+      )
     {
-      exeFileName = fullFilePathOfThisExecutable.substr(indexOfLastBackSlash,
-        fullFilePathOfThisExecutable.length( ));
+      exeFileName = stdwstrAbsoluteFilePath.substr(indexOfLastFileSepChar,
+        wxstrThisExecutablesFilePath.length() );
     }
-    if( indexOfLastDot == -1 ) /** If no file name extension like ".exe" */
+    const int indexOfExeFileNameDot = exeFileName.rfind(wxT("."));
+    if( indexOfExeFileNameDot == -1 ) /** If no file name extension like ".exe" */
     {
   //        fullConfigFilePath = fullFilePathOfThisExecutable + wxT(".");
-      if( indexOfLastBackSlash != -1 )
+      if( indexOfLastFileSepChar != -1 )
       {
-        fullConfigFilePathWithoutExtension = currentWorkingDir /*+ wxFILE_SEP_PATH */+
+        fullConfigFilePathWithoutExtension = //currentWorkingDir /*+ wxFILE_SEP_PATH */+
+          stdwstrAbsoluteFilePath.substr(0, indexOfLastFileSepChar + 1) +
           exeFileName + wxT(".");
       }
     }
     else
     {
       const wxString fullFilePathOfThisExecutableWoutExt =
-        fullFilePathOfThisExecutable.substr(0, indexOfLastDot + 1);
+        wxstrThisExecutablesFilePath.substr(0, indexOfLastDot + 1);
       fullConfigFilePathWithoutExtension = fullFilePathOfThisExecutableWoutExt;
     }
   }
@@ -110,11 +139,11 @@ void wxSMARTmonitorApp::ConstructConfigFilePath(
     if( false /*isDirectoryPath(argv[1])*/ )
     {
     const wxString directoryForConfigFile = /*wxGetCwd()*/ argv[1];
-    const int indexOfLastBackSlash = fullFilePathOfThisExecutable.rfind(
+    const int indexOfLastBackSlash = wxstrThisExecutablesFilePath.rfind(
       wxFILE_SEP_PATH);
-    const int fileNameLen = fullFilePathOfThisExecutable.size() - indexOfLastBackSlash - 1;
+    const int fileNameLen = wxstrThisExecutablesFilePath.size() - indexOfLastBackSlash - 1;
     const wxString workingDirWithConfigFilePrefix = directoryForConfigFile +
-      fullFilePathOfThisExecutable.substr(indexOfLastBackSlash,
+      wxstrThisExecutablesFilePath.substr(indexOfLastBackSlash,
       fileNameLen - 2 /* - 3 chars extension + file separator char */);
     fullConfigFilePathWithoutExtension = workingDirWithConfigFilePrefix;
     }
@@ -124,6 +153,7 @@ void wxSMARTmonitorApp::ConstructConfigFilePath(
   //  wxWidgets::wxSMARTreader smartReader;
   /*std::wstring*/ stdwstrConfigPathWithoutExtension =
     wxWidgets::GetStdWstring_Inline(fullConfigFilePathWithoutExtension);
+  LOGN("using config file path: \"" << stdwstrConfigPathWithoutExtension << "\"")
 }
 bool wxSMARTmonitorApp::OnInit()
 {
