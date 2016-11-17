@@ -96,10 +96,11 @@ void wxSMARTmonitorApp::ConstructConfigFilePath(
   LOGN("this exe's current working dir: \"" << wxWidgets::GetStdWstring_Inline(
     currentWorkingDir) << "\"")
   
+  //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
+  //have to be taken into account          
   wxString fullConfigFilePathWithoutExtension;
   if(argc == 1) /** NO program arguments passed. */
   {
-
     //wxstrThisExecutablesFilePath
     wxString fileNameWithoutExtension;
     const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(wxT("."));

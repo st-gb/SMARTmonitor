@@ -21,7 +21,7 @@
 class MyTaskBarIcon;
 
 class wxSMARTmonitorApp
-  : public wxApp, UserInterface
+  : public wxApp, UserInterface//, SMARTmonitorBase
 {
   wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
