@@ -83,7 +83,9 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(vo
 
 SMARTdialog::SMARTdialog(
   const wxString & title,
-   const wxWidgets::wxSMARTvalueProcessor & SMARTvalueProcessor)
+   //const wxWidgets::wxSMARTvalueProcessor & SMARTvalueProcessor
+    const SMARTvalueProcessorBase & SMARTvalueProcessor
+  )
   : wxDialog(NULL, wxID_ANY, title, wxDefaultPosition, //wxDefaultSize,
       wxSize(400,400),
       wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
@@ -319,6 +321,9 @@ void SMARTdialog::UpdateSMARTvaluesUI()
     wxGetApp().mp_SMARTaccess->getSMARTattributesToObserve();
   wxString wxSMARTattribName;
   wxString currentTime;
+#ifdef DEBUG
+  int itemCount = m_pwxlistctrl->GetItemCount();
+#endif
   for(fastestUnsignedDataType currentDriveIndex = 0;
     SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
     SMARTuniqueIDandValuesIter ++)
@@ -509,6 +514,7 @@ void SMARTdialog::SetSMARTattribIDandNameLabel()
 {
   const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
     m_SMARTaccess.getSMARTattributesToObserve();
+  LOGN("begin " << & SMARTattributesToObserve)
   unsigned lineNumber = 0;
   wxString wxSMARTattribName;
 

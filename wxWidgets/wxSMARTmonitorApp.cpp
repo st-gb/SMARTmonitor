@@ -30,12 +30,9 @@
 #include <wx/taskbar.h>
 #include <wx/filefn.h> //wxFILE_SEP_PATH
 #include <iostream> //class std::cerr
-#include <ConfigLoader/ParseConfigFileException.hpp>
 #include <Windows/HideMinGWconsoleWindow.h>
 #include <FileSystem/File/FileException.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
-#include <Controller/Logger/LogFileAccessException.hpp>
-#include <FileSystem/File/GetAbsoluteFilePath.hpp> // GetAbsoluteFilePath(...)
 
 // ----------------------------------------------------------------------------
 // global variables
@@ -55,116 +52,22 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
 //      m_SMARTaccess.getSMARTattributesToObserve(),
 //      * this)
 {
-  mp_SMARTaccess = & m_wxSMARTvalueProcessor.getSMARTaccess();
-  mp_configurationLoader = new libConfig::ConfigurationLoader(
-      (SMARTaccessBase::SMARTattributesType &) mp_SMARTaccess->getSMARTattributesToObserve(), * this);
-  LogLevel::CreateLogLevelStringToNumberMapping();
-  std::string stdstrLogFilePath("wxSMARTmonitor.txt");
-  try
-  {
-    g_logger.OpenFileA(stdstrLogFilePath, "log4j", 4000, LogLevel::debug);
-  }
-  catch(const LogFileAccessException & lfae)
-  {
-    std::cout << lfae.GetErrorMessageA() << std::endl;
-  }
-  LOGN("SMART acc ptr:" << mp_SMARTaccess)
+  //InitializeLogger(); 
+  //mp_SMARTaccess = & m_wxSMARTvalueProcessor.getSMARTaccess();
+  LOGN("SMART access pointer:" << mp_SMARTaccess)
 }
 
 wxSMARTmonitorApp::~wxSMARTmonitorApp()
 {
-  // TODO Auto-generated destructor stub
+  delete mp_configurationLoader;
+  delete [] m_cmdLineArgStrings;
+  delete [] m_ar_stdwstrCmdLineArgs;
 }
 
 IMPLEMENT_APP(wxSMARTmonitorApp)
 
-void wxSMARTmonitorApp::ConstructConfigFilePath(
-  std::wstring & stdwstrConfigPathWithoutExtension)
+void wxSMARTmonitorApp::CreateTaskBarIcon()
 {
-  // Not necessarily an absolute file path! e.g. also "./executable.elf" is possible
-  const wxString wxstrThisExecutablesFilePath = argv[0];
-  LOGN("this exe's file path: \"" << wxWidgets::GetStdWstring_Inline(
-    wxstrThisExecutablesFilePath) << "\"")
-
-  const wxString currentWorkingDir = wxGetCwd();
-  
-  std::wstring stdwstrAbsoluteFilePath = GetAbsoluteFilePath(
-    wxWidgets::GetStdWstring_Inline(currentWorkingDir), 
-    wxWidgets::GetStdWstring_Inline(wxstrThisExecutablesFilePath) );
-  LOGN("this exe's absolute file path: \"" << stdwstrAbsoluteFilePath << "\"")
-
-  LOGN("this exe's current working dir: \"" << wxWidgets::GetStdWstring_Inline(
-    currentWorkingDir) << "\"")
-  
-  //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
-  //have to be taken into account          
-  wxString fullConfigFilePathWithoutExtension;
-  if(argc == 1) /** NO program arguments passed. */
-  {
-    //wxstrThisExecutablesFilePath
-    wxString fileNameWithoutExtension;
-    const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(wxT("."));
-    const int indexOfLastFileSepChar = stdwstrAbsoluteFilePath.rfind(
-      wxFILE_SEP_PATH);
-    wxString configFileNameWithoutExtension;
-    wxString exeFileName;
-    if( indexOfLastFileSepChar != -1
-      //Else this may happen: /home.git/executable"
-      //&& indexOfLastFileSepChar < indexOfLastFileSepChar
-      )
-    {
-      exeFileName = stdwstrAbsoluteFilePath.substr(indexOfLastFileSepChar,
-        wxstrThisExecutablesFilePath.length() );
-    }
-    const int indexOfExeFileNameDot = exeFileName.rfind(wxT("."));
-    if( indexOfExeFileNameDot == -1 ) /** If no file name extension like ".exe" */
-    {
-  //        fullConfigFilePath = fullFilePathOfThisExecutable + wxT(".");
-      if( indexOfLastFileSepChar != -1 )
-      {
-        fullConfigFilePathWithoutExtension = //currentWorkingDir /*+ wxFILE_SEP_PATH */+
-          stdwstrAbsoluteFilePath.substr(0, indexOfLastFileSepChar + 1) +
-          exeFileName + wxT(".");
-      }
-    }
-    else
-    {
-      const wxString fullFilePathOfThisExecutableWoutExt =
-        wxstrThisExecutablesFilePath.substr(0, indexOfLastDot + 1);
-      fullConfigFilePathWithoutExtension = fullFilePathOfThisExecutableWoutExt;
-    }
-  }
-  else /** At least 1 program argument passed. */
-  {
-  //      if( )
-    if( false /*isDirectoryPath(argv[1])*/ )
-    {
-    const wxString directoryForConfigFile = /*wxGetCwd()*/ argv[1];
-    const int indexOfLastBackSlash = wxstrThisExecutablesFilePath.rfind(
-      wxFILE_SEP_PATH);
-    const int fileNameLen = wxstrThisExecutablesFilePath.size() - indexOfLastBackSlash - 1;
-    const wxString workingDirWithConfigFilePrefix = directoryForConfigFile +
-      wxstrThisExecutablesFilePath.substr(indexOfLastBackSlash,
-      fileNameLen - 2 /* - 3 chars extension + file separator char */);
-    fullConfigFilePathWithoutExtension = workingDirWithConfigFilePrefix;
-    }
-    else
-      fullConfigFilePathWithoutExtension = argv[1];
-  }
-  //  wxWidgets::wxSMARTreader smartReader;
-  /*std::wstring*/ stdwstrConfigPathWithoutExtension =
-    wxWidgets::GetStdWstring_Inline(fullConfigFilePathWithoutExtension);
-  LOGN("using config file path: \"" << stdwstrConfigPathWithoutExtension << "\"")
-}
-bool wxSMARTmonitorApp::OnInit()
-{
-//  std::cerr << "ggg" << std::endl;
-//  if ( ! wxApp::OnInit() )
-//  {
-////    std::cerr << "ggg" << std::endl;
-//    return false;
-//  }
-
   /** wxTaskBarIcon::IsAvailable exists since wxWidgets 2.9.0 */
 #if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8
   if ( wxTaskBarIcon::IsAvailable() )
@@ -181,12 +84,35 @@ bool wxSMARTmonitorApp::OnInit()
 #else
   wxGetApp().m_taskBarIcon = new MyTaskBarIcon();
 #endif
+}
+
+void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
+{
+  /** IMPORTANT: creating the arrays can't be done in the constructor of this
+    class as "argc" is "0" there. So do this from or after "OnInit()" */
+  LOGN("number of program arguments passed:" << argc)
+  m_cmdLineArgStrings = new const wchar_t * [argc];
+  m_ar_stdwstrCmdLineArgs = new std::wstring[argc];
+  //TODO move to "common_sourcecode"
+  for(fastestUnsignedDataType index = 0; index < argc; ++index)
+  {
+    m_ar_stdwstrCmdLineArgs[index] = wxWidgets::GetStdWstring_Inline(argv[index]);
+    LOGN( (index+1) << ". program argument:" << m_ar_stdwstrCmdLineArgs[index])
+    m_cmdLineArgStrings[index] = m_ar_stdwstrCmdLineArgs[index].c_str();
+  }
+  m_commandLineArgs.Set(argc, (wchar_t **) m_cmdLineArgStrings);
+}
+
+bool wxSMARTmonitorApp::OnInit()
+{
+  CreateCommandLineArgsArrays();
+  CreateTaskBarIcon();
+  //m_wxSMARTvalueProcessor.Init();
+  //InitializeSMART();
   try
   {
 //    if( m_SMARTaccess.GetNumberOfSMARTparametersToRead() > 0 )
     {
-//      m_taskBarIcon = new MyTaskBarIcon();
-      // Create the main window
   #ifdef __MINGW32__
       HideMinGWconsoleWindow();
   #endif
@@ -198,48 +124,14 @@ bool wxSMARTmonitorApp::OnInit()
 //    }
     /** Show a dialog. Else when displaying messages no icon appears in the
      *  task bar and this not able to switch there with alt+Tab.*/
-    gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), m_wxSMARTvalueProcessor);
+    gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), //m_wxSMARTvalueProcessor
+      m_SMARTvalueProcessor);
     gs_dialog->Show(true);
-    m_wxSMARTvalueProcessor.Init();
-
-    std::wstring stdwstrWorkingDirWithConfigFilePrefix;
-    ConstructConfigFilePath(stdwstrWorkingDirWithConfigFilePrefix);
-
-//  std::set<SkSmartAttributeParsedData> smartAttributesToObserve;
-//  libConfig::ConfigurationLoader configurationLoader(
-//    /*smartAttributesToObserve*/ (SMARTaccessBase::SMARTattributesType &)
-//    m_SMARTaccess.getSMARTattributesToObserve(),
-//    * this);
-
-    try
-    {
-        //TODO just for compilation
-      const bool successfullyLoadedConfigFile = mp_configurationLoader->
-        LoadConfiguration(stdwstrWorkingDirWithConfigFilePrefix);
-  //    ! smartReader.LoadSMARTparameterConfigFile(
-  //            stdwstrWorkingDirWithConfigFilePrefix, this);
-      if( ! successfullyLoadedConfigFile )
-      {
-        //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));
-        return false;
-      }
-    }catch(const ParseConfigFileException & e)
-    {
-      ShowMessage("There was at least 1 error reading the configuration file\n"
-        "->this application will exit now.");
-    }
-
-    //if( smartReader.m_oSMARTDetails.size())
-    DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
-    if( dwRetVal == SMARTaccessBase::accessDenied )
-    {
-      wxMessageBox( wxT("access denied to S.M.A.R.T.\n->restart this program as an"
-        " administrator\n->program exits after closing this message box") );
-      return false;
-    }
+    InitializeSMART();
     gs_dialog->StartAsyncUpdateThread();
   }
-  catch(const FileException & fe)
+  /** Thrown by mp_configurationLoader->LoadConfiguration(..:) */
+  catch(const FileException & fe) 
   {
     TCHAR * filePath = fe.GetFilePath();
     wxMessageBox(wxT("failed to open file: ") + wxWidgets::getwxString_inline(

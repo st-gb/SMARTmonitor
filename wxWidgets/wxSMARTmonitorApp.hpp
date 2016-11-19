@@ -8,37 +8,35 @@
 #ifndef WXSMARTMONITORAPP_HPP_
 #define WXSMARTMONITORAPP_HPP_
 
-#include <wx/app.h>
+#include <wx/app.h> //Base class wxApp
 #include <wx/dialog.h> //class wxDialog
-//#include "wxSMARTmonitorTaskBarIcon.hpp"
-#include <UserInterface/UserInterface.hpp> //base class UserInterface
 
-#include <libATA_SMART/SMARTaccess.hpp>
-#include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
-#include "libConfig/ConfigurationLoader.hpp"
+//#include "wxSMARTmonitorTaskBarIcon.hpp"
+#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase
+//#include <libATA_SMART/SMARTaccess.hpp>
+#include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxWidgets::wxSMARTvalueProcessor
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
 
 class MyTaskBarIcon;
 
 class wxSMARTmonitorApp
-  : public wxApp, UserInterface//, SMARTmonitorBase
+  : public wxApp, public SMARTmonitorBase
 {
   wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
+  const wchar_t ** m_cmdLineArgStrings;
+  std::wstring * m_ar_stdwstrCmdLineArgs;
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
-  /** Must persist the OnInit() method because the strings are referred from
-   *  libATAsmart's SMART access class. */
-//  libConfig::ConfigurationLoader configurationLoader;
-  libConfig::ConfigurationLoader * mp_configurationLoader;
 public:
   //SMARTaccess_type & m_SMARTaccess;
-  SMARTaccess_type * mp_SMARTaccess;
   static const wxString appName;
   MyTaskBarIcon * m_taskBarIcon;
   wxSMARTmonitorApp();
   virtual
   ~wxSMARTmonitorApp();
+ 
+  void CreateCommandLineArgsArrays();
+  void CreateTaskBarIcon();
   bool OnInit();
-  void ConstructConfigFilePath(std::wstring & stdwstrConfigPathWithoutExtension);
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {

@@ -15,6 +15,8 @@
 
 #ifdef __linux__
   #include <Linux/daemon/daemon.h>
+
+#include "SMARTmonitorBase.hpp"
 #endif
 
 using namespace std;
@@ -25,7 +27,14 @@ using namespace std;
 int main(int argc, char** argv) {
   
   //std::string lockFilePath = "/var/lock/" + argv[0];
-  daemonize("/var/lock/smartmonitor.lock");
+  //daemonize("/var/lock/smartmonitor.lock");
+  SMARTmonitorBase/*<char>*/ SMARTmonitor();//argc, argv);
+  //TODO set command line args
+  //SMARTmonitor.SetCommandLineArgs();
+  
+  //std::wstring stdwstrConfigPathWithoutExtension;
+  //SMARTmonitor.ConstructConfigFilePath(stdwstrConfigPathWithoutExtension);
+  SMARTmonitor.InitializeSMART();
   return 0;
 }
 

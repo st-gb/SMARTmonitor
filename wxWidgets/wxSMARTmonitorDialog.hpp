@@ -42,7 +42,8 @@ public:
   wxMutex m_wxCloseMutex;
   fastestUnsignedDataType m_updateUI;
     SMARTdialog(const wxString& title,
-     const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor);
+      //const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor
+      const SMARTvalueProcessorBase & SMARTvalueProcessor);
     virtual ~SMARTdialog();
     void UpdateSMARTvaluesThreadSafe();
     void StartAsyncUpdateThread();

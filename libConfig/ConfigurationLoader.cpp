@@ -117,6 +117,7 @@ namespace libConfig
               /*m_smartAttributesToObserve.*/ mp_smartAttributesToObserve->insert(
                 /*std::make_pair(smartAttributeID,*/ skSmartAttributeParsedData//)
                 );
+              LOGN("adding SMART ID" << smartAttributeID << "to " << mp_smartAttributesToObserve)
             }
           }
           else
@@ -144,14 +145,16 @@ namespace libConfig
     }
     catch (const libconfig::ParseException & libConfigParseException)
     {
+      const int errorlineNumber = libConfigParseException.getLine();
+      const char * filePath = libConfigParseException.getFile();
       std::ostringstream stdoss;
-      stdoss << "Parse error at " << libConfigParseException.getFile() << ":"
-        << libConfigParseException.getLine()
+      stdoss << "Parse error at " << filePath << ":" << errorlineNumber
         << " - " << libConfigParseException.getError() ;
       std::cerr << stdoss.str() << std::endl;
       //return false;
       m_r_userInterface.ShowMessage(stdoss.str().c_str() );
-      ParseConfigFileException parseConfigFileException;
+      ParseConfigFileException parseConfigFileException(
+        fullFilePathOfThisExecutable.c_str(), errorlineNumber);
       throw parseConfigFileException;
       //return(EXIT_FAILURE);
     }

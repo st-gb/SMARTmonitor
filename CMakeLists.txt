@@ -1,7 +1,7 @@
 #from https://cmake.org/cmake-tutorial/
 
 cmake_minimum_required (VERSION 2.6)
-project (wxSMARTmonitor)
+project (SMARTmonitor)
 
 set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_DEBUG_POSTFIX "_debug")
@@ -140,12 +140,14 @@ set(LOGGER_SOURCE_FILES
 set(CLIENT_SERVER_BASE_SOURCE_FILES
   ${CLIENT_SERVER_BASE_SOURCE_FILES}
   ${LOGGER_SOURCE_FILES}
+  ${PROJECT_SOURCE_DIR}/SMARTmonitorBase.cpp
   ${PROJECT_SOURCE_DIR}/SMARTaccessBase.cpp
   ${PROJECT_SOURCE_DIR}/SMARTvalueProcessorBase.cpp
   #${COMMON_SOURCECODE_ROOT_PATH}/Controller/character_string/stdtstr.cpp
   #${COMMON_SOURCECODE_ROOT_PATH}/data_structures/Trie/byteTrie/ByteTrie.cpp
   #${COMMON_SOURCECODE_ROOT_PATH}/data_structures/Trie/byteTrie/Trie.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/multithread/I_Thread.cpp
+  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/character_string/stdtstr.cpp
 )
 
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
@@ -180,16 +182,23 @@ if(DEFINED WXWIDGETS)
   message("wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
 endif (DEFINED WXWIDGETS)
 
-add_executable(wxSMARTmonitor ${SOURCE_FILE_PATHS})
+if( ${EXE_TYPE} STREQUAL "wxGUI")
+  set(EXE_NAME wx${PROJECT_NAME}_GUI)
+  add_executable(wx${EXE_NAME} ${SOURCE_FILE_PATHS})
+endif( ${EXE_TYPE} STREQUAL "wxGUI" )
+if( ${EXE_TYPE} STREQUAL "UNIX_service")
+  set(EXE_NAME ${PROJECT_NAME}_service)
+  add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
+endif( ${EXE_TYPE} STREQUAL "UNIX_service" )
 
 if(DEFINED WXWIDGETS)
   #https://wiki.wxwidgets.org/CMake
-  target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES})
+  target_link_libraries(${EXE_NAME} ${wxWidgets_LIBRARIES})
 endif (DEFINED WXWIDGETS)
 
 message ("LIBRARIES: ${LIBRARIES}")
 
-target_link_libraries(wxSMARTmonitor ${LIBRARIES})
+target_link_libraries(${EXE_NAME} ${LIBRARIES})
 message (STATUS "wxWidgets type: ${wxWidgets_CONFIGURATION}")
 
 #target_link_libraries (VTrans3 wxWidgets)
