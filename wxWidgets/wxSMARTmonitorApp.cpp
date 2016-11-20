@@ -42,7 +42,6 @@
 /*static*/ SMARTdialog *gs_dialog = NULL;
 
 const wxString wxSMARTmonitorApp::appName = wxT("wxSMARTmonitor");
-unsigned wxSMARTmonitorApp::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 
 wxSMARTmonitorApp::wxSMARTmonitorApp()
   : m_taskBarIcon(NULL) //,
@@ -128,6 +127,7 @@ bool wxSMARTmonitorApp::OnInit()
       m_SMARTvalueProcessor);
     gs_dialog->Show(true);
     InitializeSMART();
+    //TODO exchange by wxGetApp().StartAsyncUpdateThread();
     gs_dialog->StartAsyncUpdateThread();
   }
   /** Thrown by mp_configurationLoader->LoadConfiguration(..:) */

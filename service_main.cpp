@@ -16,10 +16,45 @@
 #ifdef __linux__
   #include <Linux/daemon/daemon.h>
 
-#include "SMARTmonitorBase.hpp"
+  #include "service/SMARTmonitorService.hpp"
 #endif
+#include "hardware/CPU/atomic/AtomicExchange.h"
 
 using namespace std;
+
+//static SMARTmonitorService/*<char>*/ SMARTmonitor;//(argc, argv);
+static SMARTmonitorService/*<char>*/ * gp_SMARTmonitor;//(argc, argv);
+
+static void child_handler(int signum)
+{
+  LOGN("received signal")
+  switch(signum)
+  {
+  case SIGALRM: exit(EXIT_FAILURE); break;
+  case SIGUSR1: exit(EXIT_SUCCESS); break;
+  case SIGCHLD: exit(EXIT_FAILURE); break;
+    case SIGTERM:
+      LOGN("received term signal")
+      
+      LOGN("ending get SMART values loop");
+      /** Inform the SMART values update thread about we're going to exit,*/
+      AtomicExchange( (long *) & gp_SMARTmonitor->s_updateSMARTvalues, 0);
+
+      break;
+  }
+}
+
+void TrapSignals2()
+{
+  /* Trap signals that we expect to receive */
+  signal(SIGCHLD, child_handler);
+  signal(SIGTERM, child_handler);
+  signal(SIGKILL, child_handler);
+  signal(SIGUSR1, child_handler);
+  signal(SIGALRM, child_handler);
+  //SIGHUP = Reload config signal.
+  signal(SIGHUP, child_handler);
+}
 
 /*
  * 
@@ -28,13 +63,24 @@ int main(int argc, char** argv) {
   
   //std::string lockFilePath = "/var/lock/" + argv[0];
   //daemonize("/var/lock/smartmonitor.lock");
-  SMARTmonitorBase/*<char>*/ SMARTmonitor();//argc, argv);
+  TrapSignals2();
+  SMARTmonitorService/*<char>*/ SMARTmonitor;//(argc, argv);
+  gp_SMARTmonitor = & SMARTmonitor;
+  
   //TODO set command line args
-  //SMARTmonitor.SetCommandLineArgs();
+  SMARTmonitor.SetCommandLineArgs(argc, argv);
   
   //std::wstring stdwstrConfigPathWithoutExtension;
   //SMARTmonitor.ConstructConfigFilePath(stdwstrConfigPathWithoutExtension);
   SMARTmonitor.InitializeSMART();
+  nativeThread_type clientConnThread;
+  clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor );
+
+  SMARTmonitor.StartAsyncUpdateThread();
+  
+  //Wait for the update thread to be finished
+  SMARTmonitor.WaitForSignal();
+  LOGN("ending service")
   return 0;
 }
 

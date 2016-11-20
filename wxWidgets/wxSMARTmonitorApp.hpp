@@ -23,9 +23,6 @@ class wxSMARTmonitorApp
   : public wxApp, public SMARTmonitorBase
 {
   wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
-  const wchar_t ** m_cmdLineArgStrings;
-  std::wstring * m_ar_stdwstrCmdLineArgs;
-  static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
 public:
   //SMARTaccess_type & m_SMARTaccess;
   static const wxString appName;
@@ -39,9 +36,6 @@ public:
   bool OnInit();
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
-  static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
-    return s_numberOfMilliSecondsToWaitBetweenSMARTquery;
-  }
   void ShowMessage(const char * const ) const;
 };
 

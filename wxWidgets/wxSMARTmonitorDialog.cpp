@@ -48,7 +48,7 @@ BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
       SMARTdialog::OnUpdateSMARTparameterValuesInGUI)
 END_EVENT_TABLE()
 
-DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(void * p_v)
+DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(void * p_v)
 {
   SMARTdialog * p_myDialog = (SMARTdialog *) p_v;
   const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
@@ -58,7 +58,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(vo
   {
     do
     {
-      p_myDialog->UpdateSMARTvaluesThreadSafe();
+      /*p_myDialog->*/wxGetApp().UpdateSMARTvaluesThreadSafe();
       //https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#.22But_I_don.27t_need_a_whole_new_event_class....22
       wxCommandEvent MyEvent( wxEVT_COMMAND_BUTTON_CLICKED );
       wxPostEvent(p_myDialog, MyEvent);
@@ -266,8 +266,8 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
     m_pwxlistctrl->SetItem(
       index,
       SMARTtableListCtrl::COL_IDX_rawValue /** column #/ index */,
-      wxString::Format(wxT("%u"), m_arSMARTrawValue[index]) );
-    LOGN( "raw value:" << m_arSMARTrawValue[index] )
+      wxString::Format(wxT("%u"), wxGetApp().m_arSMARTrawValue[index]) );
+    LOGN( "raw value:" << wxGetApp().m_arSMARTrawValue[index] )
 
 //    const SkSmartAttributeParsedData & skSmartAttributeParsedData = * SMARTattributesToObserveIter;
 //    wxListItem listItem;
@@ -275,7 +275,7 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
 //    listItem.SetColumn(SMARTtableListCtrl::COL_IDX_rawValue);
 
     if( //SMARTattributesToObserveIter->threshold < SMARTattributesToObserveIter->worst_value
-        m_arSMARTrawValue[index] > 0 )
+        wxGetApp().m_arSMARTrawValue[index] > 0 )
 //      wxListItemAttr;
       m_pwxlistctrl->SetItemBackgroundColour(index, * wxRED);
       //listItem.SetBackgroundColour(* wxRED);
@@ -391,88 +391,6 @@ void SMARTdialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
   UpdateSMARTvaluesUI();
 }
 
-void SMARTdialog::UpdateSMARTvaluesThreadSafe()
-{
-  DWORD dwRetVal = m_SMARTaccess.ReadSMARTValuesForAllDrives();
-  if( dwRetVal == SMARTaccessBase::success )
-  {
-//    ST_DRIVE_INFO * pDriveInfo = NULL;
-//    ST_SMART_INFO * pSmartInfo = NULL;
-//    ST_SMART_DETAILS * pSmartDetails = NULL;
-//    unsigned ucT3;
-    unsigned lineNumber = 0;
-    bool atLeast1NonNullValue = false;
-//    //loop over drives
-//    long double timeInS;
-//    for(unsigned ucT1 = 0, ucT4 = 0; ucT1 < m_SMARTvalueProcessor.m_ucDrivesWithInfo; ++ ucT1)
-//    {
-//      pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(ucT1);
-//      for(unsigned SMARTattributeID = ucT3 = 0; SMARTattributeID < 255;
-//        ++ SMARTattributeID)
-//      {
-//        pSmartInfo = m_SMARTvalueProcessor.GetSMARTValue(pDriveInfo->m_ucDriveIndex, SMARTattributeID);
-//        if(pSmartInfo)
-//        {
-//          pSmartDetails = m_SMARTvalueProcessor.GetSMARTDetails(
-//            pSmartInfo->m_ucAttribIndex);
-//          if(pSmartDetails)
-//          {
-//            if(pSmartDetails->m_bCritical)
-//            {
-      const fastestUnsignedDataType numberOfDifferentDrives = m_SMARTaccess.
-        GetNumberOfDifferentDrives();
-      std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = m_SMARTaccess.
-        GetSMARTuniqueIDandValues();
-      LOGN("address:" << & SMARTuniqueIDsAndValues )
-      std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
-        SMARTuniqueIDsAndValues.begin();
-      fastestUnsignedDataType SMARTattributeID;
-      uint64_t SMARTrawValue;
-      const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
-        m_SMARTaccess.getSMARTattributesToObserve();
-      LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
-      //TODO crashed in loop header at "iter++"
-      for(fastestUnsignedDataType currentDriveIndex = 0 /*, ucT4 = 0*/;
-        currentDriveIndex < numberOfDifferentDrives;
-        ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
-      {
-    //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
-        std::set<SkSmartAttributeParsedData>::const_iterator
-          SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
-        long int currentSMARTrawValue;
-        //TODO crashes here (iterator-related?!-> thread access problem??)
-        for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
-            SMARTattributesToObserveIter ++)
-        {
-          SMARTattributeID = SMARTattributesToObserveIter->id;
-          currentSMARTrawValue = SMARTuniqueIDandValuesIter->m_SMARTrawValues[SMARTattributeID];
-
-          AtomicExchange( (long int *) & m_arSMARTrawValue[lineNumber] //long * Target
-            , /*pSmartInfo->m_dwAttribValue*/
-            //* (long int *) //SMARTattributesToObserveIter->pretty_value /*raw*/ /*long val*/
-            currentSMARTrawValue);
-//          AtomicExchange( (long int *) & m_arSMART_ID[lineNumber]
-          LOGN(m_arSMARTrawValue[lineNumber] << " " << currentSMARTrawValue)
-          AtomicExchange(
-            & m_arTickCountOfLastQueryInMilliSeconds[lineNumber]
-            , GetTickCount() /*long val*/ );
-          //FileTi
-//              OperatingSystem::GetTimeCountInSeconds(timeInS);
-
-          if( /*pSmartInfo->m_dwAttribValue*/
-            SMARTattributesToObserveIter->pretty_value )
-            atLeast1NonNullValue = true;
-          ++ lineNumber;
-//            }
-//          }
-        }
-      }
-//    }
-  }
-  else // e.g. SMARTaccessBase::accessDenied
-    ;
-}
-
 void SMARTdialog::StartAsyncUpdateThread()
 {
   //    m_timer.Start(1000); // 1 second interval
@@ -480,7 +398,7 @@ void SMARTdialog::StartAsyncUpdateThread()
   {
     ReadSMARTvaluesAndUpdateUI();
     m_updateSMARTparameterValuesThread.start(
-      UpdateSMARTparameterValuesThreadFunc, this);
+      wxUpdateSMARTparameterValuesThreadFunc, this);
   }
 }
 

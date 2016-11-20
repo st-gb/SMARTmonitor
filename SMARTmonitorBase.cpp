@@ -20,6 +20,11 @@
 #include <Controller/Logger/LogFileAccessException.hpp>
 #include <SMARTaccessBase.hpp>
 #include <ConfigLoader/ParseConfigFileException.hpp>
+#include <hardware/CPU/atomic/AtomicExchange.h>
+#include <Controller/time/GetTickCount.hpp>
+
+unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
+fastestSignedDataType SMARTmonitorBase::s_updateSMARTvalues = 1;
 
 SMARTmonitorBase::SMARTmonitorBase() 
 {
@@ -36,6 +41,23 @@ SMARTmonitorBase::~SMARTmonitorBase() {
 #define xstringify(s) stringify(s)
 #define stringify(s) #s
 
+void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv)
+{
+  /** IMPORTANT: creating the arrays can't be done in the constructor of this
+    class as "argc" is "0" there. So do this from or after "OnInit()" */
+  LOGN("number of program arguments passed:" << argc)
+  m_cmdLineArgStrings = new const wchar_t * [argc];
+  m_ar_stdwstrCmdLineArgs = new std::wstring[argc];
+  //TODO move to "common_sourcecode"
+  for(fastestUnsignedDataType index = 0; index < argc; ++index)
+  {
+    m_ar_stdwstrCmdLineArgs[index] = GetStdWstring(argv[index]);
+    LOGN( (index+1) << ". program argument:" << m_ar_stdwstrCmdLineArgs[index])
+    m_cmdLineArgStrings[index] = m_ar_stdwstrCmdLineArgs[index].c_str();
+  }
+  m_commandLineArgs.Set(argc, (wchar_t **) m_cmdLineArgStrings);
+}
+
 void SMARTmonitorBase::InitializeLogger()
 {
   LogLevel::CreateLogLevelStringToNumberMapping();
@@ -47,6 +69,176 @@ void SMARTmonitorBase::InitializeLogger()
   catch(const LogFileAccessException & lfae)
   {
     std::cout << lfae.GetErrorMessageA() << std::endl;
+  }
+}
+
+void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
+  const std::wstring & stdwstrAbsoluteFilePath,
+  const std::wstring & stdwstrThisExecutable_sFilePath)
+{
+  std::wstring fullConfigFilePathWithoutExtension;
+//    //wxstrThisExecutablesFilePath
+//    wxString fileNameWithoutExtension;
+  const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(_T("."));
+  //const char ps = PATH_SEPERATOR_CHAR;
+  std::wstring stdwstrPathSeperatorChar = GetStdWstring(std::string(
+    PATH_SEPERATOR_CHAR_STRING) );
+  const int indexOfLastFileSepChar = stdwstrAbsoluteFilePath.rfind(
+    //_T(xstringify(PATH_SEPERATOR_CHAR)  )
+    stdwstrPathSeperatorChar );
+  std::string configFileNameWithoutExtension;
+  std::wstring exeFileName;
+  if( indexOfLastFileSepChar != -1
+    //Else this may happen: /home.git/executable"
+    //&& indexOfLastFileSepChar < indexOfLastFileSepChar
+    )
+  {
+    int thisExecutable_sFilePathLen = //wcslen(wchThisExecutable_sFilePath);
+      stdwstrThisExecutable_sFilePath.length();
+    exeFileName = stdwstrAbsoluteFilePath.substr(indexOfLastFileSepChar + 1,
+      thisExecutable_sFilePathLen );
+  }
+  const int indexOfExeFileNameDot = exeFileName.rfind( L"." );
+  if( indexOfExeFileNameDot == -1 ) /** If no file name extension like ".exe" */
+  {
+//        fullConfigFilePath = fullFilePathOfThisExecutable + wxT(".");
+    if( indexOfLastFileSepChar != -1 )
+    {
+      fullConfigFilePathWithoutExtension = //currentWorkingDir /*+ wxFILE_SEP_PATH */+
+        stdwstrAbsoluteFilePath.substr(0, indexOfLastFileSepChar + 1) +
+        exeFileName + L".";
+    }
+  }
+  else
+  {
+    const std::wstring fullFilePathOfThisExecutableWoutExt =
+      stdwstrThisExecutable_sFilePath.substr(0, indexOfLastDot + 1);
+    fullConfigFilePathWithoutExtension = fullFilePathOfThisExecutableWoutExt;
+  }
+}
+
+void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
+{
+  DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
+  SMARTaccess_type & SMARTaccess = * mp_SMARTaccess;
+  if( dwRetVal == SMARTaccessBase::success )
+  {
+    unsigned lineNumber = 0;
+    bool atLeast1NonNullValue = false;
+//    //loop over drives
+//    long double timeInS;
+//    for(unsigned ucT1 = 0, ucT4 = 0; ucT1 < m_SMARTvalueProcessor.m_ucDrivesWithInfo; ++ ucT1)
+//    {
+      const fastestUnsignedDataType numberOfDifferentDrives = SMARTaccess.
+        GetNumberOfDifferentDrives();
+      std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = SMARTaccess.
+        GetSMARTuniqueIDandValues();
+      LOGN("address:" << & SMARTuniqueIDsAndValues )
+      std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
+        SMARTuniqueIDsAndValues.begin();
+      fastestUnsignedDataType SMARTattributeID;
+      uint64_t SMARTrawValue;
+      const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
+        SMARTaccess.getSMARTattributesToObserve();
+      LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
+      //TODO crashed in loop header at "iter++"
+      for(fastestUnsignedDataType currentDriveIndex = 0 /*, ucT4 = 0*/;
+        currentDriveIndex < numberOfDifferentDrives;
+        ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
+      {
+    //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
+        std::set<SkSmartAttributeParsedData>::const_iterator
+          SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
+        long int currentSMARTrawValue;
+        //TODO crashes here (iterator-related?!-> thread access problem??)
+        for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
+            SMARTattributesToObserveIter ++)
+        {
+          SMARTattributeID = SMARTattributesToObserveIter->id;
+          currentSMARTrawValue = SMARTuniqueIDandValuesIter->m_SMARTrawValues[SMARTattributeID];
+
+          AtomicExchange( (long int *) & m_arSMARTrawValue[lineNumber] //long * Target
+            , /*pSmartInfo->m_dwAttribValue*/
+            //* (long int *) //SMARTattributesToObserveIter->pretty_value /*raw*/ /*long val*/
+            currentSMARTrawValue);
+//          AtomicExchange( (long int *) & m_arSMART_ID[lineNumber]
+          LOGN(m_arSMARTrawValue[lineNumber] << " " << currentSMARTrawValue)
+          AtomicExchange(
+            & m_arTickCountOfLastQueryInMilliSeconds[lineNumber]
+            , GetTickCount() /*long val*/ );
+          //FileTi
+//              OperatingSystem::GetTimeCountInSeconds(timeInS);
+
+          if( /*pSmartInfo->m_dwAttribValue*/
+            SMARTattributesToObserveIter->pretty_value )
+            atLeast1NonNullValue = true;
+          ++ lineNumber;
+//            }
+//          }
+        }
+      }
+//    }
+  }
+  else // e.g. SMARTaccessBase::accessDenied
+    ;
+}
+
+DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(void * p_v)
+{
+  SMARTmonitorBase * p_SMARTmonitorBase = (SMARTmonitorBase *) p_v;
+  const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
+    SMARTmonitorBase::GetNumberOfMilliSecondsToWaitBetweenSMARTquery();
+  fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;
+  if(p_SMARTmonitorBase)
+  {
+    do
+    {
+      p_SMARTmonitorBase->UpdateSMARTvaluesThreadSafe();
+      p_SMARTmonitorBase->BeforeWait();
+
+      numberOfSecondsToWaitBetweenSMARTquery =
+        numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
+      while( numberOfSecondsToWaitBetweenSMARTquery -- && 
+        SMARTmonitorBase::s_updateSMARTvalues)
+      {
+        sleep(1);
+      }
+      //Sleep in mikroseconds (1/1000 of a millisecond))
+      usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
+    }while(SMARTmonitorBase::s_updateSMARTvalues);
+    
+    p_SMARTmonitorBase->AfterGetSMARTvaluesLoop();    
+  }
+  return 0;
+}
+
+void SMARTmonitorBase::StartAsyncUpdateThread()
+{
+  if( mp_SMARTaccess->GetNumSMARTattributesToObserve() > 0 )
+  {
+    m_updateSMARTparameterValuesThread.start(
+      UpdateSMARTparameterValuesThreadFunc, this);
+  }
+}
+
+void SMARTmonitorBase::ConstructConfigFilePathFromExeDirPath(
+  const std::wstring & stdwstrAbsoluteFilePath,
+  std::wstring & fullConfigFilePathWithoutExtension)
+{
+  //const char ps = PATH_SEPERATOR_CHAR;
+  std::wstring stdwstrPathSeperatorChar = GetStdWstring(std::string(
+    PATH_SEPERATOR_CHAR_STRING) );
+  const int indexOfLastPathSepChar = stdwstrAbsoluteFilePath.rfind(
+    //_T(xstringify(PATH_SEPERATOR_CHAR)  )
+    stdwstrPathSeperatorChar );
+  if( indexOfLastPathSepChar != -1
+    //Else this may happen: /home.git/executable"
+    //&& indexOfLastFileSepChar < indexOfLastFileSepChar
+    )
+  {
+    std::wstring stdwstrAbsoluteDirPath = stdwstrAbsoluteFilePath.substr(0, 
+      indexOfLastPathSepChar + 1);
+    fullConfigFilePathWithoutExtension = stdwstrAbsoluteDirPath + L"SMARTmonitor.";
   }
 }
 
@@ -75,47 +267,16 @@ void SMARTmonitorBase::ConstructConfigFilePath(
     currentWorkingDir) << "\"")
   
   //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
-  //have to be taken into account          
+  //have to be taken into account
   std::wstring fullConfigFilePathWithoutExtension;
   if(m_commandLineArgs.GetArgumentCount() == 1) /** NO program arguments passed. */
   {
-//    //wxstrThisExecutablesFilePath
-//    wxString fileNameWithoutExtension;
-    const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(_T("."));
-    //const char ps = PATH_SEPERATOR_CHAR;
-    std::wstring stdwstrPathSeperatorChar = GetStdWstring(std::string(
-      PATH_SEPERATOR_CHAR_STRING) );
-    const int indexOfLastFileSepChar = stdwstrAbsoluteFilePath.rfind(
-      //_T(xstringify(PATH_SEPERATOR_CHAR)  )
-      stdwstrPathSeperatorChar );
-    std::string configFileNameWithoutExtension;
-    std::wstring exeFileName;
-    if( indexOfLastFileSepChar != -1
-      //Else this may happen: /home.git/executable"
-      //&& indexOfLastFileSepChar < indexOfLastFileSepChar
-      )
-    {
-      int thisExecutable_sFilePathLen = wcslen(wchThisExecutable_sFilePath);
-      exeFileName = stdwstrAbsoluteFilePath.substr(indexOfLastFileSepChar + 1,
-        thisExecutable_sFilePathLen );
-    }
-    const int indexOfExeFileNameDot = exeFileName.rfind( L"." );
-    if( indexOfExeFileNameDot == -1 ) /** If no file name extension like ".exe" */
-    {
-  //        fullConfigFilePath = fullFilePathOfThisExecutable + wxT(".");
-      if( indexOfLastFileSepChar != -1 )
-      {
-        fullConfigFilePathWithoutExtension = //currentWorkingDir /*+ wxFILE_SEP_PATH */+
-          stdwstrAbsoluteFilePath.substr(0, indexOfLastFileSepChar + 1) +
-          exeFileName + L".";
-      }
-    }
-    else
-    {
-      const std::wstring fullFilePathOfThisExecutableWoutExt =
-        stdwstrThisExecutable_sFilePath.substr(0, indexOfLastDot + 1);
-      fullConfigFilePathWithoutExtension = fullFilePathOfThisExecutableWoutExt;
-    }
+//    ConstructConfigFilePathFromExeFilePath(
+//      stdwstrAbsoluteFilePath,
+//      stdwstrThisExecutable_sFilePath);
+    ConstructConfigFilePathFromExeDirPath(
+      stdwstrAbsoluteFilePath,
+      fullConfigFilePathWithoutExtension);
   }
 //  else /** At least 1 program argument passed. */
 //  {

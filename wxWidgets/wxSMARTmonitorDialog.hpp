@@ -29,9 +29,6 @@ class SMARTdialog: public wxDialog
   wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
   SMARTaccess_type & m_SMARTaccess;
   enum IDs {TIMER_ID = 0, showSupportedSMART_IDs};
-  /*DWORD*/ long int m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
-//  long int m_arSMART_ID[255]; //provide space for up t 255 SMART attribute values
-  long int m_arTickCountOfLastQueryInMilliSeconds[255];
   SMARTtableListCtrl * m_pwxlistctrl;
   wxTextCtrl * m_p_wxTextCtrl;
   wxButton * m_p_showSupportedSMART_IDs;
@@ -41,12 +38,11 @@ public:
   wxCondition m_wxCloseCondition;
   wxMutex m_wxCloseMutex;
   fastestUnsignedDataType m_updateUI;
-    SMARTdialog(const wxString& title,
-      //const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor
-      const SMARTvalueProcessorBase & SMARTvalueProcessor);
-    virtual ~SMARTdialog();
-    void UpdateSMARTvaluesThreadSafe();
-    void StartAsyncUpdateThread();
+  SMARTdialog(const wxString& title,
+    //const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor
+    const SMARTvalueProcessorBase & SMARTvalueProcessor);
+  virtual ~SMARTdialog();
+  void StartAsyncUpdateThread();
   void EndUpdateUIthread();
   void UpdateSMARTvaluesUI();
   void UpdateUIregarding1DataCarrierOnly();
