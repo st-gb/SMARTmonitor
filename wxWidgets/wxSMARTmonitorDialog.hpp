@@ -18,6 +18,7 @@
 #include <multithread/nativeThreadType.hpp>
 #include <wx/thread.h> //class wxCondition
 #include "SMARTtableListCtrl.hpp"
+#include <wx/defs.h> //wxID_HIGHEST
 
 class MyTaskBarIcon;
 class wxListCtrl;
@@ -25,16 +26,16 @@ using namespace wxWidgets;
 
 class SMARTdialog: public wxDialog
 {
-  //  CSmartReader m_oSmartReader;
+  //enum IDs { CONNECT = wxID_HIGHEST + 1};
   wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
-  SMARTaccess_type & m_SMARTaccess;
-  enum IDs {TIMER_ID = 0, showSupportedSMART_IDs};
+  enum IDs {TIMER_ID = 0, showSupportedSMART_IDs, CONNECT};
   SMARTtableListCtrl * m_pwxlistctrl;
   wxTextCtrl * m_p_wxTextCtrl;
   wxButton * m_p_showSupportedSMART_IDs;
 //  wxTimer m_timer;
   nativeThread_type m_updateSMARTparameterValuesThread;
 public:
+  SMARTaccess_type & m_SMARTaccess;
   wxCondition m_wxCloseCondition;
   wxMutex m_wxCloseMutex;
   fastestUnsignedDataType m_updateUI;
@@ -48,12 +49,14 @@ public:
   void UpdateUIregarding1DataCarrierOnly();
   void SetSMARTattribIDandNameLabel();
   void SetSMARTdriveID();
+  void ReBuildUserInterface();
 
 protected:
     void OnAbout(wxCommandEvent& event);
     void OnOK(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
     void OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event));
+    void ConnectToServer(wxCommandEvent& WXUNUSED(event));
     void OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);
     void OnTimer(wxTimerEvent& event);

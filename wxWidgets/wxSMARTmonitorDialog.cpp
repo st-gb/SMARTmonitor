@@ -29,6 +29,7 @@ GCC_DIAG_ON(write-strings)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/SupportedSMARTIDsDialog.hpp>
 #include <sstream> //ostringstream
+#include <wx/textdlg.h> //wxGetTextFromUser
 
 //extern wxSMARTmonitorApp theApp;
 
@@ -43,6 +44,7 @@ BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
     EVT_BUTTON(wxID_OK, SMARTdialog::OnOK)
     EVT_BUTTON(wxID_EXIT, SMARTdialog::OnExit)
     EVT_BUTTON(showSupportedSMART_IDs, SMARTdialog::OnShowSupportedSMART_IDs)
+    EVT_BUTTON(CONNECT, SMARTdialog::ConnectToServer)
     EVT_CLOSE(SMARTdialog::OnCloseWindow)
     EVT_COMMAND(wxID_ANY, wxEVT_COMMAND_BUTTON_CLICKED,
       SMARTdialog::OnUpdateSMARTparameterValuesInGUI)
@@ -54,23 +56,37 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
   const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
     wxGetApp().GetNumberOfMilliSecondsToWaitBetweenSMARTquery();
   fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;
+  //TODO set to false when connected
+  bool getSMARTvaluesDirectly = false;
   if(p_myDialog)
   {
+    std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesSet = 
+      p_myDialog->m_SMARTaccess.GetSMARTuniqueIDandValues();
     do
     {
-      /*p_myDialog->*/wxGetApp().UpdateSMARTvaluesThreadSafe();
+      if( getSMARTvaluesDirectly )
+      {
+        /*p_myDialog->*/wxGetApp().UpdateSMARTvaluesThreadSafe();
+
+        numberOfSecondsToWaitBetweenSMARTquery =
+          numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
+        while( numberOfSecondsToWaitBetweenSMARTquery -- && p_myDialog->m_updateUI)
+        {
+          //TODO handle closing of window / app
+          wxSleep(1);
+        }
+        wxMilliSleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 );
+      }
+      else
+      {
+        int res = wxGetApp().GetSMARTvaluesFromServer(sMARTuniqueIDandValuesSet);
+        if( res == 0 )
+          p_myDialog->UpdateSMARTvaluesUI();
+      }
+      
       //https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#.22But_I_don.27t_need_a_whole_new_event_class....22
       wxCommandEvent MyEvent( wxEVT_COMMAND_BUTTON_CLICKED );
       wxPostEvent(p_myDialog, MyEvent);
-
-      numberOfSecondsToWaitBetweenSMARTquery =
-        numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
-      while( numberOfSecondsToWaitBetweenSMARTquery -- && p_myDialog->m_updateUI)
-      {
-        //TODO handle closing of window / app
-        wxSleep(1);
-      }
-      wxMilliSleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 );
     }while(p_myDialog->m_updateUI);
     LOGN("locking close mutex");
     /** see http://docs.wxwidgets.org/trunk/classwx_condition.html */
@@ -151,6 +167,7 @@ SMARTdialog::SMARTdialog(
 
     wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
     sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
+    sizerBtns->Add(new wxButton(this, CONNECT, wxT("&Connect")), flags);
     sizerBtns->Add(new wxButton(this, wxID_OK, wxT("&Hide")), flags);
     sizerBtns->Add(new wxButton(this, wxID_EXIT, wxT("E&xit")), flags);
 
@@ -231,6 +248,44 @@ void SMARTdialog::OnExit(wxCommandEvent& WXUNUSED(event))
 {
   EndUpdateUIthread();
   Close(true);
+}
+
+void SMARTdialog::ConnectToServer(wxCommandEvent& WXUNUSED(event))
+{
+  wxString wxstrServerAddress = wxGetTextFromUser(wxT("input SMART values server address") //message,
+    , wxGetTextFromUserPromptStr// const wxString & 	caption = wxGetTextFromUserPromptStr,
+    , wxT("localhost")//const wxString & 	default_value = wxEmptyString,
+    , NULL //wxWindow * 	parent = NULL,
+    );
+  std::string stdstrServerAddress = wxWidgets::GetStdString_Inline(wxstrServerAddress);
+  const fastestUnsignedDataType res = wxGetApp().ConnectToServer(stdstrServerAddress.c_str());
+  if( res == 0)
+  {
+    SetTitle(wxT("data from ") + wxstrServerAddress);
+    //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
+    std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = m_SMARTaccess.
+      GetSMARTuniqueIDandValues();
+    /** Get # of attributes to in order build the user interface (write 
+     *  attribute ID an name into the table--creating the UI needs to be done 
+     *  only once because the attribute IDs received usually do not change).*/
+    const int res = wxGetApp().GetSMARTvaluesFromServer(sMARTuniqueIDandValues);
+    if( res == 0)
+    {
+      ReBuildUserInterface();
+      UpdateSMARTvaluesUI();
+    }
+    StartAsyncUpdateThread();
+  }
+  else
+  {
+    //wxGetApp().ShowMessage("");
+  }
+}
+
+void SMARTdialog::ReBuildUserInterface()
+{
+  SetSMARTdriveID();
+  SetSMARTattribIDandNameLabel();
 }
 
 void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event))
@@ -404,6 +459,7 @@ void SMARTdialog::StartAsyncUpdateThread()
 
 void SMARTdialog::SetSMARTdriveID()
 {
+  LOGN("begin")
   std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = m_SMARTaccess.
     GetSMARTuniqueIDandValues();
   std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
@@ -416,9 +472,9 @@ void SMARTdialog::SetSMARTdriveID()
     const SMARTuniqueID & SMARTuniqueID = SMARTuniqueIDandValuesIter->getSMARTuniqueID();
 //    SMARTuniqueID.
     std::ostringstream oss;
-    oss << "model:" << SMARTuniqueID.model;
-    oss << " firmware:" << SMARTuniqueID.firmware;
-    oss << " serial:" << SMARTuniqueID.serial;
+    oss << "model:" << SMARTuniqueID.m_modelName;
+    oss << " firmware:" << SMARTuniqueID.m_firmWareName;
+    oss << " serial:" << SMARTuniqueID.m_serialNumber;
     std::string mediaInfo = oss.str();
     m_p_wxTextCtrl->SetValue( wxWidgets::GetwxString_Inline(mediaInfo ) );
 //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
@@ -430,6 +486,7 @@ void SMARTdialog::SetSMARTdriveID()
 
 void SMARTdialog::SetSMARTattribIDandNameLabel()
 {
+  LOGN("begin")
   const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
     m_SMARTaccess.getSMARTattributesToObserve();
   LOGN("begin " << & SMARTattributesToObserve)
@@ -461,6 +518,7 @@ void SMARTdialog::SetSMARTattribIDandNameLabel()
       );
 //            item.SetId(2);
   }
+  LOGN("end")
 }
 
 void SMARTdialog::ReadSMARTvaluesAndUpdateUI()
@@ -482,8 +540,7 @@ void SMARTdialog::ReadSMARTvaluesAndUpdateUI()
 
   m_pwxlistctrl->DeleteAllItems();
 
-  SetSMARTdriveID();
-  SetSMARTattribIDandNameLabel();
+  ReBuildUserInterface();
   UpdateSMARTvaluesUI();
 }
 

@@ -12,7 +12,8 @@
 #include <wx/dialog.h> //class wxDialog
 
 //#include "wxSMARTmonitorTaskBarIcon.hpp"
-#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase
+//#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase
+#include <client/SMARTmonitorClient.h> //base class SMARTmonitorClient
 //#include <libATA_SMART/SMARTaccess.hpp>
 #include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxWidgets::wxSMARTvalueProcessor
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
@@ -20,7 +21,7 @@
 class MyTaskBarIcon;
 
 class wxSMARTmonitorApp
-  : public wxApp, public SMARTmonitorBase
+  : public wxApp, public /*SMARTmonitorBase*/ SMARTmonitorClient
 {
   wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
 public:

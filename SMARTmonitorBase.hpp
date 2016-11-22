@@ -34,7 +34,7 @@ public:
   virtual ~SMARTmonitorBase();
   
   void ConstructConfigFilePath(std::wstring & stdwstrConfigPathWithoutExtension);
-  void InitializeSMART();
+  fastestUnsignedDataType InitializeSMART();
   void ShowMessage(const char * const msg) const;
   SMARTaccess_type * mp_SMARTaccess;
   SMARTvalueProcessorBase m_SMARTvalueProcessor;

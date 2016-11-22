@@ -34,7 +34,8 @@ static void child_handler(int signum)
   case SIGUSR1: exit(EXIT_SUCCESS); break;
   case SIGCHLD: exit(EXIT_FAILURE); break;
     case SIGTERM:
-      LOGN("received term signal")
+    case SIGKILL:
+      LOGN("received term or kill signal")
       
       LOGN("ending get SMART values loop");
       /** Inform the SMART values update thread about we're going to exit,*/

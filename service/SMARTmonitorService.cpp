@@ -15,6 +15,8 @@
 #include <sys/socket.h> //socket(...), bind(...), ...)
 #include <netinet/in.h> //struct sockaddr_in
 
+int SMARTmonitorService::s_socketFileDesc = 0;
+
 SMARTmonitorService::SMARTmonitorService() 
   //: 
   /** https://computing.llnl.gov/tutorials/pthreads/#ConditionVariables :
@@ -55,7 +57,7 @@ void SMARTmonitorService::WaitForSignal()
 DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
 {
   LOGN("begin")
-  SMARTmonitorBase * p_SMARTmonitor = (SMARTmonitorBase * ) p_v;
+  SMARTmonitorService * p_SMARTmonitor = (SMARTmonitorService * ) p_v;
   if( p_SMARTmonitor )
   {
     //Code adapted from http://www.linuxhowtos.org/data/6/server.c
@@ -67,7 +69,9 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
     server_address.sin_addr.s_addr = INADDR_ANY;
     server_address.sin_port = htons(portNumber);
 
-    int socketFileDesc = socket(AF_INET, SOCK_STREAM, 0); //Erzeugt ein neues Socket bestimmten Types und alloziert hierfür Systemressourcen. Für die Identifizierung gibt die Funktion eine eindeutige Zahl vom Typ Integer zurück.
+    //Erzeugt ein neues Socket bestimmten Types und alloziert hierfür Systemressourcen. Für die Identifizierung gibt die Funktion eine eindeutige Zahl vom Typ Integer zurück.
+    p_SMARTmonitor->s_socketFileDesc = socket(AF_INET, SOCK_STREAM, 0);
+    const int socketFileDesc = p_SMARTmonitor->s_socketFileDesc;
     //Bindet den Socket an eine Socket Adressinformation, in der Regel an eine IP-Adresse und Port. Wird typischerweise auf Server-Seite benutzt.
     if( bind(socketFileDesc, (struct sockaddr *) &server_address, 
         sizeof(server_address)) < 0)
@@ -79,13 +83,13 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
     {
       LOGN_INFO("bound server")
       //Versetzt einen gebundenen STREAM (TCP/IP) Socket in einen Lauschen-Modus. Wird auf Server-Seite benutzt.
-      if( listen(socketFileDesc,5) == 0 )
+      if( listen(socketFileDesc, 5) == 0 )
       {
       do
       {
         socklen_t sizeOfClientAddrInB = sizeof(client_address);
         LOGN("Waiting for a socket client to accept on port" << portNumber)
-        int clientSocketFileDesc = accept(socketFileDesc, 
+        const int clientSocketFileDesc = accept(socketFileDesc, 
                    (struct sockaddr *) & client_address, 
                    & sizeOfClientAddrInB);
         if (clientSocketFileDesc < 0)
@@ -93,16 +97,35 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
           LOGN_ERROR("Failed to accept client")
           //return 2;
         }
-        LOGN_ERROR("new client:" << client_address.sin_port)
+        else
+        {
+          LOGN("new client at port " << client_address.sin_port 
+            << " file desc.:" << clientSocketFileDesc)
+          p_SMARTmonitor->AddClient(clientSocketFileDesc);
+        }
       }while(p_SMARTmonitor->s_updateSMARTvalues);
+      LOGN("after \"wait for socket connection\" loop")
       }
     }
+    
   }
   LOGN("end")
   return 0;
 }
 
+void SMARTmonitorService::AddClient(const int clientSocketFileDesc)
+{
+  m_clientsCriticalSection.Enter();
+  m_clientSocketFileDescVector.push_back(clientSocketFileDesc);
+  m_clientsCriticalSection.Leave();  
+}
+
 void SMARTmonitorService::AfterGetSMARTvaluesLoop() {
+  //from http://www.mombu.com/microsoft/t-how-to-cancel-a-blocking-socket-call-12612626.html
+  //"Is the server multithreaded? If so, then closing the socket on another 
+  //thread will unblock the accept() call."
+  LOGN("closing socket file descr.")
+  close(s_socketFileDesc);
   LOGN("locking mutex for signalling")
   pthread_mutex_lock(&mutex);
   LOGN("signalling the main thread to end")
@@ -114,6 +137,42 @@ void SMARTmonitorService::AfterGetSMARTvaluesLoop() {
   LOGN("Unlocking mutex for signalling")
   pthread_mutex_unlock(& mutex);
   LOGN("end")
+}
+
+void SendSMART_IDandRawValue()
+{
+//  uint8_t array[5];
+//  array[0] = SMARTattributeID;
+//  memcpy( & array[1], & SMARTrawDataInHostFormat, 4);
+//  uint32_t SMARTrawDataInHostFormat;
+//  SMARTrawDataInHostFormat = htonl(currentSMARTrawValue);
+}
+
+void SMARTmonitorService::SendBytes(std::string & xmlString)
+{
+  const uint16_t numOverallBytes = xmlString.length() + 2;
+  LOGN("# bytes to send:" << numOverallBytes << " XML data:" << numOverallBytes - 2)
+  int clientSocketFileDesc;
+  uint8_t * array = new uint8_t[numOverallBytes];
+  
+  memcpy(array + 2, xmlString.c_str(), numOverallBytes - 2);
+  const uint16_t byteSizeInNWbyteOrder = htons(xmlString.length());
+  memcpy(array, & byteSizeInNWbyteOrder, 2);
+  
+  m_clientsCriticalSection.Enter();
+  std::vector<int>::const_iterator iter = m_clientSocketFileDescVector.begin();
+  for( ; iter != m_clientSocketFileDescVector.end() ; iter ++)
+  {
+    clientSocketFileDesc = *iter;
+    int n = write(clientSocketFileDesc, array, numOverallBytes);
+    if (n < 0) 
+      LOGN_ERROR("ERROR writing to socket file desc " << clientSocketFileDesc)
+    else
+      LOGN("successfully wrote " << numOverallBytes << " bytes to file descr." 
+        << clientSocketFileDesc)
+  }
+  m_clientsCriticalSection.Leave();
+  delete [] array;
 }
 
 void SMARTmonitorService::BeforeWait()
@@ -134,11 +193,18 @@ void SMARTmonitorService::BeforeWait()
     SMARTaccess.getSMARTattributesToObserve();
   LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
 
+  std::ostringstream oss;
   unsigned lineNumber = 0;
   for(fastestUnsignedDataType currentDriveIndex = 0;
     currentDriveIndex < numberOfDifferentDrives;
     ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
   {
+    const SMARTuniqueID & SMARTuniqueID = SMARTuniqueIDandValuesIter->
+      getSMARTuniqueID();
+    oss << "<data_carrier model=\"" << SMARTuniqueID.m_modelName << "\""
+      << " firmware=\"" << SMARTuniqueID.m_firmWareName << "\""
+      << " serial_number=\"" << SMARTuniqueID.m_serialNumber << "\">";
+    
 //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
     std::set<SkSmartAttributeParsedData>::const_iterator
       SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
@@ -149,9 +215,14 @@ void SMARTmonitorService::BeforeWait()
     {
       SMARTattributeID = SMARTattributesToObserveIter->id;
       currentSMARTrawValue = SMARTuniqueIDandValuesIter->m_SMARTrawValues[SMARTattributeID];
+      oss << "<SMART ID=\"" << SMARTattributeID << "\" raw_value=\"" 
+        << currentSMARTrawValue << "\"/>";
 
-      m_arSMARTrawValue[lineNumber];
+      //m_arSMARTrawValue[lineNumber];  
     }
+    oss << "</data_carrier>";
+    std::string xmlString = oss.str();
+    SendBytes(xmlString);  
   }
 }
 

@@ -15,6 +15,8 @@
 #define SMARTMONITORSERVICE_HPP
 
 #include "../SMARTmonitorBase.hpp"
+#include "multithread/nativeCriticalSectionType.hpp"
+#include <vector> //std::vector
 
 class SMARTmonitorService
   : public SMARTmonitorBase
@@ -24,14 +26,19 @@ public:
   SMARTmonitorService(const SMARTmonitorService& orig);
   virtual ~SMARTmonitorService();
   
+  void SendBytes(std::string & xmlString);
+  void AddClient(const int clientSocketFileDesc);
   void BeforeWait();
   void AfterGetSMARTvaluesLoop();
   void WaitForSignal();
   static DWORD ClientConnThreadFunc(void * p_v);
-
+  
+  static int s_socketFileDesc;
 private:
+  std::vector<int> m_clientSocketFileDescVector;
   pthread_cond_t cond;
   pthread_mutex_t mutex;
+  CriticalSection_type m_clientsCriticalSection;
 };
 
 #endif /* SMARTMONITORSERVICE_HPP */

@@ -302,7 +302,7 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   LOGN("using config file path: \"" << stdwstrConfigPathWithoutExtension << "\"")
 }
 
-void SMARTmonitorBase::InitializeSMART()
+fastestUnsignedDataType SMARTmonitorBase::InitializeSMART()
 {
   std::wstring stdwstrWorkingDirWithConfigFilePrefix;
   ConstructConfigFilePath(stdwstrWorkingDirWithConfigFilePrefix);
@@ -324,7 +324,7 @@ void SMARTmonitorBase::InitializeSMART()
     {
       ShowMessage("access denied to S.M.A.R.T.\n->restart this program as an"
         " administrator\n->program exits after closing this message box");
-//      return false;
+      return 1;
     }
     else
       LOGN("SMART successfully accessed")
@@ -335,6 +335,7 @@ void SMARTmonitorBase::InitializeSMART()
       "->this application will exit now.");
     throw e;
   }
+  return 0;
   LOGN("end")
 }
 

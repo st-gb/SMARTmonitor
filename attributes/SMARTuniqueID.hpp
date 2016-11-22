@@ -20,9 +20,9 @@
 #endif
   /** Same structure as in Linux' "atasmart.h" */
   struct SMARTuniqueID {
-    char serial[21];
-    char firmware[9];
-    char model[41];
+    char m_serialNumber[21];
+    char m_firmWareName[9];
+    char m_modelName[41];
     SMARTuniqueID & operator = (const SMARTuniqueID & l);
     SMARTuniqueID() { }
 #ifdef __linux__
@@ -34,10 +34,13 @@
     friend std::ostream & operator << ( std::ostream & ostr,
       const SMARTuniqueID & obj)
     {
-      ostr << obj.firmware << " " << obj.model << " " << obj.serial;
+      ostr << obj.m_firmWareName << " " << obj.m_modelName << " " << obj.m_serialNumber;
       return ostr;
     }
     std::string str() const;
+    void SetModelName(const char *);
+    void SetSerialNumber(const char *);
+    void SetFirmwareName(const char *);
   };
 //#endif
 //#endif

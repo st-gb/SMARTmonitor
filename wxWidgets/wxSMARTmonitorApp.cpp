@@ -126,9 +126,12 @@ bool wxSMARTmonitorApp::OnInit()
     gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), //m_wxSMARTvalueProcessor
       m_SMARTvalueProcessor);
     gs_dialog->Show(true);
-    InitializeSMART();
-    //TODO exchange by wxGetApp().StartAsyncUpdateThread();
-    gs_dialog->StartAsyncUpdateThread();
+    const fastestUnsignedDataType result = InitializeSMART();
+    if( result == 0)
+    {
+      //TODO exchange by wxGetApp().StartAsyncUpdateThread();
+      gs_dialog->StartAsyncUpdateThread();
+    }
   }
   /** Thrown by mp_configurationLoader->LoadConfiguration(..:) */
   catch(const FileException & fe) 

@@ -8,7 +8,7 @@ set(CMAKE_DEBUG_POSTFIX "_debug")
 #set(<variable> <value>  ... <valueN>)
 set(COMMON_SOURCECODE_ROOT_PATH /home/sg/SourceCodeManagement/common_sourcecode)
 set(WXWIDGETS_SOURCECODE_ROOT_PATH )
-#set(VTRANS3_ROOT_PATH ${PROJECT_SOURCE_DIR} )
+set(TINYXML_ROOT_PATH /home/sg/SourceCodeManagement/tinyxml2-master )
 
 #from http://stackoverflow.com/questions/12896988/passing-the-argument-to-cmake-via-command-prompt
 # on command line: "-DEXE_TYPE:STRING=wxGUI"
@@ -49,6 +49,7 @@ set( INCLUDE_DIRS
   ${COMMON_SOURCECODE_ROOT_PATH}
   ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
   ${PROJECT_SOURCE_DIR}
+  ${TINYXML_ROOT_PATH}
 )
 message("include directories: ${INCLUDE_DIRS}")
 
@@ -159,6 +160,13 @@ if( ${EXE_TYPE} STREQUAL "UNIX_service")
   )
 endif(${EXE_TYPE} STREQUAL "UNIX_service")
 
+if( ${EXE_TYPE} STREQUAL "wxGUI")
+  set(SOURCE_FILE_PATHS
+    ${SOURCE_FILE_PATHS}
+    ${PROJECT_SOURCE_DIR}/client/SMARTmonitorClient.cpp
+  )
+endif(${EXE_TYPE} STREQUAL "wxGUI")
+
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
   ${CLIENT_SERVER_BASE_SOURCE_FILES}
@@ -185,7 +193,12 @@ endif (DEFINED WXWIDGETS)
 
 if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(EXE_NAME wx${PROJECT_NAME}_GUI)
+  set(SOURCE_FILE_PATHS 
+    ${SOURCE_FILE_PATHS}
+    ${TINYXML_ROOT_PATH}/tinyxml2.cpp
+    )
   add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
+  #set( LIBRARIES ${LIBRARIES} tinyxml2 )
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
   set(EXE_NAME ${PROJECT_NAME}_service)
