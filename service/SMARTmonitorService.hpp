@@ -17,6 +17,7 @@
 #include "../SMARTmonitorBase.hpp"
 #include "multithread/nativeCriticalSectionType.hpp"
 #include <vector> //std::vector
+#include <set> //class std::set
 
 class SMARTmonitorService
   : public SMARTmonitorBase
@@ -32,10 +33,15 @@ public:
   void AfterGetSMARTvaluesLoop();
   void WaitForSignal();
   static DWORD ClientConnThreadFunc(void * p_v);
+  void RemoveFileDescsOfBrokenSocketConns(
+    std::vector<int> & fileDescsToDelete);
   
   static int s_socketFileDesc;
 private:
-  std::vector<int> m_clientSocketFileDescVector;
+  // std::vector<int> m_clientSocketFileDescVector;
+  /** Preferred STL container because it's able to insert and delete easily,
+      also no double values are possible */
+  std::set<int> m_clientSocketFileDescSet;
   pthread_cond_t cond;
   pthread_mutex_t mutex;
   CriticalSection_type m_clientsCriticalSection;

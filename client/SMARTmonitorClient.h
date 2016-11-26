@@ -24,12 +24,14 @@ public:
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
 
+  enum TransmissionError { numBytesToReceive, SMARTdata};
   int m_socketFileDesc;
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(uint8_t * SMARTvalues, unsigned numBytesToRead,
     /*std::set<SMARTuniqueIDandValues> & */ SMARTuniqueIDandValues &);
   fastestUnsignedDataType ConnectToServer(const char * hostName);
   fastestUnsignedDataType  GetSMARTvaluesFromServer(std::set<SMARTuniqueIDandValues> & );
+  void HandleTransmissionError(enum TransmissionError transmissionError);
 private:
 
 };

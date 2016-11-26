@@ -14,6 +14,7 @@
 #include "SMARTmonitorService.hpp"
 #include <sys/socket.h> //socket(...), bind(...), ...)
 #include <netinet/in.h> //struct sockaddr_in
+#include "Controller/time/GetTickCount.hpp" //OperatingSystem::GetTimeCountInNanoSeconds(...)
 
 int SMARTmonitorService::s_socketFileDesc = 0;
 
@@ -88,10 +89,12 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
       do
       {
         socklen_t sizeOfClientAddrInB = sizeof(client_address);
-        LOGN("Waiting for a socket client to accept on port" << portNumber)
-        const int clientSocketFileDesc = accept(socketFileDesc, 
-                   (struct sockaddr *) & client_address, 
-                   & sizeOfClientAddrInB);
+        LOGN("Waiting for a socket client to accept on file descr." << 
+          socketFileDesc << ",port " << portNumber)
+        const int clientSocketFileDesc = accept(
+          socketFileDesc, 
+          (struct sockaddr *) & client_address, 
+          & sizeOfClientAddrInB);
         if (clientSocketFileDesc < 0)
         {
           LOGN_ERROR("Failed to accept client")
@@ -116,16 +119,29 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
 void SMARTmonitorService::AddClient(const int clientSocketFileDesc)
 {
   m_clientsCriticalSection.Enter();
-  m_clientSocketFileDescVector.push_back(clientSocketFileDesc);
+  //m_clientSocketFileDescVector.push_back(clientSocketFileDesc);
+  LOGN("adding client with file descr. " << clientSocketFileDesc)
+  m_clientSocketFileDescSet.insert(clientSocketFileDesc);
   m_clientsCriticalSection.Leave();  
 }
 
 void SMARTmonitorService::AfterGetSMARTvaluesLoop() {
+  LOGN("closing server socket file descr." << s_socketFileDesc)
   //from http://www.mombu.com/microsoft/t-how-to-cancel-a-blocking-socket-call-12612626.html
   //"Is the server multithreaded? If so, then closing the socket on another 
   //thread will unblock the accept() call."
-  LOGN("closing socket file descr.")
+  //see http://stackoverflow.com/questions/2486335/wake-up-thread-blocked-on-accept-call
+  const int shutdownResult = shutdown(s_socketFileDesc, SHUT_RDWR);
+  if( shutdownResult == 0)
+    LOGN("successfully shut down server socket")
+  else
+    LOGN_ERROR("Error shuting down server socket")
   close(s_socketFileDesc);
+//  LOGN("closing all client socket file descr." << s_socketFileDesc)
+//  m_clientsCriticalSection.Enter();
+//  m_clientSocketFileDescVector.push_back(clientSocketFileDesc);
+//  m_clientsCriticalSection.Leave();
+
   LOGN("locking mutex for signalling")
   pthread_mutex_lock(&mutex);
   LOGN("signalling the main thread to end")
@@ -148,6 +164,30 @@ void SendSMART_IDandRawValue()
 //  SMARTrawDataInHostFormat = htonl(currentSMARTrawValue);
 }
 
+void SMARTmonitorService::RemoveFileDescsOfBrokenSocketConns(
+  std::vector<int> & fileDescsToDelete)
+{
+  //TODO remove broken connections from clients list and stop get SMART data loop
+  // if no more clients
+  for( std::vector<int>::const_iterator iter = fileDescsToDelete.begin();
+    iter != fileDescsToDelete.end(); iter ++)
+  {
+//    int n = * iter;
+//    std::vector<int>::iterator iterToDelete = std::find(
+//        m_clientSocketFileDescVector.begin(), 
+//        m_clientSocketFileDescVector.end(),
+//        n);
+    //if( m_clientSocketFileDescVector.
+//    if( iterToDelete != m_clientSocketFileDescVector.end() )
+//    {
+//      m_clientSocketFileDescVector.erase(iterToDelete);
+//    }
+    LOGN("Removing client with file descr. " << *iter << " from list "
+      "because of broken socket connection")
+    m_clientSocketFileDescSet.erase(*iter);
+  }
+}
+
 void SMARTmonitorService::SendBytes(std::string & xmlString)
 {
   const uint16_t numOverallBytes = xmlString.length() + 2;
@@ -160,17 +200,33 @@ void SMARTmonitorService::SendBytes(std::string & xmlString)
   memcpy(array, & byteSizeInNWbyteOrder, 2);
   
   m_clientsCriticalSection.Enter();
-  std::vector<int>::const_iterator iter = m_clientSocketFileDescVector.begin();
-  for( ; iter != m_clientSocketFileDescVector.end() ; iter ++)
+  //std::vector<int>::const_iterator socketFileDescIter = m_clientSocketFileDescVector.begin();
+  std::set<int>::const_iterator socketFileDescIter = m_clientSocketFileDescSet.begin();
+  std::vector<int> fileDescsToDelete;
+  for( ; socketFileDescIter != m_clientSocketFileDescSet.end() ; socketFileDescIter ++)
   {
-    clientSocketFileDesc = *iter;
+    clientSocketFileDesc = *socketFileDescIter;
     int n = write(clientSocketFileDesc, array, numOverallBytes);
-    if (n < 0) 
-      LOGN_ERROR("ERROR writing to socket file desc " << clientSocketFileDesc)
+    if (n < 0)
+    {
+      std::ostringstream stdoss;
+      stdoss << "error writing to socket with file desc " 
+        << clientSocketFileDesc << " OS error number:" << errno << ".";
+      switch(errno)
+      {
+        case EPIPE :
+          //see https://linux.die.net/man/2/write
+          stdoss << "The reading end of socket is closed.";
+          fileDescsToDelete.push_back(clientSocketFileDesc);
+          break;
+      }
+      LOGN_ERROR(stdoss.str())
+    }
     else
       LOGN("successfully wrote " << numOverallBytes << " bytes to file descr." 
         << clientSocketFileDesc)
   }
+  RemoveFileDescsOfBrokenSocketConns(fileDescsToDelete);
   m_clientsCriticalSection.Leave();
   delete [] array;
 }
@@ -194,6 +250,7 @@ void SMARTmonitorService::BeforeWait()
   LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
 
   std::ostringstream oss;
+  oss.precision(3); //Allow 3 digits right of decimal point
   unsigned lineNumber = 0;
   for(fastestUnsignedDataType currentDriveIndex = 0;
     currentDriveIndex < numberOfDifferentDrives;
@@ -208,16 +265,32 @@ void SMARTmonitorService::BeforeWait()
 //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
     std::set<SkSmartAttributeParsedData>::const_iterator
       SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
-    long int currentSMARTrawValue;
+//    long int currentSMARTrawValue;
+    //TimeCountInNanosec_type timeCountInNanoSeconds;
+//    long double timeCountInSeconds;
+    SMARTvalue sMARTvalue;
     //TODO crashes here (iterator-related?!-> thread access problem??)
     for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
         SMARTattributesToObserveIter ++, ++lineNumber )
     {
       SMARTattributeID = SMARTattributesToObserveIter->id;
-      currentSMARTrawValue = SMARTuniqueIDandValuesIter->m_SMARTrawValues[SMARTattributeID];
-      oss << "<SMART ID=\"" << SMARTattributeID << "\" raw_value=\"" 
-        << currentSMARTrawValue << "\"/>";
-
+      //OperatingSystem::GetTimeCountInNanoSeconds(timeCountInNanoSeconds);
+      //OperatingSystem::GetTimeCountInSeconds(timeCountInSeconds);
+      sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];
+      
+      float fTimeInS = sMARTvalue.m_timeStampOfRetrieval;
+      fTimeInS /= 1000.0f;
+      LOGN("time in [s] as int * 1000: " << sMARTvalue.m_timeStampOfRetrieval 
+          << "as float:" << fTimeInS)
+      if( sMARTvalue.IsConsistent(SMARTrawValue) )
+      {
+        oss << "<SMART ID=\"" << SMARTattributeID 
+          << "\" raw_value=\"" << SMARTrawValue 
+          << "\" time_in_s=\"" << 
+          /** Ensure not using scientific output (exponent representation/notation) */
+          std::fixed 
+          << fTimeInS << "\"/>";
+      }
       //m_arSMARTrawValue[lineNumber];  
     }
     oss << "</data_carrier>";

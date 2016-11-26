@@ -53,7 +53,7 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
 {
   //InitializeLogger(); 
   //mp_SMARTaccess = & m_wxSMARTvalueProcessor.getSMARTaccess();
-  LOGN("SMART access pointer:" << mp_SMARTaccess)
+  //LOGN("SMART access pointer:" << mp_SMARTaccess)
 }
 
 wxSMARTmonitorApp::~wxSMARTmonitorApp()
@@ -105,6 +105,7 @@ void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
 bool wxSMARTmonitorApp::OnInit()
 {
   CreateCommandLineArgsArrays();
+  InitializeLogger();
   CreateTaskBarIcon();
   //m_wxSMARTvalueProcessor.Init();
   //InitializeSMART();

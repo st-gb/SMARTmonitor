@@ -10,26 +10,51 @@
 
 #include "SMARTuniqueID.hpp" //struct SMARTuniqueID
 #include <stdint.h> //uint64_t
+//#include "SMARTaccessBase.hpp"
+#include <fastest_data_type.h>
+
+//class SMARTaccessBase;
 
 #define NUM_DIFFERENT_SMART_ENTRIES 256
+
+class SMARTvalue
+{
+public:
+  SMARTvalue() {}
+  SMARTvalue(SMARTvalue & copyFrom); //copy constructor
+  SMARTvalue & operator = ( const SMARTvalue & rhs ); //assignment operator
+  
+  //calculation of array size adapted from 
+  // http://stackoverflow.com/questions/4079243/how-can-i-use-sizeof-in-a-preprocessor-macro
+  // Dats types must be long int for atomic operations
+  long int m_rawValue [sizeof(long int) < 8 ? 8 / sizeof(long int) : 8];
+  long int m_rawValueCheckSum;
+  long int m_timeStampOfRetrieval;
+  long int m_successfullyReadSMARTrawValue;
+  
+  void SetRawValue(/*long int * ,*/ const uint64_t & rawSMARTattrValue);
+  bool IsConsistent(uint64_t &) const;
+};
 
 class SMARTuniqueIDandValues
 {
 private:
   SMARTuniqueID m_SMARTuniqueID;
 public:
-  /*uint64_t*/ long int m_SMARTrawValues[NUM_DIFFERENT_SMART_ENTRIES];
-  long int m_successfullyReadSMARTrawValue[NUM_DIFFERENT_SMART_ENTRIES];
+//  /*uint64_t*/ long int m_SMARTrawValues[NUM_DIFFERENT_SMART_ENTRIES];
+//  long int m_successfullyReadSMARTrawValue[NUM_DIFFERENT_SMART_ENTRIES];
+//  long int m_timeStampOfRetrieval[NUM_DIFFERENT_SMART_ENTRIES];
+  SMARTvalue m_SMARTvalues[NUM_DIFFERENT_SMART_ENTRIES];
   SMARTuniqueIDandValues (const SMARTuniqueID & _SMARTuniqueID);
   SMARTuniqueIDandValues () {}
   SMARTuniqueIDandValues( const SMARTuniqueIDandValues &);
-  virtual
-  ~SMARTuniqueIDandValues ();
+  virtual ~SMARTuniqueIDandValues ();
 
   const SMARTuniqueID & getSMARTuniqueID() const { return m_SMARTuniqueID; }
   void SetDataCarrierID(const SMARTuniqueID & sMARTuniqueID) {
     m_SMARTuniqueID = sMARTuniqueID;
   }
+  int GetSMARTentry(fastestUnsignedDataType SMART_ID, SMARTvalue & sMARTvalue);
 };
 
 bool operator < (const SMARTuniqueIDandValues & left,

@@ -22,16 +22,18 @@
 #include <ConfigLoader/ParseConfigFileException.hpp>
 #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <Controller/time/GetTickCount.hpp>
+#include <FileSystem/PathSeperatorChar.hpp>
 
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 fastestSignedDataType SMARTmonitorBase::s_updateSMARTvalues = 1;
+extern const char FileSystem::dirSeperatorChar;
 
 SMARTmonitorBase::SMARTmonitorBase() 
 {
   mp_SMARTaccess = & m_SMARTvalueProcessor.getSMARTaccess();
   mp_configurationLoader = new libConfig::ConfigurationLoader(
     (SMARTaccessBase::SMARTattributesType &) mp_SMARTaccess->getSMARTattributesToObserve(), * this);
-  InitializeLogger();
+//  InitializeLogger();
 }
 
 SMARTmonitorBase::~SMARTmonitorBase() {
@@ -58,10 +60,25 @@ void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv)
   m_commandLineArgs.Set(argc, (wchar_t **) m_cmdLineArgStrings);
 }
 
+  std::wstring GetExeFileName(const wchar_t * const ar_wchFullProgramPath)
+  {
+    std::wstring stdwstrFullProgramPath(ar_wchFullProgramPath);
+    int charIndexOfLastDirSepChar = stdwstrFullProgramPath.rfind(FileSystem::
+      dirSeperatorChar);
+    if( charIndexOfLastDirSepChar != std::wstring::npos)
+    {
+      return stdwstrFullProgramPath.substr(charIndexOfLastDirSepChar + 1);
+    }
+    return stdwstrFullProgramPath;
+  }
+
 void SMARTmonitorBase::InitializeLogger()
 {
   LogLevel::CreateLogLevelStringToNumberMapping();
-  std::string stdstrLogFilePath("SMARTmonitor.txt");
+  //std::string stdstrLogFilePath("SMARTmonitor.txt");
+  std::wstring stdwstrProgramePath = GetExeFileName(m_commandLineArgs.GetProgramPath() );
+    stdwstrProgramePath += L"_log.txt";
+  std::string stdstrLogFilePath = GetStdString_Inline(stdwstrProgramePath);
   try
   {
     g_logger.OpenFileA(stdstrLogFilePath, "log4j", 4000, LogLevel::debug);
@@ -117,6 +134,23 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
   }
 }
 
+std::string SMARTmonitorBase::Format(
+  fastestUnsignedDataType SMARTattributeID, 
+  const uint64_t & SMARTrawValue)
+{
+  std::ostringstream stdoss;
+  switch(SMARTattributeID)
+  {
+    case 9:
+      stdoss << SMARTrawValue << " ms";
+      break;
+    default:
+      stdoss << SMARTrawValue;
+      break;
+  }
+  return stdoss.str();
+}
+
 void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
 {
   DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
@@ -142,6 +176,7 @@ void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
         SMARTaccess.getSMARTattributesToObserve();
       LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
       //TODO crashed in loop header at "iter++"
+      bool consistent;
       for(fastestUnsignedDataType currentDriveIndex = 0 /*, ucT4 = 0*/;
         currentDriveIndex < numberOfDifferentDrives;
         ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
@@ -149,18 +184,15 @@ void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
     //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
         std::set<SkSmartAttributeParsedData>::const_iterator
           SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
-        long int currentSMARTrawValue;
+        uint64_t currentSMARTrawValue;
         //TODO crashes here (iterator-related?!-> thread access problem??)
         for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
             SMARTattributesToObserveIter ++)
         {
           SMARTattributeID = SMARTattributesToObserveIter->id;
-          currentSMARTrawValue = SMARTuniqueIDandValuesIter->m_SMARTrawValues[SMARTattributeID];
-
-          AtomicExchange( (long int *) & m_arSMARTrawValue[lineNumber] //long * Target
-            , /*pSmartInfo->m_dwAttribValue*/
-            //* (long int *) //SMARTattributesToObserveIter->pretty_value /*raw*/ /*long val*/
-            currentSMARTrawValue);
+          
+          consistent = SMARTuniqueIDandValuesIter->m_SMARTvalues[
+            SMARTattributeID].IsConsistent( m_arSMARTrawValue[lineNumber]);
 //          AtomicExchange( (long int *) & m_arSMART_ID[lineNumber]
           LOGN(m_arSMARTrawValue[lineNumber] << " " << currentSMARTrawValue)
           AtomicExchange(

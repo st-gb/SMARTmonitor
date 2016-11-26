@@ -15,7 +15,7 @@
 
 #ifdef __linux__
   #include <Linux/daemon/daemon.h>
-
+  
   #include "service/SMARTmonitorService.hpp"
 #endif
 #include "hardware/CPU/atomic/AtomicExchange.h"
@@ -31,11 +31,15 @@ static void child_handler(int signum)
   switch(signum)
   {
   case SIGALRM: exit(EXIT_FAILURE); break;
-  case SIGUSR1: exit(EXIT_SUCCESS); break;
+    case SIGPIPE:
+      LOGN_ERROR("pipe/socket is broken")
+      break;
+  //case SIGUSR1: exit(EXIT_SUCCESS); break;
   case SIGCHLD: exit(EXIT_FAILURE); break;
     case SIGTERM:
     case SIGKILL:
-      LOGN("received term or kill signal")
+    case SIGINT:
+      LOGN("received term or kill or interrupt signal")
       
       LOGN("ending get SMART values loop");
       /** Inform the SMART values update thread about we're going to exit,*/
@@ -53,8 +57,11 @@ void TrapSignals2()
   signal(SIGKILL, child_handler);
   signal(SIGUSR1, child_handler);
   signal(SIGALRM, child_handler);
+  signal(SIGPIPE, child_handler);
   //SIGHUP = Reload config signal.
   signal(SIGHUP, child_handler);
+  signal(SIGINT, child_handler);
+
 }
 
 /*
@@ -70,6 +77,7 @@ int main(int argc, char** argv) {
   
   //TODO set command line args
   SMARTmonitor.SetCommandLineArgs(argc, argv);
+  SMARTmonitor.InitializeLogger();
   
   //std::wstring stdwstrConfigPathWithoutExtension;
   //SMARTmonitor.ConstructConfigFilePath(stdwstrConfigPathWithoutExtension);

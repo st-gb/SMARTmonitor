@@ -10,7 +10,6 @@
 
 #include <SMARTaccessBase.hpp> //base class SMARTreaderBase
 #include <string> //class std::string
-#include <attributes/SMARTattributeNameAndID.hpp>
 #include <vector> //class std::vector
 
 namespace libatasmart
@@ -28,11 +27,14 @@ namespace libatasmart
                           std::vector<SMARTattributeNameAndID> & );
 
   static void getSMARTrawValueCallback(
-    SkDisk *d,
+    SkDisk * d,
     const SkSmartAttributeParsedData *a,
     struct libatasmart::attr_helper *ah);
 
-  int readAttribute(const char attributeName [], SkDisk * p_skDisk, uint64_t & value);
+  int readAttribute(/*const char attributeName []*/
+    fastestUnsignedDataType SMARTattributeID,
+    SkDisk * p_skDisk, 
+    uint64_t & value);
 
   class SMARTaccess
     : public SMARTaccessBase
@@ -43,7 +45,11 @@ namespace libatasmart
     ~SMARTaccess ();
 
     enum SMARTaccessBase::retCodes readSmartForDevice(const char device []);
+    int GetSupportedSMART_IDs(
+      const char * const device,
+      std::vector<SMARTattributeNameAndID> & SMARTattributeNamesAndIDs);
     enum SMARTaccessBase::retCodes ReadSMARTValuesForAllDrives();
+    void copySMARTvalues(const  SkDisk *, const SkIdentifyParsedData *);
   };
 
 } /* namespace libatasmart */

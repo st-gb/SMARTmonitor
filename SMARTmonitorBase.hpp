@@ -46,11 +46,14 @@ public:
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
     return s_numberOfMilliSecondsToWaitBetweenSMARTquery;
     }
+  std::string Format(fastestUnsignedDataType SMARTattributeID, 
+    const uint64_t & SMARTrawValue);
   
   static fastestSignedDataType s_updateSMARTvalues;
-  /*DWORD*/ long int m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
+  /*DWORD*/ uint64_t m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
 //  long int m_arSMART_ID[255]; //provide space for up t 255 SMART attribute values
   long int m_arTickCountOfLastQueryInMilliSeconds[255];
+  void InitializeLogger();
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
   const wchar_t ** m_cmdLineArgStrings;
@@ -59,7 +62,6 @@ protected:
    *  libATAsmart's SMART access class. So create the config loader on heap.*/
 //  libConfig::ConfigurationLoader configurationLoader;
   libConfig::ConfigurationLoader * mp_configurationLoader;
-  void InitializeLogger();
   CommandLineArgs</*charType*/ wchar_t> m_commandLineArgs;
   nativeThread_type m_updateSMARTparameterValuesThread;
 

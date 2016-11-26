@@ -17,6 +17,7 @@
 #include <netdb.h> //gethostbyname(...)
 #include <stdint.h> //uint8_t
 #include "tinyxml2.h" //
+#include "hardware/CPU/atomic/AtomicExchange.h"
 
 SMARTmonitorClient::SMARTmonitorClient() {
 }
@@ -61,6 +62,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostNam
     //see http://man7.org/linux/man-pages/man2/connect.2.html
     switch(errno )
     {
+      //see http://man7.org/linux/man-pages/man2/connect.2.html
       case ECONNREFUSED :
         oss << "No process listening on the remote address \"" << hostName 
           << "\", port:" << portNumber;
@@ -110,25 +112,35 @@ void HandleSingleSMARTentry(
   tinyxml2::XMLElement * p_SMARTelement,
   SMARTuniqueIDandValues & sMARTuniqueIDandValues)
 {
-  const int SMART_ID = p_SMARTelement->IntAttribute("ID", 0);
-  if( SMART_ID >= NUM_DIFFERENT_SMART_ENTRIES)
+  const int SMARTattributeID = p_SMARTelement->IntAttribute("ID", 0);
+  if( SMARTattributeID >= NUM_DIFFERENT_SMART_ENTRIES)
   {
-    LOGN_ERROR("SMART ID too high:" << SMART_ID)
+    LOGN_ERROR("SMART ID too high:" << SMARTattributeID)
     return;
   }
-  if( SMART_ID < 0)
+  if( SMARTattributeID < 0)
   {
-    LOGN_ERROR("SMART ID is negative:" << SMART_ID)
+    LOGN_ERROR("SMART ID is negative:" << SMARTattributeID)
     return;
   }
-  const int SMART_raw_value = p_SMARTelement->IntAttribute("raw_value", 0);
+  const int64_t SMART_raw_value = p_SMARTelement->Int64Attribute("raw_value", 0);
+  SMARTvalue & sMARTvalue = sMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID];
   if( SMART_raw_value < 0)
   {
-    LOGN_ERROR("SMART raw value is negative:" << SMART_raw_value)
+    LOGN_ERROR("SMART raw value for attrib ID " << SMARTattributeID 
+      << " is negative:" << SMART_raw_value)
+    //sMARTuniqueIDandValues.m_successfullyReadSMARTrawValue[SMARTattributeID] = 0;
+    AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 0);
     return;
   }
-  LOGN("adding SMART raw value " << SMART_raw_value << " to ID " << SMART_ID)
-  sMARTuniqueIDandValues.m_SMARTrawValues[SMART_ID] = SMART_raw_value;
+  AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 1);
+  const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
+  
+  AtomicExchange(& sMARTvalue.m_timeStampOfRetrieval, timeInS * 1000.0f );
+  
+  LOGN("adding SMART raw value " << SMART_raw_value << " (time:" << timeInS 
+    << ") to SMART ID " << SMARTattributeID)
+  sMARTvalue.SetRawValue(SMART_raw_value);
 }
 
 void GetSMARTrawValues(
@@ -141,6 +153,9 @@ void GetSMARTrawValues(
     LOGN_ERROR("no SMART XML element name below the root element")
     return;
   }
+  /** from http://stackoverflow.com/questions/13919817/sscanf-and-locales-how-does-one-really-parse-things-like-3-14 :
+   *  For "FloatAttribute" which uses "sscanf" to use "." as a decimal point. */
+  setlocale(LC_NUMERIC, "C");
   HandleSingleSMARTentry(p_SMARTelement, sMARTuniqueIDandValues);
   
   p_SMARTelement = p_SMARTelement->NextSiblingElement("SMART");
@@ -189,10 +204,38 @@ void SMARTmonitorClient::GetSMARTdataViaXML(
   //sMARTuniqueIDandValuesContainter.insert(sMARTuniqueIDandValues);
 }
 
+void SMARTmonitorClient::HandleTransmissionError( 
+  enum SMARTmonitorClient::TransmissionError transmissionError)
+{
+  std::ostringstream stdoss;
+  switch(transmissionError)
+  {
+    case numBytesToReceive :
+      stdoss << "ERROR reading the number of following bytes from socket";
+      break;
+    case SMARTdata :
+      stdoss << "ERROR reading SMART data from socket";
+      break;
+  }
+  if( errno != 0)
+    stdoss << strerror(errno);
+  switch(errno)
+  {
+    case EPIPE :
+      //see https://linux.die.net/man/2/write
+      stdoss << "The reading end of socket is closed.";
+      break;
+  }
+  LOGN_ERROR(stdoss.str() );
+  ShowMessage(stdoss.str().c_str());
+  //TODO close socket, set status (also in UI) to unconnected
+}
+
 fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
   std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer)
 {
   LOGN("begin")
+  sMARTuniqueIDandValuesContainer.clear();
   //int lineNumber = 0;
   //uint8_t array[5];
   uint16_t numBytesToRead;
@@ -203,7 +246,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
     
     int numBytesRead = read(m_socketFileDesc, & numBytesToRead, 2);
     if( numBytesRead < 2 ) {
-      LOGN_ERROR("ERROR reading the number of following bytes from socket");
+      HandleTransmissionError(numBytesToReceive);
       return 1;
     }
     numBytesToRead = ntohs(numBytesToRead);
@@ -215,14 +258,23 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
     {
       numBytesRead = read(m_socketFileDesc, SMARTvalues, numBytesToRead);
       if (numBytesRead < numBytesToRead) {
+        HandleTransmissionError(SMARTdata);
         LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
           << numBytesToRead << ")");
-        return 2;
+        return 2; //TODO provide error handling (show message to user etc.)
       }
       SMARTvalues[numBytesToRead] = '\0';
       SMARTuniqueIDandValues sMARTuniqueIDandValues;
       GetSMARTdataViaXML(SMARTvalues, numBytesToRead, sMARTuniqueIDandValues);
-      sMARTuniqueIDandValuesContainer.insert(sMARTuniqueIDandValues);
+      LOGN("SMART unique ID and values object " << & sMARTuniqueIDandValues )
+      //sMARTuniqueIDandValuesContainer.f
+      std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert = 
+        sMARTuniqueIDandValuesContainer.insert(sMARTuniqueIDandValues);
+      LOGN("insered object into container?:" << insert.second);
+      if(insert.second)
+      {
+        LOGN("SMART unique ID and values object in container:" << &(*insert.first) )
+      }
       //RebuildGUI();
       //LOGN("got model attribute")
       //const char * modelString = p_tinyxml2XMLattribute->Value();

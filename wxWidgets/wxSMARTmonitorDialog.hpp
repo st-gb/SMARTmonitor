@@ -36,7 +36,7 @@ class SMARTdialog: public wxDialog
   nativeThread_type m_updateSMARTparameterValuesThread;
 public:
   SMARTaccess_type & m_SMARTaccess;
-  wxCondition m_wxCloseCondition;
+  wxCondition * m_p_wxCloseCondition;
   wxMutex m_wxCloseMutex;
   fastestUnsignedDataType m_updateUI;
   SMARTdialog(const wxString& title,
@@ -52,15 +52,18 @@ public:
   void ReBuildUserInterface();
 
 protected:
-    void OnAbout(wxCommandEvent& event);
-    void OnOK(wxCommandEvent& event);
-    void OnExit(wxCommandEvent& event);
-    void OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event));
-    void ConnectToServer(wxCommandEvent& WXUNUSED(event));
-    void OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event);
-    void OnCloseWindow(wxCloseEvent& event);
-    void OnTimer(wxTimerEvent& event);
-    void ReadSMARTvaluesAndUpdateUI();
+  void OnAbout(wxCommandEvent& event);
+  void OnOK(wxCommandEvent& event);
+  void OnExit(wxCommandEvent& event);
+  void OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event));
+  void ConnectToServer(wxCommandEvent& WXUNUSED(event));
+  void OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event);
+  void OnCloseWindow(wxCloseEvent& event);
+  void OnTimer(wxTimerEvent& event);
+  void ReadSMARTvaluesAndUpdateUI();
+  inline void UpdateTimeOfSMARTvalueRetrieval(
+    unsigned lineNumber,
+    long int timeStampOfRetrieval);
 
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
     MyTaskBarIcon   *m_dockIcon;

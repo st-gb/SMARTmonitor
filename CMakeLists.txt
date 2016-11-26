@@ -149,6 +149,7 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
   #${COMMON_SOURCECODE_ROOT_PATH}/data_structures/Trie/byteTrie/Trie.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/multithread/I_Thread.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/Controller/character_string/stdtstr.cpp
+  ${COMMON_SOURCECODE_ROOT_PATH}/FileSystem/PathSeperatorChar.cpp
 )
 
 if( ${EXE_TYPE} STREQUAL "UNIX_service")

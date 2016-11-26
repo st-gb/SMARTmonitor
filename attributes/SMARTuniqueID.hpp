@@ -34,7 +34,8 @@
     friend std::ostream & operator << ( std::ostream & ostr,
       const SMARTuniqueID & obj)
     {
-      ostr << obj.m_firmWareName << " " << obj.m_modelName << " " << obj.m_serialNumber;
+      ostr << "model:" << obj.m_modelName << " firmware:" << obj.m_firmWareName 
+        << " serial #:" << obj.m_serialNumber;
       return ostr;
     }
     std::string str() const;

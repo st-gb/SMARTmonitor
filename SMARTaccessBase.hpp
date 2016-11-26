@@ -11,8 +11,10 @@
 #include <fastest_data_type.h>
 #include <stddef.h> //size_t for <atasmart.h>
 #include <atasmart.h> //struct SkSmartAttributeParsedData
-#include <set> //std::set
+#include <set> //class std::set
+#include <vector> //class std::vector
 #include <attributes/SMARTuniqueIDandValues.hpp> //class SMARTuniqueIDandValues
+#include <attributes/SMARTattributeNameAndID.hpp> //class SMARTattributeNameAndID
 
 class SMARTaccessBase
 {
@@ -21,6 +23,7 @@ private:
 public:
   typedef std::set<SkSmartAttributeParsedData> SMARTattributesType;
   typedef const SMARTattributesType constSMARTattributesType;
+  static fastestUnsignedDataType s_sizeOfLongIntInBytes;
 protected:
   /*std::set<SkSmartAttributeParsedData>*/ SMARTattributesType SMARTattributesToObserve;
   std::set<SMARTuniqueIDandValues> m_SMARTuniqueIDandValues;
@@ -49,6 +52,10 @@ public:
   }
   fastestUnsignedDataType GetNumSMARTattributesToObserve() const {
     return SMARTattributesToObserve.size(); }
+  
+  virtual int GetSupportedSMART_IDs(
+    const char * const device,
+    std::vector<SMARTattributeNameAndID> & SMARTattributeNamesAndIDs) {};
 };
 
 #endif /* SMARTACCESSBASE_HPP_ */
