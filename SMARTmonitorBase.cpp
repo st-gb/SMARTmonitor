@@ -29,10 +29,11 @@ fastestSignedDataType SMARTmonitorBase::s_updateSMARTvalues = 1;
 extern const char FileSystem::dirSeperatorChar;
 
 SMARTmonitorBase::SMARTmonitorBase() 
+  : m_socketPortNumber(1000)
 {
   mp_SMARTaccess = & m_SMARTvalueProcessor.getSMARTaccess();
   mp_configurationLoader = new libConfig::ConfigurationLoader(
-    (SMARTaccessBase::SMARTattributesType &) mp_SMARTaccess->getSMARTattributesToObserve(), * this);
+    (SMARTaccessBase::SMARTattributesContainerType &) mp_SMARTaccess->getSMARTattributesToObserve(), * this);
 //  InitializeLogger();
 }
 
@@ -71,6 +72,32 @@ void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv)
     }
     return stdwstrFullProgramPath;
   }
+
+void SMARTmonitorBase::SetSMARTattributesToObserve(
+  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDandValuesContainer)
+{
+//  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
+//    wxGetApp().mp_SMARTaccess->getSMARTattributesToObserve();
+  //TODO add SMART attribute IDs to SMARTattributesToObserve
+  m_SMARTattributesToObserve.clear();
+  std::set<SMARTuniqueIDandValues>::const_iterator iter = 
+    SMARTuniqueIDandValuesContainer.begin();
+  for( ; iter != SMARTuniqueIDandValuesContainer.end(); iter++ )
+  {
+    for( int SMARTattributeID = 0; SMARTattributeID < 
+        NUM_DIFFERENT_SMART_ENTRIES; SMARTattributeID ++ )
+    {
+//    SkSmartAttributeParsedData skSmartAttributeParsedData;
+//    skSmartAttributeParsedData.id 
+//    SMARTattributesToObserve.insert();
+      const SMARTuniqueIDandValues & SMARTuniqueIDandValues = *iter;
+      LOGN_DEBUG("address of SMARTuniqueIDandValues obj:" << & SMARTuniqueIDandValues)
+      if( SMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID].
+          m_successfullyReadSMARTrawValue )
+        m_SMARTattributesToObserve.insert(SMARTattributeID);
+    }
+  }
+}
 
 void SMARTmonitorBase::InitializeLogger()
 {
@@ -142,7 +169,8 @@ std::string SMARTmonitorBase::Format(
   switch(SMARTattributeID)
   {
     case 9:
-      stdoss << SMARTrawValue << " ms";
+      stdoss.precision(1);
+      stdoss << std::fixed << (float) SMARTrawValue / 3600000 << " h";
       break;
     default:
       stdoss << SMARTrawValue;

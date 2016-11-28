@@ -20,6 +20,7 @@
 #include <SMARTvalueProcessorBase.hpp> //
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
 #include <multithread/nativeThreadType.hpp>
+#include <set> //class std::set
 
 /** Use character type in order to pass to to CommandLineArgs member variable*/
 /*template<typename charType>*/ class SMARTmonitorBase
@@ -53,7 +54,12 @@ public:
   /*DWORD*/ uint64_t m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
 //  long int m_arSMART_ID[255]; //provide space for up t 255 SMART attribute values
   long int m_arTickCountOfLastQueryInMilliSeconds[255];
+  fastestUnsignedDataType m_socketPortNumber;
+  //TODO this member isn't needed for the service
+  std::string m_stdstrServiceHostName;
   void InitializeLogger();
+  std::set<int> m_SMARTattributesToObserve;
+  void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
   const wchar_t ** m_cmdLineArgStrings;

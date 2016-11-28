@@ -21,11 +21,11 @@ class SMARTaccessBase
 private:
 //  std::set<SkIdentifyParsedData> m_SMARTuniqueIDs;
 public:
-  typedef std::set<SkSmartAttributeParsedData> SMARTattributesType;
-  typedef const SMARTattributesType constSMARTattributesType;
+  typedef std::set<SkSmartAttributeParsedData> SMARTattributesContainerType;
+  typedef const SMARTattributesContainerType constSMARTattributesType;
   static fastestUnsignedDataType s_sizeOfLongIntInBytes;
 protected:
-  /*std::set<SkSmartAttributeParsedData>*/ SMARTattributesType SMARTattributesToObserve;
+  SMARTattributesContainerType SMARTattributesToObserve;
   std::set<SMARTuniqueIDandValues> m_SMARTuniqueIDandValues;
 public:
   enum retCodes { success = 0, accessDenied};

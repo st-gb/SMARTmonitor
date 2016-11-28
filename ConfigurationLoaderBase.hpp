@@ -18,7 +18,6 @@ class ConfigurationLoaderBase
 {
 //protected:
 public:
-//  SMARTDETAILSMAP & m_oSMARTDetails;
 //  std::set<SMARTentry> & m_smartAttributesToObserve;
   std::set<SMARTentry> * mp_smartAttributesToObserve;
 

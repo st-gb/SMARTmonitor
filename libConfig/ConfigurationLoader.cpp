@@ -13,21 +13,21 @@
 #include <FileSystem/File/FileException.hpp>
 #include <iostream> //std::err
 #include <sstream> //std::ostringstream
-#include <Controller/character_string/stdtstr.hpp> //GetStdString_Inline
+#include <Controller/character_string/stdtstr.hpp>
+
+#include "SMARTmonitorBase.hpp" //GetStdString_Inline
 
 namespace libConfig
 {
 
   ConfigurationLoader::ConfigurationLoader(
-//    SMARTDETAILSMAP & oSMARTDetails ,
     std::set<SkSmartAttributeParsedData> & smartAttributesToObserve,
-    const UserInterface & r_userInterface
+    SMARTmonitorBase & r_userInterface
     )
     : ConfigurationLoaderBase(/*oSMARTDetails*/ smartAttributesToObserve)
-    , m_r_userInterface(r_userInterface)
+    , m_r_SMARTmonitorBase(r_userInterface)
   {
     // TODO Auto-generated constructor stub
-
   }
 
   ConfigurationLoader::~ConfigurationLoader()
@@ -41,15 +41,51 @@ namespace libConfig
   {
 
   }*/
+  
+  void ConfigurationLoader::ReadNetworkConfig(const libconfig::Setting & root)
+  {
+    unsigned portNumber;
+    const libconfig::Setting & netWorkConnection =
+      root["networkConnection"];
+    if( netWorkConnection.lookupValue("portNumber", portNumber) )
+    {
+      m_r_SMARTmonitorBase.m_socketPortNumber = portNumber;
+      LOGN("setting port number to " << portNumber)
+    }
+    std::string serviceHostName;
+    if( netWorkConnection.lookupValue("serviceHostName", serviceHostName) )
+    {
+      LOGN("setting service host name to " << serviceHostName)
+      m_r_SMARTmonitorBase.m_stdstrServiceHostName = serviceHostName;
+    }
+  }
+  
+  void ConfigurationLoader::GetSMARTattributesToObserve(const libconfig::Setting & root)
+  {
+    const libconfig::Setting & SMART_parameters_to_observe =
+      root["SMART_parameters_to_observe"];
+    int numSMARTparamsToObserve = SMART_parameters_to_observe.getLength();
+    int SMARTattributeID;
+    for (int i = 0; i < numSMARTparamsToObserve; ++i)
+    {
+      const libconfig::Setting & SMARTattributeIDSetting = SMART_parameters_to_observe[i];
+      libconfig::Setting::Type type = SMARTattributeIDSetting.getType();
+      if( type == libconfig::Setting::TypeInt )
+      {
+        SMARTattributeID = (int) SMARTattributeIDSetting;
+        LOGN("adding SMART attribute with ID " << (int) SMARTattributeIDSetting << 
+          " as SMART parameter to observe/monitor")
+          m_r_SMARTmonitorBase.m_SMARTattributesToObserve.insert(SMARTattributeID);
+      }
+    }
+  }
 
   bool ConfigurationLoader::LoadConfiguration(
       const std::wstring & fullFilePathOfThisExecutable)
   {
     TCHAR * szFileNameOfThisExecutable;
     int nC1, nSmartAttribs;
-//    ST_SMART_DETAILS stSD;
 
-//    m_oSMARTDetails.clear();
 //    m_smartAttributesToObserve.clear();
     mp_smartAttributesToObserve->clear();
 
@@ -72,15 +108,19 @@ namespace libConfig
           //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
 
         const libconfig::Setting & root = libConfig.getRoot();
-          const libconfig::Setting & critical_SMART_parameters =
-              root["critical_SMART_parameters"];
-        const int numCritical_SMART_parameters = critical_SMART_parameters.getLength();
+        
+        ReadNetworkConfig(root);
+        GetSMARTattributesToObserve(root);
+                
+        const libconfig::Setting & SMART_parameters =
+          root["SMART_parameters"];        
+        const int numCritical_SMART_parameters = SMART_parameters.getLength();
         std::tstring std_tstr;
-        for(int criticalSMARTparameterIndex = 0; criticalSMARTparameterIndex
-          < numCritical_SMART_parameters; ++ criticalSMARTparameterIndex)
+        for(int SMARTparameterIndex = 0; SMARTparameterIndex
+          < numCritical_SMART_parameters; ++ SMARTparameterIndex)
         {
           const libconfig::Setting & critical_SMART_parameter =
-            critical_SMART_parameters[criticalSMARTparameterIndex];
+            SMART_parameters[SMARTparameterIndex];
 //          stSmartDetails.m_bCritical = true;
           int smartAttributeID;
           std::string std_strAttribName, std_strAttribDetails;
@@ -98,14 +138,6 @@ namespace libConfig
                 //&& successfullyLookedUpDetails
               )
             {
-//              stSmartDetails.m_ucAttribId = smartAttributeID;
-//              std_tstr = GetStdTstring_Inline( std_strAttribName.c_str() );
-//              stSmartDetails.m_csAttribName = CString(std_tstr);
-              //stSD.m_csAttribDetails = std_strAttribDetails;
-//              m_oSMARTDetails.insert(
-//                  SMARTDETAILSMAP::value_type(stSmartDetails.m_ucAttribId,
-//              stSmartDetails
-
               skSmartAttributeParsedData.id = smartAttributeID;
               attributeNamesFromConfigFile.insert(std_strAttribName);
               std::set<std::string>::const_iterator citer =
@@ -117,7 +149,8 @@ namespace libConfig
               /*m_smartAttributesToObserve.*/ mp_smartAttributesToObserve->insert(
                 /*std::make_pair(smartAttributeID,*/ skSmartAttributeParsedData//)
                 );
-              LOGN("adding SMART ID" << smartAttributeID << "to " << mp_smartAttributesToObserve)
+              LOGN("adding SMART ID" << smartAttributeID << "to " 
+                  << mp_smartAttributesToObserve)
             }
           }
           else
@@ -126,13 +159,19 @@ namespace libConfig
             std_oss << "warning: no \"Id\" parameter provided for SMART "
               "parameter at " << critical_SMART_parameter.getSourceFile()
               << ":" << critical_SMART_parameter.getSourceLine();
-            m_r_userInterface.ShowMessage(std_oss.str().c_str() );
+            m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
           }
         }
       }
-      catch (const libconfig::SettingNotFoundException &nfex)
+      catch (const libconfig::SettingNotFoundException & nfex)
       {
-        std::cerr << "No 'name' setting in configuration file." << std::endl;
+        std::ostringstream std_oss;
+        std_oss << "\"" << nfex.getPath() << "\" setting not found in "
+          "configuration file \n\"" << stdstrFullConfigFilePath << "\"\n"
+          << "cause: " << nfex.what();
+        std::cerr << std_oss.str() << std::endl;
+        LOGN_ERROR(std_oss.str() )
+        m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
         //setDefaultValues = true;
       }
     }
@@ -148,11 +187,11 @@ namespace libConfig
       const int errorlineNumber = libConfigParseException.getLine();
       const char * filePath = libConfigParseException.getFile();
       std::ostringstream stdoss;
-      stdoss << "Parse error at " << filePath << ":" << errorlineNumber
-        << " - " << libConfigParseException.getError() ;
-      std::cerr << stdoss.str() << std::endl;
+      stdoss << "Parse error in file \n\"" << filePath << "\"\n, line " 
+        << errorlineNumber << " : " << libConfigParseException.getError() ;
+      LOGN_ERROR( stdoss.str() );
       //return false;
-      m_r_userInterface.ShowMessage(stdoss.str().c_str() );
+      m_r_SMARTmonitorBase.ShowMessage(stdoss.str().c_str() );
       ParseConfigFileException parseConfigFileException(
         fullFilePathOfThisExecutable.c_str(), errorlineNumber);
       throw parseConfigFileException;

@@ -38,11 +38,13 @@ public:
   SMARTaccess_type & m_SMARTaccess;
   wxCondition * m_p_wxCloseCondition;
   wxMutex m_wxCloseMutex;
+  wxButton * m_p_ConnectAndDisconnectButton;
   fastestUnsignedDataType m_updateUI;
-  SMARTdialog(const wxString& title,
+  SMARTdialog(const wxString & title,
     //const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor
     const SMARTvalueProcessorBase & SMARTvalueProcessor);
   virtual ~SMARTdialog();
+  
   void StartAsyncUpdateThread();
   void EndUpdateUIthread();
   void UpdateSMARTvaluesUI();
@@ -50,6 +52,7 @@ public:
   void SetSMARTattribIDandNameLabel();
   void SetSMARTdriveID();
   void ReBuildUserInterface();
+  void InformAboutTerminationOfUpdateThread();
 
 protected:
   void OnAbout(wxCommandEvent& event);

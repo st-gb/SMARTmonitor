@@ -62,7 +62,7 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
   if( p_SMARTmonitor )
   {
     //Code adapted from http://www.linuxhowtos.org/data/6/server.c
-    unsigned portNumber = 1000;
+    unsigned portNumber = p_SMARTmonitor->m_socketPortNumber;
     struct sockaddr_in server_address,  client_address;
     memset(&server_address, 0, sizeof(server_address)); /* Clear structure */
 

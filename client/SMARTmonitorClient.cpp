@@ -30,7 +30,7 @@ SMARTmonitorClient::~SMARTmonitorClient() {
 
 fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostName) {
   //from http://www.linuxhowtos.org/data/6/client.c
-  int portNumber = 1000, n;
+  int portNumber = m_socketPortNumber, n;
   struct sockaddr_in serv_addr;
   struct hostent *server;
   
@@ -52,11 +52,11 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostNam
        (char *)&serv_addr.sin_addr.s_addr,
        server->h_length);
   serv_addr.sin_port = htons(portNumber);
-  if (connect(m_socketFileDesc,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+  if( connect(m_socketFileDesc,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
   {
     //TODO: show error via user interface
     //Message("")
-    LOGN_ERROR("error connecting to SMART values server:" << strerror( errno ));
+    LOGN_ERROR("error connecting to SMART values service:" << strerror( errno ));
     std::ostringstream oss;
     oss << "error connecting to server:\n";
     //see http://man7.org/linux/man-pages/man2/connect.2.html
@@ -228,6 +228,8 @@ void SMARTmonitorClient::HandleTransmissionError(
   }
   LOGN_ERROR(stdoss.str() );
   ShowMessage(stdoss.str().c_str());
+  //TODO set connection status of the user interface to "network errors"/"unconnected"
+  //ChangeState(unconnected);
   //TODO close socket, set status (also in UI) to unconnected
 }
 

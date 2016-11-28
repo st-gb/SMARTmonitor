@@ -9,29 +9,35 @@
 #define LIBCONFIG_CONFIGURATIONLOADER_HPP_
 
 #include <ConfigurationLoaderBase.hpp>
-#include <UserInterface/UserInterface.hpp>
+//#include <UserInterface/UserInterface.hpp> //Base class UserInterface
+//#include <SMARTmonitorBase.hpp> //Base class SMARTmonitorBase
 #include <set> //class std::set
 #include <string> //class std::string
 
+class SMARTmonitorBase;
+namespace libconfig {
+  class Setting;
+}
+
 namespace libConfig
 {
-
   class ConfigurationLoader
     : public ConfigurationLoaderBase
   {
   private:
-    const UserInterface & m_r_userInterface;
+    SMARTmonitorBase & m_r_SMARTmonitorBase;
     std::set<std::string> attributeNamesFromConfigFile;
   public:
     ConfigurationLoader(
-//      SMARTDETAILSMAP & oSMARTDetails,
       std::set<SkSmartAttributeParsedData> & smartAttributesToObserve,
-      const UserInterface & r_userInterface);
+      SMARTmonitorBase & r_userInterface);
     virtual
     ~ConfigurationLoader();
+    
+    void ReadNetworkConfig(const libconfig::Setting & root);
     bool LoadConfiguration(const std::wstring & fullFilePathOfThisExecutable);
+    void GetSMARTattributesToObserve(const libconfig::Setting & root);
   };
-
 } /* namespace libConfig */
 
 #endif /* LIBCONFIG_CONFIGURATIONLOADER_HPP_ */

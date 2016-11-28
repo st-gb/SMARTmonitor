@@ -20,7 +20,10 @@
 class SMARTvalue
 {
 public:
-  SMARTvalue() {}
+  SMARTvalue() 
+    /** Initialization of this attribute is important for 
+     * SetSMARTattributesToObserve(...) */
+    : m_successfullyReadSMARTrawValue(0) {}
   SMARTvalue(SMARTvalue & copyFrom); //copy constructor
   SMARTvalue & operator = ( const SMARTvalue & rhs ); //assignment operator
   
