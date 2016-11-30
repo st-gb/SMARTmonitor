@@ -246,7 +246,7 @@ void SMARTmonitorService::BeforeWait()
   fastestUnsignedDataType SMARTattributeID;
   uint64_t SMARTrawValue;
   const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
-    SMARTaccess.getSMARTattributesToObserve();
+    SMARTaccess.getSMARTattributes();
   LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
 
   std::ostringstream oss;
@@ -282,7 +282,9 @@ void SMARTmonitorService::BeforeWait()
       fTimeInS /= 1000.0f;
       LOGN("time in [s] as int * 1000: " << sMARTvalue.m_timeStampOfRetrieval 
           << "as float:" << fTimeInS)
-      if( sMARTvalue.IsConsistent(SMARTrawValue) )
+      if( sMARTvalue.m_successfullyReadSMARTrawValue &&
+          //m_timeStampOfRetrieval > 0 && 
+          sMARTvalue.IsConsistent(SMARTrawValue) )
       {
         oss << "<SMART ID=\"" << SMARTattributeID 
           << "\" raw_value=\"" << SMARTrawValue 

@@ -19,7 +19,7 @@ class ConfigurationLoaderBase
 //protected:
 public:
 //  std::set<SMARTentry> & m_smartAttributesToObserve;
-  std::set<SMARTentry> * mp_smartAttributesToObserve;
+  std::set<SMARTentry> * mp_smartAttributes;
 
   ConfigurationLoaderBase(/*const*/ //SMARTDETAILSMAP & oSMARTDetails
     std::set<SkSmartAttributeParsedData> & smartAttributesToObserve )
@@ -27,7 +27,7 @@ public:
 //      m_smartAttributesToObserve(smartAttributesToObserve)
   {
     LOGN(smartAttributesToObserve.size() )
-    mp_smartAttributesToObserve = & smartAttributesToObserve;
+    mp_smartAttributes = & smartAttributesToObserve;
   }
 };
 

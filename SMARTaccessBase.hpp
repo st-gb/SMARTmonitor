@@ -36,7 +36,7 @@ public:
   /** Implement functionality in subclasses because the SMART access part is
    *  specific to Linux, Windows or used SMART library and so on.*/
   virtual enum retCodes ReadSMARTValuesForAllDrives() = 0;
-  const std::set<SkSmartAttributeParsedData> & getSMARTattributesToObserve() const
+  const std::set<SkSmartAttributeParsedData> & getSMARTattributes() const
   {
     return SMARTattributesToObserve;
   }

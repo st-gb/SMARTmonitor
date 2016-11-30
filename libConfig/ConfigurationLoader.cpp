@@ -75,7 +75,7 @@ namespace libConfig
         SMARTattributeID = (int) SMARTattributeIDSetting;
         LOGN("adding SMART attribute with ID " << (int) SMARTattributeIDSetting << 
           " as SMART parameter to observe/monitor")
-          m_r_SMARTmonitorBase.m_SMARTattributesToObserve.insert(SMARTattributeID);
+          m_r_SMARTmonitorBase.m_IDsOfSMARTattributesToObserve.insert(SMARTattributeID);
       }
     }
   }
@@ -87,7 +87,7 @@ namespace libConfig
     int nC1, nSmartAttribs;
 
 //    m_smartAttributesToObserve.clear();
-    mp_smartAttributesToObserve->clear();
+    mp_smartAttributes->clear();
 
   //  if(IsDebuggerPresent()==FALSE)
       {
@@ -146,11 +146,11 @@ namespace libConfig
                 //use pointer from member var instead of from stack.
                 skSmartAttributeParsedData.name = std_strAttribName.c_str();
 
-              /*m_smartAttributesToObserve.*/ mp_smartAttributesToObserve->insert(
+              /*m_smartAttributesToObserve.*/ mp_smartAttributes->insert(
                 /*std::make_pair(smartAttributeID,*/ skSmartAttributeParsedData//)
                 );
               LOGN("adding SMART ID" << smartAttributeID << "to " 
-                  << mp_smartAttributesToObserve)
+                  << mp_smartAttributes)
             }
           }
           else

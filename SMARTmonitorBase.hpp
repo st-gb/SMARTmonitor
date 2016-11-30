@@ -58,7 +58,7 @@ public:
   //TODO this member isn't needed for the service
   std::string m_stdstrServiceHostName;
   void InitializeLogger();
-  std::set<int> m_SMARTattributesToObserve;
+  std::set<int> m_IDsOfSMARTattributesToObserve;
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;

@@ -99,7 +99,8 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
 }
 
 void SMARTdialog::InformAboutTerminationOfUpdateThread()
-  LOGN("locking close mutex");
+{
+  LOGN("locking close mutex")
   /** see http://docs.wxwidgets.org/trunk/classwx_condition.html */
   wxMutexLocker lock(m_wxCloseMutex);
   LOGN("sending close event")
@@ -362,7 +363,7 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
   wxString currentTime;
 
   const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
-    m_SMARTaccess.getSMARTattributesToObserve();
+    m_SMARTaccess.getSMARTattributes();
   std::set<SkSmartAttributeParsedData>::const_iterator
     SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
   for( unsigned index = 0; index < listItemCount; ++ index,
@@ -442,27 +443,28 @@ void SMARTdialog::UpdateSMARTvaluesUI()
     SMARTuniqueIDsAndValues.begin();
   fastestUnsignedDataType SMARTattributeID;
   uint64_t SMARTrawValue;
-  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
-    wxGetApp().mp_SMARTaccess->getSMARTattributesToObserve();
+  const std::set<int> & IDsOfSMARTattributesToObserve =
+    wxGetApp().m_IDsOfSMARTattributesToObserve;
   wxString wxSMARTattribName;
   wxString currentTime;
 #ifdef DEBUG
   int itemCount = m_pwxlistctrl->GetItemCount();
 #endif
   memory_barrier(); //TODO: not really necessary??
+  
+  /** Loop over data carriers. */
   for(fastestUnsignedDataType currentDriveIndex = 0;
     SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
     SMARTuniqueIDandValuesIter ++)
   {
     LOGN("SMART unique ID and values object " << &(*SMARTuniqueIDandValuesIter) )
-    std::set<SkSmartAttributeParsedData>::const_iterator
-      SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
-    for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
-        SMARTattributesToObserveIter ++)
+    std::set<int>::const_iterator
+      IDsOfSMARTattributesToObserveIter = IDsOfSMARTattributesToObserve.begin();
+    /** Loop over attribute IDs to observe */
+    for( ; IDsOfSMARTattributesToObserveIter != IDsOfSMARTattributesToObserve.end();
+        IDsOfSMARTattributesToObserveIter ++)
     {
-      const SkSmartAttributeParsedData & SMARTattributeToObserve =
-        *SMARTattributesToObserveIter;
-      SMARTattributeID = SMARTattributeToObserve.id;
+      SMARTattributeID = *IDsOfSMARTattributesToObserveIter;
       const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];
       sMARTvalue.IsConsistent(SMARTrawValue);
       memory_barrier(); //TODO: not really necessary??
@@ -564,7 +566,7 @@ void SMARTdialog::SetSMARTattribIDandNameLabel()
 {
   LOGN("begin")
   const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
-    m_SMARTaccess.getSMARTattributesToObserve();
+    m_SMARTaccess.getSMARTattributes();
   LOGN("begin " << & SMARTattributesToObserve)
   unsigned lineNumber = 0;
   wxString wxSMARTattribName;
@@ -574,11 +576,11 @@ void SMARTdialog::SetSMARTattribIDandNameLabel()
   fastestUnsignedDataType SMARTattributeID;
   
   std::set<int>::const_iterator IDofAttributeToObserverIter = wxGetApp().
-    m_SMARTattributesToObserve.begin();
+    m_IDsOfSMARTattributesToObserve.begin();
   SkSmartAttributeParsedData skSmartAttributeParsedData;
   /** Traverse all SMART attribute IDs either got from server or read via config 
    *  file.*/
-  for( ; IDofAttributeToObserverIter != wxGetApp().m_SMARTattributesToObserve.
+  for( ; IDofAttributeToObserverIter != wxGetApp().m_IDsOfSMARTattributesToObserve.
       end() ; IDofAttributeToObserverIter ++, lineNumber++)
   {
     SMARTattributeID = * IDofAttributeToObserverIter;

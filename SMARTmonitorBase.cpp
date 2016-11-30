@@ -33,7 +33,7 @@ SMARTmonitorBase::SMARTmonitorBase()
 {
   mp_SMARTaccess = & m_SMARTvalueProcessor.getSMARTaccess();
   mp_configurationLoader = new libConfig::ConfigurationLoader(
-    (SMARTaccessBase::SMARTattributesContainerType &) mp_SMARTaccess->getSMARTattributesToObserve(), * this);
+    (SMARTaccessBase::SMARTattributesContainerType &) mp_SMARTaccess->getSMARTattributes(), * this);
 //  InitializeLogger();
 }
 
@@ -79,22 +79,25 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
 //  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
 //    wxGetApp().mp_SMARTaccess->getSMARTattributesToObserve();
   //TODO add SMART attribute IDs to SMARTattributesToObserve
-  m_SMARTattributesToObserve.clear();
+  m_IDsOfSMARTattributesToObserve.clear();
   std::set<SMARTuniqueIDandValues>::const_iterator iter = 
     SMARTuniqueIDandValuesContainer.begin();
   for( ; iter != SMARTuniqueIDandValuesContainer.end(); iter++ )
   {
+    const SMARTuniqueIDandValues & SMARTuniqueIDandValues = *iter;
+    LOGN_DEBUG("address of SMARTuniqueIDandValues obj:" << & SMARTuniqueIDandValues)
     for( int SMARTattributeID = 0; SMARTattributeID < 
         NUM_DIFFERENT_SMART_ENTRIES; SMARTattributeID ++ )
     {
 //    SkSmartAttributeParsedData skSmartAttributeParsedData;
 //    skSmartAttributeParsedData.id 
 //    SMARTattributesToObserve.insert();
-      const SMARTuniqueIDandValues & SMARTuniqueIDandValues = *iter;
-      LOGN_DEBUG("address of SMARTuniqueIDandValues obj:" << & SMARTuniqueIDandValues)
       if( SMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID].
           m_successfullyReadSMARTrawValue )
-        m_SMARTattributesToObserve.insert(SMARTattributeID);
+      {
+        m_IDsOfSMARTattributesToObserve.insert(SMARTattributeID);
+        LOGN_DEBUG("adding SMART attribute ID " << SMARTattributeID )
+      }
     }
   }
 }
@@ -169,8 +172,14 @@ std::string SMARTmonitorBase::Format(
   switch(SMARTattributeID)
   {
     case 9:
+    {
       stdoss.precision(1);
-      stdoss << std::fixed << (float) SMARTrawValue / 3600000 << " h";
+      //stdoss << std::fixed << (float) SMARTrawValue / 3600000 << " h";
+      const float hours = (float) SMARTrawValue / 3600000.0f;
+      const fastestUnsignedDataType numDays = hours / 24;
+      const float hoursRemainder = hours - (numDays*24);
+      stdoss << std::fixed << numDays << "d" << hoursRemainder << "h";
+    }
       break;
     default:
       stdoss << SMARTrawValue;
@@ -201,7 +210,7 @@ void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
       fastestUnsignedDataType SMARTattributeID;
       uint64_t SMARTrawValue;
       const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
-        SMARTaccess.getSMARTattributesToObserve();
+        SMARTaccess.getSMARTattributes();
       LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
       //TODO crashed in loop header at "iter++"
       bool consistent;
