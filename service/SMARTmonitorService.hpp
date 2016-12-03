@@ -15,7 +15,7 @@
 #define SMARTMONITORSERVICE_HPP
 
 #include "../SMARTmonitorBase.hpp"
-#include "multithread/nativeCriticalSectionType.hpp"
+#include "OperatingSystem/multithread/nativeCriticalSectionType.hpp"
 #include <vector> //std::vector
 #include <set> //class std::set
 
@@ -44,7 +44,7 @@ private:
   std::set<int> m_clientSocketFileDescSet;
   pthread_cond_t cond;
   pthread_mutex_t mutex;
-  CriticalSection_type m_clientsCriticalSection;
+  nativeCriticalSection_type m_clientsCriticalSection;
 };
 
 #endif /* SMARTMONITORSERVICE_HPP */

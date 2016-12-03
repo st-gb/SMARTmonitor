@@ -12,6 +12,12 @@ set(SOURCE_FILE_PATHS
  PARENT_SCOPE
 )
 
+set(CMAKE_LIST_FILE_PATHS
+  ${CMAKE_LIST_FILE_PATHS}
+  ${CMAKE_CURRENT_LIST_FILE}
+  PARENT_SCOPE
+)
+
 set(INCLUDE_DIRS
   ${INCLUDE_DIRS}
   #/usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-2.8

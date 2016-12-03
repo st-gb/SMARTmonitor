@@ -14,7 +14,7 @@
 #include <cstdlib>
 
 #ifdef __linux__
-  #include <Linux/daemon/daemon.h>
+  #include <OperatingSystem/Linux/daemon/daemon.h>
   
   #include "service/SMARTmonitorService.hpp"
 #endif

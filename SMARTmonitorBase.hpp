@@ -19,7 +19,7 @@
 #include "libConfig/ConfigurationLoader.hpp"
 #include <SMARTvalueProcessorBase.hpp> //
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
-#include <multithread/nativeThreadType.hpp>
+#include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <set> //class std::set
 
 /** Use character type in order to pass to to CommandLineArgs member variable*/

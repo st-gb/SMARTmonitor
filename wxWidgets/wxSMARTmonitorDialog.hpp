@@ -15,7 +15,7 @@
 //#endif
 #include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
 #include "wxSMARTmonitorTaskBarIcon.hpp"
-#include <multithread/nativeThreadType.hpp>
+#include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <wx/thread.h> //class wxCondition
 #include "SMARTtableListCtrl.hpp"
 #include <wx/defs.h> //wxID_HIGHEST
