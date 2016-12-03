@@ -3,6 +3,10 @@
 cmake_minimum_required (VERSION 2.6)
 project (SMARTmonitor)
 
+set(CMAKE_LIST_FILE_PATHS
+  ${CMAKE_CURRENT_LIST_FILE}
+)
+
 set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_DEBUG_POSTFIX "_debug")
 #set(<variable> <value>  ... <valueN>)
@@ -75,6 +79,7 @@ set( CXX_DEFINITIONS
 add_subdirectory(./libConfig
   #EXCLUDE_FROM_ALL
   )
+message (STATUS "${CMAKE_CURRENT_LIST_FILE} LIBRARIES: ${LIBRARIES}")
 
 #include_directories("${PROJECT_BINARY_DIR}")
 
@@ -117,9 +122,9 @@ if (UNIX)
     )
   set( CLIENT_SERVER_BASE_SOURCE_FILES
     ${CLIENT_SERVER_BASE_SOURCE_FILES}
-    ${COMMON_SOURCECODE_ROOT_PATH}/Linux/multithread/pthreadBasedI_Thread.cpp
-  	${COMMON_SOURCECODE_ROOT_PATH}/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
-	  ${COMMON_SOURCECODE_ROOT_PATH}/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/POSIX/multithread/pthreadBasedI_Thread.cpp
+  	${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
+	  ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp
   )
   #message("CLIENT_SERVER_BASE_SOURCE_FILES: ${CLIENT_SERVER_BASE_SOURCE_FILES}")
 endif (UNIX)
@@ -147,7 +152,7 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
   #${COMMON_SOURCECODE_ROOT_PATH}/Controller/character_string/stdtstr.cpp
   #${COMMON_SOURCECODE_ROOT_PATH}/data_structures/Trie/byteTrie/ByteTrie.cpp
   #${COMMON_SOURCECODE_ROOT_PATH}/data_structures/Trie/byteTrie/Trie.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/multithread/I_Thread.cpp
+  ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/multithread/I_Thread.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/Controller/character_string/stdtstr.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/FileSystem/PathSeperatorChar.cpp
 )
@@ -155,7 +160,7 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
-    ${COMMON_SOURCECODE_ROOT_PATH}/Linux/daemon/daemon.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/daemon/daemon.cpp
     ${PROJECT_SOURCE_DIR}/service/SMARTmonitorService.cpp
     ${PROJECT_SOURCE_DIR}/service_main.cpp
   )
@@ -211,17 +216,22 @@ if(DEFINED WXWIDGETS)
   target_link_libraries(${EXE_NAME} ${wxWidgets_LIBRARIES})
 endif (DEFINED WXWIDGETS)
 
-message ("LIBRARIES: ${LIBRARIES}")
+message ("EXE_NAME_: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")
 
 target_link_libraries(${EXE_NAME} ${LIBRARIES})
 message (STATUS "wxWidgets type: ${wxWidgets_CONFIGURATION}")
 
+set(ARCHIVE_FILE_PATHS
+  ${CMAKE_LIST_FILE_PATHS}
+  ${SOURCE_FILE_PATHS}
+)
+
 #following: package source files into archive file
 set(RELATIVE_SOURCE_FILE_PATH, "")
-execute_process(COMMAND tar --create ${EXE_NAME}source.zip)
+execute_process(COMMAND rm ${EXE_NAME}_source.zip)
 #https://cmake.org/cmake/help/v3.0/command/foreach.html
 file(WRITE ${EXE_TYPE}source_file_paths.txt "" )
-foreach( SOURCE_FILE_PATH ${SOURCE_FILE_PATHS} )
+foreach( SOURCE_FILE_PATH ${ARCHIVE_FILE_PATHS} )
   #see https://cmake.org/cmake/help/v3.0/command/file.html
   file(APPEND ${EXE_TYPE}source_file_paths.txt ${SOURCE_FILE_PATH} )
   file(APPEND ${EXE_TYPE}source_file_paths.txt "\n" )
@@ -230,12 +240,12 @@ foreach( SOURCE_FILE_PATH ${SOURCE_FILE_PATHS} )
   #see https://cmake.org/pipermail/cmake/2004-December/005934.html
   string(REGEX REPLACE "^/home/sg/SourceCodeManagement/" "" 
     RELATIVE_SOURCE_FILE_PATH ${SOURCE_FILE_PATH} )
-  message (STATUS "RELATIVE_SOURCE_FILE_PATH:" ${RELATIVE_SOURCE_FILE_PATH} )
-  execute_process(
+  #message (STATUS "RELATIVE_SOURCE_FILE_PATH:" ${RELATIVE_SOURCE_FILE_PATH} )
+  #execute_process(
     #COMMAND cd /home/sg/SourceCodeManagement/ 
     #COMMAND zip ${EXE_NAME}source.zip ./${RELATIVE_SOURCE_FILE_PATH} 
-    COMMAND tar --strip 3 --append -f ${EXE_NAME}source.zip ${SOURCE_FILE_PATH} 
-  )
+  #  COMMAND tar --strip 3 --append -f ${EXE_NAME}_source.zip ${SOURCE_FILE_PATH} 
+  #)
 endforeach()
 
 #http://stackoverflow.com/questions/7050997/zip-files-using-cmake
@@ -247,7 +257,7 @@ add_custom_target(create_zip COMMAND
 #cpack --config CPackSourceConfig.cmake
 #http://stackoverflow.com/questions/17495906/copying-files-and-including-them-in-a-cpack-archive
 #https://cmake.org/Wiki/CMake/CPackExample
-INSTALL(SOURCE ${SOURCE_FILE_PATHS} DESTINATION source)
+#INSTALL(SOURCE ${SOURCE_FILE_PATHS} DESTINATION source)
 set(CPACK_GENERATOR "ZIP")
 include(CPack)
 
