@@ -27,6 +27,7 @@ public:
   SMARTmonitorService(const SMARTmonitorService& orig);
   virtual ~SMARTmonitorService();
   
+  void EndUpdateSMARTvaluesThread();
   void SendBytes(std::string & xmlString);
   void AddClient(const int clientSocketFileDesc);
   void BeforeWait();

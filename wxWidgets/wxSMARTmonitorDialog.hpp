@@ -15,6 +15,7 @@
 //#endif
 #include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
 #include "wxSMARTmonitorTaskBarIcon.hpp"
+#include "client/SMARTmonitorClient.h" //enum SMARTmonitorClient::state
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <wx/thread.h> //class wxCondition
 #include "SMARTtableListCtrl.hpp"
@@ -51,6 +52,7 @@ public:
   void UpdateUIregarding1DataCarrierOnly();
   void SetSMARTattribIDandNameLabel();
   void SetSMARTdriveID();
+  void SetState(enum SMARTmonitorClient::state newState);
   void ReBuildUserInterface();
   void InformAboutTerminationOfUpdateThread();
 

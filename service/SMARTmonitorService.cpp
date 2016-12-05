@@ -15,6 +15,7 @@
 #include <sys/socket.h> //socket(...), bind(...), ...)
 #include <netinet/in.h> //struct sockaddr_in
 #include "Controller/time/GetTickCount.hpp" //OperatingSystem::GetTimeCountInNanoSeconds(...)
+#include "hardware/CPU/atomic/AtomicExchange.h"
 
 int SMARTmonitorService::s_socketFileDesc = 0;
 
@@ -38,6 +39,13 @@ SMARTmonitorService::~SMARTmonitorService() {
    *  "free a condition variable that is no longer needed." */
   pthread_cond_destroy(& cond);
   pthread_mutex_destroy(& mutex);
+}
+
+void SMARTmonitorService::EndUpdateSMARTvaluesThread()
+{
+  LOGN("ending get SMART values loop");
+  /** Inform the SMART values update thread about we're going to exit,*/
+  AtomicExchange( (long *) & s_updateSMARTvalues, 0);
 }
 
 void SMARTmonitorService::WaitForSignal()

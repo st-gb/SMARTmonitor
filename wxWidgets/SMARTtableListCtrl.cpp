@@ -28,7 +28,8 @@ namespace wxWidgets
     wxListItem col0;
     col0.SetId(COL_IDX_SMART_ID);
     col0.SetText( _("ID") );
-    col0.SetWidth(30);
+    //TODO calculate width needed for 3 digits
+    col0.SetWidth(textControlFont.GetPixelSize().x * 4);
     InsertColumn(COL_IDX_SMART_ID, col0);
 
     // Add second column
@@ -46,7 +47,8 @@ namespace wxWidgets
 
     col1.SetId(COL_IDX_lastUpdate);
     col1.SetText( wxT("last update") );
-    col1.SetWidth(100);
+    //TODO calculate width needed for the last update time string
+    col1.SetWidth(300);
     InsertColumn(COL_IDX_lastUpdate, col1);
   }
 

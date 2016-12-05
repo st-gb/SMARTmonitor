@@ -26,12 +26,14 @@ class wxSMARTmonitorApp
   wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
 public:
   //SMARTaccess_type & m_SMARTaccess;
-  static const wxString appName;
+  //static const wxString appName;
   MyTaskBarIcon * m_taskBarIcon;
+  static fastestUnsignedDataType s_GUIthreadID;
   wxSMARTmonitorApp();
   virtual
   ~wxSMARTmonitorApp();
  
+  void ChangeState(enum state newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
   bool OnInit();

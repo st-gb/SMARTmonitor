@@ -18,12 +18,30 @@ set(CMAKE_LIST_FILE_PATHS
   PARENT_SCOPE
 )
 
+#see http://accountingplusplus.blogspot.de/2010/12/cmake-wxwidgets.html :
+#Set wxWidgets_USE_DEBUG to "ON" to link against WxWidgets debug libraries.
+set( wxWidgets_USE_DEBUG ON
+  #PARENT_SCOPE makes changes made in this script visible to the caller of this file
+  PARENT_SCOPE )
+message("wxWidgets_USE_DEBUG: ${wxWidgets_USE_DEBUG}")
+
+#Set to appropriate version--releae, debug, 32/64 bit
+#Use wxWidgets >= v.2.9 as it provides an appropriate task bar support
+set( WXWIDGETS_SETUP_H_HEADER_PATH 
+  /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-3.0
+  #PARENT_SCOPE makes changes made in this script visible to the caller of this file
+  PARENT_SCOPE)
+set( WXWIDGETS_HEADER_PATH
+  /usr/include/wx-3.0
+  #PARENT_SCOPE makes changes made in this script visible to the caller of this file
+  PARENT_SCOPE)
+  
 set(INCLUDE_DIRS
   ${INCLUDE_DIRS}
-  #/usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-2.8
-  /usr/include/wx-2.8
-  PARENT_SCOPE
-)
+  ${WXWIDGETS_SETUP_H_HEADER_PATH}
+  ${WXWIDGETS_HEADER_PATH}
+  #PARENT_SCOPE makes changes made in this script visible to the caller of this file
+  PARENT_SCOPE)
 
 #include_directories( ${INCLUDE_DIRS} )
 
@@ -35,8 +53,7 @@ set(INCLUDE_DIRS
 set( LIBRARIES
   ${LIBRARIES}
   ${wxWidgets_USE_FILE}
-  PARENT_SCOPE
-)
+  PARENT_SCOPE )
 
 if (WIN32)
   add_definitions(-D__WXMSW__)

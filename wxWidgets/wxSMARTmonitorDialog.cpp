@@ -170,28 +170,20 @@ SMARTdialog::SMARTdialog(
 //        , /*int border*/ 0);
 //    sizerTop->Add(sizerListCtrl /*, flags.Align(wxALIGN_CENTER_HORIZONTAL) */);
 
-
-//    sizerTop->Add(new wxStaticText
-//              (
-//                this,
-//                wxID_ANY,
-//                wxT("Press 'Hide me' to hide this window, Exit to quit.")
-//              ), flags);
-//
-//    sizerTop->Add(new wxStaticText
-//                      (
-//                        this,
-//                        wxID_ANY,
-//                        wxT("Double-click on the taskbar icon to show me again.")
-//                      ), flags);
-
 //    sizerTop->AddStretchSpacer()->SetMinSize(200, 50);
 
     wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
     sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
     m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT, wxT("&Connect") );
     sizerBtns->Add(m_p_ConnectAndDisconnectButton, flags);
-    sizerBtns->Add(new wxButton(this, wxID_OK, wxT("&Hide")), flags);
+    /** Needs to compile with wxWidgets headers > 2.8.x */
+    if( wxTaskBarIcon::IsAvailable() )
+    {
+      /** Only show the hide button if re-showing this dialog is possible. */
+      wxButton * hideButton = new wxButton(this, wxID_OK, wxT("&Hide") );
+      hideButton->SetToolTip( wxT("Click on the taskbar icon to show this dialog again.") );
+      sizerBtns->Add(hideButton, flags);
+    }
     sizerBtns->Add(new wxButton(this, wxID_EXIT, wxT("E&xit")), flags);
 
     sizerTop->Add(sizerBtns, flags.Align(wxALIGN_CENTER_HORIZONTAL));
@@ -206,27 +198,6 @@ SMARTdialog::SMARTdialog(
         wxMessageBox(wxT("Could not set new icon."), wxT("wxSMARTmonitor") );
       SetIcon(icon);
     }
-//    // we should be able to show up to 128 characters on recent Windows versions
-//    // (and 64 on Win9x)
-//    if ( ! m_taskBarIcon->SetIcon(
-//        wxICON(sample),
-//         wxT("wxTaskBarIcon Sample\n"
-//         "With a very, very, very, very\n"
-//         "long tooltip whose length is\n"
-//         "greater than 64 characters.")
-//        )
-//       )
-//    {
-//        wxLogError(wxT("Could not set icon."));
-//    }
-
-#if defined(__WXOSX__) && wxOSX_USE_COCOA
-    m_dockIcon = new MyTaskBarIcon(wxTBI_DOCK);
-    if ( !m_dockIcon->SetIcon(wxICON(sample)) )
-    {
-        wxLogError(wxT("Could not set icon."));
-    }
-#endif
 }
 
 SMARTdialog::~SMARTdialog()
@@ -322,6 +293,16 @@ void SMARTdialog::ConnectToServer(wxCommandEvent& WXUNUSED(event))
   else
   {
     //wxGetApp().ShowMessage("");
+  }
+}
+
+void SMARTdialog::SetState(enum SMARTmonitorClient::state newState)
+{
+  switch(newState)
+  {
+    case SMARTmonitorClient::unconnectedFromService :
+      SetTitle( wxGetApp().GetAppName() + wxT("--unconnected") );
+      break;
   }
 }
 

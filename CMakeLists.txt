@@ -31,21 +31,6 @@ if( DEFINED WXWIDGETS )
   add_subdirectory(wxWidgets 
     #EXCLUDE_FROM_ALL
   )
-
-  #see http://accountingplusplus.blogspot.de/2010/12/cmake-wxwidgets.html :
-  #Set wxWidgets_USE_DEBUG to "ON" to link against WxWidgets debug libraries.
-  set( wxWidgets_USE_DEBUG ON)
-
-  #Set to appropriate version--releae, debug, 32/64 bit
-  set( WXWIDGETS_SETUP_H_HEADER_PATH /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-2.8)
-  set( WXWIDGETS_HEADER_PATH /usr/include/wx-2.8)
-
-  set( INCLUDE_DIRS 
-    ${WXWIDGETS__SETUP_H_HEADER_PATH}
-    ${WXWIDGETS_HEADER_PATH}
-    )
-  
-  message("wxWidgets_USE_DEBUG: ${wxWidgets_USE_DEBUG}")
 endif ( DEFINED WXWIDGETS )
 
 set( INCLUDE_DIRS 
@@ -143,6 +128,7 @@ set(LOGGER_SOURCE_FILES
   ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/OutputHandler/StdOfStreamLogWriter.cpp
 )
 
+#Source files needed for both client/GUI and server builds.
 set(CLIENT_SERVER_BASE_SOURCE_FILES
   ${CLIENT_SERVER_BASE_SOURCE_FILES}
   ${LOGGER_SOURCE_FILES}

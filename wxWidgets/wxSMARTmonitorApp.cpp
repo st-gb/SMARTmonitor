@@ -29,19 +29,26 @@
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <wx/taskbar.h>
 #include <wx/filefn.h> //wxFILE_SEP_PATH
+#include "compiler/GCC/enable_disable_warning.h"
+/** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
+ *  to ‘char*’" when including the "xpm" file */
+GCC_DIAG_OFF(write-strings)
+#include "S.M.A.R.T._OK.xpm"
+#include "S.M.A.R.T._warning.xpm"
+GCC_DIAG_ON(write-strings)
+
 #include <iostream> //class std::cerr
 #include <Windows/HideMinGWconsoleWindow.h>
 #include <FileSystem/File/FileException.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
-// ----------------------------------------------------------------------------
 // global variables
-// ----------------------------------------------------------------------------
 
-//class MyDialog;
 /*static*/ SMARTdialog *gs_dialog = NULL;
+/** defintions of static class members. */
+fastestUnsignedDataType wxSMARTmonitorApp::s_GUIthreadID;
 
-const wxString wxSMARTmonitorApp::appName = wxT("wxSMARTmonitor");
+//const wxString wxSMARTmonitorApp::appName = wxT("wxSMARTmonitor");
 
 wxSMARTmonitorApp::wxSMARTmonitorApp()
   : m_taskBarIcon(NULL) //,
@@ -51,6 +58,7 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
 //      m_SMARTaccess.getSMARTattributesToObserve(),
 //      * this)
 {
+  s_GUIthreadID = GetCurrentThreadNumber();
   //InitializeLogger(); 
   //mp_SMARTaccess = & m_wxSMARTvalueProcessor.getSMARTaccess();
   //LOGN("SMART access pointer:" << mp_SMARTaccess)
@@ -85,6 +93,12 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 #endif
 }
 
+void wxSMARTmonitorApp::ChangeState(enum state newState)
+{
+  //TODO ensure to/must be called in GUI thread
+  gs_dialog->SetState(newState);
+}
+  
 void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
 {
   /** IMPORTANT: creating the arrays can't be done in the constructor of this
@@ -147,6 +161,7 @@ bool wxSMARTmonitorApp::OnInit()
   return true;
 }
 
+//TODO better call this function only once at startup?!
 bool wxSMARTmonitorApp::GetSMARTokayIcon(wxIcon & icon)
 {
 //  wxIcon icon; //(/*smile_xpm*/  );
@@ -168,11 +183,16 @@ bool wxSMARTmonitorApp::GetSMARTokayIcon(wxIcon & icon)
     #endif
     );
   if( ! bLoadFileRetVal)
+  {
     wxMessageBox( wxT("Loading icon file \n\"") + wxGetCwd() +
       wxFILE_SEP_PATH + wxstrIconFileName + wxT( "\" failed") );
+    /** Loading a (custom) icon from file failed, so provide a pre-defined one.*/
+    icon = wxIcon(S_M_A_R_T__OK_xpm);
+  }
   return bLoadFileRetVal;
 }
 
+//TODO better call this function only once at startup?!
 bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 {
 //  wxIcon icon; //(/*smile_xpm*/  );
@@ -194,13 +214,28 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
     #endif
     );
   if( ! bLoadFileRetVal)
-    wxMessageBox( wxT("Loading icon file \n\"") + wxGetCwd() +
-      wxFILE_SEP_PATH + wxstrIconFileName + wxT( "\" failed") );
+  {
+//    wxMessageBox( wxT("Loading icon file \n\"") + wxGetCwd() +
+//      wxFILE_SEP_PATH + wxstrIconFileName + wxT( "\" failed") );
+//#if defined(__WXGTK__) || defined(__WXMOTIF__)
+    /** Loading a (custom) icon from file failed, so provide a pre-defined one.*/
+    icon = wxIcon(S_M_A_R_T__warning_xpm);
+//#endif
+  }
   return bLoadFileRetVal;
 }
 
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 {
-  wxString wxstrMessage = wxWidgets::GetwxString_Inline(str);
-  wxMessageBox(wxstrMessage, appName );
+  /** Only call UI functions in UI thread, else errors?! */
+  if( GetCurrentThreadNumber() == s_GUIthreadID )
+  { 
+    wxString wxstrMessage = wxWidgets::GetwxString_Inline(str);
+    wxMessageBox(wxstrMessage, m_appName );
+  }
+  else
+  {
+    //TODO poast an event with the message as content and synchronize to showing 
+    //  this message in the GUI thread
+  }
 }

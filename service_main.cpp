@@ -15,15 +15,19 @@
 
 #ifdef __linux__
   #include <OperatingSystem/Linux/daemon/daemon.h>
-  
   #include "service/SMARTmonitorService.hpp"
 #endif
-#include "hardware/CPU/atomic/AtomicExchange.h"
 
 using namespace std;
 
 //static SMARTmonitorService/*<char>*/ SMARTmonitor;//(argc, argv);
 static SMARTmonitorService/*<char>*/ * gp_SMARTmonitor;//(argc, argv);
+
+static void End(const char * const signalName)
+{
+  LOGN("received " << signalName << "signal")
+  gp_SMARTmonitor->EndUpdateSMARTvaluesThread();
+}
 
 static void child_handler(int signum)
 {
@@ -37,15 +41,11 @@ static void child_handler(int signum)
   //case SIGUSR1: exit(EXIT_SUCCESS); break;
   case SIGCHLD: exit(EXIT_FAILURE); break;
     case SIGTERM:
+      End("term"); break;
     case SIGKILL:
+      End("kill"); break;
     case SIGINT:
-      LOGN("received term or kill or interrupt signal")
-      
-      LOGN("ending get SMART values loop");
-      /** Inform the SMART values update thread about we're going to exit,*/
-      AtomicExchange( (long *) & gp_SMARTmonitor->s_updateSMARTvalues, 0);
-
-      break;
+      End("interrupt"); break;
   }
 }
 
@@ -61,7 +61,6 @@ void TrapSignals2()
   //SIGHUP = Reload config signal.
   signal(SIGHUP, child_handler);
   signal(SIGINT, child_handler);
-
 }
 
 /*

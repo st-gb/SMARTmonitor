@@ -229,7 +229,7 @@ void SMARTmonitorClient::HandleTransmissionError(
   LOGN_ERROR(stdoss.str() );
   ShowMessage(stdoss.str().c_str());
   //TODO set connection status of the user interface to "network errors"/"unconnected"
-  //ChangeState(unconnected);
+  ChangeState(unconnectedFromService);
   //TODO close socket, set status (also in UI) to unconnected
 }
 
