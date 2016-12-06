@@ -27,6 +27,9 @@
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 fastestSignedDataType SMARTmonitorBase::s_updateSMARTvalues = 1;
 extern const char FileSystem::dirSeperatorChar;
+CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = { 
+  {"logfilefolder", "<absolute or relative log file FOLDER>, e.g. \"/run/\" "
+    "for writing log files to tmpfs/RAM drives"}, {""} };
 
 SMARTmonitorBase::SMARTmonitorBase() 
   : m_socketPortNumber(1000)
@@ -102,13 +105,55 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
   }
 }
 
+void SMARTmonitorBase::OutputUsage()
+{
+  std::ostringstream stdoss;
+  stdoss << "Usage (options) (pass 2 command line arguments for each in this order:\n"
+    << "<command line option NAME> <command line option VALUE>) :\n";
+  for( fastestUnsignedDataType index = 0; 
+    s_commandLineOptions[index].optionName[0] != '\0'; ++ index )
+  {
+    CommandLineOption & commandLineOption = s_commandLineOptions[index];
+    stdoss << commandLineOption.optionName << " " << 
+      commandLineOption.possibleOptionValue << "";
+    stdoss << "\n";
+  }
+  std::cout << stdoss.str() << std::endl;
+}
+
+std::wstring SMARTmonitorBase::GetCommandLineArgument(const wchar_t * const str)
+{
+  const int index = m_commandLineArgs.contains(str);
+  if( index != UINT_MAX && m_commandLineArgs.GetArgumentCount() > index + 1 )
+  {
+    return m_commandLineArgs.GetArgument(index + 1);
+  }
+  return std::wstring();
+}
+
 void SMARTmonitorBase::InitializeLogger()
 {
   LogLevel::CreateLogLevelStringToNumberMapping();
   //std::string stdstrLogFilePath("SMARTmonitor.txt");
   std::wstring stdwstrProgramePath = GetExeFileName(m_commandLineArgs.GetProgramPath() );
     stdwstrProgramePath += L"_log.txt";
-  std::string stdstrLogFilePath = GetStdString_Inline(stdwstrProgramePath);
+    
+  std::string stdstrLogFilePath;
+  //std::string stdstrLogFileDirectory;
+  if( m_commandLineArgs.GetArgumentCount() > 1 )
+  {
+    std::wstring stdwstrLogfilepathCmdLineArg = GetCommandLineArgument(L"logfilefolder");
+    if( stdwstrLogfilepathCmdLineArg.size() > 0 )
+    {
+      const wchar_t lastChar = stdwstrLogfilepathCmdLineArg.at(
+        stdwstrLogfilepathCmdLineArg.size() - 1 );
+      if( lastChar != FileSystem::dirSeperatorChar )
+        stdwstrLogfilepathCmdLineArg += FileSystem::dirSeperatorChar;
+    }
+    stdstrLogFilePath = GetStdString_Inline( stdwstrLogfilepathCmdLineArg );
+  }  
+  stdstrLogFilePath += GetStdString_Inline(stdwstrProgramePath);
+  
   try
   {
     g_logger.OpenFileA(stdstrLogFilePath, "log4j", 4000, LogLevel::debug);
@@ -338,7 +383,8 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
   //have to be taken into account
   std::wstring fullConfigFilePathWithoutExtension;
-  if(m_commandLineArgs.GetArgumentCount() == 1) /** NO program arguments passed. */
+  std::wstring configFilePathCmdLineValue = GetCommandLineArgument(L"configfilepath");
+  if( configFilePathCmdLineValue == L"" ) /** NO config file path passed. */
   {
 //    ConstructConfigFilePathFromExeFilePath(
 //      stdwstrAbsoluteFilePath,

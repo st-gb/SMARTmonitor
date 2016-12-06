@@ -22,6 +22,12 @@
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <set> //class std::set
 
+struct CommandLineOption
+{
+  const char * optionName;
+  const char * possibleOptionValue;
+};
+
 /** Use character type in order to pass to to CommandLineArgs member variable*/
 /*template<typename charType>*/ class SMARTmonitorBase
   : public UserInterface
@@ -53,6 +59,7 @@ public:
     const uint64_t & SMARTrawValue);
   
   static fastestSignedDataType s_updateSMARTvalues;
+  static CommandLineOption s_commandLineOptions [] ;
   /*DWORD*/ uint64_t m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
 //  long int m_arSMART_ID[255]; //provide space for up t 255 SMART attribute values
   long int m_arTickCountOfLastQueryInMilliSeconds[255];
@@ -62,6 +69,9 @@ public:
   void InitializeLogger();
   std::set<int> m_IDsOfSMARTattributesToObserve;
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
+  void OutputUsage();
+  CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}
+  std::wstring GetCommandLineArgument(const wchar_t * const str);
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
   const wchar_t ** m_cmdLineArgStrings;

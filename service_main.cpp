@@ -76,6 +76,8 @@ int main(int argc, char** argv) {
   
   //TODO set command line args
   SMARTmonitor.SetCommandLineArgs(argc, argv);
+  if( SMARTmonitor.GetCommandLineArgs().GetArgumentCount() < 2 )
+    SMARTmonitor.OutputUsage();
   SMARTmonitor.InitializeLogger();
   
   //std::wstring stdwstrConfigPathWithoutExtension;
