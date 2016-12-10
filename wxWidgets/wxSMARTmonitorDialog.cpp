@@ -267,8 +267,11 @@ void SMARTdialog::ConnectToServer(wxCommandEvent& WXUNUSED(event))
     , wxT("localhost")//const wxString & 	default_value = wxEmptyString,
     , NULL //wxWindow * 	parent = NULL,
     );
-  std::string stdstrServerAddress = wxWidgets::GetStdString_Inline(wxstrServerAddress);
-  const fastestUnsignedDataType res = wxGetApp().ConnectToServer(stdstrServerAddress.c_str());
+  const std::string stdstrServerAddress = wxWidgets::GetStdString_Inline(
+    wxstrServerAddress);
+  wxGetApp().SetServiceAddress(stdstrServerAddress);
+  const fastestUnsignedDataType res = wxGetApp().ConnectToServer(
+    stdstrServerAddress.c_str() );
   if( res == 0)
   {
     SetTitle(wxT("wxSMARTmonitor--data from ") + wxstrServerAddress);
@@ -301,7 +304,22 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::state newState)
   switch(newState)
   {
     case SMARTmonitorClient::unconnectedFromService :
-      SetTitle( wxGetApp().GetAppName() + wxT("--unconnected") );
+    {
+      wxString wxstrTitle = wxGetApp().GetAppName();
+      //TODO move to class UserInterface
+      char buffer[80];
+      const struct tm & timeOfLastSMARTvaluesUpdate = wxGetApp().
+        GetLastSMARTvaluesUpdateTime();
+      //"%a" : Abbreviated weekday name
+      // %d : Day of the month, zero-padded (01-31)
+      // %b : Abbreviated month name
+      // %T : ISO 8601 time format (HH:MM:SS),
+      size_t strLen = strftime(buffer, 80, "%a %d %b %T", 
+        & timeOfLastSMARTvaluesUpdate );
+      wxstrTitle += wxString::Format( wxT("--last update:%s --unconnected"),
+        wxWidgets::GetwxString_Inline(buffer) );
+      SetTitle(wxstrTitle);
+    }
       break;
   }
 }
@@ -396,11 +414,47 @@ void SMARTdialog::UpdateTimeOfSMARTvalueRetrieval(
   long int timeStampOfRetrieval)
 {
   wxString timeOfSMARTvalueRetrievel;
+  
   float timeOfSMARTvalueRetrievelInS;
   //currentTime = wxNow();
   timeOfSMARTvalueRetrievelInS = (float) timeStampOfRetrieval / 1000.f;
-  timeOfSMARTvalueRetrievel = wxString::Format(wxT("%.3f s pure runtime after bootup"),
-    timeOfSMARTvalueRetrievelInS);
+  if( timeOfSMARTvalueRetrievelInS >= 3600.0 )
+  {
+    const fastestUnsignedDataType timeOfSMARTvalueRetrievelInH = 
+      timeOfSMARTvalueRetrievelInS / 3600.0;
+    const fastestUnsignedDataType timeOfSMARTvalueRetrievelInMin = 
+      timeOfSMARTvalueRetrievelInS / 60 - timeOfSMARTvalueRetrievelInH * 60;
+    
+    timeOfSMARTvalueRetrievelInS = timeOfSMARTvalueRetrievelInS -
+      timeOfSMARTvalueRetrievelInH * 3600 - timeOfSMARTvalueRetrievelInMin * 60;
+    timeOfSMARTvalueRetrievel = wxString::Format(
+      wxT("%dh%dmin%.3fs pure runtime after bootup"),
+      timeOfSMARTvalueRetrievelInH,
+      timeOfSMARTvalueRetrievelInMin,
+      timeOfSMARTvalueRetrievelInS);
+    //TODO change to snprintf and move this function to class UserInterface
+//    const char * formatString = "%dh%dmin%.3fs pure runtime after bootup";
+//    char formattedString[80];
+//    snprintf(formattedString, 80, 
+//      timeOfSMARTvalueRetrievelInH, 
+//      timeOfSMARTvalueRetrievelInMin,
+//      timeOfSMARTvalueRetrievelInS);
+  }
+  else if( timeOfSMARTvalueRetrievelInS >= 60.0 )
+  {
+    const fastestUnsignedDataType timeOfSMARTvalueRetrievelInMin = 
+      timeOfSMARTvalueRetrievelInS / 60.0; 
+    timeOfSMARTvalueRetrievel = wxString::Format(
+      wxT("%.0fmin %.3fs pure runtime after bootup"),
+      timeOfSMARTvalueRetrievelInMin,
+      timeOfSMARTvalueRetrievelInS);
+  }
+  else
+//  }
+//  else
+    timeOfSMARTvalueRetrievel = wxString::Format(
+      wxT("%.3f s pure runtime after bootup"),
+      timeOfSMARTvalueRetrievelInS);
   m_pwxlistctrl->SetItem(
     lineNumber,
     SMARTtableListCtrl::COL_IDX_lastUpdate /** column #/ index */,
@@ -485,16 +539,7 @@ void SMARTdialog::UpdateSMARTvaluesUI()
   }
   if( atLeast1NonNullValue )
   {
-    wxIcon icon;
-    if( wxGetApp().GetSMARTwarningIcon(icon) )
-    {
-      if ( ! wxGetApp().m_taskBarIcon->SetIcon(
-        icon,
-        wxT("warning:\nraw value for at least 1 critical SMART parameter is > 0"))
-        )
-        wxMessageBox(wxT("Could not set new icon."), wxT("wxSMARTmonitor") );
-      SetIcon(icon);
-    }
+    wxGetApp().ShowSMARTwarningIcon();
   }
 }
 

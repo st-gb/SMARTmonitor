@@ -18,6 +18,7 @@
 #include <stdint.h> //uint8_t
 #include "tinyxml2.h" //
 #include "hardware/CPU/atomic/AtomicExchange.h"
+#include <OperatingSystem/time/GetCurrentTime.hpp>
 
 SMARTmonitorClient::SMARTmonitorClient() {
 }
@@ -278,6 +279,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
         LOGN("SMART unique ID and values object in container:" << &(*insert.first) )
       }
       //RebuildGUI();
+      OperatingSystem::GetCurrentTime(m_timeOfLastSMARTvaluesUpdate);
       //LOGN("got model attribute")
       //const char * modelString = p_tinyxml2XMLattribute->Value();
       //LOGN("model: " << modelString)

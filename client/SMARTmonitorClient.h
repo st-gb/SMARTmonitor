@@ -35,6 +35,10 @@ public:
   fastestUnsignedDataType ConnectToServer(const char * hostName);
   fastestUnsignedDataType  GetSMARTvaluesFromServer(std::set<SMARTuniqueIDandValues> & );
   void HandleTransmissionError(enum TransmissionError transmissionError);
+  
+  const struct tm & GetLastSMARTvaluesUpdateTime() const { 
+    return m_timeOfLastSMARTvaluesUpdate; }
+  struct tm m_timeOfLastSMARTvaluesUpdate;
 private:
 
 };
