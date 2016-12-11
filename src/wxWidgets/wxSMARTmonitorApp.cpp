@@ -33,8 +33,8 @@
 /** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
  *  to ‘char*’" when including the "xpm" file */
 GCC_DIAG_OFF(write-strings)
-#include "S.M.A.R.T._OK.xpm"
-#include "S.M.A.R.T._warning.xpm"
+#include "../S.M.A.R.T._OK.xpm"
+#include "../S.M.A.R.T._warning.xpm"
 GCC_DIAG_ON(write-strings)
 
 #include <iostream> //class std::cerr
@@ -254,5 +254,6 @@ wxIcon wxSMARTmonitorApp::ShowSMARTwarningIcon()
       wxMessageBox(wxT("Could not set new icon."), wxT("wxSMARTmonitor") );
     gs_dialog->SetIcon(icon);
   }
+  return icon;
 }
   

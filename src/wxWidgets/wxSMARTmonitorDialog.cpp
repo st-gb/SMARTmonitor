@@ -411,50 +411,14 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
 
 void SMARTdialog::UpdateTimeOfSMARTvalueRetrieval(
   unsigned lineNumber,
-  long int timeStampOfRetrieval)
-{
-  wxString timeOfSMARTvalueRetrievel;
-  
-  float timeOfSMARTvalueRetrievelInS;
-  //currentTime = wxNow();
-  timeOfSMARTvalueRetrievelInS = (float) timeStampOfRetrieval / 1000.f;
-  if( timeOfSMARTvalueRetrievelInS >= 3600.0 )
-  {
-    const fastestUnsignedDataType timeOfSMARTvalueRetrievelInH = 
-      timeOfSMARTvalueRetrievelInS / 3600.0;
-    const fastestUnsignedDataType timeOfSMARTvalueRetrievelInMin = 
-      timeOfSMARTvalueRetrievelInS / 60 - timeOfSMARTvalueRetrievelInH * 60;
-    
-    timeOfSMARTvalueRetrievelInS = timeOfSMARTvalueRetrievelInS -
-      timeOfSMARTvalueRetrievelInH * 3600 - timeOfSMARTvalueRetrievelInMin * 60;
-    timeOfSMARTvalueRetrievel = wxString::Format(
-      wxT("%dh%dmin%.3fs pure runtime after bootup"),
-      timeOfSMARTvalueRetrievelInH,
-      timeOfSMARTvalueRetrievelInMin,
-      timeOfSMARTvalueRetrievelInS);
-    //TODO change to snprintf and move this function to class UserInterface
-//    const char * formatString = "%dh%dmin%.3fs pure runtime after bootup";
-//    char formattedString[80];
-//    snprintf(formattedString, 80, 
-//      timeOfSMARTvalueRetrievelInH, 
-//      timeOfSMARTvalueRetrievelInMin,
-//      timeOfSMARTvalueRetrievelInS);
-  }
-  else if( timeOfSMARTvalueRetrievelInS >= 60.0 )
-  {
-    const fastestUnsignedDataType timeOfSMARTvalueRetrievelInMin = 
-      timeOfSMARTvalueRetrievelInS / 60.0; 
-    timeOfSMARTvalueRetrievel = wxString::Format(
-      wxT("%.0fmin %.3fs pure runtime after bootup"),
-      timeOfSMARTvalueRetrievelInMin,
-      timeOfSMARTvalueRetrievelInS);
-  }
-  else
-//  }
-//  else
-    timeOfSMARTvalueRetrievel = wxString::Format(
-      wxT("%.3f s pure runtime after bootup"),
-      timeOfSMARTvalueRetrievelInS);
+  long int timeStampOfRetrievalIn1ks)
+{  
+  std::string timeFormatString;
+  UserInterface::FormatTimeOfLastUpdate(timeStampOfRetrievalIn1ks, 
+    timeFormatString);
+  wxString timeOfSMARTvalueRetrievel = wxWidgets::GetwxString_Inline(
+    timeFormatString);
+
   m_pwxlistctrl->SetItem(
     lineNumber,
     SMARTtableListCtrl::COL_IDX_lastUpdate /** column #/ index */,

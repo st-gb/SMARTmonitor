@@ -8,7 +8,7 @@
 #ifndef LIBCONFIG_CONFIGURATIONLOADER_HPP_
 #define LIBCONFIG_CONFIGURATIONLOADER_HPP_
 
-#include <ConfigurationLoaderBase.hpp>
+#include "ConfigLoader/ConfigurationLoaderBase.hpp"
 //#include <UserInterface/UserInterface.hpp> //Base class UserInterface
 //#include <SMARTmonitorBase.hpp> //Base class SMARTmonitorBase
 #include <set> //class std::set

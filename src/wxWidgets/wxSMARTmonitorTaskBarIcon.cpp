@@ -50,6 +50,31 @@ BEGIN_EVENT_TABLE(MyTaskBarIcon, wxTaskBarIcon)
     EVT_SIZE(MyTaskBarIcon::OnSize)
 END_EVENT_TABLE()
 
+void ShowTaskBarIcon()
+{
+//    // we should be able to show up to 128 characters on recent Windows versions
+//    // (and 64 on Win9x)
+//    if ( ! m_taskBarIcon->SetIcon(
+//        wxICON(sample),
+//         wxT("wxTaskBarIcon Sample\n"
+//         "With a very, very, very, very\n"
+//         "long tooltip whose length is\n"
+//         "greater than 64 characters.")
+//        )
+//       )
+//    {
+//        wxLogError(wxT("Could not set icon."));
+//    }
+
+#if defined(__WXOSX__) && wxOSX_USE_COCOA
+    m_dockIcon = new MyTaskBarIcon(wxTBI_DOCK);
+    if ( !m_dockIcon->SetIcon(wxICON(sample)) )
+    {
+        wxLogError(wxT("Could not set icon."));
+    }
+#endif
+}
+
 void MyTaskBarIcon::OnMenuRestore(wxCommandEvent& )
 {
     gs_dialog->Show(true);
