@@ -22,13 +22,16 @@ namespace libatasmart
 
   void getDriveSupportedSMART_IDs(
     SkDisk * p_SkDisk,
-    const SkSmartAttributeParsedData * p_SkSmartAttributeParsedData,
+    const SMARTentry * p_SMARTentry,
     std::vector<SMARTattributeNameAndID> * p_SMARTattributeNamesAndIDs)
   {
-    p_SMARTattributeNamesAndIDs->push_back( SMARTattributeNameAndID(
-      p_SkSmartAttributeParsedData->name, p_SkSmartAttributeParsedData->id) );
-    LOGN(p_SkSmartAttributeParsedData->name << " ID:" <<
-      (fastestUnsignedDataType) p_SkSmartAttributeParsedData->id)
+    p_SMARTattributeNamesAndIDs->push_back( 
+      SMARTattributeNameAndID(
+        p_SMARTentry->GetName(), 
+        p_SMARTentry->GetAttributeID() ) 
+      );
+    LOGN(p_SMARTentry->GetName() << " ID:" <<
+      (fastestUnsignedDataType) p_SMARTentry->GetAttributeID() )
   }
 
   //TODO sk_disk_smart_parse_attributes calls this callback for all 255 SMART
@@ -147,8 +150,8 @@ namespace libatasmart
       for( ; SMARTattributesToObserveIter !=
         SMARTattributesToObserve.end(); ++ SMARTattributesToObserveIter )
       {
-        SMARTattributeID = SMARTattributesToObserveIter->id;
-        attributeName = SMARTattributesToObserveIter->name;
+        SMARTattributeID = SMARTattributesToObserveIter->GetAttributeID();
+        attributeName = SMARTattributesToObserveIter->GetName();
         i = readAttribute(/*attributeName*/SMARTattributeID, 
               (SkDisk *) p_skDisk, rawSMARTattrValue);
         if( i == 0) /** Successfully got SMART attribute value */

@@ -253,7 +253,7 @@ void SMARTmonitorService::BeforeWait()
     SMARTuniqueIDsAndValues.begin();
   fastestUnsignedDataType SMARTattributeID;
   uint64_t SMARTrawValue;
-  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
+  const std::set<SMARTentry> & SMARTattributesToObserve =
     SMARTaccess.getSMARTattributes();
   LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
 
@@ -271,7 +271,7 @@ void SMARTmonitorService::BeforeWait()
       << " serial_number=\"" << SMARTuniqueID.m_serialNumber << "\">";
     
 //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
-    std::set<SkSmartAttributeParsedData>::const_iterator
+    std::set<SMARTentry>::const_iterator
       SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
 //    long int currentSMARTrawValue;
     //TimeCountInNanosec_type timeCountInNanoSeconds;
@@ -281,7 +281,7 @@ void SMARTmonitorService::BeforeWait()
     for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
         SMARTattributesToObserveIter ++, ++lineNumber )
     {
-      SMARTattributeID = SMARTattributesToObserveIter->id;
+      SMARTattributeID = SMARTattributesToObserveIter->GetAttributeID();
       //OperatingSystem::GetTimeCountInNanoSeconds(timeCountInNanoSeconds);
       //OperatingSystem::GetTimeCountInSeconds(timeCountInSeconds);
       sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];

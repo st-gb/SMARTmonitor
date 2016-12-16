@@ -21,7 +21,7 @@ namespace libConfig
 {
 
   ConfigurationLoader::ConfigurationLoader(
-    std::set<SkSmartAttributeParsedData> & smartAttributesToObserve,
+    std::set<SMARTentry> & smartAttributesToObserve,
     SMARTmonitorBase & r_userInterface
     )
     : ConfigurationLoaderBase(/*oSMARTDetails*/ smartAttributesToObserve)
@@ -103,8 +103,7 @@ namespace libConfig
 
       // Get the store name.
       try {
-//        ST_SMART_DETAILS stSmartDetails;
-        SkSmartAttributeParsedData skSmartAttributeParsedData;
+        SMARTentry sMARTentry;
           //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
 
         const libconfig::Setting & root = libConfig.getRoot();
@@ -132,26 +131,30 @@ namespace libConfig
               lookupValue("Name", std_strAttribName);
 //            const bool successfullyLookedUpDetails = critical_SMART_parameter.
 //              lookupValue("Details", std_strAttribDetails);
-
             if( //successfullyLookedUpID &&
                 successfullyLookedUpName
                 //&& successfullyLookedUpDetails
               )
             {
-              skSmartAttributeParsedData.id = smartAttributeID;
+              sMARTentry.SetAttributeID(smartAttributeID);
               attributeNamesFromConfigFile.insert(std_strAttribName);
               std::set<std::string>::const_iterator citer =
                 attributeNamesFromConfigFile.find(std_strAttribName);
               if( citer != attributeNamesFromConfigFile.end() )
                 //use pointer from member var instead of from stack.
-                skSmartAttributeParsedData.name = std_strAttribName.c_str();
+                sMARTentry.SetName(std_strAttribName.c_str() );
 
               /*m_smartAttributesToObserve.*/ mp_smartAttributes->insert(
-                /*std::make_pair(smartAttributeID,*/ skSmartAttributeParsedData//)
+                /*std::make_pair(smartAttributeID,*/ sMARTentry//)
                 );
               LOGN("adding SMART ID" << smartAttributeID << "to " 
                   << mp_smartAttributes)
             }
+            std::string std_strCritical;
+            const bool successfullyLookedUpCritical = critical_SMART_parameter.
+              lookupValue("Critical", std_strCritical);
+            if( successfullyLookedUpCritical )
+              sMARTentry.SetCritical(std_strCritical == "yes");
           }
           else
           {

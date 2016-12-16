@@ -47,28 +47,24 @@ namespace wxWidgets
   }
 
   void wxSMARTvalueProcessor::ExecuteChangedCriticalParametersAction(
-//    ST_SMART_INFO* pCurrentSMARTparameter,
-    SkSmartAttributeParsedData & skSmartAttributeParsedData,
-//    const ST_DRIVE_INFO & st_drive_info
-    SkIdentifyParsedData & skIdentifyParsedData
+    SMARTentry & sMARTentry,
+    SMARTuniqueID & sMARTuniqueID
     )
   {
 //    m_wxdynlib.
-    OnChangedCriticalSMARTparameters(//pCurrentSMARTparameter, st_drive_info
-      skSmartAttributeParsedData, skIdentifyParsedData);
+    OnChangedCriticalSMARTparameters(
+      sMARTentry, sMARTuniqueID);
   }
 
   void wxSMARTvalueProcessor::OnChangedCriticalSMARTparameters(
-//    ST_SMART_INFO * pCurrentSMARTparameter,
-    SkSmartAttributeParsedData & skSmartAttributeParsedData,
-//    const ST_DRIVE_INFO & st_drive_info
-    SkIdentifyParsedData & skIdentifyParsedData
+    SMARTentry & sMARTentry,
+    SMARTuniqueID & sMARTuniqueID
     )
   {
     if( m_p_OnChangedCriticalSMARTparameters )
       /** Call function in dynamic library.*/
-      m_p_OnChangedCriticalSMARTparameters(//pCurrentSMARTparameter, st_drive_info
-        skSmartAttributeParsedData, skIdentifyParsedData);
+      m_p_OnChangedCriticalSMARTparameters(
+        sMARTentry, sMARTuniqueID);
   }
 
 	template <typename func_type> void wxSMARTvalueProcessor::PossiblyAssign(

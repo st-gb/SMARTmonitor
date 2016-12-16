@@ -118,16 +118,34 @@ void SMARTmonitorBase::OutputUsage()
       commandLineOption.possibleOptionValue << "";
     stdoss << "\n";
   }
-  std::cout << stdoss.str() << std::endl;
+  std::string str = stdoss.str();
+  std::cout << str << std::endl;
 }
 
-std::wstring SMARTmonitorBase::GetCommandLineArgument(const wchar_t * const str)
+std::wstring SMARTmonitorBase::GetCommandOptionValue(const wchar_t * const 
+  cmdLineOptionName)
 {
-  const int index = m_commandLineArgs.contains(str);
-  if( index != UINT_MAX && m_commandLineArgs.GetArgumentCount() > index + 1 )
+  const int index = m_commandLineArgs.contains(cmdLineOptionName);
+  return m_commandLineArgs.GetArgument(index);
+}
+
+std::wstring SMARTmonitorBase::GetCommandOptionValue(//const wchar_t * const str
+  unsigned programArgumentIndex)
+{
+  //const int index = m_commandLineArgs.contains(str);
+  std::wstring cmdLineOptionName = m_commandLineArgs.GetArgument(
+    programArgumentIndex);
+  for( fastestUnsignedDataType cmdLineOptionIndex = 0; 
+    s_commandLineOptions[cmdLineOptionIndex].optionName[0] != '\0'; 
+    ++ cmdLineOptionIndex )
   {
-    return m_commandLineArgs.GetArgument(index + 1);
+    CommandLineOption & commandLineOption = s_commandLineOptions[cmdLineOptionIndex];
+    if( GetStdString_Inline(cmdLineOptionName) == commandLineOption.optionName )
+      return m_commandLineArgs.GetArgument(programArgumentIndex + 1);      
   }
+//  if( index != UINT_MAX && m_commandLineArgs.GetArgumentCount() > index + 1 )
+//  {
+//  }
   return std::wstring();
 }
 
@@ -140,17 +158,36 @@ void SMARTmonitorBase::InitializeLogger()
     
   std::string stdstrLogFilePath;
   //std::string stdstrLogFileDirectory;
-  if( m_commandLineArgs.GetArgumentCount() > 1 )
+  unsigned programArgumentCount = m_commandLineArgs.GetArgumentCount();
+  if( programArgumentCount > 1 )
   {
-    std::wstring stdwstrLogfilepathCmdLineArg = GetCommandLineArgument(L"logfilefolder");
-    if( stdwstrLogfilepathCmdLineArg.size() > 0 )
+    bool atLeast1UnknwonCmdLineOption = false;
+    for( unsigned programArgumentIndex = 1; programArgumentIndex < programArgumentCount;
+        programArgumentIndex += 2)
     {
-      const wchar_t lastChar = stdwstrLogfilepathCmdLineArg.at(
-        stdwstrLogfilepathCmdLineArg.size() - 1 );
-      if( lastChar != FileSystem::dirSeperatorChar )
-        stdwstrLogfilepathCmdLineArg += FileSystem::dirSeperatorChar;
+      std::wstring cmdLineOptionName = m_commandLineArgs.GetArgument(programArgumentIndex);
+      if( GetCommandOptionValue(/*cmdLineOptionName.c_str()*/
+            programArgumentIndex ) == L"" )
+      {
+        std::wcout << L"unknown command line option \"" << cmdLineOptionName << L"\"" << std::endl;
+        atLeast1UnknwonCmdLineOption = true;
+      }
+      if( cmdLineOptionName == L"logfilefolder" )
+      {
+        std::wstring stdwstrLogfilepathCmdLineArg = GetCommandOptionValue(
+          /* L"logfilefolder" */ programArgumentIndex );
+        if( stdwstrLogfilepathCmdLineArg.size() > 0 )
+        {
+          const wchar_t lastChar = stdwstrLogfilepathCmdLineArg.at(
+            stdwstrLogfilepathCmdLineArg.size() - 1 );
+          if( lastChar != FileSystem::dirSeperatorChar )
+            stdwstrLogfilepathCmdLineArg += FileSystem::dirSeperatorChar;
+        }
+        stdstrLogFilePath = GetStdString_Inline( stdwstrLogfilepathCmdLineArg );
+      }
     }
-    stdstrLogFilePath = GetStdString_Inline( stdwstrLogfilepathCmdLineArg );
+    if( atLeast1UnknwonCmdLineOption )
+      OutputUsage();
   }  
   stdstrLogFilePath += GetStdString_Inline(stdwstrProgramePath);
   
@@ -254,7 +291,7 @@ void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
         SMARTuniqueIDsAndValues.begin();
       fastestUnsignedDataType SMARTattributeID;
       uint64_t SMARTrawValue;
-      const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
+      const std::set<SMARTentry> & SMARTattributesToObserve =
         SMARTaccess.getSMARTattributes();
       LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
       //TODO crashed in loop header at "iter++"
@@ -264,17 +301,19 @@ void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
         ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
       {
     //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
-        std::set<SkSmartAttributeParsedData>::const_iterator
+        std::set<SMARTentry>::const_iterator
           SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
         uint64_t currentSMARTrawValue;
         //TODO crashes here (iterator-related?!-> thread access problem??)
         for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
             SMARTattributesToObserveIter ++)
         {
-          SMARTattributeID = SMARTattributesToObserveIter->id;
+          SMARTattributeID = SMARTattributesToObserveIter->GetAttributeID();
           
           consistent = SMARTuniqueIDandValuesIter->m_SMARTvalues[
             SMARTattributeID].IsConsistent( m_arSMARTrawValue[lineNumber]);
+          if(consistent)
+          {
 //          AtomicExchange( (long int *) & m_arSMART_ID[lineNumber]
           LOGN(m_arSMARTrawValue[lineNumber] << " " << currentSMARTrawValue)
           AtomicExchange(
@@ -283,12 +322,12 @@ void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
           //FileTi
 //              OperatingSystem::GetTimeCountInSeconds(timeInS);
 
-          if( /*pSmartInfo->m_dwAttribValue*/
-            SMARTattributesToObserveIter->pretty_value )
+          if( /*SMARTattributesToObserveIter->pretty_value*/
+              m_arSMARTrawValue[lineNumber] )
             atLeast1NonNullValue = true;
           ++ lineNumber;
 //            }
-//          }
+          }
         }
       }
 //    }
@@ -383,7 +422,7 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
   //have to be taken into account
   std::wstring fullConfigFilePathWithoutExtension;
-  std::wstring configFilePathCmdLineValue = GetCommandLineArgument(L"configfilepath");
+  std::wstring configFilePathCmdLineValue = GetCommandOptionValue(L"configfilepath");
   if( configFilePathCmdLineValue == L"" ) /** NO config file path passed. */
   {
 //    ConstructConfigFilePathFromExeFilePath(
@@ -419,6 +458,7 @@ void SMARTmonitorBase::ConstructConfigFilePath(
 
 fastestUnsignedDataType SMARTmonitorBase::InitializeSMART()
 {
+  enum InitSMARTretCode initSMARTretCode = success;
   std::wstring stdwstrWorkingDirWithConfigFilePrefix;
   ConstructConfigFilePath(stdwstrWorkingDirWithConfigFilePrefix);
 
@@ -428,7 +468,8 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART()
     const bool successfullyLoadedConfigFile = mp_configurationLoader->
       LoadConfiguration(stdwstrWorkingDirWithConfigFilePrefix);
     
-//    if( ! successfullyLoadedConfigFile )
+    if( ! successfullyLoadedConfigFile )
+      initSMARTretCode = readingConfigFileFailed;
 //    {
 //      //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));
 //      return false;
@@ -438,8 +479,8 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART()
     if( dwRetVal == SMARTaccessBase::accessDenied )
     {
       ShowMessage("access denied to S.M.A.R.T.\n->restart this program as an"
-        " administrator\n->program exits after closing this message box");
-      return 1;
+        " administrator\n->program exits (after showing this message)");
+      initSMARTretCode = accessToSMARTdenied;
     }
     else
       LOGN("SMART successfully accessed")
@@ -448,13 +489,15 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART()
     LOGN("parse config file exc")
     ShowMessage("There was at least 1 error reading the configuration file\n"
       "->this application will exit now.");
+    initSMARTretCode = readingConfigFileFailed;
     throw e;
   }
-  return 0;
   LOGN("end")
+  return initSMARTretCode;
 }
 
 void SMARTmonitorBase::ShowMessage(const char * const msg) const
 {
   LOGN(msg)
+  std::cout << msg << std::endl;
 }

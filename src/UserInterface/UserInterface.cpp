@@ -7,6 +7,8 @@
 #include <fastest_data_type.h> //fastestUnsignedDataType
 #include <stdio.h> //snprintf(...)
 
+/** This function is intended to be used by subclasses (e.g. TUI via (n)curses, 
+ * wxWidgets GUI, ...) of this class.*/
 void UserInterface::FormatTimeOfLastUpdate(
   long int timeStampOfRetrievalIn1ks, 
   std::string & timeFormatString)
@@ -34,7 +36,9 @@ void UserInterface::FormatTimeOfLastUpdate(
   {
     const fastestUnsignedDataType timeOfSMARTvalueRetrievelInMin = 
       timeOfSMARTvalueRetrievelInS / 60.0;
-    const char * formatString = "%.0fmin %.3fs pure runtime after bootup";
+    timeOfSMARTvalueRetrievelInS = timeOfSMARTvalueRetrievelInS -
+      timeOfSMARTvalueRetrievelInMin * 60;
+    const char * formatString = "%dmin %.3fs pure runtime after bootup";
     char formattedString[80];
     snprintf(formattedString, 80, formatString,
       timeOfSMARTvalueRetrievelInMin,

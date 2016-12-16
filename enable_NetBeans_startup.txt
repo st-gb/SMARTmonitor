@@ -1,0 +1,2 @@
+If NetBeans does not start because it was executed as another (e.g. root) user:
+sudo chown <username> -R  ~/.cache/netbeans

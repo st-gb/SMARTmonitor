@@ -82,15 +82,17 @@ int main(int argc, char** argv) {
   
   //std::wstring stdwstrConfigPathWithoutExtension;
   //SMARTmonitor.ConstructConfigFilePath(stdwstrConfigPathWithoutExtension);
-  SMARTmonitor.InitializeSMART();
-  nativeThread_type clientConnThread;
-  clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor );
+  const fastestUnsignedDataType SMARTinitResult = SMARTmonitor.InitializeSMART();
+  if( SMARTinitResult == SMARTmonitorBase::success )
+  {
+    nativeThread_type clientConnThread;
+    clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor );
 
-  SMARTmonitor.StartAsyncUpdateThread();
-  
-  //Wait for the update thread to be finished
-  SMARTmonitor.WaitForSignal();
+    SMARTmonitor.StartAsyncUpdateThread();
+
+    //Wait for the update thread to be finished
+    SMARTmonitor.WaitForSignal();
+  }
   LOGN("ending service")
   return 0;
 }
-

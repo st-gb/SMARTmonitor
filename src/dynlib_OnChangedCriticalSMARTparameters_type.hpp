@@ -8,15 +8,17 @@
 #ifndef DYNLIB_ONCHANGEDCRITICALSMARTPARAMETERS_TYPE_HPP_
 #define DYNLIB_ONCHANGEDCRITICALSMARTPARAMETERS_TYPE_HPP_
 
-#include <atasmart.h> //SkIdentifyParsedData
+//#include <atasmart.h> //SkIdentifyParsedData
+#include <attributes/SMARTentry.hpp> //class SMARTentry
+#include <attributes/SMARTuniqueID.hpp> //class SMARTuniqueID
 
 #define DYN_LIB_CALLING_CONVENTION
 
 typedef DWORD (
   DYN_LIB_CALLING_CONVENTION
   * dynlib_OnChangedCriticalSMARTparameters_type)(
-//  ST_SMART_INFO * pCurrentSMARTparameter,
-  SkSmartAttributeParsedData & SkSmartAttributeParsedData,
-    const /*ST_DRIVE_INFO*/ SkIdentifyParsedData & st_drive_info );
+      SMARTentry & sMARTentry,
+      SMARTuniqueID & sMARTuniqueID
+  );
 
 #endif /* DYNLIB_ONCHANGEDCRITICALSMARTPARAMETERS_TYPE_HPP_ */

@@ -22,7 +22,7 @@ public:
   std::set<SMARTentry> * mp_smartAttributes;
 
   ConfigurationLoaderBase(/*const*/ //SMARTDETAILSMAP & oSMARTDetails
-    std::set<SkSmartAttributeParsedData> & smartAttributesToObserve )
+    std::set</*SkSmartAttributeParsedData*/SMARTentry> & smartAttributesToObserve )
 //    : //m_oSMARTDetails(oSMARTDetails)
 //      m_smartAttributesToObserve(smartAttributesToObserve)
   {

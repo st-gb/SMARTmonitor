@@ -40,6 +40,8 @@ public:
     }*/
   virtual ~SMARTmonitorBase();
   
+  enum InitSMARTretCode { success = 0, readingConfigFileFailed, accessToSMARTdenied};
+  
   void ConstructConfigFilePath(std::wstring & stdwstrConfigPathWithoutExtension);
   fastestUnsignedDataType InitializeSMART();
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
@@ -71,7 +73,9 @@ public:
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
   void OutputUsage();
   CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}
-  std::wstring GetCommandLineArgument(const wchar_t * const str);
+  std::wstring GetCommandOptionValue(const wchar_t * const 
+    cmdLineOptionName);
+  std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
   const wchar_t ** m_cmdLineArgStrings;

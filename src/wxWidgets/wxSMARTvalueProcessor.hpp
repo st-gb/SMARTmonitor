@@ -29,16 +29,12 @@ namespace wxWidgets
 
     void Init();
     void ExecuteChangedCriticalParametersAction(
-//      ST_SMART_INFO * pCurrentSMARTparameter,
-      SkSmartAttributeParsedData & skSmartAttributeParsedData,
-//      const ST_DRIVE_INFO & st_drive_info
-      SkIdentifyParsedData & skIdentifyParsedData
+      SMARTentry & sMARTentry,
+      SMARTuniqueID & sMARTuniqueID
       );
     void OnChangedCriticalSMARTparameters(
-//      ST_SMART_INFO * pCurrentSMARTparameter,
-      SkSmartAttributeParsedData & skSmartAttributeParsedData,
-//      const ST_DRIVE_INFO & st_drive_info
-      SkIdentifyParsedData & skIdentifyParsedData
+      SMARTentry & sMARTentry,
+      SMARTuniqueID & sMARTuniqueID
       );
 
 	/** @brief template function for ease to assign function pointers from a dyn lib

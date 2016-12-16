@@ -15,13 +15,14 @@
 #include <vector> //class std::vector
 #include <attributes/SMARTuniqueIDandValues.hpp> //class SMARTuniqueIDandValues
 #include <attributes/SMARTattributeNameAndID.hpp> //class SMARTattributeNameAndID
+#include <attributes/SMARTentry.hpp> //class SMARTentry
 
 class SMARTaccessBase
 {
 private:
 //  std::set<SkIdentifyParsedData> m_SMARTuniqueIDs;
 public:
-  typedef std::set<SkSmartAttributeParsedData> SMARTattributesContainerType;
+  typedef std::set<SMARTentry> SMARTattributesContainerType;
   typedef const SMARTattributesContainerType constSMARTattributesType;
   static fastestUnsignedDataType s_sizeOfLongIntInBytes;
 protected:
@@ -36,7 +37,7 @@ public:
   /** Implement functionality in subclasses because the SMART access part is
    *  specific to Linux, Windows or used SMART library and so on.*/
   virtual enum retCodes ReadSMARTValuesForAllDrives() = 0;
-  const std::set<SkSmartAttributeParsedData> & getSMARTattributes() const
+  const std::set<SMARTentry> & getSMARTattributes() const
   {
     return SMARTattributesToObserve;
   }

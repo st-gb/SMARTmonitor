@@ -361,9 +361,9 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
   DWORD numberOfMilliSecondsPassedSinceLastSMARTquery;
   wxString currentTime;
 
-  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
+  const std::set<SMARTentry> & SMARTattributesToObserve =
     m_SMARTaccess.getSMARTattributes();
-  std::set<SkSmartAttributeParsedData>::const_iterator
+  std::set<SMARTentry>::const_iterator
     SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
   for( unsigned index = 0; index < listItemCount; ++ index,
     SMARTattributesToObserveIter ++)
@@ -555,19 +555,19 @@ void SMARTdialog::SetSMARTdriveID()
 void SMARTdialog::SetSMARTattribIDandNameLabel()
 {
   LOGN("begin")
-  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
+  const std::set<SMARTentry> & SMARTattributesFromConfigFile =
     m_SMARTaccess.getSMARTattributes();
-  LOGN("begin " << & SMARTattributesToObserve)
+  LOGN("begin " << & SMARTattributesFromConfigFile)
   unsigned lineNumber = 0;
   wxString wxSMARTattribName;
 
-  std::set<SkSmartAttributeParsedData>::const_iterator
-    SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
+  std::set<SMARTentry>::const_iterator
+    SMARTattributesToObserveIter = SMARTattributesFromConfigFile.begin();
   fastestUnsignedDataType SMARTattributeID;
   
   std::set<int>::const_iterator IDofAttributeToObserverIter = wxGetApp().
     m_IDsOfSMARTattributesToObserve.begin();
-  SkSmartAttributeParsedData skSmartAttributeParsedData;
+  SMARTentry sMARTentry;
   /** Traverse all SMART attribute IDs either got from server or read via config 
    *  file.*/
   for( ; IDofAttributeToObserverIter != wxGetApp().m_IDsOfSMARTattributesToObserve.
@@ -583,15 +583,15 @@ void SMARTdialog::SetSMARTattribIDandNameLabel()
     m_pwxlistctrl->InsertItem( item );
     
     /** Now get the attribute name belonging to SMART ID */
-    skSmartAttributeParsedData.id = SMARTattributeID;
-    SMARTattributesToObserveIter = SMARTattributesToObserve.find(skSmartAttributeParsedData);
-    if( SMARTattributesToObserveIter != SMARTattributesToObserve.end() )
+    sMARTentry.SetAttributeID(SMARTattributeID);
+    SMARTattributesToObserveIter = SMARTattributesFromConfigFile.find(sMARTentry);
+    if( SMARTattributesToObserveIter != SMARTattributesFromConfigFile.end() )
     {
-      const SkSmartAttributeParsedData & SMARTattributeToObserve =
+      const SMARTentry & SMARTattributeFromConfig =
         *SMARTattributesToObserveIter;
       //SMARTattributeToObserve.name
       wxSMARTattribName = wxWidgets::GetwxString_Inline(
-        SMARTattributeToObserve.name);
+        SMARTattributeFromConfig.GetName() );
       m_pwxlistctrl->SetItem(
         lineNumber, 
         SMARTtableListCtrl::COL_IDX_SMARTparameterName, /*wxString::Format( wxT("%s"),

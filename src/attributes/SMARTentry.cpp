@@ -2,5 +2,5 @@
 
 bool operator < (const SMARTentry & left, const SMARTentry & right)
 {
-  return left.id < right.id;
+  return left./*id*/GetAttributeID() < right./*id*/GetAttributeID();
 }

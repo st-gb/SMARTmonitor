@@ -35,7 +35,9 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostNam
   struct sockaddr_in serv_addr;
   struct hostent *server;
   
-  m_socketFileDesc = socket(AF_INET, SOCK_STREAM, 0);
+  m_socketFileDesc = socket(AF_INET, SOCK_STREAM,
+    /** socket.h : "If PROTOCOL is zero, one is chosen automatically." */
+    0 );
   if (m_socketFileDesc < 0)
   {
     LOGN_ERROR("ERROR opening socket");
@@ -47,13 +49,16 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostNam
     LOGN_ERROR("host " << hostName << " not in database");
     return 2;
   }
+  LOGN("got host name for \"" << hostName << "\":" << server->h_name)
   bzero((char *) &serv_addr, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
   bcopy((char *)server->h_addr, 
        (char *)&serv_addr.sin_addr.s_addr,
        server->h_length);
   serv_addr.sin_port = htons(portNumber);
-  if( connect(m_socketFileDesc,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+  const int connectResult = connect(m_socketFileDesc,(struct sockaddr *) & serv_addr,
+    sizeof(serv_addr) );
+  if( connectResult < 0)
   {
     //TODO: show error via user interface
     //Message("")
@@ -246,7 +251,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
   //int numberOfDataSets;
   //do
   //{
-    
+  LOGN("reading 2 bytes from socket #" << m_socketFileDesc)
     int numBytesRead = read(m_socketFileDesc, & numBytesToRead, 2);
     if( numBytesRead < 2 ) {
       HandleTransmissionError(numBytesToReceive);
