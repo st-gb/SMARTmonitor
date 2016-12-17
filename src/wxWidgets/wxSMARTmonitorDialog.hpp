@@ -35,6 +35,7 @@ class SMARTdialog: public wxDialog
   wxButton * m_p_showSupportedSMART_IDs;
 //  wxTimer m_timer;
   nativeThread_type m_updateSMARTparameterValuesThread;
+  static bool s_atLeast1CriticalNonNullValue;
 public:
   SMARTaccess_type & m_SMARTaccess;
   wxCondition * m_p_wxCloseCondition;
@@ -66,6 +67,7 @@ protected:
   void OnCloseWindow(wxCloseEvent& event);
   void OnTimer(wxTimerEvent& event);
   void ReadSMARTvaluesAndUpdateUI();
+  void ShowStateAccordingToSMARTvalues(bool b);
   inline void UpdateTimeOfSMARTvalueRetrieval(
     unsigned lineNumber,
     long int timeStampOfRetrieval);

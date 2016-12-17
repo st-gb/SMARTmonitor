@@ -44,6 +44,7 @@ public:
   void SetServiceAddress(const std::string & str) {
     m_stdstrServerAddress = str;
   }
+  wxIcon ShowSMARTokIcon();
   wxIcon ShowSMARTwarningIcon();
 };
 

@@ -27,7 +27,7 @@ namespace libConfig
     : ConfigurationLoaderBase(/*oSMARTDetails*/ smartAttributesToObserve)
     , m_r_SMARTmonitorBase(r_userInterface)
   {
-    // TODO Auto-generated constructor stub
+    
   }
 
   ConfigurationLoader::~ConfigurationLoader()
@@ -115,6 +115,7 @@ namespace libConfig
           root["SMART_parameters"];        
         const int numCritical_SMART_parameters = SMART_parameters.getLength();
         std::tstring std_tstr;
+        bool criticalSMARTattribute = false;
         for(int SMARTparameterIndex = 0; SMARTparameterIndex
           < numCritical_SMART_parameters; ++ SMARTparameterIndex)
         {
@@ -131,6 +132,21 @@ namespace libConfig
               lookupValue("Name", std_strAttribName);
 //            const bool successfullyLookedUpDetails = critical_SMART_parameter.
 //              lookupValue("Details", std_strAttribDetails);
+            std::string std_strCritical;
+            const bool successfullyLookedUpCritical = critical_SMART_parameter.
+              lookupValue("Critical", std_strCritical);
+            if( successfullyLookedUpCritical )
+            {
+              LOGN_DEBUG("found \"Critical\" attribute.Value is:" << 
+                std_strCritical )
+              if( std_strCritical == "yes" )
+                criticalSMARTattribute = true;
+            }
+            else
+              criticalSMARTattribute = false;
+            sMARTentry.SetCritical(criticalSMARTattribute);
+            LOGN_DEBUG("Critical value for " << 
+              smartAttributeID << ":" << criticalSMARTattribute )
             if( //successfullyLookedUpID &&
                 successfullyLookedUpName
                 //&& successfullyLookedUpDetails
@@ -147,14 +163,11 @@ namespace libConfig
               /*m_smartAttributesToObserve.*/ mp_smartAttributes->insert(
                 /*std::make_pair(smartAttributeID,*/ sMARTentry//)
                 );
+            LOGN_DEBUG( "using SMART entry at address " << 
+              &  (* mp_smartAttributes->find(sMARTentry) ) )
               LOGN("adding SMART ID" << smartAttributeID << "to " 
                   << mp_smartAttributes)
             }
-            std::string std_strCritical;
-            const bool successfullyLookedUpCritical = critical_SMART_parameter.
-              lookupValue("Critical", std_strCritical);
-            if( successfullyLookedUpCritical )
-              sMARTentry.SetCritical(std_strCritical == "yes");
           }
           else
           {

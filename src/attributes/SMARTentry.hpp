@@ -17,17 +17,20 @@
 
 class SMARTentry
 {
-  bool criticalAttribute;
+  bool m_criticalAttribute;
   fastestUnsignedDataType attributeID;
   std::string attributeName;
 public:
+  SMARTentry() : m_criticalAttribute(false) { }
+  
   fastestUnsignedDataType GetAttributeID() const { return attributeID; }
   void SetAttributeID(const fastestUnsignedDataType attributeID) {
     this->attributeID = attributeID;
     }
   void SetName(const char * const name ) { attributeName = name; }
   void SetCritical(const bool criticalAttribute) { 
-    this->criticalAttribute = criticalAttribute; }
+    m_criticalAttribute = criticalAttribute; }
+  bool IsCritical() const { return m_criticalAttribute; }
   const char * const GetName() const { return attributeName.c_str(); }
 };
 

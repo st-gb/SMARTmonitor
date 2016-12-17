@@ -240,6 +240,27 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
   }
 }
 
+wxIcon wxSMARTmonitorApp::ShowSMARTokIcon()
+{
+  wxIcon icon;
+  if( GetSMARTokayIcon(icon) )
+  {
+    //if ( wxGetApp().m_taskBarIcon == NULL )  
+    wxString serviceLocation = wxWidgets::GetwxString_Inline(m_stdstrServerAddress);
+    
+    wxString message;
+    if( serviceLocation != wxT("") )
+      message = wxString::Format( wxT("for %s:\n"
+        "raw value for all critical SMART parameters is 0"), 
+        serviceLocation);
+    if ( ! m_taskBarIcon->SetIcon( icon, message ) )
+      wxMessageBox(wxT("Could not set new icon."), wxT("wxSMARTmonitor") );
+    if( gs_dialog)
+      gs_dialog->SetIcon(icon);
+  }
+  return icon;
+}
+
 wxIcon wxSMARTmonitorApp::ShowSMARTwarningIcon()
 {
   wxIcon icon;

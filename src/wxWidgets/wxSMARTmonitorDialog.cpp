@@ -33,10 +33,8 @@ GCC_DIAG_ON(write-strings)
 #include <hardware/CPU/atomic/memory_barrier.h>
 
 //extern wxSMARTmonitorApp theApp;
-
-// ----------------------------------------------------------------------------
-// MyDialog implementation
-// ----------------------------------------------------------------------------
+/** Static (class) variables. */
+bool SMARTdialog::s_atLeast1CriticalNonNullValue;
 
 //wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
@@ -190,14 +188,8 @@ SMARTdialog::SMARTdialog(
     SetSizerAndFit(sizerTop);
     Centre();
 
-    wxIcon icon;
-    if( wxGetApp().GetSMARTokayIcon(icon) )
-    {
-      if ( wxGetApp().m_taskBarIcon == NULL || ! wxGetApp().m_taskBarIcon->SetIcon(
-        icon, wxT("no S.M.A.R.T. problem") ) )
-        wxMessageBox(wxT("Could not set new icon."), wxT("wxSMARTmonitor") );
-      SetIcon(icon);
-    }
+    wxIcon okIcon = wxGetApp().ShowSMARTokIcon();
+    SetIcon(okIcon);
 }
 
 SMARTdialog::~SMARTdialog()
@@ -287,9 +279,10 @@ void SMARTdialog::ConnectToServer(wxCommandEvent& WXUNUSED(event))
     {
       wxGetApp().SetSMARTattributesToObserve(sMARTuniqueIDandValues);
       
-      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
+      m_p_ConnectAndDisconnectButton->SetLabel( wxT("disconnect") );
       ReBuildUserInterface();
       UpdateSMARTvaluesUI();
+      ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
       StartAsyncUpdateThread();
     }
   }
@@ -409,6 +402,14 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
   }
 }
 
+void SMARTdialog::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNonNullValue)
+{
+  if( atLeast1CriticalNonNullValue )
+    wxGetApp().ShowSMARTwarningIcon();
+  else
+    wxGetApp().ShowSMARTokIcon();
+}
+
 void SMARTdialog::UpdateTimeOfSMARTvalueRetrieval(
   unsigned lineNumber,
   long int timeStampOfRetrievalIn1ks)
@@ -430,11 +431,14 @@ void SMARTdialog::UpdateTimeOfSMARTvalueRetrieval(
 void SMARTdialog::UpdateSMARTvaluesUI()
 {
   unsigned lineNumber = 0;
-  bool atLeast1NonNullValue = false;
+  bool atLeast1CriticalNonNullValue = false;
 
   const fastestUnsignedDataType numberOfDifferentDrives = m_SMARTaccess.
     GetNumberOfDifferentDrives();
-  memory_barrier();
+  SMARTaccessBase::constSMARTattributesContainerType & SMARTattributesFromConfigFile =
+    m_SMARTaccess.getSMARTattributes();
+
+  //memory_barrier(); //TODO necessary at all??
   std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = m_SMARTaccess.
     GetSMARTuniqueIDandValues();
   LOGN("SMART unique ID and values container:" << & SMARTuniqueIDsAndValues )
@@ -449,7 +453,7 @@ void SMARTdialog::UpdateSMARTvaluesUI()
 #ifdef DEBUG
   int itemCount = m_pwxlistctrl->GetItemCount();
 #endif
-  memory_barrier(); //TODO: not really necessary??
+  //memory_barrier(); //TODO: not really necessary??
   
   /** Loop over data carriers. */
   for(fastestUnsignedDataType currentDriveIndex = 0;
@@ -459,17 +463,28 @@ void SMARTdialog::UpdateSMARTvaluesUI()
     LOGN("SMART unique ID and values object " << &(*SMARTuniqueIDandValuesIter) )
     std::set<int>::const_iterator
       IDsOfSMARTattributesToObserveIter = IDsOfSMARTattributesToObserve.begin();
+    SMARTaccessBase::SMARTattributesContainerConstIterType 
+      SMARTattributesFromConfigFileIter = SMARTattributesFromConfigFile.begin();
+    
     /** Loop over attribute IDs to observe */
     for( ; IDsOfSMARTattributesToObserveIter != IDsOfSMARTattributesToObserve.end();
         IDsOfSMARTattributesToObserveIter ++)
     {
       SMARTattributeID = *IDsOfSMARTattributesToObserveIter;
+      //TODO attribute IDs of SMART values to observe may not be a subset of
+      // SMART attributes in config file!
+      while( SMARTattributesFromConfigFileIter->GetAttributeID() != SMARTattributeID)
+      {
+        SMARTattributesFromConfigFileIter++;
+        LOGN_DEBUG( "using SMART entry at address " << & (* SMARTattributesFromConfigFileIter) )
+      }
+      
       const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];
       sMARTvalue.IsConsistent(SMARTrawValue);
       memory_barrier(); //TODO: not really necessary??
       int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
       
-      memory_barrier(); //TODO: not really necessary??
+      //memory_barrier(); //TODO: not really necessary??
       std::string stdstr;
       wxString wxstrRawValueString;
       if( successfullyUpdatedSMART )
@@ -482,13 +497,18 @@ void SMARTdialog::UpdateSMARTvaluesUI()
           SMARTtableListCtrl::COL_IDX_rawValue /** column #/ index */,
           //wxString::Format(wxT("%i"), SMARTrawValue) 
           wxstrRawValueString);
-        if( SMARTrawValue > 0)
+        bool critical = SMARTattributesFromConfigFileIter->IsCritical();
+        LOGN_DEBUG("attribute ID " << SMARTattributesFromConfigFileIter->GetAttributeID() 
+            << " is critical?:" << critical
+          //(critical==true ? "yes" : "no") 
+          )
+        if( critical && SMARTrawValue > 0)
+        {
+          atLeast1CriticalNonNullValue = true;
           m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxRED);
+        }
         else
           m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxGREEN);
-        if( /*SMARTattributesToObserveIter->pretty_value*/ SMARTrawValue )
-          atLeast1NonNullValue = true;
-
         UpdateTimeOfSMARTvalueRetrieval(lineNumber, sMARTvalue.m_timeStampOfRetrieval);
       }
       else
@@ -501,10 +521,12 @@ void SMARTdialog::UpdateSMARTvaluesUI()
       ++ lineNumber;
     }
   }
-  if( atLeast1NonNullValue )
+  /** ^= state changed. */
+  if( s_atLeast1CriticalNonNullValue != atLeast1CriticalNonNullValue )
   {
-    wxGetApp().ShowSMARTwarningIcon();
+    ShowStateAccordingToSMARTvalues(atLeast1CriticalNonNullValue);
   }
+  s_atLeast1CriticalNonNullValue = atLeast1CriticalNonNullValue;
 }
 
 void SMARTdialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)

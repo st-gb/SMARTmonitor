@@ -127,8 +127,8 @@ namespace libatasmart
   {
     uint64_t rawSMARTattrValue;
     const char * attributeName;
-    constSMARTattributesType::const_iterator SMARTattributesToObserveIter =
-      SMARTattributesToObserve.begin();
+    constSMARTattributesContainerType::const_iterator 
+      constSMARTattributesToObserveConstIter = SMARTattributesToObserve.begin();
 //            std::pair<std::set<SkIdentifyParsedData>::iterator, bool> insert =
 //              m_SMARTuniqueIDs.insert(*p_SkIdentifyParsedData);
 
@@ -147,11 +147,11 @@ namespace libatasmart
         m_SMARTuniqueIDandValues.insert(sMARTuniqueIDandValues);
 //              if( insert.second == true )/** If actually inserted into std::set*/
     {
-      for( ; SMARTattributesToObserveIter !=
-        SMARTattributesToObserve.end(); ++ SMARTattributesToObserveIter )
+      for( ; constSMARTattributesToObserveConstIter !=
+        SMARTattributesToObserve.end(); ++ constSMARTattributesToObserveConstIter )
       {
-        SMARTattributeID = SMARTattributesToObserveIter->GetAttributeID();
-        attributeName = SMARTattributesToObserveIter->GetName();
+        SMARTattributeID = constSMARTattributesToObserveConstIter->GetAttributeID();
+        attributeName = constSMARTattributesToObserveConstIter->GetName();
         i = readAttribute(/*attributeName*/SMARTattributeID, 
               (SkDisk *) p_skDisk, rawSMARTattrValue);
         if( i == 0) /** Successfully got SMART attribute value */

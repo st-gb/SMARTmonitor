@@ -23,7 +23,9 @@ private:
 //  std::set<SkIdentifyParsedData> m_SMARTuniqueIDs;
 public:
   typedef std::set<SMARTentry> SMARTattributesContainerType;
-  typedef const SMARTattributesContainerType constSMARTattributesType;
+  typedef const SMARTattributesContainerType constSMARTattributesContainerType;
+  typedef SMARTattributesContainerType::const_iterator 
+    SMARTattributesContainerConstIterType;
   static fastestUnsignedDataType s_sizeOfLongIntInBytes;
 protected:
   SMARTattributesContainerType SMARTattributesToObserve;
@@ -37,7 +39,7 @@ public:
   /** Implement functionality in subclasses because the SMART access part is
    *  specific to Linux, Windows or used SMART library and so on.*/
   virtual enum retCodes ReadSMARTValuesForAllDrives() = 0;
-  const std::set<SMARTentry> & getSMARTattributes() const
+  constSMARTattributesContainerType & getSMARTattributes() const
   {
     return SMARTattributesToObserve;
   }
