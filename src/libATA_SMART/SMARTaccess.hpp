@@ -24,11 +24,11 @@ namespace libatasmart
   };
 
   int getSupportedSMART_IDs(const char * const,
-                          std::vector<SMARTattributeNameAndID> & );
+    std::vector<SMARTattributeNameAndID> & );
 
   static void getSMARTrawValueCallback(
     SkDisk * d,
-    const SkSmartAttributeParsedData *a,
+    const SkSmartAttributeParsedData * a,
     struct libatasmart::attr_helper *ah);
 
   int readAttribute(/*const char attributeName []*/
@@ -49,7 +49,8 @@ namespace libatasmart
       const char * const device,
       std::vector<SMARTattributeNameAndID> & SMARTattributeNamesAndIDs);
     enum SMARTaccessBase::retCodes ReadSMARTValuesForAllDrives();
-    void copySMARTvalues(const  SkDisk *, const SkIdentifyParsedData *);
+    void copySMARTvalues(const  SkDisk *, //const SkIdentifyParsedData *
+      SMARTuniqueID & sMARTuniqueID);
   };
 
 } /* namespace libatasmart */

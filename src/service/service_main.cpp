@@ -83,7 +83,9 @@ int main(int argc, char** argv) {
   //std::wstring stdwstrConfigPathWithoutExtension;
   //SMARTmonitor.ConstructConfigFilePath(stdwstrConfigPathWithoutExtension);
   const fastestUnsignedDataType SMARTinitResult = SMARTmonitor.InitializeSMART();
-  if( SMARTinitResult == SMARTmonitorBase::success )
+  if( SMARTinitResult == SMARTmonitorBase::success && 
+      SMARTmonitor.BindAndListenToSocket() == 
+      SMARTmonitorService::listeningToSocket )
   {
     nativeThread_type clientConnThread;
     clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor );

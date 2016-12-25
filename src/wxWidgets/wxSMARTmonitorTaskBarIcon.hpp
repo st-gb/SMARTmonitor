@@ -16,15 +16,15 @@
 #include <wx/msw/winundef.h>
 #endif
 
-class MyTaskBarIcon
+class TaskBarIcon
   : public wxTaskBarIcon
 {
 public:
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
-    MyTaskBarIcon(wxTaskBarIconType iconType = wxTBI_DEFAULT_TYPE)
+    TaskBarIcon(wxTaskBarIconType iconType = wxTBI_DEFAULT_TYPE)
     :   wxTaskBarIcon(iconType)
 #else
-    MyTaskBarIcon()
+    TaskBarIcon()
 #endif
     {
 //      //http://msdn.microsoft.com/en-us/library/windows/desktop/dd378426%28v=vs.85%29.aspx

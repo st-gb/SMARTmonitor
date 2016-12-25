@@ -23,17 +23,30 @@ public:
   SMARTmonitorClient();
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
+  typedef std::set<fastestSignedDataType> supportedSMARTattributeIDs_type;
+  typedef std::map<SMARTuniqueID,supportedSMARTattributeIDs_type >
+    dataCarrierID2supportedSMARTattributesMap_type;
+  dataCarrierID2supportedSMARTattributesMap_type
+    dataCarrierIDandSMARTidsContainer;
   
   enum state {connectedToService, unconnectedFromService};
-
+  enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata};
+  
   int m_socketFileDesc;
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(uint8_t * SMARTvalues, unsigned numBytesToRead,
     /*std::set<SMARTuniqueIDandValues> & */ SMARTuniqueIDandValues &);
   virtual void ChangeState(enum state newState) { };
   fastestUnsignedDataType ConnectToServer(const char * hostName);
-  fastestUnsignedDataType  GetSMARTvaluesFromServer(std::set<SMARTuniqueIDandValues> & );
+  /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
+    uint8_t * xmlDataByteArray,
+    fastestUnsignedDataType numBytesToRead,
+    dataCarrierID2supportedSMARTattributesMap_type & supportedSMARTattributess
+    );
+  fastestUnsignedDataType GetSupportedSMARTidsFromServer();
+  fastestSignedDataType ReadNumFollowingBytes();
+  fastestUnsignedDataType GetSMARTvaluesFromServer(std::set<SMARTuniqueIDandValues> & );
   void HandleTransmissionError(enum TransmissionError transmissionError);
   
   const struct tm & GetLastSMARTvaluesUpdateTime() const { 

@@ -21,7 +21,7 @@
 #include "SMARTtableListCtrl.hpp"
 #include <wx/defs.h> //wxID_HIGHEST
 
-class MyTaskBarIcon;
+class TaskBarIcon;
 class wxListCtrl;
 using namespace wxWidgets;
 
@@ -73,7 +73,7 @@ protected:
     long int timeStampOfRetrieval);
 
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
-    MyTaskBarIcon   *m_dockIcon;
+    TaskBarIcon   *m_dockIcon;
 #endif
 
     DECLARE_EVENT_TABLE()

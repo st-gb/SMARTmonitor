@@ -9,6 +9,7 @@
 #include <fastest_data_type.h>
 #include "SMARTaccessBase.hpp"
 #include "hardware/CPU/atomic/AtomicExchange.h"
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN())
 
 //class SMARTaccessBase;
 //extern fastestUnsignedDataType SMARTaccessBase::s_sizeOfLongIntInBytes;
@@ -28,13 +29,36 @@ SMARTvalue::SMARTvalue(SMARTvalue & copyFrom)
   SetRawValue( * (uint64_t *) copyFrom.m_rawValue);
 }
 
-void SMARTvalue::SetRawValue(/*long int * pRawValue,*/ const uint64_t & rawSMARTattrValue)
+void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
+  an 8 byte type here */ uint64_t & rawSMARTattrValue)
 {
-  long int liRawSMARTattrValue;
+  LOGN_DEBUG("for raw value:" << rawSMARTattrValue)
+  /** important:-1.Use same datatype as atomic functions because of its size 
+     -2. use an unsigned type else there were miscalutions. */
+  unsigned long int liRawSMARTattrValue;
   m_rawValueCheckSum = 0;
-  /** If shorter than a uint64_t */
+  /** If shorter than a (8 byte) uint64_t */
   if( SMARTaccessBase::s_sizeOfLongIntInBytes < 8 )
   {
+    /** because a SMART raw value takes 6 bytes.
+     *   But on a 32 bit OS (even when executed on a 64 bit CPU) this value can't
+     *    be stored in 1 thread safe atomic operation ( e.g. 
+     *    __sync_lock_test_and_set() when using GCC/g++).
+     *   So a "check sum" is calcutated from the RAW value.
+     *   Because of multithreading: while a part of the checksum is copied
+     *    it may happen that other parts are changed and so the whole value 
+     *    may become inconsistent:
+     *   -for instance the SMART raw value may be
+     *    0xFF FF FF FF.and then changes to 0x01 00 00 00 00 value here in 
+     *     this function while another threads reads it, it finally may become:
+     *    0x01 FF FF FF FF
+     *    so an exclusive or operation is used in order to detect these cases:
+     *     originally:         00 00 00 00 xor FF FF FF FF = FF FF FF FF
+     *     reading thread does:00 00 00 01 xor FF FF FF FF = FF FF FF FE
+     *    -for instance the SMART raw value may be
+     *    0xFF FF FF FF.and then changes to 0x01 00 00 00 00 while copying the
+     *     value here in this function, it finally may become
+     *    0x01 FF FF FF FF  */
     fastestUnsignedDataType numTimesLongIntFitsInto8Bytes = 8/SMARTaccessBase::
       s_sizeOfLongIntInBytes;
     fastestUnsignedDataType numBitsToShift;
@@ -54,6 +78,9 @@ void SMARTvalue::SetRawValue(/*long int * pRawValue,*/ const uint64_t & rawSMART
         //(SMARTaccessBase::s_sizeOfLongIntInBytes * i)//long * Target
         , //* (long int *) //SMARTattributesToObserveIter->pretty_value /*raw*/ /*long val*/
         liRawSMARTattrValue );
+      LOGN_DEBUG("SMART raw value part (" 
+        << SMARTaccessBase::s_sizeOfLongIntInBytes << "B) #" << 
+        i << ":" << liRawSMARTattrValue)
       m_rawValueCheckSum ^= liRawSMARTattrValue;
     }
   }
@@ -64,9 +91,17 @@ void SMARTvalue::SetRawValue(/*long int * pRawValue,*/ const uint64_t & rawSMART
   }
 }
 
+/** @brief purpose of this function: because a SMART raw value takes 6 bytes.
+ *   But on a 32 bit OS (even when executed on a 64 bit CPU) this value can't
+ *    be stored in 1 thread safe atomic operation ( e.g. 
+ *    __sync_lock_test_and_set() when using GCC/g++).
+ *   So a "check sum" is calcutated using the RAW value parts stored in this 
+ *    class. If the raw value then matches */
 bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
 {
-  long int liRawSMARTattrValue, rawValueCheckSum = 0;
+  /** important:-1.Use same datatype as atomic functions because of its size 
+     -2. use an unsigned type else there were miscalutions. */
+  unsigned long int liRawSMARTattrValue, rawValueCheckSum = 0;
   /** If shorter than a uint64_t */
   if( SMARTaccessBase::s_sizeOfLongIntInBytes < 8 )
   {
@@ -88,13 +123,22 @@ bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
       rawValueCheckSum ^= liRawSMARTattrValue;
       rawValue |= liRawSMARTattrValue;
       rawValue <<= numBitsToShift;
+      LOGN_DEBUG("SMART raw value part (" 
+        << SMARTaccessBase::s_sizeOfLongIntInBytes << "B) #" << 
+        i << ":" << liRawSMARTattrValue)
+      LOGN_DEBUG("SMART raw value after iteration #" << 
+        (numTimesLongIntFitsInto8Bytes - i) << ":" << rawValue)
     }
   }
   else
   {
     rawValueCheckSum = * (uint64_t *) m_rawValue;
     rawValue = * (uint64_t *) m_rawValue;
-  }  
+  }
+#ifdef DEBUG
+  if( rawValueCheckSum != m_rawValueCheckSum )
+    LOGN_WARNING("values differ")
+#endif
   return rawValueCheckSum == m_rawValueCheckSum;
 }
 

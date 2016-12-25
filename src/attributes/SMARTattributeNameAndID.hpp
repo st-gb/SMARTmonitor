@@ -22,7 +22,7 @@ public:
   }
   virtual
   ~SMARTattributeNameAndID ();
-  unsigned getID() const { return id; }
+  unsigned GetID() const { return id; }
   const std::string & getName() const { return name; }
 };
 

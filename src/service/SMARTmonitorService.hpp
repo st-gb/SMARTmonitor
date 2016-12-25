@@ -27,8 +27,15 @@ public:
   SMARTmonitorService(const SMARTmonitorService& orig);
   virtual ~SMARTmonitorService();
   
+  enum BindAndListenRetCode { listeningToSocket, unset, 
+    failedToBindToSocket, failedToListenToSocket };
+  enum SocketSendReturnCodes { successfullyWroteAllBytes, readingEndOfSoecketClosed, 
+    wroteLessBytesThanIntended } ;
+  fastestUnsignedDataType BindAndListenToSocket();
   void EndUpdateSMARTvaluesThread();
-  void SendBytes(std::string & xmlString);
+  int SendBytesTo1Client(const int clientSocketFileDesc, 
+    const std::string & xmlString);
+  void SendBytesToAllClients(std::string & xmlString);
   void AddClient(const int clientSocketFileDesc);
   void BeforeWait();
   void AfterGetSMARTvaluesLoop();
@@ -46,6 +53,7 @@ private:
   pthread_cond_t cond;
   pthread_mutex_t mutex;
   nativeCriticalSection_type m_clientsCriticalSection;
+  void SendSupportedSMART_IDsToClient(const int clientSocketFileDesc);
 };
 
 #endif /* SMARTMONITORSERVICE_HPP */

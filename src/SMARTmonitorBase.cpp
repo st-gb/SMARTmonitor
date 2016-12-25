@@ -24,6 +24,8 @@
 #include <Controller/time/GetTickCount.hpp>
 #include <FileSystem/PathSeperatorChar.hpp>
 
+/** Static/Class members must be defined once in a source file. Do this here */
+SMARTmonitorBase::dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 fastestSignedDataType SMARTmonitorBase::s_updateSMARTvalues = 1;
 extern const char FileSystem::dirSeperatorChar;
@@ -476,14 +478,22 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART()
 //    }
     //if( smartReader.m_oSMARTDetails.size())
     DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
-    if( dwRetVal == SMARTaccessBase::accessDenied )
+    switch( dwRetVal)
     {
-      ShowMessage("access denied to S.M.A.R.T.\n->restart this program as an"
-        " administrator\n->program exits (after showing this message)");
-      initSMARTretCode = accessToSMARTdenied;
+      case SMARTaccessBase::accessDenied :
+        ShowMessage("access denied to S.M.A.R.T.\n->restart this program as an"
+          " administrator\n->program exits (after showing this message)");
+        initSMARTretCode = accessToSMARTdenied;
+        break;
+      case SMARTaccessBase::noSingleSMARTdevice :
+        ShowMessage("no S.M.A.R.T. capable device present\n->program exits "
+          "(after showing this message)");
+        initSMARTretCode = noSMARTcapableDevicePresent;
+        break;
+      case SMARTaccessBase::success :
+        LOGN("SMART successfully accessed")
+        break;
     }
-    else
-      LOGN("SMART successfully accessed")
   }catch(const ParseConfigFileException & e)
   {
     LOGN("parse config file exc")
@@ -492,7 +502,7 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART()
     initSMARTretCode = readingConfigFileFailed;
     throw e;
   }
-  LOGN("end")
+  LOGN("end--returning " << initSMARTretCode)
   return initSMARTretCode;
 }
 

@@ -31,7 +31,8 @@ protected:
   SMARTattributesContainerType SMARTattributesToObserve;
   std::set<SMARTuniqueIDandValues> m_SMARTuniqueIDandValues;
 public:
-  enum retCodes { success = 0, accessDenied};
+  enum retCodes { success = 0, accessDenied, noSingleSMARTdevice, 
+    gotSMARTattributeValue, unset};
   SMARTaccessBase ();
   virtual
   ~SMARTaccessBase ();

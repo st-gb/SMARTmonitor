@@ -18,7 +18,7 @@
 #include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxWidgets::wxSMARTvalueProcessor
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
 
-class MyTaskBarIcon;
+class TaskBarIcon;
 
 class wxSMARTmonitorApp
   : public wxApp, public /*SMARTmonitorBase*/ SMARTmonitorClient
@@ -28,7 +28,7 @@ class wxSMARTmonitorApp
 public:
   //SMARTaccess_type & m_SMARTaccess;
   //static const wxString appName;
-  MyTaskBarIcon * m_taskBarIcon;
+  TaskBarIcon * m_taskBarIcon;
   static fastestUnsignedDataType s_GUIthreadID;
   wxSMARTmonitorApp();
   virtual

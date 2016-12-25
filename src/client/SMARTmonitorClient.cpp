@@ -18,6 +18,7 @@
 #include <stdint.h> //uint8_t
 #include "tinyxml2.h" //
 #include "hardware/CPU/atomic/AtomicExchange.h"
+#include "Controller/character_string/ConvertStdStringToTypename.hpp"
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 
 SMARTmonitorClient::SMARTmonitorClient() {
@@ -83,7 +84,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostNam
   return 0;
 }
 
-void GetSMARTuniqueID(
+bool GetSMARTuniqueID(
   tinyxml2::XMLElement * p_tinyxml2XMLelement, 
   SMARTuniqueID & sMARTuniqueID)
 {
@@ -98,20 +99,36 @@ void GetSMARTuniqueID(
 //      }
   if( ! modelString ) {
     LOGN_ERROR("failed to get model atribute value")
-    return;
+    return false;
   }
   if( ! firmwareString ) {
     LOGN_ERROR("failed to get firmware atribute value")
-    return;
+    return false;
   }
   if( ! serialNumberString ) {
     LOGN_ERROR("failed to get serial number atribute value")
-    return;
+    return false;
   }
   sMARTuniqueID.SetModelName(modelString);
   sMARTuniqueID.SetFirmwareName(firmwareString);
   sMARTuniqueID.SetSerialNumber(serialNumberString);
   LOGN("data carrier ID:" << sMARTuniqueID)
+  return true;
+}
+
+int CheckSMARTidRange(const int SMARTattributeID)
+{
+  if( SMARTattributeID >= NUM_DIFFERENT_SMART_ENTRIES)
+  {
+    LOGN_ERROR("SMART ID too high:" << SMARTattributeID)
+    return 1;
+  }
+  if( SMARTattributeID < 0)
+  {
+    LOGN_ERROR("SMART ID is negative:" << SMARTattributeID)
+    return -1;
+  }
+  return 0;
 }
 
 void HandleSingleSMARTentry(
@@ -119,14 +136,9 @@ void HandleSingleSMARTentry(
   SMARTuniqueIDandValues & sMARTuniqueIDandValues)
 {
   const int SMARTattributeID = p_SMARTelement->IntAttribute("ID", 0);
-  if( SMARTattributeID >= NUM_DIFFERENT_SMART_ENTRIES)
+  if( CheckSMARTidRange(SMARTattributeID) != 0)
   {
-    LOGN_ERROR("SMART ID too high:" << SMARTattributeID)
-    return;
-  }
-  if( SMARTattributeID < 0)
-  {
-    LOGN_ERROR("SMART ID is negative:" << SMARTattributeID)
+    LOGN_ERROR("SMART ID is not in range 0..255->not processing this SMART entry")
     return;
   }
   const int64_t SMART_raw_value = p_SMARTelement->Int64Attribute("raw_value", 0);
@@ -153,7 +165,8 @@ void GetSMARTrawValues(
   tinyxml2::XMLElement * p_tinyxml2XMLelement, 
   SMARTuniqueIDandValues & sMARTuniqueIDandValues)
 {
-  tinyxml2::XMLElement * p_SMARTelement = p_tinyxml2XMLelement->FirstChildElement("SMART");
+  tinyxml2::XMLElement * p_SMARTelement = p_tinyxml2XMLelement->
+    FirstChildElement("SMART");
   if( ! p_SMARTelement)
   {
     LOGN_ERROR("no SMART XML element name below the root element")
@@ -171,6 +184,112 @@ void GetSMARTrawValues(
     p_SMARTelement = p_SMARTelement->NextSiblingElement("SMART");
   }
   LOGN("end")
+}
+
+void HandleXMLresult(const tinyxml2::XMLError XMLparsingResult)
+{
+  LOGN("result of parsing XML data:" << XMLparsingResult)
+  if( XMLparsingResult != tinyxml2::XML_SUCCESS)
+  {
+    LOGN_ERROR("XML error occured")
+    switch(XMLparsingResult)
+    {
+      case tinyxml2::XML_ERROR_PARSING_ELEMENT :
+        LOGN_ERROR("XML parsing error")
+        break;
+    }
+    return;
+  }
+}
+
+void ConvertStringToInt(
+  const char * const p_BeginOfNumber, 
+  SMARTmonitorClient::supportedSMARTattributeIDs_type & supportedSMARTattributeIDs )
+{
+  fastestUnsignedDataType number;
+  //std::string std_strConvertToNumber(p_BeginOfNumber);
+  
+  if( ConvertStdStringToTypename(number, p_BeginOfNumber) )
+  {
+    if( CheckSMARTidRange(number) == 0 )
+    {
+      LOGN_DEBUG( "string:" << p_BeginOfNumber << " as int:" << number )
+      supportedSMARTattributeIDs.insert( number );
+    }
+    else
+      LOGN_ERROR("SMART ID is not in range 0..255->not processing this SMART entry")
+  }
+  else
+    LOGN_ERROR("error converting " << p_BeginOfNumber << " to a number")
+}
+
+void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
+  uint8_t * xmlDataByteArray,
+  fastestUnsignedDataType numBytesToRead,
+  //std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainter
+  dataCarrierID2supportedSMARTattributesMap_type & 
+    dataCarrierID2supportedSMARTattributess)
+{
+  std::string std_strXMLdata( (const char *) xmlDataByteArray);
+  LOGN("XML data:" << std_strXMLdata)
+  //TODO source out into tinyxml2.cpp because this code is specific to the XML lib
+  tinyxml2::XMLDocument tinyXML2Doc;
+  const tinyxml2::XMLError XMLparsingResult = tinyXML2Doc.Parse(
+    std_strXMLdata.c_str(), 
+    numBytesToRead);
+  HandleXMLresult(XMLparsingResult);
+  if( XMLparsingResult != tinyxml2::XML_SUCCESS )
+  {
+    ShowMessage("error parsing the XML data->no further processing->exit");
+    LOGN_ERROR("error parsing the XML data->no further processing->exit")
+    return;
+  }
+  tinyxml2::XMLElement * p_tinyxml2XMLelement = tinyXML2Doc.RootElement();
+  if( ! p_tinyxml2XMLelement )
+  {
+    LOGN_ERROR("Failed to get XML root element")
+    return;
+  }
+  LOGN_DEBUG("got XML root element")
+  SMARTuniqueID sMARTuniqueID;
+  if( GetSMARTuniqueID(p_tinyxml2XMLelement, sMARTuniqueID) )
+  {
+    p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement("supportedSMART_IDs");
+    if( ! p_tinyxml2XMLelement )
+    {
+      LOGN_ERROR("no \"supportedSMART_IDs\" child element in XML data??")
+      return;
+    }
+    const char * supportedSMARTattributeIDsString = p_tinyxml2XMLelement->GetText();
+//      "supportedSMART_IDs", NULL);
+    if( supportedSMARTattributeIDsString == NULL )
+    {
+      LOGN_ERROR("no \"supportedSMART_IDs\" attribute in XML data??")
+      return;
+    }
+    LOGN_DEBUG( "text inside \"supportedSMART_IDs\":" << 
+      supportedSMARTattributeIDsString )
+    supportedSMARTattributeIDs_type supportedSMARTattributeIDs;
+    
+    const char * p_lastComma = (char * ) supportedSMARTattributeIDsString;
+    char * p_currentChar=(char * )supportedSMARTattributeIDsString;
+    for( ; *p_currentChar != '\0' ; ++ p_currentChar)
+    {
+      if( * p_currentChar == ',')
+      {
+        * p_currentChar = '\0';
+        ConvertStringToInt(p_lastComma, supportedSMARTattributeIDs);
+        p_lastComma = p_currentChar + 1;
+      }
+      //TODO
+//      GetSupportedSMARTattributes(p_tinyxml2XMLelement, supportedSMARTattributes);
+    }
+    if( p_lastComma < p_currentChar ) /** Process last attribute ID */
+      ConvertStringToInt(p_lastComma, supportedSMARTattributeIDs);
+      
+    dataCarrierID2supportedSMARTattributess.insert( std::make_pair(sMARTuniqueID, 
+      supportedSMARTattributeIDs) );
+  }
 }
 
 void SMARTmonitorClient::GetSMARTdataViaXML(
@@ -239,80 +358,85 @@ void SMARTmonitorClient::HandleTransmissionError(
   //TODO close socket, set status (also in UI) to unconnected
 }
 
+fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
+{
+  LOGN("reading 2 bytes from socket #" << m_socketFileDesc)
+  uint16_t numBytesToRead;
+  int numBytesRead = read(m_socketFileDesc, & numBytesToRead, 2);
+  if( numBytesRead < 2 ) {
+    HandleTransmissionError(numBytesToReceive);
+    return 1;
+  }
+  numBytesToRead = ntohs(numBytesToRead);
+  LOGN_DEBUG("# bytes to read:" << numBytesToRead)
+  return numBytesToRead;
+}
+
+fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
+{
+  dataCarrierIDandSMARTidsContainer.clear();
+  fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
+  LOGN_DEBUG("# of following bytes: " << numBytesToRead );
+  
+  const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
+  uint8_t * XMLdata = new uint8_t[numBytesToAllocate];
+  if( XMLdata)
+  {
+    int numBytesRead = read(m_socketFileDesc, XMLdata, numBytesToRead);
+    if (numBytesRead < numBytesToRead) {
+      HandleTransmissionError(SMARTdata);
+      LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
+        << numBytesToRead << ")");
+      return 2; //TODO provide error handling (show message to user etc.)
+    }
+    LOGN_DEBUG("successfully read " << numBytesRead << "bytes")
+    XMLdata[numBytesToRead] = '\0';
+
+    GetSupportedSMARTattributesViaXML(XMLdata, numBytesToRead, 
+      dataCarrierIDandSMARTidsContainer);
+  }
+}
+
 fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
   std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer)
 {
   LOGN("begin")
+  enum transmission transmissionResult = unsetTransmResult;
   sMARTuniqueIDandValuesContainer.clear();
-  //int lineNumber = 0;
-  //uint8_t array[5];
-  uint16_t numBytesToRead;
+  int numBytesRead;
+  fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
   
-  //int numberOfDataSets;
-  //do
-  //{
-  LOGN("reading 2 bytes from socket #" << m_socketFileDesc)
-    int numBytesRead = read(m_socketFileDesc, & numBytesToRead, 2);
-    if( numBytesRead < 2 ) {
-      HandleTransmissionError(numBytesToReceive);
-      return 1;
+  const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
+  uint8_t SMARTvalues[numBytesToAllocate];
+  if( SMARTvalues)
+  {
+    numBytesRead = read(m_socketFileDesc, SMARTvalues, numBytesToRead);
+    if (numBytesRead < numBytesToRead) {
+      HandleTransmissionError(SMARTdata);
+      LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
+        << numBytesToRead << ")");
+      return readLessBytesThanIntended; //TODO provide error handling (show message to user etc.)
     }
-    numBytesToRead = ntohs(numBytesToRead);
-    LOGN("# bytes to read:" << numBytesToRead)
-            
-    const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
-    uint8_t * SMARTvalues = new uint8_t[numBytesToAllocate];
-    if( SMARTvalues)
+    SMARTvalues[numBytesToRead] = '\0';
+    SMARTuniqueIDandValues sMARTuniqueIDandValues;
+    GetSMARTdataViaXML(SMARTvalues, numBytesToRead, sMARTuniqueIDandValues);
+    LOGN("SMART unique ID and values object " << & sMARTuniqueIDandValues )
+    //sMARTuniqueIDandValuesContainer.f
+    std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert = 
+      sMARTuniqueIDandValuesContainer.insert(sMARTuniqueIDandValues);
+    LOGN("insered object into container?:" << insert.second);
+    if(insert.second)
     {
-      numBytesRead = read(m_socketFileDesc, SMARTvalues, numBytesToRead);
-      if (numBytesRead < numBytesToRead) {
-        HandleTransmissionError(SMARTdata);
-        LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
-          << numBytesToRead << ")");
-        return 2; //TODO provide error handling (show message to user etc.)
-      }
-      SMARTvalues[numBytesToRead] = '\0';
-      SMARTuniqueIDandValues sMARTuniqueIDandValues;
-      GetSMARTdataViaXML(SMARTvalues, numBytesToRead, sMARTuniqueIDandValues);
-      LOGN("SMART unique ID and values object " << & sMARTuniqueIDandValues )
-      //sMARTuniqueIDandValuesContainer.f
-      std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert = 
-        sMARTuniqueIDandValuesContainer.insert(sMARTuniqueIDandValues);
-      LOGN("insered object into container?:" << insert.second);
-      if(insert.second)
-      {
-        LOGN("SMART unique ID and values object in container:" << &(*insert.first) )
-      }
-      //RebuildGUI();
-      OperatingSystem::GetCurrentTime(m_timeOfLastSMARTvaluesUpdate);
-      //LOGN("got model attribute")
-      //const char * modelString = p_tinyxml2XMLattribute->Value();
-      //LOGN("model: " << modelString)
-      delete [] SMARTvalues;
+      LOGN("SMART unique ID and values object in container:" << &(*insert.first) )
     }
-    else
-    {
-      LOGN_ERROR("Failed to allocate " << numBytesToAllocate << " bytes")
-    }
-    
-//    char * str = (char *) "<data_carrier></data_carrier";
-//    numberOfDataSets = numBytesToRead / 5;
-//    
-//    if (numBytesRead < 5) {
-//      LOGN_ERROR("ERROR reading from socket");
-//      return;
-//    }
-
-    //long currentSMARTrawValue = ntohl( * (long*) & array[1]);
-    /*AtomicExchange( (long int *) & m_arSMARTrawValue[lineNumber] //long * Target */
-      //,//* (long int *) //SMARTattributesToObserveIter->pretty_value /*raw*/ /*long val*/
-      /*currentSMARTrawValue);
-  //          AtomicExchange( (long int *) & m_arSMART_ID[lineNumber]
-    LOGN(m_arSMARTrawValue[lineNumber] << " " << currentSMARTrawValue)
-    AtomicExchange(
-      & m_arTickCountOfLastQueryInMilliSeconds[lineNumber]
-      , GetTickCount() /*long val*/ //);
-  //}while(1);
+    //RebuildGUI();
+    OperatingSystem::GetCurrentTime(m_timeOfLastSMARTvaluesUpdate);
+//    delete [] SMARTvalues;
+  }
+  else
+  {
+    LOGN_ERROR("Failed to allocate " << numBytesToAllocate << " bytes")
+  }
   LOGN("end")
-  return 0;
+  return successfull;
 }

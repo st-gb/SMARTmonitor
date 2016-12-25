@@ -270,12 +270,14 @@ void SMARTdialog::ConnectToServer(wxCommandEvent& WXUNUSED(event))
     //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
     std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = m_SMARTaccess.
       GetSMARTuniqueIDandValues();
+    /*const int res =*/ wxGetApp().GetSupportedSMARTidsFromServer();
     LOGN("SMART unique ID and values container:" << & sMARTuniqueIDandValues )
     /** Get # of attributes to in order build the user interface (write 
      *  attribute ID an name into the table--creating the UI needs to be done 
      *  only once because the attribute IDs received usually do not change).*/
-    const int res = wxGetApp().GetSMARTvaluesFromServer(sMARTuniqueIDandValues);
-    if( res == 0)
+    const int getSMARTvaluesResult = wxGetApp().GetSMARTvaluesFromServer(
+      sMARTuniqueIDandValues);
+    if( getSMARTvaluesResult == 0)
     {
       wxGetApp().SetSMARTattributesToObserve(sMARTuniqueIDandValues);
       
@@ -327,16 +329,26 @@ void SMARTdialog::ReBuildUserInterface()
   SetSMARTattribIDandNameLabel();
 }
 
+//TODO enable showing supported SMART IDs for multiple disks
 void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event))
 {
-  std::vector<SMARTattributeNameAndID> SMARTattributeNamesAndIDs;
+  //TODO: get supported SMART IDs for data carrier identifier
+  // idea: pointer to data carrier id object -> supported SMART IDs
+  
+//  std::vector<SMARTattributeNameAndID> SMARTattributeNamesAndIDs;
 //  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesSet = m_SMARTaccess.
 //    GetSMARTuniqueIDandValues();
-  //TODO show data carrier model (, firmware, serial #) in title bar
-  m_SMARTaccess.GetSupportedSMART_IDs("/dev/sda", SMARTattributeNamesAndIDs);
-  SupportedSMART_IDsDialog * p_SupportedSMART_IDsDialog = new
-    SupportedSMART_IDsDialog(SMARTattributeNamesAndIDs);
-  p_SupportedSMART_IDsDialog->Show(true);
+  //m_SMARTaccess.GetSupportedSMART_IDs("/dev/sda", SMARTattributeNamesAndIDs);
+  
+  SMARTmonitorClient::dataCarrierID2supportedSMARTattributesMap_type::const_iterator
+    iter = wxGetApp().dataCarrierIDandSMARTidsContainer.begin();
+  if( iter != wxGetApp().dataCarrierIDandSMARTidsContainer.end() )
+  {
+//    SMARTuniqueID & r_SMARTuniqueID = iter->first;
+    SupportedSMART_IDsDialog * p_SupportedSMART_IDsDialog = new
+      SupportedSMART_IDsDialog(iter);
+    p_SupportedSMART_IDsDialog->Show(true);
+  }
 }
 
 void SMARTdialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))

@@ -78,7 +78,7 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
   /** wxTaskBarIcon::IsAvailable exists since wxWidgets 2.9.0 */
 #if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8
   if ( wxTaskBarIcon::IsAvailable() )
-    wxGetApp().m_taskBarIcon = new MyTaskBarIcon();
+    wxGetApp().m_taskBarIcon = new TaskBarIcon();
   else
   {
     wxMessageBox(
@@ -89,7 +89,7 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
     );
   }
 #else
-  wxGetApp().m_taskBarIcon = new MyTaskBarIcon();
+  wxGetApp().m_taskBarIcon = new TaskBarIcon();
 #endif
 }
 
@@ -142,11 +142,13 @@ bool wxSMARTmonitorApp::OnInit()
       m_SMARTvalueProcessor);
     gs_dialog->Show(true);
     const fastestUnsignedDataType result = InitializeSMART();
-    if( result == 0)
+    if( result == SMARTaccessBase::success)
     {
       //TODO exchange by wxGetApp().StartAsyncUpdateThread();
       gs_dialog->StartAsyncUpdateThread();
     }
+//    else if( result == SMARTaccessBase::noSingleSMARTdevice )
+//      return false;
   }
   /** Thrown by mp_configurationLoader->LoadConfiguration(..:) */
   catch(const FileException & fe) 

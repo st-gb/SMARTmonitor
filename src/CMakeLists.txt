@@ -112,6 +112,7 @@ if (UNIX)
   set( CLIENT_SERVER_BASE_SOURCE_FILES
     ${CLIENT_SERVER_BASE_SOURCE_FILES}
     ${PROJECT_SOURCE_DIR}/UserInterface/UserInterface.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/POSIX/GetBlockDeviceFiles.c
     ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/POSIX/multithread/pthreadBasedI_Thread.cpp
   	${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
 	  ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp

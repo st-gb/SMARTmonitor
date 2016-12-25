@@ -37,17 +37,17 @@ enum
     PU_SUBMAIN
 };
 
-BEGIN_EVENT_TABLE(MyTaskBarIcon, wxTaskBarIcon)
-    EVT_MENU(PU_RESTORE, MyTaskBarIcon::OnMenuRestore)
-    EVT_MENU(PU_EXIT,    MyTaskBarIcon::OnMenuExit)
-    EVT_MENU(PU_NEW_ICON,MyTaskBarIcon::OnMenuSetNewIcon)
-    EVT_MENU(PU_CHECKMARK,MyTaskBarIcon::OnMenuCheckmark)
-    EVT_UPDATE_UI(PU_CHECKMARK,MyTaskBarIcon::OnMenuUICheckmark)
+BEGIN_EVENT_TABLE(TaskBarIcon, wxTaskBarIcon)
+    EVT_MENU(PU_RESTORE, TaskBarIcon::OnMenuRestore)
+    EVT_MENU(PU_EXIT,    TaskBarIcon::OnMenuExit)
+    EVT_MENU(PU_NEW_ICON,TaskBarIcon::OnMenuSetNewIcon)
+    EVT_MENU(PU_CHECKMARK,TaskBarIcon::OnMenuCheckmark)
+    EVT_UPDATE_UI(PU_CHECKMARK,TaskBarIcon::OnMenuUICheckmark)
 //    EVT_TASKBAR_LEFT_DCLICK  (MyTaskBarIcon::OnLeftButtonDClick)
-    EVT_TASKBAR_LEFT_DOWN  (MyTaskBarIcon::OnLeftButtonClick)
-    EVT_MENU(PU_SUB1, MyTaskBarIcon::OnMenuSub)
-    EVT_MENU(PU_SUB2, MyTaskBarIcon::OnMenuSub)
-    EVT_SIZE(MyTaskBarIcon::OnSize)
+    EVT_TASKBAR_LEFT_DOWN  (TaskBarIcon::OnLeftButtonClick)
+    EVT_MENU(PU_SUB1, TaskBarIcon::OnMenuSub)
+    EVT_MENU(PU_SUB2, TaskBarIcon::OnMenuSub)
+    EVT_SIZE(TaskBarIcon::OnSize)
 END_EVENT_TABLE()
 
 void ShowTaskBarIcon()
@@ -67,7 +67,7 @@ void ShowTaskBarIcon()
 //    }
 
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
-    m_dockIcon = new MyTaskBarIcon(wxTBI_DOCK);
+    m_dockIcon = new TaskBarIcon(wxTBI_DOCK);
     if ( !m_dockIcon->SetIcon(wxICON(sample)) )
     {
         wxLogError(wxT("Could not set icon."));
@@ -75,29 +75,29 @@ void ShowTaskBarIcon()
 #endif
 }
 
-void MyTaskBarIcon::OnMenuRestore(wxCommandEvent& )
+void TaskBarIcon::OnMenuRestore(wxCommandEvent& )
 {
     gs_dialog->Show(true);
 }
 
-void MyTaskBarIcon::OnMenuExit(wxCommandEvent& )
+void TaskBarIcon::OnMenuExit(wxCommandEvent& )
 {
     gs_dialog->Close(true);
 }
 
 static bool check = true;
 
-void MyTaskBarIcon::OnMenuCheckmark(wxCommandEvent& )
+void TaskBarIcon::OnMenuCheckmark(wxCommandEvent& )
 {
     check = !check;
 }
 
-void MyTaskBarIcon::OnMenuUICheckmark(wxUpdateUIEvent &event)
+void TaskBarIcon::OnMenuUICheckmark(wxUpdateUIEvent &event)
 {
     event.Check(check);
 }
 
-void MyTaskBarIcon::OnMenuSetNewIcon(wxCommandEvent&)
+void TaskBarIcon::OnMenuSetNewIcon(wxCommandEvent&)
 {
 //    wxIcon icon(smile_xpm);
 //
@@ -105,13 +105,13 @@ void MyTaskBarIcon::OnMenuSetNewIcon(wxCommandEvent&)
 //        wxMessageBox(wxT("Could not set new icon."));
 }
 
-void MyTaskBarIcon::OnMenuSub(wxCommandEvent&)
+void TaskBarIcon::OnMenuSub(wxCommandEvent&)
 {
     wxMessageBox(wxT("You clicked on a submenu!"));
 }
 
 // Overridables
-wxMenu * MyTaskBarIcon::CreatePopupMenu()
+wxMenu * TaskBarIcon::CreatePopupMenu()
 {
     wxMenu *menu = new wxMenu;
     menu->Append(PU_RESTORE, wxT("&Restore main window"));
@@ -136,7 +136,7 @@ wxMenu * MyTaskBarIcon::CreatePopupMenu()
     return menu;
 }
 
-void MyTaskBarIcon::OnSize(wxSizeEvent & evt)
+void TaskBarIcon::OnSize(wxSizeEvent & evt)
 {
   wxSize s = evt.GetSize();
   int i = s.x;
@@ -147,7 +147,7 @@ void MyTaskBarIcon::OnSize(wxSizeEvent & evt)
 //    gs_dialog->Show(true);
 //}
 
-void MyTaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
+void TaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 {
   bool dialogIsShown = gs_dialog->IsShown();
   gs_dialog->Show( ! dialogIsShown);
