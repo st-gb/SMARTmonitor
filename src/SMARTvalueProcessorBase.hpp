@@ -21,9 +21,9 @@ class SMARTvalueProcessorBase
 protected:
   SMARTaccess_type m_SMARTaccess;
 public:
-  SMARTvalueProcessorBase ();
+  SMARTvalueProcessorBase () { };
   virtual
-  ~SMARTvalueProcessorBase ();
+  ~SMARTvalueProcessorBase () { };
   SMARTaccess_type & getSMARTaccess() const { return (SMARTaccess_type &) m_SMARTaccess; }
 };
 
