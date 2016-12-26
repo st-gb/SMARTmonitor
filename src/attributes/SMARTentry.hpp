@@ -18,14 +18,19 @@
 class SMARTentry
 {
   bool m_criticalAttribute;
-  fastestUnsignedDataType attributeID;
+  fastestUnsignedDataType m_attributeID;
   std::string attributeName;
 public:
   SMARTentry() : m_criticalAttribute(false) { }
+  /** For easy searching purposes within an STL container.: 
+      "[...].find( SMARTentry(197) );" */
+  SMARTentry(const fastestUnsignedDataType attributeID) {
+    m_attributeID = attributeID;
+  }
   
-  fastestUnsignedDataType GetAttributeID() const { return attributeID; }
+  fastestUnsignedDataType GetAttributeID() const { return m_attributeID; }
   void SetAttributeID(const fastestUnsignedDataType attributeID) {
-    this->attributeID = attributeID;
+    m_attributeID = attributeID;
     }
   void SetName(const char * const name ) { attributeName = name; }
   void SetCritical(const bool criticalAttribute) { 

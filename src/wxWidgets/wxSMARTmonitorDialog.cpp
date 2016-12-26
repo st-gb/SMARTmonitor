@@ -133,35 +133,36 @@ SMARTdialog::SMARTdialog(
   LOGN("Mutex is OK?:" << m_wxCloseMutex.IsOk() << " cond.OK?:" << 
     m_p_wxCloseCondition->IsOk() )
   
-    wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
+  wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
 
-    wxSizerFlags flags;
-    flags.Border(wxALL, 10);
+  wxSizerFlags flags;
+  flags.Border(wxALL, 10);
 
-    m_p_wxTextCtrl = new wxTextCtrl(this, wxID_ANY, wxT("dd") );
-    m_p_wxTextCtrl->SetEditable(false);
+  m_p_wxTextCtrl = new wxTextCtrl(this, wxID_ANY, wxT("") );
+  m_p_wxTextCtrl->SetEditable(false);
 
-    wxSizer * const diskIDsizer = new wxBoxSizer(wxHORIZONTAL);
+  wxSizer * const diskIDsizer = new wxBoxSizer(wxHORIZONTAL);
 
-    m_p_showSupportedSMART_IDs = new wxButton(this, showSupportedSMART_IDs, wxT("show supported SMART IDs"));
+  m_p_showSupportedSMART_IDs = new wxButton(this, showSupportedSMART_IDs, 
+    wxT("show supported SMART IDs"));
 
-    diskIDsizer->Add( m_p_wxTextCtrl,
-      /** "in the main orientation of the wxBoxSizer - where 0 stands for not
-       * changeable" */
-      1,
-      wxEXPAND, 0);
-    diskIDsizer->Add( m_p_showSupportedSMART_IDs, 0, wxSTRETCH_NOT, 0);
-    sizerTop->Add( diskIDsizer, 0, wxEXPAND, 0);
+  diskIDsizer->Add( m_p_wxTextCtrl,
+    /** "in the main orientation of the wxBoxSizer - where 0 stands for not
+     * changeable" */
+    1,
+    wxEXPAND, 0);
+  diskIDsizer->Add( m_p_showSupportedSMART_IDs, 0, wxSTRETCH_NOT, 0);
+  sizerTop->Add( diskIDsizer, 0, wxEXPAND, 0);
 
-    m_pwxlistctrl = new SMARTtableListCtrl(this//, wxID_ANY, wxDefaultPosition,
-      //wxDefaultSize, wxLC_REPORT
-      );
+  m_pwxlistctrl = new SMARTtableListCtrl(this//, wxID_ANY, wxDefaultPosition,
+    //wxDefaultSize, wxLC_REPORT
+    );
 
-    sizerTop->Add( m_pwxlistctrl,
-      /** "in the main orientation of the wxBoxSizer - where 0 stands for not changeable" */
-      1 //proportion
-      , wxEXPAND //int flag=0
-      , /*int border*/ 0);
+  sizerTop->Add( m_pwxlistctrl,
+    /** "in the main orientation of the wxBoxSizer - where 0 stands for not changeable" */
+    1 //proportion
+    , wxEXPAND //int flag=0
+    , /*int border*/ 0);
 //    wxSizer * const sizerListCtrl = new wxBoxSizer(wxHORIZONTAL);
 //    sizerListCtrl->Add( m_pwxlistctrl, 0,
 //        wxEXPAND //int flag=0
@@ -170,26 +171,26 @@ SMARTdialog::SMARTdialog(
 
 //    sizerTop->AddStretchSpacer()->SetMinSize(200, 50);
 
-    wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
-    sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
-    m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT, wxT("&Connect") );
-    sizerBtns->Add(m_p_ConnectAndDisconnectButton, flags);
-    /** Needs to compile with wxWidgets headers > 2.8.x */
-    if( wxTaskBarIcon::IsAvailable() )
-    {
-      /** Only show the hide button if re-showing this dialog is possible. */
-      wxButton * hideButton = new wxButton(this, wxID_OK, wxT("&Hide") );
-      hideButton->SetToolTip( wxT("Click on the taskbar icon to show this dialog again.") );
-      sizerBtns->Add(hideButton, flags);
-    }
-    sizerBtns->Add(new wxButton(this, wxID_EXIT, wxT("E&xit")), flags);
+  wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
+  sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
+  m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT, wxT("&Connect") );
+  sizerBtns->Add(m_p_ConnectAndDisconnectButton, flags);
+  /** Needs to compile with wxWidgets headers > 2.8.x */
+  if( wxTaskBarIcon::IsAvailable() )
+  {
+    /** Only show the hide button if re-showing this dialog is possible. */
+    wxButton * hideButton = new wxButton(this, wxID_OK, wxT("&Hide") );
+    hideButton->SetToolTip( wxT("Click on the taskbar icon to show this dialog again.") );
+    sizerBtns->Add(hideButton, flags);
+  }
+  sizerBtns->Add(new wxButton(this, wxID_EXIT, wxT("E&xit")), flags);
 
-    sizerTop->Add(sizerBtns, flags.Align(wxALIGN_CENTER_HORIZONTAL));
-    SetSizerAndFit(sizerTop);
-    Centre();
+  sizerTop->Add(sizerBtns, flags.Align(wxALIGN_CENTER_HORIZONTAL));
+  SetSizerAndFit(sizerTop);
+  Centre();
 
-    wxIcon okIcon = wxGetApp().ShowSMARTokIcon();
-    SetIcon(okIcon);
+  wxIcon okIcon = wxGetApp().ShowSMARTokIcon();
+  SetIcon(okIcon);
 }
 
 SMARTdialog::~SMARTdialog()
@@ -245,7 +246,7 @@ void SMARTdialog::EndUpdateUIthread()
 
 void SMARTdialog::OnExit(wxCommandEvent& WXUNUSED(event))
 {
-  EndUpdateUIthread();
+  EndAllThreadsAndCloseAllOtherTopLevelWindows();
   Close(true);
 }
 
@@ -347,14 +348,30 @@ void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event))
 //    SMARTuniqueID & r_SMARTuniqueID = iter->first;
     SupportedSMART_IDsDialog * p_SupportedSMART_IDsDialog = new
       SupportedSMART_IDsDialog(iter);
+    wxGetApp().openTopLevelWindows.insert(p_SupportedSMART_IDsDialog);
     p_SupportedSMART_IDsDialog->Show(true);
+  }
+}
+
+void SMARTdialog::EndAllThreadsAndCloseAllOtherTopLevelWindows()
+{
+  EndUpdateUIthread();
+  if( OperatingSystem::GetCurrentThreadNumber() == wxGetApp().s_GUIthreadID )
+  {
+    /** This code should only be executed in UI thread! */
+    for( std::set<wxTopLevelWindow *>::iterator iter = 
+      wxGetApp().openTopLevelWindows.begin(); 
+      iter != wxGetApp().openTopLevelWindows.end(); iter ++ )
+    {
+      (*iter)->Destroy();
+    }
   }
 }
 
 void SMARTdialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
 {
   LOGN("begin")
-  EndUpdateUIthread();
+  EndAllThreadsAndCloseAllOtherTopLevelWindows();
   Destroy();
 }
 

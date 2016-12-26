@@ -15,6 +15,7 @@
 
 /** Forward declarations: */
 class wxListCtrl;
+class wxSizer;
 //class SMARTmonitorClient;
 //SMARTmonitorClient::dataCarrierID2supportedSMARTattributesMap_type;
 
@@ -28,6 +29,14 @@ public:
   virtual
   ~SupportedSMART_IDsDialog ();
   enum columnIndices { COL_IDX_SMART_ID = 0 , COL_IDX_SMARTparameterName};
+  wxSizer * CreateGUI(const SMARTuniqueID & dataCarrierID);
+  void FillGUI(const SMARTmonitorClient::supportedSMARTattributeIDs_type & 
+    supportedSMART_IDs);
+  void SetTitleFromDataCarrierID(const SMARTuniqueID & dataCarrierID);
+  void OnCloseWindow(wxCloseEvent& event);
+  
+  /** Necessary for receiving events. */
+  DECLARE_EVENT_TABLE()
 };
 
 #endif /* WXWIDGETS_SUPPORTEDSMARTIDSDIALOG_HPP_ */

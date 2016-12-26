@@ -49,6 +49,7 @@ public:
   
   void StartAsyncUpdateThread();
   void EndUpdateUIthread();
+  void EndAllThreadsAndCloseAllOtherTopLevelWindows();
   void UpdateSMARTvaluesUI();
   void UpdateUIregarding1DataCarrierOnly();
   void SetSMARTattribIDandNameLabel();

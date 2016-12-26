@@ -33,7 +33,8 @@ public:
   wxSMARTmonitorApp();
   virtual
   ~wxSMARTmonitorApp();
- 
+
+  std::set<wxTopLevelWindow *> openTopLevelWindows;
   void ChangeState(enum state newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();

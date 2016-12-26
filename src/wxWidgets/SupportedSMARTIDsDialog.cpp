@@ -11,7 +11,12 @@
 #include <wxWidgets/SupportedSMARTIDsDialog.hpp>
 #include <fastest_data_type.h> //fastestUnsignedDataType
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include "wxSMARTmonitorApp.hpp" //wxGetApp()
 //#include <attributes/SMARTuniqueID.hpp>
+
+BEGIN_EVENT_TABLE(SupportedSMART_IDsDialog, wxDialog)
+  EVT_CLOSE(SupportedSMART_IDsDialog::OnCloseWindow)
+END_EVENT_TABLE()
 
 SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
   //std::vector<SMARTattributeNameAndID> & SMARTattributeNamesAndIDs
@@ -21,13 +26,35 @@ SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
      wxSize(400,400),
      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
-  std::string std_strDataCarrierID = iter->first.str();
-  SMARTmonitorClient::supportedSMARTattributeIDs_type supportedSMART_IDs = iter->second;
-  wxString wstrDataCarrierID = wxWidgets::GetwxString_Inline(std_strDataCarrierID);
-  /** Show data carrier model (, firmware, serial #) in title bar because 
-   *  the supported attribute IDs are specific to the HDD model e.g.. */
-  SetTitle("SMART IDs supported by " + wstrDataCarrierID );
+  SetTitleFromDataCarrierID(iter->first);  
+  wxSizer * sizerTop = CreateGUI(iter->first);
+
+  FillGUI(iter->second);
+  SetSizerAndFit(sizerTop);
+  Centre();
+}
+
+SupportedSMART_IDsDialog::~SupportedSMART_IDsDialog ()
+{
+  // TODO Auto-generated destructor stub
+}
+
+wxSizer * SupportedSMART_IDsDialog::CreateGUI(
+  const SMARTuniqueID & dataCarrierID)
+{
   wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
+  std::string std_strDataCarrierID = dataCarrierID.str();
+  wxTextCtrl * p_wxTextCtrl = new wxTextCtrl(this, wxID_ANY, 
+    wxT("S.M.A.R.T. attribute IDs supported by\n") + 
+      wxWidgets::GetwxString_Inline(std_strDataCarrierID),
+    wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
+  p_wxTextCtrl->SetEditable(false);
+
+  sizerTop->Add( p_wxTextCtrl,
+    /** "in the main orientation of the wxBoxSizer - where 0 stands for not
+     * changeable" */
+    0,
+    wxEXPAND, 1);
 
   m_pwxlistctrl = new wxListCtrl( (wxWindow *) this, wxID_ANY, wxDefaultPosition,
     wxDefaultSize, wxLC_REPORT);
@@ -48,12 +75,23 @@ SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
   m_pwxlistctrl->InsertColumn(COL_IDX_SMARTparameterName, col1);
 
   sizerTop->Add( m_pwxlistctrl, 1, wxEXPAND, 0);
+  return sizerTop;
+}
 
-  wxString wxSMARTattribName;
+void SupportedSMART_IDsDialog::FillGUI(
+  const SMARTmonitorClient::supportedSMARTattributeIDs_type & supportedSMART_IDs)
+{
   fastestUnsignedDataType SMART_ID;
 //  m_pwxlistctrl->SetItemCount(SMARTattributeNamesAndIDs.size() );
    SMARTmonitorClient::supportedSMARTattributeIDs_type::const_iterator 
     supportedSMART_IDsIter = supportedSMART_IDs.begin();
+   
+  SMARTaccessBase::constSMARTattributesContainerType & 
+    r_SMARTattributesContainer = wxGetApp().mp_SMARTaccess->getSMARTattributes();
+    
+  wxString wxSMARTattribName;
+  SMARTaccessBase::SMARTattributesContainerType::const_iterator 
+    SMARTattributesIter;
   for( fastestUnsignedDataType lineNumber = 0; lineNumber < supportedSMART_IDs.
     size() ; ++ lineNumber, supportedSMART_IDsIter++)
   {
@@ -62,17 +100,31 @@ SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
     item.SetId(lineNumber); //item line number
     item.SetText( wxString::Format(wxT("%u"), SMART_ID ) );
     m_pwxlistctrl->InsertItem( item );
-
-//    wxSMARTattribName = wxWidgets::GetwxString_Inline(
-//      supportedSMART_IDs[lineNumber].getName().c_str());
-//    m_pwxlistctrl->SetItem(lineNumber, 1, wxSMARTattribName);
+    
+    SMARTattributesIter = r_SMARTattributesContainer.find( SMARTentry(SMART_ID) );
+    if( SMARTattributesIter != r_SMARTattributesContainer.end() )
+    {
+      wxSMARTattribName = wxWidgets::GetwxString_Inline(
+        SMARTattributesIter->GetName() );
+      m_pwxlistctrl->SetItem(lineNumber, 1, wxSMARTattribName);
+    }
   }
-  SetSizerAndFit(sizerTop);
-  Centre();
 }
 
-SupportedSMART_IDsDialog::~SupportedSMART_IDsDialog ()
+void SupportedSMART_IDsDialog::OnCloseWindow(wxCloseEvent& event)
 {
-  // TODO Auto-generated destructor stub
+  wxGetApp().openTopLevelWindows.erase(this);
+  Destroy();
 }
 
+void SupportedSMART_IDsDialog::SetTitleFromDataCarrierID(
+  const SMARTuniqueID & dataCarrierID)
+{
+  std::ostringstream std_oss;
+  std_oss << dataCarrierID/*.str()*/.m_modelName << " " <<
+    dataCarrierID.m_firmWareName;
+  wxString wstrDataCarrierID = wxWidgets::GetwxString_Inline(std_oss.str() );
+  /** Show data carrier model (, firmware, serial #) in title bar because 
+   *  the supported attribute IDs are specific to the HDD model e.g.. */
+  SetTitle( /*"SMART IDs supported by " +*/ wstrDataCarrierID );  
+}
