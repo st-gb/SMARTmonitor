@@ -16,7 +16,7 @@
 
 #include <string> //std::wstring
 #include <Process/CommandLineArgs.hpp> //class CommandLineArgs
-#include "libConfig/ConfigurationLoader.hpp"
+//#include "libConfig/ConfigurationLoader.hpp"
 #include <SMARTvalueProcessorBase.hpp> //
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
@@ -27,6 +27,9 @@ struct CommandLineOption
   const char * optionName;
   const char * possibleOptionValue;
 };
+
+/** Forward declarations: */
+class ConfigurationLoaderBase;
 
 /** Use character type in order to pass to to CommandLineArgs member variable*/
 /*template<typename charType>*/ class SMARTmonitorBase
@@ -40,10 +43,23 @@ public:
     }*/
   virtual ~SMARTmonitorBase();
   
+  enum programOptionNames { logFileFolder = 0, 
+    /** This is used for service clients (i.e. TUIs/GUIs) to specify the 
+     *  service address etc.*/
+    serviceConnectionConfigFile,
+    beyondLastProgramOptionName};
+  static std::wstring s_programOptionValues[beyondLastProgramOptionName];
+  typedef void ( * CommandLineOptionHandler_type)();
+  std::map<std::wstring,CommandLineOptionHandler_type> s_programOptionName2handler;
+  
+  std::wstring m_stdwstrProgramePath;
+  std::string m_stdstrLogFilePath;
   enum InitSMARTretCode { success = 0, readingConfigFileFailed, 
     accessToSMARTdenied, noSMARTcapableDevicePresent};
   
   void ConstructConfigFilePath(std::wstring & stdwstrConfigPathWithoutExtension);
+  void ProcessCommandLineArgs();
+  void HandleLogFileFolderProgramOption();
   fastestUnsignedDataType InitializeSMART();
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
@@ -58,7 +74,7 @@ public:
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
     return s_numberOfMilliSecondsToWaitBetweenSMARTquery;
     }
-  std::string Format(fastestUnsignedDataType SMARTattributeID, 
+  std::string FormatHumanReadable(fastestUnsignedDataType SMARTattributeID, 
     const uint64_t & SMARTrawValue);
   
   static fastestSignedDataType s_updateSMARTvalues;
@@ -69,6 +85,7 @@ public:
   fastestUnsignedDataType m_socketPortNumber;
   //TODO this member isn't needed for the service
   std::string m_stdstrServiceHostName;
+  fastestUnsignedDataType m_retryWaitTimeInS;
   void InitializeLogger();
   std::set<int> m_IDsOfSMARTattributesToObserve;
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
@@ -76,6 +93,12 @@ public:
   CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}
   std::wstring GetCommandOptionValue(const wchar_t * const 
     cmdLineOptionName);
+  void GetCommandOptionNameAndValue(
+    fastestUnsignedDataType & programArgumentIndex,
+    std::wstring & cmdLineOptionName,
+    std::wstring & cmdLineOptionValue
+    );
+  std::wstring GetCommandOptionName(std::wstring & cmdLineArg);
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
   typedef std::map<SMARTuniqueID,std::string> dataCarrierID2devicePath_type;
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
@@ -86,7 +109,7 @@ protected:
   /** Must persist the OnInit() method because the strings are referred from
    *  libATAsmart's SMART access class. So create the config loader on heap.*/
 //  libConfig::ConfigurationLoader configurationLoader;
-  libConfig::ConfigurationLoader * mp_configurationLoader;
+  ConfigurationLoaderBase * mp_configurationLoader;
   CommandLineArgs</*charType*/ wchar_t> m_commandLineArgs;
   nativeThread_type m_updateSMARTparameterValuesThread;
 

@@ -3,7 +3,7 @@
 cmake_minimum_required (VERSION 2.6)
 project (SMARTmonitor)
 
-#To create executable outside of "src" dir
+#To create executable outside of "src" directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/..)
 
 set(CMAKE_LIST_FILE_PATHS
@@ -65,9 +65,9 @@ set( CXX_DEFINITIONS
   -DUNICODE
 )
 
-add_subdirectory(./libConfig
-  #EXCLUDE_FROM_ALL
-  )
+#add_subdirectory(./libConfig
+#  #EXCLUDE_FROM_ALL
+#  )
 message (STATUS "${CMAKE_CURRENT_LIST_FILE} LIBRARIES: ${LIBRARIES}")
 
 #include_directories("${PROJECT_BINARY_DIR}")
@@ -138,6 +138,8 @@ set(LOGGER_SOURCE_FILES
 set(CLIENT_SERVER_BASE_SOURCE_FILES
   ${CLIENT_SERVER_BASE_SOURCE_FILES}
   ${LOGGER_SOURCE_FILES}
+  ${PROJECT_SOURCE_DIR}/tinyxml2/ConfigLoader.cpp
+  ${TINYXML2_ROOT_PATH}/tinyxml2.cpp
   ${PROJECT_SOURCE_DIR}/SMARTmonitorBase.cpp
   ${PROJECT_SOURCE_DIR}/SMARTaccessBase.cpp
   #${PROJECT_SOURCE_DIR}/SMARTvalueProcessorBase.cpp
@@ -193,7 +195,7 @@ if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(EXE_NAME wx${PROJECT_NAME}_GUI)
   set(SOURCE_FILE_PATHS 
     ${SOURCE_FILE_PATHS}
-    ${TINYXML2_ROOT_PATH}/tinyxml2.cpp
+    #${TINYXML2_ROOT_PATH}/tinyxml2.cpp
     )
   add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
   #set( LIBRARIES ${LIBRARIES} tinyxml2 )

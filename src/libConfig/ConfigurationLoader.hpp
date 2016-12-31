@@ -25,7 +25,7 @@ namespace libConfig
     : public ConfigurationLoaderBase
   {
   private:
-    SMARTmonitorBase & m_r_SMARTmonitorBase;
+    //SMARTmonitorBase & m_r_SMARTmonitorBase;
     std::set<std::string> attributeNamesFromConfigFile;
   public:
     ConfigurationLoader(
@@ -34,9 +34,18 @@ namespace libConfig
     virtual
     ~ConfigurationLoader();
     
-    void ReadNetworkConfig(const libconfig::Setting & root);
-    bool LoadConfiguration(const std::wstring & fullFilePathOfThisExecutable);
+    void ReadServiceConfig(const libconfig::Setting & netWorkConnection);
+    void ReadServiceConnectionSettings(
+      const std::wstring & fullFilePathOfThisExecutable);
+    const libconfig::Setting & ReadNetworkConfig(const libconfig::Setting & root);
+    const libconfig::Setting * OpenConfigFile(
+      const std::wstring & fullFilePathOfThisExecutable,
+      std::string & stdstrFullConfigFilePath
+      /*, libconfig::Setting & root*/ );
     void GetSMARTattributesToObserve(const libconfig::Setting & root);
+    bool LoadSMARTparametersConfiguration(
+      /*libconfig::Setting & root*/ 
+      const std::wstring & stdwstrWorkingDirWithConfigFilePrefix);
   };
 } /* namespace libConfig */
 

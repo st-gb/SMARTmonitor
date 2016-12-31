@@ -17,6 +17,9 @@
 #include <netdb.h> //gethostbyname(...)
 #include <stdint.h> //uint8_t
 #include "tinyxml2.h" //
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...))
+#include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
+#include "OperatingSystem/GetLastErrorCode.hpp" //OperatingSystem::GetLastErrorCode()
 #include "hardware/CPU/atomic/AtomicExchange.h"
 #include "Controller/character_string/ConvertStdStringToTypename.hpp"
 #include <OperatingSystem/time/GetCurrentTime.hpp>
@@ -30,25 +33,64 @@ SMARTmonitorClient::SMARTmonitorClient(const SMARTmonitorClient& orig) {
 SMARTmonitorClient::~SMARTmonitorClient() {
 }
 
+void SMARTmonitorClient::HandleConnectionError(const char * hostName)
+{
+  //TODO: show error via user interface
+  //Message("")
+  std::ostringstream oss;
+  oss << "error connecting to S.M.A.R.T. values service:\n";
+  //TODO the following is Linux-specific and should be OS-independent
+  //see http://man7.org/linux/man-pages/man2/connect.2.html
+  switch(errno )
+  {
+    //see http://man7.org/linux/man-pages/man2/connect.2.html
+    case ECONNREFUSED :
+      oss << "No process listening on the remote address \"" << hostName 
+        << "\", port:" << m_socketPortNumber;
+      break;
+    default :
+    {
+      int errorCode = OperatingSystem::GetLastErrorCode();
+      oss << OperatingSystem::EnglishMessageFromErrorCode( errorCode );
+    }
+    break;
+  }
+  ShowMessage(oss.str().c_str() );
+  LOGN_ERROR(oss.str() )
+}
+
 fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostName) {
   //from http://www.linuxhowtos.org/data/6/client.c
   int portNumber = m_socketPortNumber, n;
   struct sockaddr_in serv_addr;
   struct hostent *server;
   
+  /** http://pubs.opengroup.org/onlinepubs/009695399/functions/socket.html :
+   * "Upon successful completion, socket() shall return a non-negative integer, 
+   * the socket file descriptor. Otherwise, a value of -1 shall be returned 
+   * and errno set to indicate the error." */
   m_socketFileDesc = socket(AF_INET, SOCK_STREAM,
     /** socket.h : "If PROTOCOL is zero, one is chosen automatically." */
     0 );
   if (m_socketFileDesc < 0)
   {
-    LOGN_ERROR("ERROR opening socket");
-    return 1;
+    OperatingSystem::GetLastErrorCode();
+    LOGN_ERROR("ERROR opening socket: error code " << errno 
+      << " error message:" << OperatingSystem::EnglishMessageFromErrorCode(errno) )
+    return errorOpeningSocket;
   }
   LOGN("successfully opened socket");
+  /** http://pubs.opengroup.org/onlinepubs/009695399/functions/gethostbyaddr.html :
+   * "Upon successful completion, these functions shall return a pointer to a 
+   * hostent structure if the requested entry was found, and a null pointer if 
+   * the end of the database was reached or the requested entry was not found.
+   * 
+   * Upon unsuccessful completion, gethostbyaddr() and gethostbyname() shall 
+   * set h_errno to indicate the error." */
   server = gethostbyname(hostName);
   if (server == NULL) {
-    LOGN_ERROR("host " << hostName << " not in database");
-    return 2;
+    LOGN_ERROR("host " << hostName << " not in database;error code:" << h_errno)
+    return getHostByNameFailed;
   }
   LOGN("got host name for \"" << hostName << "\":" << server->h_name)
   bzero( (char *) & serv_addr, sizeof(serv_addr) );
@@ -57,31 +99,20 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostNam
     (char *) & serv_addr.sin_addr.s_addr,
     server->h_length);
   serv_addr.sin_port = htons(portNumber);
+  /** http://pubs.opengroup.org/onlinepubs/9699919799/functions/connect.html :
+   * "Upon successful completion, connect() shall return 0; otherwise, -1 shall
+   *  be returned and errno set to indicate the error." */
   const int connectResult = connect(m_socketFileDesc,(struct sockaddr *) & serv_addr,
     sizeof(serv_addr) );
   if( connectResult < 0)
   {
-    //TODO: show error via user interface
-    //Message("")
-    LOGN_ERROR("error connecting to SMART values service:" << strerror( errno ));
-    std::ostringstream oss;
-    oss << "error connecting to server:\n";
-    //see http://man7.org/linux/man-pages/man2/connect.2.html
-    switch(errno )
-    {
-      //see http://man7.org/linux/man-pages/man2/connect.2.html
-      case ECONNREFUSED :
-        oss << "No process listening on the remote address \"" << hostName 
-          << "\", port:" << portNumber;
-        ShowMessage(oss.str().c_str() );
-        break;
-    }
-    return 3;
+    HandleConnectionError(hostName);
+    return errorConnectingToService;
   }
   else
     LOGN("successfully connected")
   //bzero(buffer,256);
-  return 0;
+  return connectedToService;
 }
 
 bool GetSMARTuniqueID(
@@ -89,9 +120,13 @@ bool GetSMARTuniqueID(
   SMARTuniqueID & sMARTuniqueID)
 {
   //tinyxml2::XMLAttribute * p_tinyxml2XMLattribute = 
-  const char * modelString = p_tinyxml2XMLelement->Attribute("model", NULL);
-  const char * firmwareString = p_tinyxml2XMLelement->Attribute("firmware", NULL);
-  const char * serialNumberString = p_tinyxml2XMLelement->Attribute("serial_number", NULL);
+  const char * modelString = p_tinyxml2XMLelement->Attribute("model", 
+    /** Value: specify '0' in order to retrieve the value */ NULL);
+  const char * firmwareString = p_tinyxml2XMLelement->Attribute("firmware", 
+    /** Value: specify '0' in order to retrieve the value */ NULL);
+  const char * serialNumberString = p_tinyxml2XMLelement->Attribute(
+    "serial_number", 
+    /** Value: specify '0' in order to retrieve the value */ NULL);
 //      if( ! p_tinyxml2XMLattribute)
 //      {
 //        LOGN_ERROR("Failed to get XML model attribute")
@@ -209,7 +244,7 @@ void ConvertStringToInt(
   fastestUnsignedDataType number;
   //std::string std_strConvertToNumber(p_BeginOfNumber);
   
-  if( ConvertStdStringToTypename(number, p_BeginOfNumber) )
+  if( ConvertCharStringToTypename(number, p_BeginOfNumber) )
   {
     if( CheckSMARTidRange(number) == 0 )
     {

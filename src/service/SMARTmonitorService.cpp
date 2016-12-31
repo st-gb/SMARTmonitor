@@ -17,6 +17,7 @@
 #include "Controller/time/GetTickCount.hpp" //OperatingSystem::GetTimeCountInNanoSeconds(...)
 #include "hardware/CPU/atomic/AtomicExchange.h"
 #include <attributes/SMARTattributeNameAndID.hpp> //SMARTattributeNameAndID
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <vector> //class std::vector
 
 int SMARTmonitorService::s_socketFileDesc = 0;

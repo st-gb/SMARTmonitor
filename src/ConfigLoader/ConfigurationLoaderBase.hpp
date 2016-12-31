@@ -14,21 +14,32 @@
 #include <attributes/SMARTentry.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN
 
+/** Forward declaration. */
+class SMARTmonitorBase;
+
 class ConfigurationLoaderBase
 {
-//protected:
+protected:
+  SMARTmonitorBase & m_r_SMARTmonitorBase;
 public:
 //  std::set<SMARTentry> & m_smartAttributesToObserve;
   std::set<SMARTentry> * mp_smartAttributes;
 
-  ConfigurationLoaderBase(/*const*/ //SMARTDETAILSMAP & oSMARTDetails
-    std::set</*SkSmartAttributeParsedData*/SMARTentry> & smartAttributesToObserve )
-//    : //m_oSMARTDetails(oSMARTDetails)
+  ConfigurationLoaderBase(/*const*/
+    std::set<SMARTentry> & smartAttributesToObserve,
+    SMARTmonitorBase & r_SMARTmonitorBase
+    )
 //      m_smartAttributesToObserve(smartAttributesToObserve)
+    : m_r_SMARTmonitorBase(r_SMARTmonitorBase)
   {
     LOGN(smartAttributesToObserve.size() )
     mp_smartAttributes = & smartAttributesToObserve;
   }
+  virtual ~ConfigurationLoaderBase() {}
+  
+  virtual void ReadServiceConnectionSettings(const std::wstring & ) {};
+  virtual bool LoadSMARTparametersConfiguration(const std::wstring & ) { 
+    return false; };
 };
 
 #endif /* CONFIGURATIONLOADERBASE_HPP_ */

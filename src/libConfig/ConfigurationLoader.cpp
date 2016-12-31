@@ -24,10 +24,9 @@ namespace libConfig
     std::set<SMARTentry> & smartAttributesToObserve,
     SMARTmonitorBase & r_userInterface
     )
-    : ConfigurationLoaderBase(/*oSMARTDetails*/ smartAttributesToObserve)
-    , m_r_SMARTmonitorBase(r_userInterface)
+    : ConfigurationLoaderBase(smartAttributesToObserve, r_userInterface)
+      //, m_r_SMARTmonitorBase(r_userInterface)
   {
-    
   }
 
   ConfigurationLoader::~ConfigurationLoader()
@@ -39,25 +38,56 @@ namespace libConfig
     std::set<SkSmartAttributeParsedData> & smartAttributesToObserve,
     const UserInterface & r_userInterface)
   {
-
   }*/
   
-  void ConfigurationLoader::ReadNetworkConfig(const libconfig::Setting & root)
+  void ConfigurationLoader::ReadServiceConnectionSettings(
+    const std::wstring & configFilePathWithoutExtension
+    /*const libconfig::Setting & netWorkConnection*/ )
   {
-    unsigned portNumber;
-    const libconfig::Setting & netWorkConnection =
-      root["networkConnection"];
-    if( netWorkConnection.lookupValue("portNumber", portNumber) )
+    std::string stdstrFullConfigFilePath;
+//    const libconfig::Setting root;
+    const libconfig::Setting * p_root = OpenConfigFile(
+      configFilePathWithoutExtension, stdstrFullConfigFilePath);
+    if( p_root )
     {
-      m_r_SMARTmonitorBase.m_socketPortNumber = portNumber;
-      LOGN("setting port number to " << portNumber)
+      const libconfig::Setting & netWorkConnection = ReadNetworkConfig(* p_root);
+      ReadServiceConfig(netWorkConnection);
     }
+  }
+  
+  /** This method only needs to be called by the clients that receive the SMART 
+      data from the service.collecting the raw values.*/
+  void ConfigurationLoader::ReadServiceConfig(const libconfig::Setting & netWorkConnection)
+  {
+    unsigned retryWaitTimeInS;
     std::string serviceHostName;
     if( netWorkConnection.lookupValue("serviceHostName", serviceHostName) )
     {
       LOGN("setting service host name to " << serviceHostName)
       m_r_SMARTmonitorBase.m_stdstrServiceHostName = serviceHostName;
     }
+    if( netWorkConnection.lookupValue("retryWaitTimeInS", retryWaitTimeInS) )
+    {
+      m_r_SMARTmonitorBase.m_retryWaitTimeInS = retryWaitTimeInS;
+      LOGN("setting retry wait time in [s] to " << retryWaitTimeInS)
+    }
+  }
+  
+  /** Affects both client and server. */
+  const libconfig::Setting & ConfigurationLoader::ReadNetworkConfig(
+    const libconfig::Setting & root)
+  {
+    unsigned portNumber;
+    //TODO
+    const libconfig::Setting & netWorkConnection =
+      root["networkConnection"];
+    /** Both client and server need to use the same port. */
+    if( netWorkConnection.lookupValue("portNumber", portNumber) )
+    {
+      m_r_SMARTmonitorBase.m_socketPortNumber = portNumber;
+      LOGN("setting port number to " << portNumber)
+    }
+    return netWorkConnection;
   }
   
   void ConfigurationLoader::GetSMARTattributesToObserve(const libconfig::Setting & root)
@@ -80,116 +110,129 @@ namespace libConfig
     }
   }
 
-  bool ConfigurationLoader::LoadConfiguration(
-      const std::wstring & fullFilePathOfThisExecutable)
+  bool ConfigurationLoader::LoadSMARTparametersConfiguration(
+    //libconfig::Setting & root
+    const std::wstring & stdwstrWorkingDirWithConfigFilePrefix )
   {
-    TCHAR * szFileNameOfThisExecutable;
-    int nC1, nSmartAttribs;
-
+    std::string stdstrFullConfigFilePath;
+    libconfig::Setting * root;
+    const libconfig::Setting * p_root = OpenConfigFile(
+      stdwstrWorkingDirWithConfigFilePrefix, stdstrFullConfigFilePath);
+    if( ! p_root )
+      return false;
+    
+    const libconfig::Setting & r_root = * p_root;
 //    m_smartAttributesToObserve.clear();
     mp_smartAttributes->clear();
+    try {
+      SMARTentry sMARTentry;
+        //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
 
-  //  if(IsDebuggerPresent()==FALSE)
+      ReadNetworkConfig(* p_root);
+      GetSMARTattributesToObserve(* p_root);
+
+      const libconfig::Setting & SMART_parameters =
+        r_root["SMART_parameters"];        
+      const int numCritical_SMART_parameters = SMART_parameters.getLength();
+      std::tstring std_tstr;
+      bool criticalSMARTattribute = false;
+      for(int SMARTparameterIndex = 0; SMARTparameterIndex
+        < numCritical_SMART_parameters; ++ SMARTparameterIndex)
       {
+        const libconfig::Setting & critical_SMART_parameter =
+          SMART_parameters[SMARTparameterIndex];
+//          stSmartDetails.m_bCritical = true;
+        int smartAttributeID;
+        std::string std_strAttribName, std_strAttribDetails;
+        const bool successfullyLookedUpID = critical_SMART_parameter.
+          lookupValue("Id", smartAttributeID);
+        if( successfullyLookedUpID )
+        {
+          const bool successfullyLookedUpName = critical_SMART_parameter.
+            lookupValue("Name", std_strAttribName);
+//            const bool successfullyLookedUpDetails = critical_SMART_parameter.
+//              lookupValue("Details", std_strAttribDetails);
+          std::string std_strCritical;
+          const bool successfullyLookedUpCritical = critical_SMART_parameter.
+            lookupValue("Critical", std_strCritical);
+          if( successfullyLookedUpCritical )
+          {
+            LOGN_DEBUG("found \"Critical\" attribute.Value is:" << 
+              std_strCritical )
+            if( std_strCritical == "yes" )
+              criticalSMARTattribute = true;
+          }
+          else
+            criticalSMARTattribute = false;
+          sMARTentry.SetCritical(criticalSMARTattribute);
+          LOGN_DEBUG("Critical value for " << 
+            smartAttributeID << ":" << criticalSMARTattribute )
+          if( //successfullyLookedUpID &&
+              successfullyLookedUpName
+              //&& successfullyLookedUpDetails
+            )
+          {
+            sMARTentry.SetAttributeID(smartAttributeID);
+            attributeNamesFromConfigFile.insert(std_strAttribName);
+            std::set<std::string>::const_iterator citer =
+              attributeNamesFromConfigFile.find(std_strAttribName);
+            if( citer != attributeNamesFromConfigFile.end() )
+              //use pointer from member var instead of from stack.
+              sMARTentry.SetName(std_strAttribName.c_str() );
+
+            /*m_smartAttributesToObserve.*/ mp_smartAttributes->insert(
+              /*std::make_pair(smartAttributeID,*/ sMARTentry//)
+              );
+          LOGN_DEBUG( "using SMART entry at address " << 
+            &  (* mp_smartAttributes->find(sMARTentry) ) )
+            LOGN("adding SMART ID" << smartAttributeID << "to " 
+                << mp_smartAttributes)
+          }
+        }
+        else
+        {
+          std::ostringstream std_oss;
+          std_oss << "warning: no \"Id\" parameter provided for SMART "
+            "parameter at " << critical_SMART_parameter.getSourceFile()
+            << ":" << critical_SMART_parameter.getSourceLine();
+          m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
+        }
       }
-    std::wstring fullConfigFilePath = fullFilePathOfThisExecutable + L"cfg";
+    }
+    catch (const libconfig::SettingNotFoundException & nfex)
+    {
+      std::ostringstream std_oss;
+      std_oss << "\"" << nfex.getPath() << "\" setting not found in "
+        "configuration file \n\"" << stdstrFullConfigFilePath << "\"\n"
+        << "cause: " << nfex.what();
+      std::cerr << std_oss.str() << std::endl;
+      LOGN_ERROR(std_oss.str() )
+      m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
+      //setDefaultValues = true;
+    }
+    return true;
+  }
+  
+  /** Also needed for the service: if e.g. only critical SMART parameters 
+   *  shoould be observed. */
+  const libconfig::Setting * ConfigurationLoader::OpenConfigFile(
+    const std::wstring & configFilePathWithoutFileExtension,
+    std::string & stdstrFullConfigFilePath
+    /* , libconfig::Setting & root */)
+  {
+  //  if(IsDebuggerPresent()==FALSE)
+//      {
+//      }
+    std::wstring fullConfigFilePath = configFilePathWithoutFileExtension + L"cfg";
     libconfig::Config libConfig;
 
-    std::string stdstrFullConfigFilePath = GetStdString_Inline(fullConfigFilePath);
+    stdstrFullConfigFilePath = GetStdString_Inline(fullConfigFilePath);
     // Read the file. If there is an error, report it and exit.
     try
     {
       libConfig.readFile(stdstrFullConfigFilePath.c_str());
-
-      // Get the store name.
-      try {
-        SMARTentry sMARTentry;
-          //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
-
-        const libconfig::Setting & root = libConfig.getRoot();
-        
-        ReadNetworkConfig(root);
-        GetSMARTattributesToObserve(root);
-                
-        const libconfig::Setting & SMART_parameters =
-          root["SMART_parameters"];        
-        const int numCritical_SMART_parameters = SMART_parameters.getLength();
-        std::tstring std_tstr;
-        bool criticalSMARTattribute = false;
-        for(int SMARTparameterIndex = 0; SMARTparameterIndex
-          < numCritical_SMART_parameters; ++ SMARTparameterIndex)
-        {
-          const libconfig::Setting & critical_SMART_parameter =
-            SMART_parameters[SMARTparameterIndex];
-//          stSmartDetails.m_bCritical = true;
-          int smartAttributeID;
-          std::string std_strAttribName, std_strAttribDetails;
-          const bool successfullyLookedUpID = critical_SMART_parameter.
-            lookupValue("Id", smartAttributeID);
-          if( successfullyLookedUpID )
-          {
-            const bool successfullyLookedUpName = critical_SMART_parameter.
-              lookupValue("Name", std_strAttribName);
-//            const bool successfullyLookedUpDetails = critical_SMART_parameter.
-//              lookupValue("Details", std_strAttribDetails);
-            std::string std_strCritical;
-            const bool successfullyLookedUpCritical = critical_SMART_parameter.
-              lookupValue("Critical", std_strCritical);
-            if( successfullyLookedUpCritical )
-            {
-              LOGN_DEBUG("found \"Critical\" attribute.Value is:" << 
-                std_strCritical )
-              if( std_strCritical == "yes" )
-                criticalSMARTattribute = true;
-            }
-            else
-              criticalSMARTattribute = false;
-            sMARTentry.SetCritical(criticalSMARTattribute);
-            LOGN_DEBUG("Critical value for " << 
-              smartAttributeID << ":" << criticalSMARTattribute )
-            if( //successfullyLookedUpID &&
-                successfullyLookedUpName
-                //&& successfullyLookedUpDetails
-              )
-            {
-              sMARTentry.SetAttributeID(smartAttributeID);
-              attributeNamesFromConfigFile.insert(std_strAttribName);
-              std::set<std::string>::const_iterator citer =
-                attributeNamesFromConfigFile.find(std_strAttribName);
-              if( citer != attributeNamesFromConfigFile.end() )
-                //use pointer from member var instead of from stack.
-                sMARTentry.SetName(std_strAttribName.c_str() );
-
-              /*m_smartAttributesToObserve.*/ mp_smartAttributes->insert(
-                /*std::make_pair(smartAttributeID,*/ sMARTentry//)
-                );
-            LOGN_DEBUG( "using SMART entry at address " << 
-              &  (* mp_smartAttributes->find(sMARTentry) ) )
-              LOGN("adding SMART ID" << smartAttributeID << "to " 
-                  << mp_smartAttributes)
-            }
-          }
-          else
-          {
-            std::ostringstream std_oss;
-            std_oss << "warning: no \"Id\" parameter provided for SMART "
-              "parameter at " << critical_SMART_parameter.getSourceFile()
-              << ":" << critical_SMART_parameter.getSourceLine();
-            m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
-          }
-        }
-      }
-      catch (const libconfig::SettingNotFoundException & nfex)
-      {
-        std::ostringstream std_oss;
-        std_oss << "\"" << nfex.getPath() << "\" setting not found in "
-          "configuration file \n\"" << stdstrFullConfigFilePath << "\"\n"
-          << "cause: " << nfex.what();
-        std::cerr << std_oss.str() << std::endl;
-        LOGN_ERROR(std_oss.str() )
-        m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
-        //setDefaultValues = true;
-      }
+      const libconfig::Setting & root = libConfig.getRoot();
+      return & root;
     }
     catch (const libconfig::FileIOException & libConfigFileIOexc)
     {
@@ -209,11 +252,10 @@ namespace libConfig
       //return false;
       m_r_SMARTmonitorBase.ShowMessage(stdoss.str().c_str() );
       ParseConfigFileException parseConfigFileException(
-        fullFilePathOfThisExecutable.c_str(), errorlineNumber);
+        configFilePathWithoutFileExtension.c_str(), errorlineNumber);
       throw parseConfigFileException;
       //return(EXIT_FAILURE);
     }
-    return true;
+    return NULL;
   }
-
 } /* namespace libConfig */

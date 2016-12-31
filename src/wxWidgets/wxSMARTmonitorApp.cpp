@@ -38,9 +38,12 @@ GCC_DIAG_OFF(write-strings)
 GCC_DIAG_ON(write-strings)
 
 #include <iostream> //class std::cerr
+#include <OperatingSystem/multithread/GetCurrentThreadNumber.hpp>
+#include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
 #include <Windows/HideMinGWconsoleWindow.h>
 #include <FileSystem/File/FileException.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(..)
 
 // global variables
 
@@ -119,6 +122,7 @@ void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
 bool wxSMARTmonitorApp::OnInit()
 {
   CreateCommandLineArgsArrays();
+  ProcessCommandLineArgs();
   InitializeLogger();
   CreateTaskBarIcon();
   //m_wxSMARTvalueProcessor.Init();
@@ -141,8 +145,10 @@ bool wxSMARTmonitorApp::OnInit()
     gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), //m_wxSMARTvalueProcessor
       m_SMARTvalueProcessor);
     gs_dialog->Show(true);
-    const fastestUnsignedDataType result = InitializeSMART();
-    if( result == SMARTaccessBase::success)
+    const fastestUnsignedDataType initSMARTresult = InitializeSMART();
+    mp_configurationLoader->ReadServiceConnectionSettings(
+      s_programOptionValues[serviceConnectionConfigFile] );
+    if( initSMARTresult == SMARTaccessBase::success)
     {
       //TODO exchange by wxGetApp().StartAsyncUpdateThread();
       gs_dialog->StartAsyncUpdateThread();

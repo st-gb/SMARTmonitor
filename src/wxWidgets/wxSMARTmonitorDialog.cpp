@@ -25,6 +25,7 @@ GCC_DIAG_OFF(write-strings)
 GCC_DIAG_ON(write-strings)
 #include <wx/listctrl.h> //class wxListCtrl
 #include <hardware/CPU/atomic/AtomicExchange.h>
+#include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <Controller/time/GetTickCount.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/SupportedSMARTIDsDialog.hpp>
@@ -312,8 +313,9 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::state newState)
       // %T : ISO 8601 time format (HH:MM:SS),
       size_t strLen = strftime(buffer, 80, "%a %d %b %T", 
         & timeOfLastSMARTvaluesUpdate );
-      wxstrTitle += wxString::Format( wxT("--last update:%s --unconnected"),
-        wxWidgets::GetwxString_Inline(buffer) );
+      wxstrTitle += wxString::Format( wxT("--last update:%s from %s--unconnected"),
+        wxWidgets::GetwxString_Inline(buffer), 
+        wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.c_str() ) );
       SetTitle(wxstrTitle);
     }
       break;
@@ -484,6 +486,7 @@ void SMARTdialog::UpdateSMARTvaluesUI()
 #endif
   //memory_barrier(); //TODO: not really necessary??
   
+  std::string stdstrHumanReadableRawValue;
   /** Loop over data carriers. */
   for(fastestUnsignedDataType currentDriveIndex = 0;
     SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
@@ -505,7 +508,8 @@ void SMARTdialog::UpdateSMARTvaluesUI()
       while( SMARTattributesFromConfigFileIter->GetAttributeID() != SMARTattributeID)
       {
         SMARTattributesFromConfigFileIter++;
-        LOGN_DEBUG( "using SMART entry at address " << & (* SMARTattributesFromConfigFileIter) )
+        LOGN_DEBUG( "using SMART entry at address " << 
+          & (* SMARTattributesFromConfigFileIter) )
       }
       
       const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];
@@ -514,21 +518,25 @@ void SMARTdialog::UpdateSMARTvaluesUI()
       int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
       
       //memory_barrier(); //TODO: not really necessary??
-      std::string stdstr;
       wxString wxstrRawValueString;
       if( successfullyUpdatedSMART )
       {
-        
-        stdstr = //SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID].
-          wxGetApp()./*m_SMARTrawValueFormatter.*/Format(SMARTattributeID, SMARTrawValue);
-        wxstrRawValueString = wxWidgets::GetwxString_Inline(stdstr);
+        stdstrHumanReadableRawValue = wxGetApp()./*m_SMARTrawValueFormatter.*/
+          FormatHumanReadable(SMARTattributeID, SMARTrawValue);
+        wxstrRawValueString = wxWidgets::GetwxString_Inline(
+          stdstrHumanReadableRawValue);
         m_pwxlistctrl->SetItem(lineNumber,
           SMARTtableListCtrl::COL_IDX_rawValue /** column #/ index */,
+          // https://cboard.cprogramming.com/c-programming/115586-64-bit-integers-printf.html
+          // : "%llu": Linux %llu, "%I64u": Windows
+          wxString::Format( wxT("%llu") , SMARTrawValue) );
+        m_pwxlistctrl->SetItem(lineNumber,
+          SMARTtableListCtrl::COL_IDX_humanReadableRawValue /** column #/ index */,
           //wxString::Format(wxT("%i"), SMARTrawValue) 
           wxstrRawValueString);
         bool critical = SMARTattributesFromConfigFileIter->IsCritical();
-        LOGN_DEBUG("attribute ID " << SMARTattributesFromConfigFileIter->GetAttributeID() 
-            << " is critical?:" << critical
+        LOGN_DEBUG("attribute ID " << SMARTattributesFromConfigFileIter->
+          GetAttributeID() << " is critical?:" << critical
           //(critical==true ? "yes" : "no") 
           )
         if( critical && SMARTrawValue > 0)

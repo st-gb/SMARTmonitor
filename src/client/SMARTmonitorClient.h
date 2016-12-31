@@ -23,6 +23,7 @@ public:
   SMARTmonitorClient();
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
+  
   typedef std::set<fastestSignedDataType> supportedSMARTattributeIDs_type;
   typedef std::map<SMARTuniqueID,supportedSMARTattributeIDs_type >
     dataCarrierID2supportedSMARTattributesMap_type;
@@ -32,8 +33,11 @@ public:
   enum state {connectedToService, unconnectedFromService};
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata};
+  enum ConnectToServerResult{ connectionToServiceSucceeded = 0, 
+    errorOpeningSocket, getHostByNameFailed, errorConnectingToService };
   
   int m_socketFileDesc;
+  void HandleConnectionError(const char * hostName);
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(uint8_t * SMARTvalues, unsigned numBytesToRead,
     /*std::set<SMARTuniqueIDandValues> & */ SMARTuniqueIDandValues &);

@@ -17,6 +17,7 @@
   #include <OperatingSystem/Linux/daemon/daemon.h>
   #include "service/SMARTmonitorService.hpp"
 #endif
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 
 using namespace std;
 
@@ -78,6 +79,7 @@ int main(int argc, char** argv) {
   SMARTmonitor.SetCommandLineArgs(argc, argv);
   if( SMARTmonitor.GetCommandLineArgs().GetArgumentCount() < 2 )
     SMARTmonitor.OutputUsage();
+  SMARTmonitor.ProcessCommandLineArgs();
   SMARTmonitor.InitializeLogger();
   
   //std::wstring stdwstrConfigPathWithoutExtension;
