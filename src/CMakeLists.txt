@@ -142,6 +142,7 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
   ${TINYXML2_ROOT_PATH}/tinyxml2.cpp
   ${PROJECT_SOURCE_DIR}/SMARTmonitorBase.cpp
   ${PROJECT_SOURCE_DIR}/SMARTaccessBase.cpp
+  ${PROJECT_SOURCE_DIR}/SMARTvalueFormatter.cpp
   #${PROJECT_SOURCE_DIR}/SMARTvalueProcessorBase.cpp
   #${COMMON_SOURCECODE_ROOT_PATH}/Controller/character_string/stdtstr.cpp
   #${COMMON_SOURCECODE_ROOT_PATH}/data_structures/Trie/byteTrie/ByteTrie.cpp

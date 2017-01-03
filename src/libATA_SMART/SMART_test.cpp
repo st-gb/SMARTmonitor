@@ -13,6 +13,7 @@
 #include <string.h> //strerror(...)
 #include "SkDisk.h" //struct SkDisk
 #include <libATA_SMART/SMARTaccess.hpp> // libatasmart::readAttribute
+#include <SMARTvalueFormatter.hpp>
 
 //void ReadSMARTValuesForAllDrives();
 
@@ -68,7 +69,7 @@ void ReadSMARTValues(/*uint8_t id*/ const char device [])
       uint64_t milliSeconds;
       i = sk_disk_smart_get_power_on(p_skDisk, & milliSeconds);
       if( i == 0)
-          outputPowerOnHours(milliSeconds);
+        SMARTvalueFormatter::OutputPowerOnTimeAssumingMilliS(milliSeconds);
 
       uint64_t sectors;
       i = sk_disk_smart_get_bad(p_skDisk, & sectors);
@@ -80,7 +81,7 @@ void ReadSMARTValues(/*uint8_t id*/ const char device [])
       if( i == 0)
         std::cout << "successfully got temperature of drive:"
           << mkelvin << "mK=" << mkelvin/1000 << "K="
-          << (float)mkelvin/1000.0f - 273.1f << "°C" << std::endl;
+          << SMARTvalueFormatter::OutputTemperatureInCelsius(mkelvin) << std::endl;
       else
         std::cout << "failed to get temperature of drive:" << i << " errno:" << errno << std::endl;
 //    const SkSmartAttributeInfo * p = lookup_attribute(& skDisk, id);

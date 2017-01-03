@@ -46,7 +46,7 @@ namespace wxWidgets
     InsertColumn(COL_IDX_rawValue, col1);
 
     col1.SetId(COL_IDX_humanReadableRawValue);
-    col1.SetText( wxT("hum.read.raw val.") );
+    col1.SetText( wxT("human readable") );
     col1.SetWidth(50);
     InsertColumn(COL_IDX_humanReadableRawValue, col1);
 

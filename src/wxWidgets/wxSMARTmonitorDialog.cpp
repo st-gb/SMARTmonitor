@@ -32,6 +32,7 @@ GCC_DIAG_ON(write-strings)
 #include <sstream> //ostringstream
 #include <wx/textdlg.h> //wxGetTextFromUser
 #include <hardware/CPU/atomic/memory_barrier.h>
+#include <SMARTvalueFormatter.hpp> //SMARTvalueFormatter::FormatHumanReadable())
 
 //extern wxSMARTmonitorApp theApp;
 /** Static (class) variables. */
@@ -521,8 +522,8 @@ void SMARTdialog::UpdateSMARTvaluesUI()
       wxString wxstrRawValueString;
       if( successfullyUpdatedSMART )
       {
-        stdstrHumanReadableRawValue = wxGetApp()./*m_SMARTrawValueFormatter.*/
-          FormatHumanReadable(SMARTattributeID, SMARTrawValue);
+        stdstrHumanReadableRawValue = SMARTvalueFormatter::FormatHumanReadable(
+          SMARTattributeID, SMARTrawValue);
         wxstrRawValueString = wxWidgets::GetwxString_Inline(
           stdstrHumanReadableRawValue);
         m_pwxlistctrl->SetItem(lineNumber,

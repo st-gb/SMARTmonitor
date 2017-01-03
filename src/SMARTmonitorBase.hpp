@@ -74,8 +74,6 @@ public:
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
     return s_numberOfMilliSecondsToWaitBetweenSMARTquery;
     }
-  std::string FormatHumanReadable(fastestUnsignedDataType SMARTattributeID, 
-    const uint64_t & SMARTrawValue);
   
   static fastestSignedDataType s_updateSMARTvalues;
   static CommandLineOption s_commandLineOptions [] ;
