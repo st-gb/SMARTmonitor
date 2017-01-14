@@ -25,6 +25,7 @@ message("executable type to build:${EXE_TYPE}")
 #see http://accountingplusplus.blogspot.de/2010/12/cmake-wxwidgets.html :
 if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(WXWIDGETS ON)
+  set(SMARTmonClient ON)
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
 
 if( DEFINED WXWIDGETS )
@@ -161,12 +162,29 @@ if( ${EXE_TYPE} STREQUAL "UNIX_service")
   )
 endif(${EXE_TYPE} STREQUAL "UNIX_service")
 
-if( ${EXE_TYPE} STREQUAL "wxGUI")
+if( ${EXE_TYPE} STREQUAL "ncursesClient" )
+#  add_subdirectory(./ncurses
+#    #EXCLUDE_FROM_ALL
+#    )  
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
-    ${PROJECT_SOURCE_DIR}/client/SMARTmonitorClient.cpp
+    ${PROJECT_SOURCE_DIR}/curses/NcursesUI.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/textfield.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/ncurses/form/Form.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/ncurses/menu/Menu.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/ncurses/InputProcessorStack.cpp
   )
-endif(${EXE_TYPE} STREQUAL "wxGUI")
+  set( LIBRARIES
+    ${LIBRARIES}
+    ncurses menu form)
+  set(SMARTmonClient ON)
+endif(${EXE_TYPE} STREQUAL "ncursesClient" )
+
+if( DEFINED SMARTmonClient )
+  set(SOURCE_FILE_PATHS
+    ${SOURCE_FILE_PATHS}
+    ${PROJECT_SOURCE_DIR}/client/SMARTmonitorClient.cpp )
+endif( DEFINED SMARTmonClient )
 
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
@@ -190,6 +208,7 @@ if(DEFINED WXWIDGETS)
   include(${wxWidgets_USE_FILE})
 
   message("wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
+  message (STATUS "wxWidgets type: ${wxWidgets_CONFIGURATION}")
 endif (DEFINED WXWIDGETS)
 
 if( ${EXE_TYPE} STREQUAL "wxGUI")
@@ -201,6 +220,12 @@ if( ${EXE_TYPE} STREQUAL "wxGUI")
   add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
   #set( LIBRARIES ${LIBRARIES} tinyxml2 )
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
+
+if( ${EXE_TYPE} STREQUAL "ncursesClient")
+  set(EXE_NAME ${PROJECT_NAME}_client_ncurses)
+  add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
+endif( ${EXE_TYPE} STREQUAL "ncursesClient" )
+
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
   set(EXE_NAME ${PROJECT_NAME}_service)
   add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
@@ -214,7 +239,6 @@ endif (DEFINED WXWIDGETS)
 message ("EXE_NAME_: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")
 
 target_link_libraries(${EXE_NAME} ${LIBRARIES})
-message (STATUS "wxWidgets type: ${wxWidgets_CONFIGURATION}")
 
 set(ARCHIVE_FILE_PATHS
   ${CMAKE_LIST_FILE_PATHS}

@@ -15,6 +15,7 @@
 #define SMARTMONITORCLIENT_H
 
 #include "../SMARTmonitorBase.hpp"
+#include <OperatingSystem/multithread/nativeThreadType.hpp>
 
 class SMARTmonitorClient 
   : public SMARTmonitorBase
@@ -24,6 +25,9 @@ public:
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
   
+  static bool s_atLeast1CriticalNonNullValue;
+  static nativeThread_type s_updateSMARTparameterValuesThread;
+  static fastestUnsignedDataType s_updateUI;
   typedef std::set<fastestSignedDataType> supportedSMARTattributeIDs_type;
   typedef std::map<SMARTuniqueID,supportedSMARTattributeIDs_type >
     dataCarrierID2supportedSMARTattributesMap_type;
@@ -37,17 +41,21 @@ public:
     errorOpeningSocket, getHostByNameFailed, errorConnectingToService };
   
   int m_socketFileDesc;
+  
+  virtual void GetTextFromUser(const char * label, std::string & ) { };
   void HandleConnectionError(const char * hostName);
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(uint8_t * SMARTvalues, unsigned numBytesToRead,
     /*std::set<SMARTuniqueIDandValues> & */ SMARTuniqueIDandValues &);
   virtual void ChangeState(enum state newState) { };
+  void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName);
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
     uint8_t * xmlDataByteArray,
     fastestUnsignedDataType numBytesToRead,
     dataCarrierID2supportedSMARTattributesMap_type & supportedSMARTattributess
     );
+  void EndUpdateUIthread();
   fastestUnsignedDataType GetSupportedSMARTidsFromServer();
   fastestSignedDataType ReadNumFollowingBytes();
   fastestUnsignedDataType GetSMARTvaluesFromServer(std::set<SMARTuniqueIDandValues> & );
@@ -56,8 +64,16 @@ public:
   const struct tm & GetLastSMARTvaluesUpdateTime() const { 
     return m_timeOfLastSMARTvaluesUpdate; }
   struct tm m_timeOfLastSMARTvaluesUpdate;
+  
+  void SetServiceAddress(const std::string & str) {
+    m_stdstrServerAddress = str;
+  }
+  virtual void ReBuildUserInterface() { }
+  virtual void UpdateSMARTvaluesUI() { }
+  virtual void ShowStateAccordingToSMARTvalues(bool ) { }
+  std::string m_stdstrServerAddress;
+protected:
 private:
-
 };
 
 #endif /* SMARTMONITORCLIENT_H */

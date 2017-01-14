@@ -36,7 +36,6 @@ GCC_DIAG_ON(write-strings)
 
 //extern wxSMARTmonitorApp theApp;
 /** Static (class) variables. */
-bool SMARTdialog::s_atLeast1CriticalNonNullValue;
 
 //wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
@@ -84,13 +83,13 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
       }
       numberOfSecondsToWaitBetweenSMARTquery =
         numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
-      while( numberOfSecondsToWaitBetweenSMARTquery -- && p_myDialog->m_updateUI)
+      while( numberOfSecondsToWaitBetweenSMARTquery -- && wxGetApp().s_updateUI)
       {
         //TODO handle closing of window / app
         wxSleep(1);
       }
       wxMilliSleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 );
-    }while(p_myDialog->m_updateUI);
+    }while(wxGetApp().s_updateUI);
     LOGN("after update UI loop")
     //p_myDialog->InformAboutTerminationOfUpdateThread();
   }
@@ -118,7 +117,6 @@ SMARTdialog::SMARTdialog(
 //    , m_timer(this, TIMER_ID)
   , m_SMARTvalueProcessor( (wxWidgets::wxSMARTvalueProcessor &) SMARTvalueProcessor)
   , m_SMARTaccess(SMARTvalueProcessor.getSMARTaccess() )
-  , m_updateUI(1)
   , m_wxCloseMutex()
   //, m_wxCloseCondition(m_wxCloseMutex)
 
@@ -227,25 +225,6 @@ void SMARTdialog::OnOK(wxCommandEvent& WXUNUSED(event))
     Show(false);
 }
 
-void SMARTdialog::EndUpdateUIthread()
-{
-  if( m_updateSMARTparameterValuesThread.IsRunning() )
-  {
-    /** Inform the SMART values update thread about we're going to exit,*/
-    //m_wxCloseMutex.TryLock();
-    LOGN("disabling update UI (ends update UI thread)");
-    AtomicExchange( (long *) & m_updateUI, 0);
-    
-    LOGN("waiting for close event");
-    /** http://docs.wxwidgets.org/trunk/classwx_condition.html : 
-      "Wait() atomically unlocks the mutex which allows the thread to continue "
-      "and starts waiting */
-    //m_p_wxCloseCondition->Wait();
-    
-    m_updateSMARTparameterValuesThread.WaitForTermination();
-  }
-}
-
 void SMARTdialog::OnExit(wxCommandEvent& WXUNUSED(event))
 {
   EndAllThreadsAndCloseAllOtherTopLevelWindows();
@@ -254,53 +233,20 @@ void SMARTdialog::OnExit(wxCommandEvent& WXUNUSED(event))
 
 void SMARTdialog::ConnectToServer(wxCommandEvent& WXUNUSED(event))
 {
-  /** Terminate a possibly running update UI thread (e.g.. already connected
-   *   to a service). */
-  EndUpdateUIthread();
-  wxString wxstrServerAddress = wxGetTextFromUser(wxT("input SMART values server address") //message,
-    , wxGetTextFromUserPromptStr// const wxString & 	caption = wxGetTextFromUserPromptStr,
-    , wxT("localhost")//const wxString & 	default_value = wxEmptyString,
-    , NULL //wxWindow * 	parent = NULL,
-    );
-  const std::string stdstrServerAddress = wxWidgets::GetStdString_Inline(
-    wxstrServerAddress);
-  wxGetApp().SetServiceAddress(stdstrServerAddress);
-  const fastestUnsignedDataType res = wxGetApp().ConnectToServer(
-    stdstrServerAddress.c_str() );
-  if( res == 0)
-  {
-    SetTitle(wxT("wxSMARTmonitor--data from ") + wxstrServerAddress);
-    //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
-    std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = m_SMARTaccess.
-      GetSMARTuniqueIDandValues();
-    /*const int res =*/ wxGetApp().GetSupportedSMARTidsFromServer();
-    LOGN("SMART unique ID and values container:" << & sMARTuniqueIDandValues )
-    /** Get # of attributes to in order build the user interface (write 
-     *  attribute ID an name into the table--creating the UI needs to be done 
-     *  only once because the attribute IDs received usually do not change).*/
-    const int getSMARTvaluesResult = wxGetApp().GetSMARTvaluesFromServer(
-      sMARTuniqueIDandValues);
-    if( getSMARTvaluesResult == 0)
-    {
-      wxGetApp().SetSMARTattributesToObserve(sMARTuniqueIDandValues);
-      
-      m_p_ConnectAndDisconnectButton->SetLabel( wxT("disconnect") );
-      ReBuildUserInterface();
-      UpdateSMARTvaluesUI();
-      ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
-      StartAsyncUpdateThread();
-    }
-  }
-  else
-  {
-    //wxGetApp().ShowMessage("");
-  }
+  wxGetApp().ConnectToServer();
 }
 
 void SMARTdialog::SetState(enum SMARTmonitorClient::state newState)
 {
   switch(newState)
   {
+    case SMARTmonitorClient::connectedToService :
+    {
+      const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
+        wxGetApp().m_stdstrServerAddress);
+      SetTitle( wxT("wxSMARTmonitor--data from ") + wxstrServiceAddress );
+    }
+      break;
     case SMARTmonitorClient::unconnectedFromService :
     {
       wxString wxstrTitle = wxGetApp().GetAppName();
@@ -358,7 +304,7 @@ void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event))
 
 void SMARTdialog::EndAllThreadsAndCloseAllOtherTopLevelWindows()
 {
-  EndUpdateUIthread();
+  wxGetApp().EndUpdateUIthread();
   if( OperatingSystem::GetCurrentThreadNumber() == wxGetApp().s_GUIthreadID )
   {
     /** This code should only be executed in UI thread! */
@@ -434,14 +380,6 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
   }
 }
 
-void SMARTdialog::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNonNullValue)
-{
-  if( atLeast1CriticalNonNullValue )
-    wxGetApp().ShowSMARTwarningIcon();
-  else
-    wxGetApp().ShowSMARTokIcon();
-}
-
 void SMARTdialog::UpdateTimeOfSMARTvalueRetrieval(
   unsigned lineNumber,
   long int timeStampOfRetrievalIn1ks)
@@ -488,6 +426,7 @@ void SMARTdialog::UpdateSMARTvaluesUI()
   //memory_barrier(); //TODO: not really necessary??
   
   std::string stdstrHumanReadableRawValue;
+  wxString wxstrRawValueString;
   /** Loop over data carriers. */
   for(fastestUnsignedDataType currentDriveIndex = 0;
     SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
@@ -519,7 +458,6 @@ void SMARTdialog::UpdateSMARTvaluesUI()
       int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
       
       //memory_barrier(); //TODO: not really necessary??
-      wxString wxstrRawValueString;
       if( successfullyUpdatedSMART )
       {
         stdstrHumanReadableRawValue = SMARTvalueFormatter::FormatHumanReadable(
@@ -527,14 +465,27 @@ void SMARTdialog::UpdateSMARTvaluesUI()
         wxstrRawValueString = wxWidgets::GetwxString_Inline(
           stdstrHumanReadableRawValue);
         m_pwxlistctrl->SetItem(lineNumber,
-          SMARTtableListCtrl::COL_IDX_rawValue /** column #/ index */,
-          // https://cboard.cprogramming.com/c-programming/115586-64-bit-integers-printf.html
-          // : "%llu": Linux %llu, "%I64u": Windows
-          wxString::Format( wxT("%llu") , SMARTrawValue) );
-        m_pwxlistctrl->SetItem(lineNumber,
           SMARTtableListCtrl::COL_IDX_humanReadableRawValue /** column #/ index */,
           //wxString::Format(wxT("%i"), SMARTrawValue) 
           wxstrRawValueString);
+        
+        /** https://cboard.cprogramming.com/c-programming/115586-64-bit-integers-printf.html
+        *   : "%llu": Linux %llu, "%I64u": Windows */
+          //TODO wxString::Format(...) causes "smallbin double linked list corrupted"
+//          wxString::Format( , ) expands to : 
+//        template < typename T1 > static wxString Format ( const wxFormatString & f1 , T1 a1 ) {
+//          typedef const wxFormatString & TF1 ;
+//          const wxFormatString * fmt = ( ( wxFormatStringArgumentFinder < TF1 > :: find ( f1 ) ) ) ;
+//          return DoFormatWchar ( f1 , wxArgNormalizerWchar < T1 > ( a1 , fmt , 1 ) . get ( ) ) ;
+//        }
+//          wxString::Format( wxT("%llu"), SMARTrawValue)
+        std::ostringstream std_oss;
+        std_oss << SMARTrawValue;
+        wxstrRawValueString = wxWidgets::GetwxString_Inline(std_oss.str() );
+        
+        m_pwxlistctrl->SetItem(lineNumber,
+          SMARTtableListCtrl::COL_IDX_rawValue /** column #/ index */,
+          wxstrRawValueString );
         bool critical = SMARTattributesFromConfigFileIter->IsCritical();
         LOGN_DEBUG("attribute ID " << SMARTattributesFromConfigFileIter->
           GetAttributeID() << " is critical?:" << critical
@@ -560,11 +511,11 @@ void SMARTdialog::UpdateSMARTvaluesUI()
     }
   }
   /** ^= state changed. */
-  if( s_atLeast1CriticalNonNullValue != atLeast1CriticalNonNullValue )
+  if( wxGetApp().s_atLeast1CriticalNonNullValue != atLeast1CriticalNonNullValue )
   {
-    ShowStateAccordingToSMARTvalues(atLeast1CriticalNonNullValue);
+    wxGetApp().ShowStateAccordingToSMARTvalues(atLeast1CriticalNonNullValue);
   }
-  s_atLeast1CriticalNonNullValue = atLeast1CriticalNonNullValue;
+  wxGetApp().s_atLeast1CriticalNonNullValue = atLeast1CriticalNonNullValue;
 }
 
 void SMARTdialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
@@ -580,7 +531,7 @@ void SMARTdialog::StartAsyncUpdateThread()
   if( wxGetApp().mp_SMARTaccess->GetNumSMARTattributesToObserve() > 0 )
   {
     //ReadSMARTvaluesAndUpdateUI();
-    m_updateSMARTparameterValuesThread.start(
+    wxGetApp().s_updateSMARTparameterValuesThread.start(
       wxUpdateSMARTparameterValuesThreadFunc, this);
   }
 }

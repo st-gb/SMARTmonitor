@@ -289,6 +289,7 @@ int SMARTmonitorService::SendBytesTo1Client(
   uint16_t numOverallBytes;
   uint8_t * array = ByteArrayFromString(xmlString, numOverallBytes);
   int n = write(clientSocketFileDesc, array, numOverallBytes);
+  delete [] array;
   if (n < 0)
   {
     std::ostringstream stdoss;
@@ -308,7 +309,6 @@ int SMARTmonitorService::SendBytesTo1Client(
   else
     LOGN("successfully wrote " << numOverallBytes << " bytes to file descr." 
       << clientSocketFileDesc)
-  delete [] array;
   return successfullyWroteAllBytes;
 }
 

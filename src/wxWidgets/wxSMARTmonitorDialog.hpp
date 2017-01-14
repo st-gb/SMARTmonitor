@@ -16,7 +16,6 @@
 #include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
 #include "wxSMARTmonitorTaskBarIcon.hpp"
 #include "client/SMARTmonitorClient.h" //enum SMARTmonitorClient::state
-#include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <wx/thread.h> //class wxCondition
 #include "SMARTtableListCtrl.hpp"
 #include <wx/defs.h> //wxID_HIGHEST
@@ -34,21 +33,17 @@ class SMARTdialog: public wxDialog
   wxTextCtrl * m_p_wxTextCtrl;
   wxButton * m_p_showSupportedSMART_IDs;
 //  wxTimer m_timer;
-  nativeThread_type m_updateSMARTparameterValuesThread;
-  static bool s_atLeast1CriticalNonNullValue;
 public:
   SMARTaccess_type & m_SMARTaccess;
   wxCondition * m_p_wxCloseCondition;
   wxMutex m_wxCloseMutex;
   wxButton * m_p_ConnectAndDisconnectButton;
-  fastestUnsignedDataType m_updateUI;
   SMARTdialog(const wxString & title,
     //const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor
     const SMARTvalueProcessorBase & SMARTvalueProcessor);
   virtual ~SMARTdialog();
   
   void StartAsyncUpdateThread();
-  void EndUpdateUIthread();
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();
   void UpdateSMARTvaluesUI();
   void UpdateUIregarding1DataCarrierOnly();
@@ -68,7 +63,6 @@ protected:
   void OnCloseWindow(wxCloseEvent& event);
   void OnTimer(wxTimerEvent& event);
   void ReadSMARTvaluesAndUpdateUI();
-  void ShowStateAccordingToSMARTvalues(bool b);
   inline void UpdateTimeOfSMARTvalueRetrieval(
     unsigned lineNumber,
     long int timeStampOfRetrieval);

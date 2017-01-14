@@ -24,6 +24,11 @@
 #include "Controller/character_string/ConvertStdStringToTypename.hpp"
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 
+/** Static/class variable defintion: */
+fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
+nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
+bool SMARTmonitorClient::s_atLeast1CriticalNonNullValue;
+
 SMARTmonitorClient::SMARTmonitorClient() {
 }
 
@@ -113,6 +118,61 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostNam
     LOGN("successfully connected")
   //bzero(buffer,256);
   return connectedToService;
+}
+
+void SMARTmonitorClient::EndUpdateUIthread()
+{
+  if( s_updateSMARTparameterValuesThread.IsRunning() )
+  {
+    /** Inform the SMART values update thread about we're going to exit,*/
+    //m_wxCloseMutex.TryLock();
+    LOGN("disabling update UI (ends update UI thread)");
+    AtomicExchange( (long *) & s_updateUI, 0);
+    
+    LOGN("waiting for close event");
+    /** http://docs.wxwidgets.org/trunk/classwx_condition.html : 
+      "Wait() atomically unlocks the mutex which allows the thread to continue "
+      "and starts waiting */
+    //m_p_wxCloseCondition->Wait();
+    
+    s_updateSMARTparameterValuesThread.WaitForTermination();
+  }
+}
+
+void SMARTmonitorClient::ConnectToServer() {
+  /** Terminate a possibly running update UI thread (e.g.. already connected
+   *   to a service). */
+  EndUpdateUIthread();
+  //  wxString wxstrServerAddress;
+  std::string stdstrServerAddress;
+  GetTextFromUser("input SMART values server address", stdstrServerAddress);
+//  const wxString wxstrServerAddress = wxWidgets::GetwxString_Inline(stdstrServerAddress);
+
+  SetServiceAddress(stdstrServerAddress);
+  const fastestUnsignedDataType res = ConnectToServer(stdstrServerAddress.c_str());
+  if (res == 0) {
+    ChangeState(connectedToService);
+    //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
+    std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = mp_SMARTaccess->
+      GetSMARTuniqueIDandValues();
+    /*const int res =*/ GetSupportedSMARTidsFromServer();
+    LOGN("SMART unique ID and values container:" << &sMARTuniqueIDandValues)
+    /** Get # of attributes to in order build the user interface (write 
+     *  attribute ID an name into the table--creating the UI needs to be done 
+     *  only once because the attribute IDs received usually do not change).*/
+    const int getSMARTvaluesResult = GetSMARTvaluesFromServer(
+    sMARTuniqueIDandValues);
+    if (getSMARTvaluesResult == 0) {
+      SetSMARTattributesToObserve(sMARTuniqueIDandValues);
+//      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
+      ReBuildUserInterface();
+      UpdateSMARTvaluesUI();
+      ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
+      StartAsyncUpdateThread();
+    }
+  } else {
+    //wxGetApp().ShowMessage("");
+  }
 }
 
 bool GetSMARTuniqueID(

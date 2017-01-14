@@ -96,12 +96,35 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 #endif
 }
 
+void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNonNullValue)
+{
+  if( atLeast1CriticalNonNullValue )
+    ShowSMARTwarningIcon();
+  else
+    ShowSMARTokIcon();
+}
+
 void wxSMARTmonitorApp::ChangeState(enum state newState)
 {
   //TODO ensure to/must be called in GUI thread
   gs_dialog->SetState(newState);
 }
-  
+
+void wxSMARTmonitorApp::GetTextFromUser(
+  const char * label, 
+  std::string & std_strValue)
+{
+  const wxString wxstrLabel = wxWidgets::GetwxString_Inline(label);
+  const wxString defaultValue = wxWidgets::GetwxString_Inline(std_strValue);
+  wxString wxstrText = wxGetTextFromUser(
+    wxstrLabel //message,
+    , wxGetTextFromUserPromptStr// const wxString & 	caption = wxGetTextFromUserPromptStr,
+    , defaultValue //const wxString & 	default_value = wxEmptyString,
+    , NULL //wxWindow * 	parent = NULL,
+    );
+  std_strValue = wxWidgets::GetStdString_Inline(wxstrText);
+}
+
 void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
 {
   /** IMPORTANT: creating the arrays can't be done in the constructor of this

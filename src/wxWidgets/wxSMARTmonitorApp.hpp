@@ -24,7 +24,6 @@ class wxSMARTmonitorApp
   : public wxApp, public /*SMARTmonitorBase*/ SMARTmonitorClient
 {
   wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
-  std::string m_stdstrServerAddress;
 public:
   //SMARTaccess_type & m_SMARTaccess;
   //static const wxString appName;
@@ -38,15 +37,14 @@ public:
   void ChangeState(enum state newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
+  void GetTextFromUser(const char * label, std::string & );
   bool OnInit();
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
   void ShowMessage(const char * const ) const;
-  void SetServiceAddress(const std::string & str) {
-    m_stdstrServerAddress = str;
-  }
   wxIcon ShowSMARTokIcon();
   wxIcon ShowSMARTwarningIcon();
+  void ShowStateAccordingToSMARTvalues(bool b);
 };
 
 DECLARE_APP(wxSMARTmonitorApp) //wxGetApp()
