@@ -143,14 +143,12 @@ void SMARTmonitorClient::ConnectToServer() {
   /** Terminate a possibly running update UI thread (e.g.. already connected
    *   to a service). */
   EndUpdateUIthread();
-  //  wxString wxstrServerAddress;
-  std::string stdstrServerAddress;
-  GetTextFromUser("input SMART values server address", stdstrServerAddress);
-//  const wxString wxstrServerAddress = wxWidgets::GetwxString_Inline(stdstrServerAddress);
+//  std::string stdstrServerAddress;
+  GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
 
-  SetServiceAddress(stdstrServerAddress);
-  const fastestUnsignedDataType res = ConnectToServer(stdstrServerAddress.c_str());
-  if (res == 0) {
+  SetServiceAddress(m_stdstrServerAddress);
+  const fastestUnsignedDataType res = ConnectToServer(m_stdstrServiceHostName.c_str());
+  if (res == connectedToService) {
     ChangeState(connectedToService);
     //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
     std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = mp_SMARTaccess->
@@ -161,7 +159,7 @@ void SMARTmonitorClient::ConnectToServer() {
      *  attribute ID an name into the table--creating the UI needs to be done 
      *  only once because the attribute IDs received usually do not change).*/
     const int getSMARTvaluesResult = GetSMARTvaluesFromServer(
-    sMARTuniqueIDandValues);
+      sMARTuniqueIDandValues);
     if (getSMARTvaluesResult == 0) {
       SetSMARTattributesToObserve(sMARTuniqueIDandValues);
 //      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));

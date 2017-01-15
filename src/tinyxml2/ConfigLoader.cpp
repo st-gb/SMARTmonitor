@@ -51,6 +51,10 @@ ConfigLoader::~ConfigLoader() {
         m_r_SMARTmonitorBase.m_socketPortNumber = portNumber;
         LOGN("setting port number to " << portNumber)
       }
+      const char * p_chAttributeValue = p_tinyxml2XMLelement->Attribute("serviceHostName", 
+        /** Value: specify '0' in order to retrieve the value */ NULL);
+      if( p_chAttributeValue )
+        m_r_SMARTmonitorBase.m_stdstrServiceHostName = p_chAttributeValue;
     }
     return p_tinyxml2XMLelement;
   }

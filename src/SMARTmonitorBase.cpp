@@ -40,14 +40,24 @@ std::wstring SMARTmonitorBase::s_programOptionValues[beyondLastProgramOptionName
 };
 
 SMARTmonitorBase::SMARTmonitorBase()
-: m_socketPortNumber(1000) {
+  : m_socketPortNumber(1000),
+    mp_configurationLoader(NULL),
+    m_cmdLineArgStrings(NULL),
+    m_ar_stdwstrCmdLineArgs(NULL)
+{
   mp_SMARTaccess = &m_SMARTvalueProcessor.getSMARTaccess();
   mp_configurationLoader = new tinyxml2::ConfigLoader(
-          (SMARTaccessBase::SMARTattributesContainerType &) mp_SMARTaccess->getSMARTattributes(), * this);
+    (SMARTaccessBase::SMARTattributesContainerType &) mp_SMARTaccess->getSMARTattributes(), * this);
   //  InitializeLogger();
 }
 
 SMARTmonitorBase::~SMARTmonitorBase() {
+  if( mp_configurationLoader )
+    delete mp_configurationLoader;
+  if(m_cmdLineArgStrings )
+    delete [] m_cmdLineArgStrings;
+  if( m_ar_stdwstrCmdLineArgs)
+    delete [] m_ar_stdwstrCmdLineArgs;
 }
 
 //https://gcc.gnu.org/onlinedocs/cpp/Stringification.html#Stringification
@@ -438,11 +448,11 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   LOGN("this exe's absolute file path: \"" << stdwstrAbsoluteFilePath << "\"")
 
   LOGN("this exe's current working dir: \"" << GetStdWstring(
-          currentWorkingDir) << "\"")
+    currentWorkingDir) << "\"")
 
-          //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
-          //have to be taken into account
-          std::wstring fullConfigFilePathWithoutExtension;
+    //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
+    //have to be taken into account
+    std::wstring fullConfigFilePathWithoutExtension;
   std::wstring configFilePathCmdLineValue = GetCommandOptionValue(L"configfilepath");
   if (configFilePathCmdLineValue == L"") /** NO config file path passed. */ {
     //    ConstructConfigFilePathFromExeFilePath(
@@ -484,7 +494,7 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
   try {
     //TODO just for compilation
     const bool successfullyLoadedConfigFile = mp_configurationLoader->
-            LoadSMARTparametersConfiguration(stdwstrWorkingDirWithConfigFilePrefix);
+      LoadSMARTparametersConfiguration(stdwstrWorkingDirWithConfigFilePrefix);
 
     if (!successfullyLoadedConfigFile)
       initSMARTretCode = readingConfigFileFailed;
@@ -497,7 +507,7 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
     switch (dwRetVal) {
       case SMARTaccessBase::accessDenied:
         ShowMessage("access denied to S.M.A.R.T.\n->restart this program as an"
-                " administrator\n->program exits (after showing this message)");
+          " administrator\nin order to get the S.M.A.R.T. values directly");
         initSMARTretCode = accessToSMARTdenied;
         break;
       case SMARTaccessBase::noSingleSMARTdevice:

@@ -166,11 +166,11 @@ if( ${EXE_TYPE} STREQUAL "ncursesClient" )
 #  add_subdirectory(./ncurses
 #    #EXCLUDE_FROM_ALL
 #    )  
+#    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/ncurses/form/Form.cpp
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
     ${PROJECT_SOURCE_DIR}/curses/NcursesUI.cpp
     ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/textfield.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/ncurses/form/Form.cpp
     ${COMMON_SOURCECODE_ROOT_PATH}/libraries/ncurses/menu/Menu.cpp
     ${COMMON_SOURCECODE_ROOT_PATH}/libraries/ncurses/InputProcessorStack.cpp
   )

@@ -69,9 +69,6 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
 
 wxSMARTmonitorApp::~wxSMARTmonitorApp()
 {
-  delete mp_configurationLoader;
-  delete [] m_cmdLineArgStrings;
-  delete [] m_ar_stdwstrCmdLineArgs;
 }
 
 IMPLEMENT_APP(wxSMARTmonitorApp)

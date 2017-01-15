@@ -68,6 +68,9 @@ public:
   void SetServiceAddress(const std::string & str) {
     m_stdstrServerAddress = str;
   }
+  /** Operations that only need to be done once after connection to the service
+      is established. 
+      "virtual" is needed in order to generate a table of virtual functions. */
   virtual void ReBuildUserInterface() { }
   virtual void UpdateSMARTvaluesUI() { }
   virtual void ShowStateAccordingToSMARTvalues(bool ) { }
