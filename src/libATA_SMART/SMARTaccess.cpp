@@ -32,7 +32,7 @@ namespace libatasmart
     p_SMARTattributeNamesAndIDs->push_back( 
       SMARTattributeNameAndID(
         p_SkSmartAttributeParsedData->name, 
-        p_SkSmartAttributeParsedData->id ) 
+        p_SkSmartAttributeParsedData->id )
       );
     LOGN(p_SkSmartAttributeParsedData->name << " ID:" <<
       (fastestUnsignedDataType) p_SkSmartAttributeParsedData->id )
@@ -232,27 +232,33 @@ namespace libatasmart
       SkDisk * p_skDisk;
   //  sk_disk_smart_is_enabled(& skDisk);
 
-      /** "sk_disk_open" allocates an p_skDisk and assigns pointer to it.
+      /** "sk_disk_open" allocates a "SkDisk" struct and assigns pointer to it.
        *  (must be freed by caller later)*/
       int i = sk_disk_open(device, /* SkDisk **_d*/ & p_skDisk);
       if( i != -1)
       {
+        LOGN_DEBUG("Disk \"" << device << "\" successfully opened.")
     //    i = sk_init_smart( & skDisk);
 //        sk_disk_check_power_mode(p_skDisk);
         i = sk_disk_smart_read_data(p_skDisk);
         if( i == 0)
         {
+          LOGN_DEBUG("sk_disk_smart_read_data for \"" << device << "\" succeeded.")
           SkBool diskIdentityAvailable;
           SkBool SMARTavailable;
           i = sk_disk_smart_is_available(p_skDisk, & SMARTavailable);
           i = sk_disk_identify_is_available(p_skDisk, & diskIdentityAvailable);
           if(i == 0 && diskIdentityAvailable)
           {
+            LOGN_DEBUG("sk_disk_identify_is_available for \"" << device << 
+              "\" succeeded.")
             const SkIdentifyParsedData * p_SkIdentifyParsedData;
             i = sk_disk_identify_parse(p_skDisk, & p_SkIdentifyParsedData);
             /** i == 0 -> successfuly got disk info */
             if( i == 0)
             {
+              LOGN_DEBUG("sk_disk_identify_parse for \"" << device << 
+                "\" succeeded.")
       //    const SkSmartAttributeInfo * p = lookup_attribute(& skDisk, id);
               SMARTuniqueID sMARTuniqueID(*p_SkIdentifyParsedData);
               SMARTmonitorBase::s_dataCarrierID2devicePath.insert(
@@ -285,7 +291,8 @@ namespace libatasmart
 //          break;
       }
     }
-    LOGN("end for " << device << " returing " << retVal)
+    LOGN("end for \"" << device << "\":returning " << retVal)
+    //TODO program crashed when /dev/sr0 was opened
     return retVal;
   }
 

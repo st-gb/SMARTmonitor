@@ -25,6 +25,12 @@ public:
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
   
+  enum columnIndices { COL_IDX_SMART_ID = 0 , COL_IDX_SMARTparameterName,
+    COL_IDX_rawValue, COL_IDX_humanReadableRawValue, COL_IDX_lastUpdate, COL_IDX_beyondLast };
+  static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
+  static fastestUnsignedDataType s_charPosOAttrNameBegin[COL_IDX_beyondLast];
+  static char * s_columnAttriuteNames [];
+      
   static bool s_atLeast1CriticalNonNullValue;
   static nativeThread_type s_updateSMARTparameterValuesThread;
   static fastestUnsignedDataType s_updateUI;
@@ -68,11 +74,21 @@ public:
   void SetServiceAddress(const std::string & str) {
     m_stdstrServerAddress = str;
   }
+  void SetSMARTattribIDandNameLabel();
   /** Operations that only need to be done once after connection to the service
       is established. 
       "virtual" is needed in order to generate a table of virtual functions. */
   virtual void ReBuildUserInterface() { }
-  virtual void UpdateSMARTvaluesUI() { }
+  inline void UpdateTimeOfSMARTvalueRetrieval(
+    const SMARTuniqueID & sMARTuniqueID,
+    const fastestUnsignedDataType SMARTattributeID,
+    const long int timeStampOfRetrieval);
+  /*virtual*/ void UpdateSMARTvaluesUI();
+  virtual void SetAttribute(
+    const SMARTuniqueID &, 
+    fastestUnsignedDataType SMARTattributeID,
+    const enum columnIndices &,
+    const std::string &) {}
   virtual void ShowStateAccordingToSMARTvalues(bool ) { }
   std::string m_stdstrServerAddress;
 protected:

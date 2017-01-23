@@ -17,8 +17,6 @@ namespace wxWidgets
     : public wxListCtrl
   {
   public:
-    enum columnIndices { COL_IDX_SMART_ID = 0 , COL_IDX_SMARTparameterName,
-      COL_IDX_rawValue, COL_IDX_humanReadableRawValue, COL_IDX_lastUpdate };
     SMARTtableListCtrl(
       wxWindow * parent,
       wxWindowID id = wxID_ANY,

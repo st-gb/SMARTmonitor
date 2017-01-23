@@ -16,11 +16,15 @@
 //#include <menu.h>
 //#include <libraries/ncurses/form/Form.hpp>
 #include <libraries/curses/textfield.h>
+#include <libraries/ncurses/MessageBox.hpp> //class Ncurses::MessageBox
+#include <libraries/curses/color.h> //A_ATTR
 
 #define NUM_MENU_BAR_LINES 1
 //from PDcurses demo, tui.c:
 # define BODYCOLOR        6
 # define BUTTON_COLOR     5
+#define ATTR_COLOR 1
+#define ATTR_INVERTED_COLOR 2
 //#define A_ATTR  (A_ATTRIBUTES ^ A_COLOR)  /* A_BLINK, A_REVERSE, A_BOLD */
 
 /** Definitions of static variables. */
@@ -43,6 +47,7 @@ namespace Ncurses
       case KEY_RESIZE :
         m_ncursesUI.LayoutUserInterface();
         m_ncursesUI.ReBuildUserInterface();
+        m_ncursesUI.UpdateSMARTvaluesUI();
         break;
       default:
         ret = Ncurses::Window::inputNotHandled;
@@ -54,6 +59,7 @@ namespace Ncurses
 }
 
 NcursesUI::NcursesUI(const int argumentCount, char * argumentVector [] )
+  : m_lastLineNumber(0)
 //    m_cmdLineArgStrings(argumentVector)
 {
   CreateCommandLineArgsArrays(argumentCount, argumentVector);
@@ -102,10 +108,31 @@ void NcursesUI::ServerAddressForm()
 
 void NcursesUI::GetTextFromUser(const char * label, std::string & std_str )
 {
-  mvwaddstr(NcursesUI::s_bodyWindow, 5, 3, label);
-  wrefresh(NcursesUI::s_bodyWindow);
-  if( editText(NcursesUI::s_bodyWindow, std_str, 29) == '\n')
+  int oldYCursorPosOfBodyWindow, oldXcursorPosOfBodyWindow;
+  getyx(NcursesUI::s_bodyWindow, oldYCursorPosOfBodyWindow, 
+    oldXcursorPosOfBodyWindow);
+  const int bodyWindowWidth = getmaxx(NcursesUI::s_bodyWindow);
+  int yBeginOfBodyWindow, xBeginOfBodyWindow;
+  getbegyx(NcursesUI::s_bodyWindow, yBeginOfBodyWindow, xBeginOfBodyWindow);
+  
+  const int textFieldCharWidth = 29;
+  int windowHeight = 5, maxLineWidth = strlen(label) + textFieldCharWidth;
+//  const int windowHeight = numLines + /** box chars + line for OK button*/ 3;
+  /** If window was created with derwin(...) or subwin(...) it isn't cleared 
+   *  from screen after wdelete(...). So use newwin(...) instead. */
+  WINDOW * p_MessageWindow = newwin(
+//      windowToShowMessageIn, 
+    windowHeight , 
+    bodyWindowWidth, /** y begin*/ 1 , /** first column */ 0 );
+  colorBox(p_MessageWindow, BODYCOLOR, 1);
+  mvwaddstr(p_MessageWindow, 1, 1, label);
+  
+  if( editText(p_MessageWindow, std_str, 29) == '\n')
     ;
+  delwin(p_MessageWindow);
+  touchwin(NcursesUI::s_bodyWindow);
+//    wmove(windowToShowMessageIn, oldYCursorPosOfBodyWindow, oldXcursorPosOfBodyWindow);
+  wrefresh(NcursesUI::s_bodyWindow);
 }
 
 void NcursesUI::ConnectToServer()
@@ -113,7 +140,7 @@ void NcursesUI::ConnectToServer()
   ServerAddressForm();
 }
 
-/*static*/ void initcolor(void)
+/*static*/ void initColor(void)
 {
 #ifdef A_COLOR
   if (has_colors())
@@ -126,8 +153,15 @@ void NcursesUI::ConnectToServer()
    *   "& ~A_ATTR" : remove possible attributes like "A_BOLD" */
   init_pair(BODYCOLOR    & ~A_ATTR, COLOR_WHITE, COLOR_BLUE);
   init_pair(EDITBOXCOLOR & ~A_ATTR, COLOR_WHITE, COLOR_BLACK);
+  init_pair(ATTR_COLOR & ~A_ATTR, COLOR_WHITE, COLOR_BLACK);
+  init_pair(ATTR_INVERTED_COLOR & ~A_ATTR, COLOR_BLACK, COLOR_WHITE);
   init_pair(BUTTON_COLOR & ~A_ATTR, COLOR_WHITE, COLOR_RED);
 #endif
+}
+
+void NcursesUI::BeforeWait()
+{
+  
 }
 
 void NcursesUI::CreateUI()
@@ -149,7 +183,7 @@ void NcursesUI::CreateUI()
   
   s_menuBar = newwin(NUM_MENU_BAR_LINES, COLS, 0, 0);
   s_bodyWindow = newwin(LINES - NUM_MENU_BAR_LINES, COLS, 1, 0 /**start x*/);
-  initcolor();
+  initColor();
   if( has_colors() )
   {
     start_color();
@@ -177,6 +211,55 @@ void NcursesUI::LayoutUserInterface()
 void NcursesUI::ReBuildUserInterface()
 {
   SetSMARTdriveID();
+  int lineNumber = 1;
+
+  fastestUnsignedDataType maxNumCharsNeeded, column = 0;
+  const char * p_chAttrName;
+  for( fastestUnsignedDataType attributeType = COL_IDX_SMART_ID;
+      attributeType < COL_IDX_beyondLast; attributeType ++ )
+  {
+    p_chAttrName = SMARTmonitorClient::s_columnAttriuteNames[attributeType];
+    mvwaddstr(s_bodyWindow, lineNumber, column, p_chAttrName );
+    maxNumCharsNeeded = SMARTmonitorClient::s_maxNumCharsNeededForDisplay[
+      attributeType];
+    column += maxNumCharsNeeded;
+  }
+  m_lastLineNumber = 2;
+  SetSMARTattribIDandNameLabel();
+  m_lastLineNumber = 2;
+  wrefresh(s_bodyWindow);
+}
+
+//void NcursesUI::UpdateSMARTvaluesUI()
+//{
+//}
+
+void NcursesUI::SetAttribute(
+  const SMARTuniqueID & sMARTuniqueID, 
+  fastestUnsignedDataType SMARTattributeID,
+  const enum columnIndices & columnIndex,
+  const std::string & std_strValue)
+{
+  attrID2Line_type::const_iterator iter = attributeID2LineMapping.find(
+    SMARTattributeID);
+  unsigned lineNumber;
+  setcolor( s_bodyWindow, columnIndex % 2 == 0 ? ATTR_COLOR : ATTR_INVERTED_COLOR);
+  const int maxx = getmaxx(s_bodyWindow);
+  if( iter != attributeID2LineMapping.end() )
+  {
+    lineNumber = iter->second;
+  }
+  else
+  {
+    ++ m_lastLineNumber;
+    lineNumber = m_lastLineNumber;
+    attributeID2LineMapping.insert(std::make_pair(SMARTattributeID, m_lastLineNumber) );
+  }
+  /** Prevent text wrap around after line end (begins at x pos 0 in next line) */
+  if( s_charPosOAttrNameBegin[columnIndex] < maxx )
+    mvwaddnstr(s_bodyWindow, lineNumber, s_charPosOAttrNameBegin[columnIndex], 
+      std_strValue.c_str(), maxx - s_charPosOAttrNameBegin[columnIndex] );
+  wrefresh(s_bodyWindow);
 }
 
 void NcursesUI::SetSMARTdriveID()
@@ -212,62 +295,8 @@ void NcursesUI::ShowMessage(const char * const message) const
 //  MessageWindow msgWin;
   //TODO Make the following code generic and move it to a separate class 
   // "Ncurses::MessageBox" derived from Ncurses::Window
-  const char * currentMessageChar = message;
-  int currentLineWidth = 0, maxLineWidth = 0, numLines = 1;
-  std::vector<fastestUnsignedDataType> m;
-  while( * currentMessageChar != '\0' )
-  {
-    if( * currentMessageChar == '\n' )
-    {
-      m.push_back(currentLineWidth);
-      if( currentLineWidth > maxLineWidth)
-        maxLineWidth = currentLineWidth;
-      currentLineWidth = 0;
-      numLines ++;
-    }
-    else
-      currentLineWidth ++;
-    currentMessageChar ++;
-  }
-  if( currentLineWidth)
-    m.push_back(currentLineWidth);
-  if( currentLineWidth > maxLineWidth)
-    maxLineWidth = currentLineWidth;
-  const int windowHeight = numLines + /** box chars + line for OK button*/ 3;
-  WINDOW * p_MessageWindow = derwin(s_bodyWindow, windowHeight , 
-    maxLineWidth + 2, 1, 1 );
-  colorBox(p_MessageWindow, BODYCOLOR, 1);
-  mvwaddstr(p_MessageWindow, 0, 1, "message");
-//  mvwaddstr(p_win, 1, 1, message);
-  const char * lineBegin = message, * formatString;
-  for( int i = 0; i < m.size(); i++ )
-  {
-    currentLineWidth = m.at(i);
-    std::ostringstream oss;
-    oss << "%." << currentLineWidth << "s"; //-> e.g. "%20s"
-    formatString = oss.str().c_str();
-    mvwprintw(p_MessageWindow, 1 + i , 1, formatString, lineBegin );
-    lineBegin += currentLineWidth + 1;
-  }
-  WINDOW * p_OKwindow = derwin(p_MessageWindow, 1 , 2, windowHeight - 2, 
-    maxLineWidth / 2 );
-  colorBox(p_OKwindow, BUTTON_COLOR, 1);
-  mvwaddstr(p_OKwindow, 0, 0, "OK");
-  wrefresh(p_OKwindow);
-//  touchwin(s_bodyWindow);
-  wrefresh(p_MessageWindow);
-  int ch;
-  do
-  {
-    ch = wgetch(p_MessageWindow);
-    /** https://linux.die.net/man/3/wgetch :
-     * "In no-delay mode, if no input is waiting, the value ERR is returned."
-     * ERR = no valid input. */
-//    if( ch != ERR )
-  }while(ch != '\n' );
-  delwin(p_OKwindow);
-  delwin(p_MessageWindow);
-  wrefresh(s_bodyWindow);
+  Ncurses::MessageBox messageBox(BODYCOLOR, BUTTON_COLOR);
+  messageBox.ShowMessage(message, s_bodyWindow);
 }
 
 void NcursesUI::ShowProgramMenu()

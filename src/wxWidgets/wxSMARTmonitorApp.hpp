@@ -41,6 +41,11 @@ public:
   bool OnInit();
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
+  void SetAttribute(
+    const SMARTuniqueID &, 
+    fastestUnsignedDataType SMARTattributeID,
+    const enum columnIndices &,
+    const std::string &);
   void ShowMessage(const char * const ) const;
   wxIcon ShowSMARTokIcon();
   wxIcon ShowSMARTwarningIcon();

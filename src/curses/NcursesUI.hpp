@@ -29,15 +29,20 @@ public:
   NcursesUI(const NcursesUI& orig);
   virtual ~NcursesUI();
   
+  typedef std::map<fastestUnsignedDataType, fastestUnsignedDataType> attrID2Line_type;
   static NcursesUI * s_p_NcursesUI;
+  void BeforeWait() { }
   static void CreateUI();
   void CreateCommandLineArgsArrays(const int argumentCount, char * argumentVector []);
   static void ServerAddressForm();
   static void MenuLoop();
   static struct _win_st * s_menuBar, * s_bodyWindow;
   void ReBuildUserInterface();
+//  void UpdateSMARTvaluesUI();
   void LayoutUserInterface();
 private:
+  int m_lastLineNumber;
+  attrID2Line_type attributeID2LineMapping;
   static Ncurses::Menu s_mainMenu, s_programMenu, s_serverMenu;
 //  static Ncurses::Form s_connToSrvForm;
   void ChangeState(enum state newState);
@@ -46,6 +51,11 @@ private:
   static void Exit();
   void GetTextFromUser(const char * label, std::string & );
   void SetSMARTdriveID();
+  void SetAttribute(
+    const SMARTuniqueID &, 
+    fastestUnsignedDataType SMARTattributeID,
+    const enum columnIndices &,
+    const std::string &);
   void ShowMessage(const char * const msg) const;
   static void ShowProgramMenu();
   static void ShowServerMenu();

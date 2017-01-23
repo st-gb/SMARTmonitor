@@ -23,13 +23,24 @@
 #include "hardware/CPU/atomic/AtomicExchange.h"
 #include "Controller/character_string/ConvertStdStringToTypename.hpp"
 #include <OperatingSystem/time/GetCurrentTime.hpp>
+#include <SMARTvalueFormatter.hpp> //SMARTvalueFormatter::FormatHumanReadable())
 
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
 nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
 bool SMARTmonitorClient::s_atLeast1CriticalNonNullValue;
+fastestUnsignedDataType SMARTmonitorClient::s_maxNumCharsNeededForDisplay [] =
+ { 3, 30, 15, 20, 40};
+fastestUnsignedDataType SMARTmonitorClient::s_charPosOAttrNameBegin [] =
+ { 0, 3, 33, 48, 68};
+char * SMARTmonitorClient::s_columnAttriuteNames [] =
+ { "ID", "name", "raw", "human readable", "last update"};
 
 SMARTmonitorClient::SMARTmonitorClient() {
+//  for( int i = 0; i < COL_IDX_beyondLast ; i++ )
+//  {
+//    s_charPosOAttrNameBegin[i] += 
+//  }
 }
 
 SMARTmonitorClient::SMARTmonitorClient(const SMARTmonitorClient& orig) {
@@ -532,4 +543,215 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
   }
   LOGN("end")
   return successfull;
+}
+
+void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
+{
+  LOGN("begin")
+  const std::set<SMARTentry> & SMARTattributesFromConfigFile =
+    mp_SMARTaccess->getSMARTattributes();
+  LOGN("begin " << & SMARTattributesFromConfigFile)
+  unsigned lineNumber = 0;
+//  wxString wxSMARTattribName;
+
+  std::set<SMARTentry>::const_iterator
+    SMARTattributesToObserveIter = SMARTattributesFromConfigFile.begin();
+  fastestUnsignedDataType SMARTattributeID;
+  
+  std::set<int>::const_iterator IDofAttributeToObserverIter = 
+    m_IDsOfSMARTattributesToObserve.begin();
+  SMARTentry sMARTentry;
+  /** Traverse all SMART attribute IDs either got from server or read via config 
+   *  file.*/
+  for( ; IDofAttributeToObserverIter != m_IDsOfSMARTattributesToObserve.
+      end() ; IDofAttributeToObserverIter ++, lineNumber++)
+  {
+    SMARTattributeID = * IDofAttributeToObserverIter;
+    
+//    wxListItem item;
+//    item.SetId(lineNumber); //item line number
+//    item.SetText( wxString::Format(wxT("%u"),
+//      SMARTattributeID)
+//      );
+    std::ostringstream std_oss;
+    std_oss << SMARTattributeID;
+    SetAttribute(
+      //TODO only dummy object!
+      SMARTuniqueID(),
+      SMARTattributeID,
+      COL_IDX_SMART_ID,
+      std_oss.str()
+      );
+//    m_pwxlistctrl->InsertItem( item );
+    
+    /** Now get the attribute name belonging to SMART ID */
+    sMARTentry.SetAttributeID(SMARTattributeID);
+    SMARTattributesToObserveIter = SMARTattributesFromConfigFile.find(sMARTentry);
+    if( SMARTattributesToObserveIter != SMARTattributesFromConfigFile.end() )
+    {
+      const SMARTentry & SMARTattributeFromConfig =
+        *SMARTattributesToObserveIter;
+      //SMARTattributeToObserve.name
+      SetAttribute(
+        //TODO only dummy object!
+        SMARTuniqueID(),
+        SMARTattributeID,
+        COL_IDX_SMARTparameterName,
+        SMARTattributeFromConfig.GetName()
+        );
+//      wxSMARTattribName = wxWidgets::GetwxString_Inline(
+//        SMARTattributeFromConfig.GetName() );
+//      m_pwxlistctrl->SetItem(
+//        lineNumber, 
+//        COL_IDX_SMARTparameterName, /*wxString::Format( wxT("%s"),
+//        wxSMARTattribName.c_str() )*/ wxSMARTattribName
+//        );
+    }
+//            m_pwxlistctrl->SetItem( item );
+  }
+  LOGN("end")
+}
+
+void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
+  const SMARTuniqueID & sMARTuniqueID,
+  const fastestUnsignedDataType SMARTattributeID,
+  const long int timeStampOfRetrievalIn1ks)
+{  
+  std::string timeFormatString;
+  UserInterface::FormatTimeOfLastUpdate(
+    timeStampOfRetrievalIn1ks, 
+    timeFormatString);
+//  wxString timeOfSMARTvalueRetrievel = wxWidgets::GetwxString_Inline(
+//    timeFormatString);
+  SetAttribute(
+    sMARTuniqueID,
+    SMARTattributeID,
+    COL_IDX_lastUpdate /** column #/ index */,
+    //wxString::Format(wxT("%u ms ago"), numberOfMilliSecondsPassedSinceLastSMARTquery )
+    timeFormatString
+    );
+}
+
+void SMARTmonitorClient::UpdateSMARTvaluesUI()
+{
+  unsigned lineNumber = 0;
+  bool atLeast1CriticalNonNullValue = false;
+
+  const fastestUnsignedDataType numberOfDifferentDrives = mp_SMARTaccess->
+    GetNumberOfDifferentDrives();
+  SMARTaccessBase::constSMARTattributesContainerType & SMARTattributesFromConfigFile =
+    mp_SMARTaccess->getSMARTattributes();
+
+  //memory_barrier(); //TODO necessary at all??
+  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = mp_SMARTaccess->
+    GetSMARTuniqueIDandValues();
+  LOGN("SMART unique ID and values container:" << & SMARTuniqueIDsAndValues )
+  std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
+    SMARTuniqueIDsAndValues.begin();
+  fastestUnsignedDataType SMARTattributeID;
+  uint64_t SMARTrawValue;
+  const std::set<int> & IDsOfSMARTattributesToObserve =
+    m_IDsOfSMARTattributesToObserve;
+#ifdef DEBUG
+//  int itemCount = m_pwxlistctrl->GetItemCount();
+#endif
+  //memory_barrier(); //TODO: not really necessary??
+  
+  std::string stdstrHumanReadableRawValue;
+//  wxString wxstrRawValueString;
+  /** Loop over data carriers. */
+  for(fastestUnsignedDataType currentDriveIndex = 0;
+    SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
+    SMARTuniqueIDandValuesIter ++)
+  {
+    const SMARTuniqueID sMARTuniqueID = SMARTuniqueIDandValuesIter->
+      getSMARTuniqueID();
+    LOGN("SMART unique ID and values object " << &(*SMARTuniqueIDandValuesIter) )
+    std::set<int>::const_iterator
+      IDsOfSMARTattributesToObserveIter = IDsOfSMARTattributesToObserve.begin();
+    SMARTaccessBase::SMARTattributesContainerConstIterType 
+      SMARTattributesFromConfigFileIter = SMARTattributesFromConfigFile.begin();
+    
+    /** Loop over attribute IDs to observe */
+    for( ; IDsOfSMARTattributesToObserveIter != IDsOfSMARTattributesToObserve.end();
+        IDsOfSMARTattributesToObserveIter ++)
+    {
+      SMARTattributeID = *IDsOfSMARTattributesToObserveIter;
+      //TODO attribute IDs of SMART values to observe may not be a subset of
+      // SMART attributes in config file!
+      while( SMARTattributesFromConfigFileIter->GetAttributeID() != SMARTattributeID)
+      {
+        SMARTattributesFromConfigFileIter++;
+        LOGN_DEBUG( "using SMART entry at address " << 
+          & (* SMARTattributesFromConfigFileIter) )
+      }
+      
+      const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];
+      sMARTvalue.IsConsistent(SMARTrawValue);
+//      memory_barrier(); //TODO: not really necessary??
+      int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
+      
+      //memory_barrier(); //TODO: not really necessary??
+      if( successfullyUpdatedSMART )
+      {
+        stdstrHumanReadableRawValue = SMARTvalueFormatter::FormatHumanReadable(
+          SMARTattributeID, SMARTrawValue);
+//        wxstrRawValueString = wxWidgets::GetwxString_Inline(
+//          stdstrHumanReadableRawValue);
+        std::ostringstream std_oss;
+         std_oss << SMARTrawValue;
+        SetAttribute(
+          sMARTuniqueID,
+          SMARTattributeID,
+          COL_IDX_rawValue /** column #/ index */,
+          std_oss.str()  );
+        SetAttribute(
+          sMARTuniqueID,
+          SMARTattributeID,
+          COL_IDX_humanReadableRawValue, 
+          stdstrHumanReadableRawValue);
+                
+        /** https://cboard.cprogramming.com/c-programming/115586-64-bit-integers-printf.html
+        *   : "%llu": Linux %llu, "%I64u": Windows */
+          //TODO wxString::Format(...) causes "smallbin double linked list corrupted"
+//          wxString::Format( , ) expands to : 
+//        template < typename T1 > static wxString Format ( const wxFormatString & f1 , T1 a1 ) {
+//          typedef const wxFormatString & TF1 ;
+//          const wxFormatString * fmt = ( ( wxFormatStringArgumentFinder < TF1 > :: find ( f1 ) ) ) ;
+//          return DoFormatWchar ( f1 , wxArgNormalizerWchar < T1 > ( a1 , fmt , 1 ) . get ( ) ) ;
+//        }
+//          wxString::Format( wxT("%llu"), SMARTrawValue)
+        bool critical = SMARTattributesFromConfigFileIter->IsCritical();
+        LOGN_DEBUG("attribute ID " << SMARTattributesFromConfigFileIter->
+          GetAttributeID() << " is critical?:" << critical
+          //(critical==true ? "yes" : "no") 
+          )
+//        if( critical && SMARTrawValue > 0)
+//        {
+//          atLeast1CriticalNonNullValue = true;
+//          m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxRED);
+//        }
+//        else
+//          m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxGREEN);
+        UpdateTimeOfSMARTvalueRetrieval(
+          sMARTuniqueID,
+          SMARTattributeID,
+          sMARTvalue.m_timeStampOfRetrieval);
+      }
+      else
+      {
+//        m_pwxlistctrl->SetItem(lineNumber,
+//          SMARTtableListCtrl::COL_IDX_rawValue /** column #/ index */,
+//          wxT("N/A") );
+      }
+//            m_pwxlistctrl->SetItem( item );
+      ++ lineNumber;
+    }
+  }
+  /** ^= state changed. */
+  if( s_atLeast1CriticalNonNullValue != atLeast1CriticalNonNullValue )
+  {
+    ShowStateAccordingToSMARTvalues(atLeast1CriticalNonNullValue);
+  }
+  s_atLeast1CriticalNonNullValue = atLeast1CriticalNonNullValue;
 }

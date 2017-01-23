@@ -253,6 +253,26 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
   return bLoadFileRetVal;
 }
 
+void wxSMARTmonitorApp::SetAttribute(
+  const SMARTuniqueID &, 
+  fastestUnsignedDataType SMARTattributeID,
+  const enum columnIndices &,
+  const std::string &)
+{
+  gs_dialog->m_pwxlistctrl->SetItem(
+    lineNumber,
+    COL_IDX_humanReadableRawValue /** column #/ index */,
+    //wxString::Format(wxT("%i"), SMARTrawValue) 
+    wxstrRawValueString);
+  
+  wxstrRawValueString = wxWidgets::GetwxString_Inline(std_oss.str() );
+
+  gs_dialog->m_pwxlistctrl->SetItem(
+    lineNumber,
+    COL_IDX_rawValue /** column #/ index */,
+    wxstrRawValueString );  
+}
+  
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 {
   /** Only call UI functions in UI thread, else errors?! */

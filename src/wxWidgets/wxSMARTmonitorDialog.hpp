@@ -47,7 +47,6 @@ public:
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();
   void UpdateSMARTvaluesUI();
   void UpdateUIregarding1DataCarrierOnly();
-  void SetSMARTattribIDandNameLabel();
   void SetSMARTdriveID();
   void SetState(enum SMARTmonitorClient::state newState);
   void ReBuildUserInterface();
@@ -63,9 +62,6 @@ protected:
   void OnCloseWindow(wxCloseEvent& event);
   void OnTimer(wxTimerEvent& event);
   void ReadSMARTvaluesAndUpdateUI();
-  inline void UpdateTimeOfSMARTvalueRetrieval(
-    unsigned lineNumber,
-    long int timeStampOfRetrieval);
 
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
     TaskBarIcon   *m_dockIcon;

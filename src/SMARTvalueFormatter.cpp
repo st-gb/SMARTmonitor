@@ -78,6 +78,7 @@ std::string SMARTvalueFormatter::OutputPowerOnTimeAssumingMilliS(
   const fastestUnsignedDataType numDays = hours / 24;
   const float hoursRemainder = hours - (numDays * 24);
   stdoss << std::fixed << numDays << "d" << hoursRemainder << "h";
+  return stdoss.str();
 }
 
 /** Make this method into a distinct class So it can be used by tests with
