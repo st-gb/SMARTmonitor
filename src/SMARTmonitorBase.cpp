@@ -1,17 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   SMARTmonitorBase.cpp
- * Author: sg
- * 
- * Created on 17. November 2016, 13:05
- */
-
-#include "SMARTmonitorBase.hpp" //class SMARTaccessBase
+/** Author: sg
+ * Created on 17. November 2016, 13:05 */
+#include "SMARTmonitorBase.hpp" //class SMARTmonitorBase
+#include "client/SMARTmonitorClient.h" //class SMARTmonitorClient
 #include <FileSystem/GetCurrentWorkingDir.hpp> //OperatingSystem::GetCurrentWorkingDirA_inl(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <Controller/character_string/stdtstr.hpp> //GetStdWstring(...)
@@ -45,6 +35,8 @@ SMARTmonitorBase::SMARTmonitorBase()
     m_cmdLineArgStrings(NULL),
     m_ar_stdwstrCmdLineArgs(NULL)
 {
+  /** For calling ::UpdateSMARTparameterValuesThreadFunc(void *) */
+  m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
   mp_SMARTaccess = &m_SMARTvalueProcessor.getSMARTaccess();
   mp_configurationLoader = new tinyxml2::ConfigLoader(
     (SMARTaccessBase::SMARTattributesContainerType &) mp_SMARTaccess->getSMARTattributes(), * this);
@@ -276,8 +268,9 @@ void SMARTmonitorBase::InitializeLogger() {
 }
 
 void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
-        const std::wstring & stdwstrAbsoluteFilePath,
-        const std::wstring & stdwstrThisExecutable_sFilePath) {
+  const std::wstring & stdwstrAbsoluteFilePath,
+  const std::wstring & stdwstrThisExecutable_sFilePath)
+{
   std::wstring fullConfigFilePathWithoutExtension;
   //    //wxstrThisExecutablesFilePath
   //    wxString fileNameWithoutExtension;
@@ -314,10 +307,12 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
   }
 }
 
-void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe() {
+fastestUnsignedDataType SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
+{
   DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
   SMARTaccess_type & SMARTaccess = *mp_SMARTaccess;
-  if (dwRetVal == SMARTaccessBase::success) {
+  if (dwRetVal == SMARTaccessBase::success)
+  {
     unsigned lineNumber = 0;
     bool atLeast1NonNullValue = false;
     //    //loop over drives
@@ -372,17 +367,41 @@ void SMARTmonitorBase::UpdateSMARTvaluesThreadSafe() {
     //    }
   } else // e.g. SMARTaccessBase::accessDenied
     ;
+  return dwRetVal;
 }
 
-DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(void * p_v) {
-  SMARTmonitorBase * p_SMARTmonitorBase = (SMARTmonitorBase *) p_v;
-  const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
-          SMARTmonitorBase::GetNumberOfMilliSecondsToWaitBetweenSMARTquery();
-  fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;
-  if (p_SMARTmonitorBase) {
-    do {
-      p_SMARTmonitorBase->UpdateSMARTvaluesThreadSafe();
-      p_SMARTmonitorBase->BeforeWait();
+DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
+  void * p_v)
+{
+//  SMARTmonitorBase * p_SMARTmonitorBase = (SMARTmonitorBase *) p_v;
+  struct GetSMARTvaluesFunctionParams * getSMARTvaluesFunctionParams =
+    (struct GetSMARTvaluesFunctionParams *) p_v;
+  if( ! /*p_SMARTmonitorBase*/ getSMARTvaluesFunctionParams)
+    return 1;
+  {
+    SMARTmonitorBase * p_SMARTmonitorBase = getSMARTvaluesFunctionParams->
+      p_SMARTmonitorBase;
+    if( ! p_SMARTmonitorBase )
+      return 2;
+    
+    const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
+      SMARTmonitorBase::GetNumberOfMilliSecondsToWaitBetweenSMARTquery();
+    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;    
+      
+    GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType 
+      p_getSMARTvaluesFunction = 
+      getSMARTvaluesFunctionParams->p_getSMARTvaluesFunction;
+            
+//    std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesSet = 
+//      p_SMARTmonitorBase->mp_SMARTaccess->GetSMARTuniqueIDandValues();
+    do
+    {
+//      int res = p_SMARTmonitorBase->UpdateSMARTvaluesThreadSafe();
+//      int res = ( (SMARTmonitorClient *) p_SMARTmonitorBase)->
+//        GetSMARTvaluesFromServer(sMARTuniqueIDandValuesSet);
+      int res = (*p_SMARTmonitorBase.*p_getSMARTvaluesFunction)();
+      if( res == 0 )
+        p_SMARTmonitorBase->BeforeWait();
 
       numberOfSecondsToWaitBetweenSMARTquery =
               numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
@@ -390,7 +409,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(vo
               SMARTmonitorBase::s_updateSMARTvalues) {
         sleep(1);
       }
-      //Sleep in mikroseconds (1/1000 of a millisecond))
+      //Sleep in microseconds (1/1000th of a millisecond))
       usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
     } while (SMARTmonitorBase::s_updateSMARTvalues);
 
@@ -399,16 +418,45 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(vo
   return 0;
 }
 
-void SMARTmonitorBase::StartAsyncUpdateThread() {
+void SMARTmonitorBase::StartAsyncUpdateThread(
+  GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
+    getSMARTvaluesFunctionType
+  )
+{
+  LOGN_DEBUG("begin")
+  /** Preconditions */
   if (mp_SMARTaccess->GetNumSMARTattributesToObserve() > 0) {
+    m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction = 
+      getSMARTvaluesFunctionType;
     m_updateSMARTparameterValuesThread.start(
-            UpdateSMARTparameterValuesThreadFunc, this);
+      UpdateSMARTparameterValuesThreadFunc, /*this*/
+      & m_getSMARTvaluesFunctionParams
+      );
+  }
+  LOGN_DEBUG("end")
+}
+
+void SMARTmonitorBase::StartAsyncUpdateThread(
+//  GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
+//    getSMARTvaluesFunctionType
+  struct GetSMARTvaluesFunctionParams & getSMARTvaluesFunctionParams
+  )
+{
+  /** Preconditions */
+  if (mp_SMARTaccess->GetNumSMARTattributesToObserve() > 0) {
+//    struct GetSMARTvaluesFunctionParams
+//      getSMARTvaluesFunctionParams = {this, getSMARTvaluesFunctionType };
+    m_updateSMARTparameterValuesThread.start(
+      UpdateSMARTparameterValuesThreadFunc, /*this*/
+      & getSMARTvaluesFunctionParams
+      );
   }
 }
 
 void SMARTmonitorBase::ConstructConfigFilePathFromExeDirPath(
-        const std::wstring & stdwstrAbsoluteFilePath,
-        std::wstring & fullConfigFilePathWithoutExtension) {
+  const std::wstring & stdwstrAbsoluteFilePath,
+  std::wstring & fullConfigFilePathWithoutExtension)
+{
   //const char ps = PATH_SEPERATOR_CHAR;
   std::wstring stdwstrPathSeperatorChar = GetStdWstring(std::string(
           PATH_SEPERATOR_CHAR_STRING));

@@ -30,7 +30,7 @@ static void End(const char * const signalName)
   gp_SMARTmonitor->EndUpdateSMARTvaluesThread();
 }
 
-static void child_handler(int signum)
+static void signal_handler(int signum)
 {
   LOGN("received signal")
   switch(signum)
@@ -53,15 +53,15 @@ static void child_handler(int signum)
 void TrapSignals2()
 {
   /* Trap signals that we expect to receive */
-  signal(SIGCHLD, child_handler);
-  signal(SIGTERM, child_handler);
-  signal(SIGKILL, child_handler);
-  signal(SIGUSR1, child_handler);
-  signal(SIGALRM, child_handler);
-  signal(SIGPIPE, child_handler);
+  signal(SIGCHLD, signal_handler);
+  signal(SIGTERM, signal_handler);
+  signal(SIGKILL, signal_handler);
+  signal(SIGUSR1, signal_handler);
+  signal(SIGALRM, signal_handler);
+  signal(SIGPIPE, signal_handler);
   //SIGHUP = Reload config signal.
-  signal(SIGHUP, child_handler);
-  signal(SIGINT, child_handler);
+  signal(SIGHUP, signal_handler);
+  signal(SIGINT, signal_handler);
 }
 
 /*
@@ -89,13 +89,18 @@ int main(int argc, char** argv) {
       SMARTmonitor.BindAndListenToSocket() == 
       SMARTmonitorService::listeningToSocket )
   {
-    nativeThread_type clientConnThread;
-    clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor );
+//    nativeThread_type clientConnThread;
+//    clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor );
 
-    SMARTmonitor.StartAsyncUpdateThread();
+    SMARTmonitor.StartAsyncUpdateThread(& SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
+    /** Client connection handling can be done in the main thread because the
+     *  service can be exiting via signals (that are software interrupts
+     * and are handled within the [main] thread.). */
+    SMARTmonitor.ClientConnThreadFunc(& SMARTmonitor);
 
-    //Wait for the update thread to be finished
+    /** Wait for the update thread to be finished */
     SMARTmonitor.WaitForSignal();
+    
   }
   LOGN("ending service")
   return 0;

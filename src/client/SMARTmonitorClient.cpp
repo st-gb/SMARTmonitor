@@ -1,17 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/** Author: sg
+ * Created on 20. November 2016, 17:43 */
 
-/* 
- * File:   SMARTmonitorClient.cpp
- * Author: root
- * 
- * Created on 20. November 2016, 17:43
- */
-
-#include "SMARTmonitorClient.h"
+#include "SMARTmonitorClient.h" //class SMARTmonitorClient
 #include <sys/socket.h> //socket(...))
 #include <netinet/in.h> //sockaddr_in
 #include <netdb.h> //gethostbyname(...)
@@ -24,6 +14,7 @@
 #include "Controller/character_string/ConvertStdStringToTypename.hpp"
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 #include <SMARTvalueFormatter.hpp> //SMARTvalueFormatter::FormatHumanReadable())
+#include <compiler/GCC/enable_disable_warning.h> //GCC_DIAG_OFF(...)
 
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
@@ -33,10 +24,17 @@ fastestUnsignedDataType SMARTmonitorClient::s_maxNumCharsNeededForDisplay [] =
  { 3, 30, 15, 20, 40};
 fastestUnsignedDataType SMARTmonitorClient::s_charPosOAttrNameBegin [] =
  { 0, 3, 33, 48, 68};
+GCC_DIAG_OFF(write-strings)
 char * SMARTmonitorClient::s_columnAttriuteNames [] =
  { "ID", "name", "raw", "human readable", "last update"};
+GCC_DIAG_ON(write-strings)
 
-SMARTmonitorClient::SMARTmonitorClient() {
+SMARTmonitorClient::SMARTmonitorClient() 
+{
+  m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
+  /** Setting seconds to an invalid number (100) indicates that the time
+   *   hasn't been retrieved yet. */
+  m_timeOfLastSMARTvaluesUpdate.tm_sec = 100;
 //  for( int i = 0; i < COL_IDX_beyondLast ; i++ )
 //  {
 //    s_charPosOAttrNameBegin[i] += 
@@ -158,7 +156,8 @@ void SMARTmonitorClient::ConnectToServer() {
   GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
 
   SetServiceAddress(m_stdstrServerAddress);
-  const fastestUnsignedDataType res = ConnectToServer(m_stdstrServiceHostName.c_str());
+  const fastestUnsignedDataType res = ConnectToServer(
+    m_stdstrServiceHostName.c_str() );
   if (res == connectedToService) {
     ChangeState(connectedToService);
     //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
@@ -170,14 +169,20 @@ void SMARTmonitorClient::ConnectToServer() {
      *  attribute ID an name into the table--creating the UI needs to be done 
      *  only once because the attribute IDs received usually do not change).*/
     const int getSMARTvaluesResult = GetSMARTvaluesFromServer(
-      sMARTuniqueIDandValues);
+      /*sMARTuniqueIDandValues*/);
     if (getSMARTvaluesResult == 0) {
       SetSMARTattributesToObserve(sMARTuniqueIDandValues);
 //      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
       ReBuildUserInterface();
       UpdateSMARTvaluesUI();
       ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
-      StartAsyncUpdateThread();
+      m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
+        & SMARTmonitorBase::GetSMARTvaluesFromServer;
+      StartAsyncUpdateThread(
+        //UpdateSMARTvaluesThreadSafe 
+        m_getSMARTvaluesFunctionParams
+        );
+//      ((SMARTmonitorBase *)this)->StartAsyncUpdateThread(SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
     }
   } else {
     //wxGetApp().ShowMessage("");
@@ -437,6 +442,18 @@ void SMARTmonitorClient::HandleTransmissionError(
   enum SMARTmonitorClient::TransmissionError transmissionError)
 {
   std::ostringstream stdoss;
+  char * errorMessageForErrno = NULL;
+  if( errno != 0)
+    switch(errno)
+    {
+      case EPIPE :
+        //see https://linux.die.net/man/2/write
+        errorMessageForErrno = (char *) "The reading end of socket is closed.";
+        break;
+      default:
+        errorMessageForErrno = strerror(errno);
+        break;
+    }
   switch(transmissionError)
   {
     case numBytesToReceive :
@@ -446,15 +463,8 @@ void SMARTmonitorClient::HandleTransmissionError(
       stdoss << "ERROR reading SMART data from socket";
       break;
   }
-  if( errno != 0)
-    stdoss << strerror(errno);
-  switch(errno)
-  {
-    case EPIPE :
-      //see https://linux.die.net/man/2/write
-      stdoss << "The reading end of socket is closed.";
-      break;
-  }
+  if( errorMessageForErrno )
+    stdoss << ":\n" << errorMessageForErrno;
   LOGN_ERROR(stdoss.str() );
   ShowMessage(stdoss.str().c_str());
   //TODO set connection status of the user interface to "network errors"/"unconnected"
@@ -502,9 +512,12 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
 }
 
 fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
-  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer)
+//  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer
+  )
 {
   LOGN("begin")
+  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer = 
+    mp_SMARTaccess->GetSMARTuniqueIDandValues();
   enum transmission transmissionResult = unsetTransmResult;
   sMARTuniqueIDandValuesContainer.clear();
   int numBytesRead;
@@ -545,6 +558,8 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
   return successfull;
 }
 
+/** These values are fixed and so need to be shown only once in the user
+  * interface (and not at/for every SMART values update -> saves resources )*/
 void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
 {
   LOGN("begin")

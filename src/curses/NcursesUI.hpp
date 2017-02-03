@@ -25,25 +25,27 @@ class NcursesUI
   : public SMARTmonitorClient
 {
 public:
+  NcursesUI() {}
   NcursesUI(const int argumentCount, char * argumentVector [] );
   NcursesUI(const NcursesUI& orig);
   virtual ~NcursesUI();
   
   typedef std::map<fastestUnsignedDataType, fastestUnsignedDataType> attrID2Line_type;
   static NcursesUI * s_p_NcursesUI;
-  void BeforeWait() { }
+  void BeforeWait();// { }
   static void CreateUI();
   void CreateCommandLineArgsArrays(const int argumentCount, char * argumentVector []);
   static void ServerAddressForm();
   static void MenuLoop();
-  static struct _win_st * s_menuBar, * s_bodyWindow;
+  static struct _win_st * s_menuBar, * s_bodyWindow, * s_statusBar;
   void ReBuildUserInterface();
 //  void UpdateSMARTvaluesUI();
   void LayoutUserInterface();
 private:
   int m_lastLineNumber;
+  static fastestUnsignedDataType s_GUIthreadID;
   attrID2Line_type attributeID2LineMapping;
-  static Ncurses::Menu s_mainMenu, s_programMenu, s_serverMenu;
+  static Curses::Menu s_mainMenu, s_programMenu, s_serverMenu;
 //  static Ncurses::Form s_connToSrvForm;
   void ChangeState(enum state newState);
   static void CreateMenus();
@@ -61,17 +63,4 @@ private:
   static void ShowServerMenu();
 };
 
-namespace Ncurses {
-  class MainWindow 
-    : public Window
-  {
-    NcursesUI & m_ncursesUI;
-  public:
-    MainWindow(NcursesUI & ncursesUI) : m_ncursesUI(ncursesUI) {
-      Ncurses::Window::s_inputProcessorStack.add(this); }
-    int HandleAction(const int ch);
-  };
-}
-
 #endif /* NCURSESUI_HPP */
-

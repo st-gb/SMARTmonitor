@@ -30,6 +30,17 @@ struct CommandLineOption
 
 /** Forward declarations: */
 class ConfigurationLoaderBase;
+class SMARTmonitorBase;
+
+/** Needed for passing class functions of SMARTmonitorBase and its derived 
+ *  classes to ::UpdateSMARTparameterValuesThreadFunc(...) */
+struct GetSMARTvaluesFunctionParams
+{
+  SMARTmonitorBase * p_SMARTmonitorBase;
+  //pointer to member functio of SMARTmonitorBase
+  typedef fastestUnsignedDataType (SMARTmonitorBase::*GetSMARTvaluesFunctionType)();
+  GetSMARTvaluesFunctionType p_getSMARTvaluesFunction = NULL;
+};
 
 /** Use character type in order to pass to to CommandLineArgs member variable*/
 /*template<typename charType>*/ class SMARTmonitorBase
@@ -43,6 +54,14 @@ public:
     }*/
   virtual ~SMARTmonitorBase();
   
+  /** Needs to persist over the call to 
+   *  ::UpdateSMARTparameterValuesThreadFunc(...) so making it a member 
+   *  variable is feasible. 
+   *  (-> creating it on stack before calling
+   *  ::UpdateSMARTparameterValuesThreadFunc(...) is not possible because
+   *  the stack content is popped and changed afterwards.) */
+  struct GetSMARTvaluesFunctionParams m_getSMARTvaluesFunctionParams;
+
   enum programOptionNames { logFileFolder = 0, 
     /** This is used for service clients (i.e. TUIs/GUIs) to specify the 
      *  service address etc.*/
@@ -58,6 +77,12 @@ public:
     accessToSMARTdenied, noSMARTcapableDevicePresent};
   
   void ConstructConfigFilePath(std::wstring & stdwstrConfigPathWithoutExtension);
+  /** Exists to enable SMARTmonitorClient::GetSMARTvaluesFromServer to be 
+   *  executed in ::UpdateSMARTparameterValuesThreadFunc(...) 
+   *  (Only methods of this class can be used there, but becase the method
+   *  is virtual it passes execution to the implementation in 
+   *  SMARTmonitorClient.) */
+  virtual fastestUnsignedDataType GetSMARTvaluesFromServer() {}
   void ProcessCommandLineArgs();
   void HandleLogFileFolderProgramOption();
   fastestUnsignedDataType InitializeSMART();
@@ -67,8 +92,14 @@ public:
   SMARTaccess_type * mp_SMARTaccess;
   SMARTvalueProcessorBase m_SMARTvalueProcessor;
   void SetCommandLineArgs(int argc, char ** argv);
-  void StartAsyncUpdateThread();
-  void UpdateSMARTvaluesThreadSafe();
+  void StartAsyncUpdateThread(
+    //GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
+    struct GetSMARTvaluesFunctionParams & getSMARTvaluesFunctionParams);
+  void StartAsyncUpdateThread(
+    GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
+      getSMARTvaluesFunctionType
+    );
+  fastestUnsignedDataType UpdateSMARTvaluesThreadSafe();
   virtual void BeforeWait() { }
   virtual void AfterGetSMARTvaluesLoop() { }
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {

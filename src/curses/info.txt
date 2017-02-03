@@ -1,0 +1,7 @@
+curses means intersection of:
+-PCcurses, 
+-X/Open curses, 
+-BSD curses
+-SYS V curses
+
+see "Portability" tables in http://wmcbrine.com/pdcurses/doc/PDCurses.txt

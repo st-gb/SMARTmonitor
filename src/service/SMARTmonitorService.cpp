@@ -1,25 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   SMARTmonitorService.cpp
- * Author: root
- * 
- * Created on 19. November 2016, 22:13
- */
-
+/** Author: sg
+ * Created on 19. November 2016, 22:13 */
 #include "SMARTmonitorService.hpp"
 #include <sys/socket.h> //socket(...), bind(...), ...)
 #include <netinet/in.h> //struct sockaddr_in
 #include "Controller/time/GetTickCount.hpp" //OperatingSystem::GetTimeCountInNanoSeconds(...)
-#include "hardware/CPU/atomic/AtomicExchange.h"
+#include "hardware/CPU/atomic/AtomicExchange.h" // AtomicExchange(...))
 #include <attributes/SMARTattributeNameAndID.hpp> //SMARTattributeNameAndID
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <vector> //class std::vector
 
+/** Definitions of class (static) variables. */
 int SMARTmonitorService::s_socketFileDesc = 0;
 
 SMARTmonitorService::SMARTmonitorService() 
@@ -28,7 +18,7 @@ SMARTmonitorService::SMARTmonitorService()
        [...] must be initialized before they can be used */
   //cond(PTHREAD_COND_INITIALIZER)
 {
-  //from https://computing.llnl.gov/tutorials/pthreads/#ConditionVariables
+  /** from https://computing.llnl.gov/tutorials/pthreads/#ConditionVariables */
    pthread_mutex_init(& mutex, NULL);
    pthread_cond_init (&cond, NULL);
 }
@@ -63,6 +53,9 @@ void SMARTmonitorService::WaitForSignal()
     LOGN("pthread wait succeeded")
   LOGN("Unlocking signal mutex")
   pthread_mutex_unlock(&mutex);
+  
+  //http://stackoverflow.com/questions/10619952/how-to-completely-destroy-a-socket-connection-in-c
+  //TODO close all sockets etc. to prevent bind(...) (to socket) here?
   LOGN("end")
 }
 
@@ -140,12 +133,31 @@ fastestUnsignedDataType SMARTmonitorService::BindAndListenToSocket()
   //Erzeugt ein neues Socket bestimmten Types und alloziert hierfür Systemressourcen. Für die Identifizierung gibt die Funktion eine eindeutige Zahl vom Typ Integer zurück.
   s_socketFileDesc = socket(AF_INET, SOCK_STREAM, 0);
   const int socketFileDesc = s_socketFileDesc;
+  
+  /** see/from 
+   * http://stackoverflow.com/questions/10619952/how-to-completely-destroy-a-socket-connection-in-c
+  *  : Avoid bind problems (errno = EADDRINUSE) */
+  int true_ = 1;
+  setsockopt(socketFileDesc, SOL_SOCKET, SO_REUSEADDR, & true_, sizeof(true_) );
+          
   //Bindet den Socket an eine Socket Adressinformation, in der Regel an eine IP-Adresse und Port. Wird typischerweise auf Server-Seite benutzt.
   if( bind(socketFileDesc, (struct sockaddr *) & server_address, 
       sizeof(server_address) ) < 0)
   {
-    LOGN_ERROR("Failed to bind server")
-    ShowMessage("Failed to bind server->exiting");
+    char * errorMessageForErrno = NULL;
+    //https://linux.die.net/man/2/bind
+    if( errno != 0 )
+      errorMessageForErrno = strerror(errno);
+//    switch(errno)
+//    {
+//      case EADDRINUSE :  
+//    }
+    std::string std_strErrorMessage = "Failed to bind server";
+    if( errorMessageForErrno)
+      std_strErrorMessage += errorMessageForErrno;
+    LOGN_ERROR(std_strErrorMessage)
+    std_strErrorMessage += "->exiting";
+    ShowMessage(std_strErrorMessage.c_str() );
     retCode = failedToBindToSocket;
   }
   else
@@ -190,6 +202,8 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
       }
     }while(p_SMARTmonitor->s_updateSMARTvalues);
     LOGN("after \"wait for socket connection\" loop")
+    /**Prevent the bind(...) failure after restarting this program (not tested)*/
+    p_SMARTmonitor->CloseAllClientSockets();
   }
   LOGN("end")
   return 0;
@@ -248,22 +262,14 @@ void SMARTmonitorService::RemoveFileDescsOfBrokenSocketConns(
 {
   //TODO remove broken connections from clients list and stop get SMART data loop
   // if no more clients
+  int clientSocketFileDesc;
   for( std::vector<int>::const_iterator iter = fileDescsToDelete.begin();
     iter != fileDescsToDelete.end(); iter ++)
   {
-//    int n = * iter;
-//    std::vector<int>::iterator iterToDelete = std::find(
-//        m_clientSocketFileDescVector.begin(), 
-//        m_clientSocketFileDescVector.end(),
-//        n);
-    //if( m_clientSocketFileDescVector.
-//    if( iterToDelete != m_clientSocketFileDescVector.end() )
-//    {
-//      m_clientSocketFileDescVector.erase(iterToDelete);
-//    }
-    LOGN("Removing client with file descr. " << *iter << " from list "
-      "because of broken socket connection")
-    m_clientSocketFileDescSet.erase(*iter);
+    clientSocketFileDesc = * iter;
+    LOGN("Removing client with file descr. " << clientSocketFileDesc
+      << " from list because of broken socket connection")
+    m_clientSocketFileDescSet.erase(clientSocketFileDesc);
   }
 }
 
@@ -286,6 +292,7 @@ int SMARTmonitorService::SendBytesTo1Client(
   const int clientSocketFileDesc, 
   const std::string & xmlString)
 {
+  fastestUnsignedDataType returnValue = successfullyWroteAllBytes;
   uint16_t numOverallBytes;
   uint8_t * array = ByteArrayFromString(xmlString, numOverallBytes);
   int n = write(clientSocketFileDesc, array, numOverallBytes);
@@ -300,16 +307,17 @@ int SMARTmonitorService::SendBytesTo1Client(
       case EPIPE :
         //see https://linux.die.net/man/2/write
         stdoss << "The reading end of socket is closed.";
-        return readingEndOfSoecketClosed;
+        returnValue = readingEndOfSocketClosed;
         break;
+      default:
+        returnValue = wroteLessBytesThanIntended;
     }
     LOGN_ERROR(stdoss.str())
-    return wroteLessBytesThanIntended;
   }
   else
     LOGN("successfully wrote " << numOverallBytes << " bytes to file descr." 
       << clientSocketFileDesc)
-  return successfullyWroteAllBytes;
+  return returnValue;
 }
 
 void SMARTmonitorService::SendBytesToAllClients(std::string & xmlString)
@@ -318,6 +326,8 @@ void SMARTmonitorService::SendBytesToAllClients(std::string & xmlString)
   uint8_t * array = ByteArrayFromString(xmlString, numOverallBytes);
   
   int clientSocketFileDesc;
+  /** Client socket connection thread runs in parallel--so mutually exclude 
+    * access to m_clientSocketFileDescSet */
   m_clientsCriticalSection.Enter();
   //std::vector<int>::const_iterator socketFileDescIter = m_clientSocketFileDescVector.begin();
   std::set<int>::const_iterator socketFileDescIter = m_clientSocketFileDescSet.begin();
@@ -403,6 +413,25 @@ void SMARTmonitorService::BeforeWait()
     std::string xmlString = oss.str();
     SendBytesToAllClients(xmlString);  
   }
+}
+
+/** In order to avoid the "Failed to bind server" error when calling "bind(...)"
+* after restarting the server.
+* see http://stackoverflow.com/questions/10619952/how-to-completely-destroy-a-socket-connection-in-c
+* Not tested yet if this works. */
+void SMARTmonitorService::CloseAllClientSockets()
+{
+  int clientSocketFileDesc;
+  m_clientsCriticalSection.Enter();
+  std::set<int>::const_iterator socketFileDescIter = m_clientSocketFileDescSet.
+    begin();
+  for( ; socketFileDescIter != m_clientSocketFileDescSet.end() ; 
+    socketFileDescIter ++)
+  {
+    clientSocketFileDesc = *socketFileDescIter;
+    close(clientSocketFileDesc);
+  }
+  m_clientsCriticalSection.Leave();
 }
 
 /*void SMARTmonitorService::AfterGetSMARTvaluesLoop()

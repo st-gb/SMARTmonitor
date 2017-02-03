@@ -4,8 +4,20 @@
  * and open the template in the editor.
  */
 #include "UserInterface.hpp" //class UserInterface
-#include <fastest_data_type.h> //fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 #include <stdio.h> //snprintf(...)
+
+std::string UserInterface::GetTimeAsString(const struct tm & timeOfLastSMARTvaluesUpdate)
+{
+  char buffer[80];
+  //"%a" : Abbreviated weekday name
+  // %d : Day of the month, zero-padded (01-31)
+  // %b : Abbreviated month name
+  // %T : ISO 8601 time format (HH:MM:SS),
+  size_t strLen = strftime(buffer, 80, "%a %d %b %T", 
+    & timeOfLastSMARTvaluesUpdate );
+  return std::string(buffer);
+}
 
 /** This function is intended to be used by subclasses (e.g. TUI via (n)curses, 
  * wxWidgets GUI, ...) of this class.*/

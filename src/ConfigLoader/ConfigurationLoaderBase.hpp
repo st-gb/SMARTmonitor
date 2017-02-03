@@ -32,7 +32,8 @@ public:
 //      m_smartAttributesToObserve(smartAttributesToObserve)
     : m_r_SMARTmonitorBase(r_SMARTmonitorBase)
   {
-    LOGN(smartAttributesToObserve.size() )
+    //TODO logging here causes crashs (if executed before opening log file?) ?
+//    LOGN(smartAttributesToObserve.size() )
     mp_smartAttributes = & smartAttributesToObserve;
   }
   virtual ~ConfigurationLoaderBase() {}

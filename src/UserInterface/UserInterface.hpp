@@ -10,12 +10,16 @@
 
 #include <string> //class std::string
 
+/** Forward declarations */
+struct tm;
+
 class UserInterface
 {
 public:
   ~UserInterface() { }
   virtual void ShowMessage(const char * const ) const = 0;
   
+  static std::string GetTimeAsString(const struct tm & timeOfLastSMARTvaluesUpdate);
   static void FormatTimeOfLastUpdate(
     long int timeStampOfRetrievalIn1ks, 
     std::string & timeFormatString);

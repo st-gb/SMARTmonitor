@@ -249,18 +249,13 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::state newState)
     case SMARTmonitorClient::unconnectedFromService :
     {
       wxString wxstrTitle = wxGetApp().GetAppName();
-      //TODO move to class UserInterface
-      char buffer[80];
       const struct tm & timeOfLastSMARTvaluesUpdate = wxGetApp().
         GetLastSMARTvaluesUpdateTime();
-      //"%a" : Abbreviated weekday name
-      // %d : Day of the month, zero-padded (01-31)
-      // %b : Abbreviated month name
-      // %T : ISO 8601 time format (HH:MM:SS),
-      size_t strLen = strftime(buffer, 80, "%a %d %b %T", 
-        & timeOfLastSMARTvaluesUpdate );
+      
+      std::string timeString = wxGetApp()::GetTimeAsString(
+        timeOfLastSMARTvaluesUpdate);
       wxstrTitle += wxString::Format( wxT("--last update:%s from %s--unconnected"),
-        wxWidgets::GetwxString_Inline(buffer), 
+        wxWidgets::GetwxString_Inline(timeString.c_str()), 
         wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.c_str() ) );
       SetTitle(wxstrTitle);
     }

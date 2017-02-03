@@ -29,8 +29,8 @@ public:
   
   enum BindAndListenRetCode { listeningToSocket, unset, 
     failedToBindToSocket, failedToListenToSocket };
-  enum SocketSendReturnCodes { successfullyWroteAllBytes, readingEndOfSoecketClosed, 
-    wroteLessBytesThanIntended } ;
+  enum SocketSendReturnCodes { successfullyWroteAllBytes, readingEndOfSocketClosed, 
+    wroteLessBytesThanIntended, SocketSendReturnCode_Unset } ;
   fastestUnsignedDataType BindAndListenToSocket();
   void EndUpdateSMARTvaluesThread();
   int SendBytesTo1Client(const int clientSocketFileDesc, 
@@ -41,6 +41,7 @@ public:
   void AfterGetSMARTvaluesLoop();
   void WaitForSignal();
   static DWORD ClientConnThreadFunc(void * p_v);
+  void CloseAllClientSockets();
   void RemoveFileDescsOfBrokenSocketConns(
     std::vector<int> & fileDescsToDelete);
   

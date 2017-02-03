@@ -1,62 +1,36 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   NcursesUI.cpp
- * Author: root
- * 
- * Created on 11. Januar 2017, 14:30
- */
-
+/* Author: sg
+ * Created on 11. Januar 2017, 14:30 */
 #include "NcursesUI.hpp"
+#include "MainWindow.hpp" //class Curses::MainWindow
 #include "Controller/character_string/stdtstr.hpp"
+#include "OperatingSystem/multithread/GetCurrentThreadNumber.hpp"
+#include <libraries/curses/EventQueue.hpp> //class Curses::EventQueue
 //#include <menu.h>
 //#include <libraries/ncurses/form/Form.hpp>
-#include <libraries/curses/textfield.h>
-#include <libraries/ncurses/MessageBox.hpp> //class Ncurses::MessageBox
+#include <libraries/curses/textfield.h> //editText(...))
+#include <libraries/curses/MessageBox.hpp> //class Ncurses::MessageBox
 #include <libraries/curses/color.h> //A_ATTR
 
 #define NUM_MENU_BAR_LINES 1
-//from PDcurses demo, tui.c:
-# define BODYCOLOR        6
-# define BUTTON_COLOR     5
-#define ATTR_COLOR 1
+
+/** from PDcurses3.4/demos/tui.c : */
+#define BODYCOLOR        6
+#define BUTTON_COLOR     5
+#define STATUS_BAR_COLOR 3
+#define SMART_ATTRIBUTE_COLOR 1
 #define ATTR_INVERTED_COLOR 2
 //#define A_ATTR  (A_ATTRIBUTES ^ A_COLOR)  /* A_BLINK, A_REVERSE, A_BOLD */
 
 /** Definitions of static variables. */
-Ncurses::Menu NcursesUI::s_mainMenu, NcursesUI::s_programMenu, 
+Curses::Menu NcursesUI::s_mainMenu, NcursesUI::s_programMenu, 
   NcursesUI::s_serverMenu;
 //Ncurses::Form NcursesUI::s_connToSrvForm;
-struct _win_st * NcursesUI::s_menuBar, * NcursesUI::s_bodyWindow;
+struct _win_st * NcursesUI::s_menuBar, * NcursesUI::s_bodyWindow, * NcursesUI::s_statusBar;
 NcursesUI * NcursesUI::s_p_NcursesUI;
+fastestUnsignedDataType NcursesUI::s_GUIthreadID;
+//static NcursesUI gs_ncursesUI;
 
-namespace Ncurses
-{
-  int MainWindow::HandleAction(const int ch)
-  {
-//      if( ch != ERR )
-//        mvprintw(7, 3, "%d %c", ch, ch );
-    int ret = -2;
-    bool consumedInput = true;
-    switch(ch)
-    {
-      case KEY_RESIZE :
-        m_ncursesUI.LayoutUserInterface();
-        m_ncursesUI.ReBuildUserInterface();
-        m_ncursesUI.UpdateSMARTvaluesUI();
-        break;
-      default:
-        ret = Ncurses::Window::inputNotHandled;
-    }
-//    if( consumedInput )
-//      wrefresh(windowToShowMenuIn);
-    return ret;
-  }
-}
+extern Curses::EventQueue g_eventQueue;
 
 NcursesUI::NcursesUI(const int argumentCount, char * argumentVector [] )
   : m_lastLineNumber(0)
@@ -152,20 +126,29 @@ void NcursesUI::ConnectToServer()
    * 3. background colour number
    *   "& ~A_ATTR" : remove possible attributes like "A_BOLD" */
   init_pair(BODYCOLOR    & ~A_ATTR, COLOR_WHITE, COLOR_BLUE);
+  init_pair(STATUS_BAR_COLOR    & ~A_ATTR, COLOR_WHITE, COLOR_CYAN);
   init_pair(EDITBOXCOLOR & ~A_ATTR, COLOR_WHITE, COLOR_BLACK);
-  init_pair(ATTR_COLOR & ~A_ATTR, COLOR_WHITE, COLOR_BLACK);
+  init_pair(SMART_ATTRIBUTE_COLOR & ~A_ATTR, COLOR_WHITE, COLOR_BLACK);
   init_pair(ATTR_INVERTED_COLOR & ~A_ATTR, COLOR_BLACK, COLOR_WHITE);
   init_pair(BUTTON_COLOR & ~A_ATTR, COLOR_WHITE, COLOR_RED);
 #endif
 }
 
+void UpdateSMARTvaluesUI_()
+{
+  NcursesUI::s_p_NcursesUI->UpdateSMARTvaluesUI();
+}
+
 void NcursesUI::BeforeWait()
 {
-  
+  g_eventQueue.addEvent( UpdateSMARTvaluesUI_ );
 }
 
 void NcursesUI::CreateUI()
 {
+  /** The GUI thread id is determined by the thread that creates the windows.
+      So this ID is set to the thread that calls this function. */
+  s_GUIthreadID = OperatingSystem::GetCurrentThreadNumber();
   /** see https://bbs.archlinux.org/viewtopic.php?id=94780 */
   std::cout << "in Linux/Unix the environment variable \"TERM\" must be set "
     "in order for initscr() to succeed. " << std::endl;
@@ -243,17 +226,17 @@ void NcursesUI::SetAttribute(
   attrID2Line_type::const_iterator iter = attributeID2LineMapping.find(
     SMARTattributeID);
   unsigned lineNumber;
-  setcolor( s_bodyWindow, columnIndex % 2 == 0 ? ATTR_COLOR : ATTR_INVERTED_COLOR);
+  setcolor( s_bodyWindow, columnIndex % 2 == 0 ? SMART_ATTRIBUTE_COLOR : ATTR_INVERTED_COLOR);
   const int maxx = getmaxx(s_bodyWindow);
-  if( iter != attributeID2LineMapping.end() )
+  if( iter != attributeID2LineMapping.end() ) /** mapping exists/found */
   {
     lineNumber = iter->second;
   }
   else
   {
-    ++ m_lastLineNumber;
     lineNumber = m_lastLineNumber;
     attributeID2LineMapping.insert(std::make_pair(SMARTattributeID, m_lastLineNumber) );
+    ++ m_lastLineNumber;
   }
   /** Prevent text wrap around after line end (begins at x pos 0 in next line) */
   if( s_charPosOAttrNameBegin[columnIndex] < maxx )
@@ -283,8 +266,6 @@ void NcursesUI::SetSMARTdriveID()
     std::string mediaInfo = oss.str();
     mvwaddstr(s_bodyWindow, 0, 0, mediaInfo.c_str() );
     wrefresh(s_bodyWindow);
-//    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
-
 //    std::set<SkSmartAttributeParsedData>::const_iterator
 //      SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
   }
@@ -292,11 +273,17 @@ void NcursesUI::SetSMARTdriveID()
 
 void NcursesUI::ShowMessage(const char * const message) const
 {
-//  MessageWindow msgWin;
-  //TODO Make the following code generic and move it to a separate class 
-  // "Ncurses::MessageBox" derived from Ncurses::Window
-  Ncurses::MessageBox messageBox(BODYCOLOR, BUTTON_COLOR);
-  messageBox.ShowMessage(message, s_bodyWindow);
+  if( OperatingSystem::GetCurrentThreadNumber() == s_GUIthreadID )
+  {
+    Curses::MessageBox messageBox(BODYCOLOR, BUTTON_COLOR);
+    messageBox.ShowMessage(message, s_bodyWindow);
+  }
+  else//if the thread is another than the GUI thread then 
+  {
+    //TODO
+//    MessageEvent(message);
+//    g_eventQueue.addEvent();
+  }
 }
 
 void NcursesUI::ShowProgramMenu()
@@ -311,9 +298,35 @@ void NcursesUI::ShowServerMenu()
 
 void NcursesUI::ChangeState(enum state newState)
 {
+  colorBox(s_statusBar, STATUS_BAR_COLOR, 0);
+//  setcolor(s_statusBar, STATUS_BAR_COLOR);
+  switch( newState )
+  {
+  case connectedToService :
 //  mvwaddstr(s_menuBar, 0, 30, m_stdstrServerAddress.c_str() );
-  mvwprintw(s_menuBar, 0, 30, "connected to %s", m_stdstrServiceHostName.c_str() );
-  wrefresh(s_menuBar);
+    mvwprintw(s_statusBar, 0, 0, 
+      "connected to \"%s\"", //"--last update:%s (local time)", 
+      m_stdstrServiceHostName.c_str() );
+    break;
+  case unconnectedFromService :
+    //If got at
+    if( m_timeOfLastSMARTvaluesUpdate.tm_sec == 100 )
+    {
+      mvwprintw(s_statusBar, 0, 0, 
+        "disconnected from %s--never got S.M.A.R.T values",
+        m_stdstrServiceHostName.c_str() );
+    }
+    else
+    {
+      std::string timeString = GetTimeAsString(m_timeOfLastSMARTvaluesUpdate);
+      mvwprintw(s_statusBar, 0, 0, 
+        "disconnected from %s--last update:%s (local time)",
+        m_stdstrServiceHostName.c_str(), timeString.c_str() );
+    }
+    break;
+  }
+//  touchwin(s_statusBar);
+  wrefresh(s_statusBar);
 }
   
 void NcursesUI::CreateMenus(){
@@ -327,7 +340,15 @@ void NcursesUI::CreateMenus(){
   
   s_mainMenu.addMenuItem("Program", ShowProgramMenu);
   s_mainMenu.addMenuItem("Server", ShowServerMenu);
-  s_mainMenu.createMenu(Ncurses::Menu::Horizontal);
+  s_mainMenu.createMenu(Curses::Menu::Horizontal);
+  s_statusBar = newwin(NUM_MENU_BAR_LINES, 
+    COLS - s_mainMenu.GetNumColumnsNeeded(), 0, s_mainMenu.GetNumColumnsNeeded());
+//  if( has_colors() )
+//  {
+//    chtype attr = BODYCOLOR & A_ATTR;  /* extract Bold, Reverse, Blink bits */
+//    wattrset(s_statusBar, BODYCOLOR ); //COLOR_PAIR(color & A_CHARTEXT) | attr);
+//    wbkgd(s_statusBar, attr);
+//  }
 //  s_inputProcessorStack.add(s_mainMenu);
 }
 
@@ -339,9 +360,10 @@ void NcursesUI::MenuLoop()
 int main(int argc, char * argv [])
 {
   NcursesUI ncursesUI(argc, argv);
+//  gs_ncursesUI.SetCommandLineArgs(argc, argv);
   
 //  ncursesUI.CreateCommandLineArgsArrays();
-  ncursesUI.ProcessCommandLineArgs();
+//  gs_ncursesUI.ProcessCommandLineArgs();
 //  ncursesUI.InitializeLogger();
   fastestUnsignedDataType initSMARTretCode = ncursesUI.
     InitializeSMART();
@@ -349,7 +371,7 @@ int main(int argc, char * argv [])
   {
 //  NcursesUI::ServerAddressForm();
 //  NcursesUI::CreateUI();
-    Ncurses::MainWindow win(ncursesUI);
+    Curses::MainWindow win(ncursesUI);
     NcursesUI::MenuLoop();
   }
   return 0;
