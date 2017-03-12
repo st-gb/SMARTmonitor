@@ -44,12 +44,13 @@ public:
   void SetAttribute(
     const SMARTuniqueID &, 
     fastestUnsignedDataType SMARTattributeID,
-    const enum columnIndices &,
+    const enum ColumnIndices::columnIndices &,
     const std::string &);
   void ShowMessage(const char * const ) const;
   wxIcon ShowSMARTokIcon();
   wxIcon ShowSMARTwarningIcon();
   void ShowStateAccordingToSMARTvalues(bool b);
+  void ReBuildUserInterface();
 };
 
 DECLARE_APP(wxSMARTmonitorApp) //wxGetApp()

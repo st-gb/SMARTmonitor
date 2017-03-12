@@ -1,11 +1,7 @@
-/*
- * wxSMARTmonitorApp.cpp
- *
- *  Created on: 26.11.2013
- *      Author: mr.sys
- *
- *  adapted from the wxWidgets "tbtest" sample
- */
+/* wxSMARTmonitorApp.cpp
+ * Created on: 26.11.2013
+ *  Author: mr.sys
+ *  adapted from the wxWidgets "tbtest" sample  */
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
 
@@ -91,6 +87,12 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 #else
   wxGetApp().m_taskBarIcon = new TaskBarIcon();
 #endif
+}
+
+void wxSMARTmonitorApp::ReBuildUserInterface() { 
+  //SetSMARTdriveID();
+//  SetSMARTattribIDandNameLabel();
+  gs_dialog->ReBuildUserInterface();
 }
 
 void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNonNullValue)
@@ -254,23 +256,19 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 }
 
 void wxSMARTmonitorApp::SetAttribute(
-  const SMARTuniqueID &, 
+  const SMARTuniqueID & sMARTuniqueID, 
   fastestUnsignedDataType SMARTattributeID,
-  const enum columnIndices &,
-  const std::string &)
+  const enum ColumnIndices::columnIndices & columnIndex,
+  const std::string & std_strValue)
 {
-  gs_dialog->m_pwxlistctrl->SetItem(
-    lineNumber,
-    COL_IDX_humanReadableRawValue /** column #/ index */,
-    //wxString::Format(wxT("%i"), SMARTrawValue) 
-    wxstrRawValueString);
-  
-  wxstrRawValueString = wxWidgets::GetwxString_Inline(std_oss.str() );
-
-  gs_dialog->m_pwxlistctrl->SetItem(
-    lineNumber,
-    COL_IDX_rawValue /** column #/ index */,
-    wxstrRawValueString );  
+  wxString wxstrValue = wxWidgets::GetwxString_Inline(std_strValue );
+  //TODO: Maybe implement this in class wxWidgets::SMARTtableListCtrl as this 
+  //should avoid 2 times a pointer dereference -> performs better or in 
+  //SMARTmonitorDialog as param. "sMARTuniqueID" needs to be taken into account
+  gs_dialog->m_pwxlistctrl->SetSMARTattribValue(
+    /*lineNumber*/ SMARTattributeID, //long index
+    columnIndex /** column #/ index */,
+    wxstrValue);
 }
   
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const
@@ -325,4 +323,3 @@ wxIcon wxSMARTmonitorApp::ShowSMARTwarningIcon()
   }
   return icon;
 }
-  

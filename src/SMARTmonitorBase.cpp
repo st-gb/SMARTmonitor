@@ -23,11 +23,19 @@ extern const char FileSystem::dirSeperatorChar;
 CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"logfilefolder", "<absolute or relative log file FOLDER>, e.g. \"/run/\" "
     "for writing log files to tmpfs/RAM drives"},
+  {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. \"server.xml"},
   {""}
 };
+
+/** Initialized with default values. */
 std::wstring SMARTmonitorBase::s_programOptionValues[beyondLastProgramOptionName] = {
-  L".", L"service"
+  L".", L""//service."
 };
+
+//SMARTmonitorBase::HandleOptionLogFilePath()
+//{
+//  
+//}
 
 SMARTmonitorBase::SMARTmonitorBase()
   : m_socketPortNumber(1000),
@@ -41,6 +49,9 @@ SMARTmonitorBase::SMARTmonitorBase()
   mp_configurationLoader = new tinyxml2::ConfigLoader(
     (SMARTaccessBase::SMARTattributesContainerType &) mp_SMARTaccess->getSMARTattributes(), * this);
   //  InitializeLogger();
+  
+  //TODO
+//  s_programOptionName2handler.insert(std::make_pair(L",));
 }
 
 SMARTmonitorBase::~SMARTmonitorBase() {
@@ -108,8 +119,12 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
 
 void SMARTmonitorBase::OutputUsage() {
   std::ostringstream stdoss;
-  stdoss << "Usage (options) (pass 2 command line arguments for each in this order:\n"
-          << "<command line option NAME> <command line option VALUE>) :\n";
+  stdoss << "Usage (options) either:\n"
+    "-pass 2 command line arguments for each in this order:\n"
+     "<command line option NAME> <command line option VALUE>):\n"
+    "-or as 1 command line argument:<command line option NAME>=<command line "
+     "option VALUE>\n\n"
+    "avaiable options:\n";
   for (fastestUnsignedDataType index = 0;
           s_commandLineOptions[index].optionName[0] != '\0'; ++index) {
     CommandLineOption & commandLineOption = s_commandLineOptions[index];
@@ -118,13 +133,15 @@ void SMARTmonitorBase::OutputUsage() {
     stdoss << "\n";
   }
   std::string str = stdoss.str();
-  std::cout << str << std::endl;
+//  std::cout << str << std::endl;
+  ShowMessage(str.c_str() );
 }
 
-std::wstring SMARTmonitorBase::GetCommandOptionValue(
-        const wchar_t * const cmdLineOptionName) {
+std::wstring SMARTmonitorBase::GetCommandLineOptionValue(
+  const wchar_t * const cmdLineOptionName)
+{
   unsigned programArgumentIndex = m_commandLineArgs.contains(
-          cmdLineOptionName);
+    cmdLineOptionName);
 
   if (programArgumentIndex != UINT_MAX) {
     std::wstring cmdLineOptionName;
@@ -140,10 +157,11 @@ std::wstring SMARTmonitorBase::GetCommandOptionValue(
 }
 
 void SMARTmonitorBase::GetCommandOptionNameAndValue(
-        fastestUnsignedDataType & programArgumentIndex,
-        std::wstring & cmdLineOptionName,
-        std::wstring & cmdLineOptionValue
-        ) {
+  fastestUnsignedDataType & programArgumentIndex,
+  std::wstring & cmdLineOptionName,
+  std::wstring & cmdLineOptionValue
+  )
+{
   const wchar_t * pwchCmdLineOption = m_commandLineArgs.GetArgument(
           programArgumentIndex);
   std::wstring std_wstrCmdLineOption = pwchCmdLineOption;
@@ -171,6 +189,7 @@ std::wstring SMARTmonitorBase::GetCommandOptionName(std::wstring & cmdLineArg) {
   return cmdLineOptionName;
 }
 
+//TODO
 std::wstring SMARTmonitorBase::GetCommandOptionValue(//const wchar_t * const str
         unsigned programArgumentIndex) {
   //const int index = m_commandLineArgs.contains(str);
@@ -200,13 +219,26 @@ std::wstring SMARTmonitorBase::GetCommandOptionValue(//const wchar_t * const str
 
 //TODO
 /** This function should be the program option name -> handler function mapping.*/
-void SMARTmonitorBase::HandleLogFileFolderProgramOption() {
-
+void SMARTmonitorBase::HandleLogFileFolderProgramOption(
+  std::wstring & cmdLineOptionValue)
+{
+  std::wstring stdwstrLogfilepathCmdLineArg = cmdLineOptionValue;
+  if (stdwstrLogfilepathCmdLineArg.size() > 0) {
+    const wchar_t lastChar = stdwstrLogfilepathCmdLineArg.at(
+            stdwstrLogfilepathCmdLineArg.size() - 1);
+    if (lastChar != FileSystem::dirSeperatorChar)
+      stdwstrLogfilepathCmdLineArg += FileSystem::dirSeperatorChar;
+  }
+  m_stdstrLogFilePath = GetStdString_Inline(stdwstrLogfilepathCmdLineArg);
+  m_stdstrLogFilePath += GetStdString_Inline(m_stdwstrProgramePath);
 }
 
-void SMARTmonitorBase::ProcessCommandLineArgs() {
+void SMARTmonitorBase::ProcessCommandLineArgs()
+{
   unsigned programArgumentCount = m_commandLineArgs.GetArgumentCount();
-  if (programArgumentCount > 1) {
+  bool showUsage = false;
+  if (programArgumentCount > 1)
+  {
     //    int charPosOfEqualSign;
     //TODO command line options may appear multiple times
     bool atLeast1UnknwonCmdLineOption = false;
@@ -215,10 +247,12 @@ void SMARTmonitorBase::ProcessCommandLineArgs() {
     std::wstring cmdLineOption;
     const wchar_t * pwchCmdLineOption;
     for (unsigned programArgumentIndex =
-            /** Start with the 2nd argument as the 1st one is the executable path 
-             * and thus can't be a program option. */ 1;
-            programArgumentIndex < programArgumentCount;
-            /* programArgumentIndex += 2 */) {
+      /** Start with the 2nd argument as the 1st one is the executable path 
+       * and thus can't be a program option. */
+      CommandLineArgs<wchar_t>::FirstProgramArg;
+      programArgumentIndex < programArgumentCount;
+      /* programArgumentIndex += 2 */)
+    {
       //      cmdLineOptionName = GetCommandOptionName(cmdLineOption);
       GetCommandOptionNameAndValue(programArgumentIndex, cmdLineOptionName,
               cmdLineOptionValue);
@@ -226,29 +260,24 @@ void SMARTmonitorBase::ProcessCommandLineArgs() {
       //      cmdLineOptionValue = GetCommandOptionValue(/*cmdLineOptionName.c_str()*/
       //        programArgumentIndex );
       if (cmdLineOptionValue == L"") {
-        std::wcout << L"unknown command line option \"" << cmdLineOption
+        std::wcout << L"unknown command line option \"" << cmdLineOptionName
                 << L"\"" << std::endl;
         atLeast1UnknwonCmdLineOption = true;
       }
-      if (cmdLineOptionName == L"svcConnConfFile") {
-        s_programOptionValues[serviceConnectionConfigFile] =
-                cmdLineOptionValue;
+      else if (cmdLineOptionName == L"svcConnConfFile") {
+        s_programOptionValues[serviceConnectionConfigFile] = cmdLineOptionValue;
       }
-      if (cmdLineOptionName == L"logfilefolder") {
-        std::wstring stdwstrLogfilepathCmdLineArg = cmdLineOptionValue;
-        if (stdwstrLogfilepathCmdLineArg.size() > 0) {
-          const wchar_t lastChar = stdwstrLogfilepathCmdLineArg.at(
-                  stdwstrLogfilepathCmdLineArg.size() - 1);
-          if (lastChar != FileSystem::dirSeperatorChar)
-            stdwstrLogfilepathCmdLineArg += FileSystem::dirSeperatorChar;
-        }
-        m_stdstrLogFilePath = GetStdString_Inline(stdwstrLogfilepathCmdLineArg);
-        m_stdstrLogFilePath += GetStdString_Inline(m_stdwstrProgramePath);
+      else if (cmdLineOptionName == L"logfilefolder") {
+        HandleLogFileFolderProgramOption(cmdLineOptionValue);
       }
     }
-    if (atLeast1UnknwonCmdLineOption)
-      OutputUsage();
+    if(atLeast1UnknwonCmdLineOption)
+      showUsage = true;
   }
+  else
+    showUsage = true;
+  if(showUsage)
+    OutputUsage();
 }
 
 void SMARTmonitorBase::InitializeLogger() {
@@ -501,7 +530,7 @@ void SMARTmonitorBase::ConstructConfigFilePath(
     //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
     //have to be taken into account
     std::wstring fullConfigFilePathWithoutExtension;
-  std::wstring configFilePathCmdLineValue = GetCommandOptionValue(L"configfilepath");
+  std::wstring configFilePathCmdLineValue = GetCommandLineOptionValue(L"configfilepath");
   if (configFilePathCmdLineValue == L"") /** NO config file path passed. */ {
     //    ConstructConfigFilePathFromExeFilePath(
     //      stdwstrAbsoluteFilePath,

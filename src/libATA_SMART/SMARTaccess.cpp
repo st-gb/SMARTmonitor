@@ -333,6 +333,7 @@ namespace libatasmart
     }
   }
 
+  //TODO store paths where access was denied in order to show it later
   enum SMARTaccessBase::retCodes SMARTaccess::ReadSMARTValuesForAllDrives()
   {
     enum SMARTaccessBase::retCodes overallRetCode = SMARTaccessBase::

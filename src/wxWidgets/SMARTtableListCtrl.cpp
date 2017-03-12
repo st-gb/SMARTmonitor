@@ -1,11 +1,12 @@
-/*
- * SMARTtableListCtrl.cpp
- *
+/* SMARTtableListCtrl.cpp
  *  Created on: 10.03.2015
- *      Author: mr.sys
- */
+ *      Author: mr.sys */
 
-#include <wxWidgets/SMARTtableListCtrl.hpp>
+#include <wxWidgets/SMARTtableListCtrl.hpp> //This class.
+#include <UserInterface/columnIndices.hpp> //enum columnIndices
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
+//wxGetApp().m_IDsOfSMARTattributesToObserve
+#include <wxWidgets/wxSMARTmonitorApp.hpp> 
 
 namespace wxWidgets
 {
@@ -23,40 +24,82 @@ namespace wxWidgets
 //    this->GetDC
 //    unsigned numpixels = textControlFont.GetWidth("255");
 
-    /** Adapted from http://wiki.wxwidgets.org/WxListCtrl#Minimal_example_to_get_started*/
-    // Add first column
-    wxListItem col0;
-    col0.SetId(COL_IDX_SMART_ID);
-    col0.SetText( _("ID") );
-    //TODO calculate width needed for 3 digits
-    col0.SetWidth(textControlFont.GetPixelSize().x * 4);
-    InsertColumn(COL_IDX_SMART_ID, col0);
+    /** Adapted from 
+     * http://wiki.wxwidgets.org/WxListCtrl#Minimal_example_to_get_started */
+    wxListItem column;
+    
+    //TODO is "SetId" needed at all?
+    column.SetId(ColumnIndices::SMART_ID);
+    column.SetText( _("ID") );
+    //TODO calculate width needed for 3 digits ("255" is the highest SMART ID)
+    column.SetWidth(textControlFont.GetPixelSize().x * 4);
+    InsertColumn(ColumnIndices::SMART_ID, column);
 
-    // Add second column
-    wxListItem col1;
-    col1.SetId(COL_IDX_SMARTparameterName);
-    col1.SetText( _("parameter name") );
-    col1.SetWidth(200);
-    InsertColumn(COL_IDX_SMARTparameterName, col1);
+    column.SetId(ColumnIndices::SMARTparameterName);
+    column.SetText( _("parameter name") );
+    column.SetWidth(200);
+    InsertColumn(ColumnIndices::SMARTparameterName, column);
 
-    // Add third column
-    col1.SetId(COL_IDX_rawValue);
-    col1.SetText( wxT("raw value") );
-    col1.SetWidth(70);
-    InsertColumn(COL_IDX_rawValue, col1);
+    column.SetId(ColumnIndices::rawValue);
+    column.SetText( wxT("raw value") );
+    column.SetWidth(70);
+    InsertColumn(ColumnIndices::rawValue, column);
 
-    col1.SetId(COL_IDX_humanReadableRawValue);
-    col1.SetText( wxT("human readable") );
-    col1.SetWidth(50);
-    InsertColumn(COL_IDX_humanReadableRawValue, col1);
+    column.SetId(ColumnIndices::humanReadableRawValue);
+    column.SetText( wxT("human readable") );
+    column.SetWidth(50);
+    InsertColumn(ColumnIndices::humanReadableRawValue, column);
 
-    col1.SetId(COL_IDX_lastUpdate);
-    col1.SetText( wxT("last update") );
+    column.SetId(ColumnIndices::lastUpdate);
+    column.SetText( wxT("last update") );
     //TODO calculate width needed for the last update time string
-    col1.SetWidth(300);
-    InsertColumn(COL_IDX_lastUpdate, col1);
+    column.SetWidth(300);
+    InsertColumn(ColumnIndices::lastUpdate, column);
   }
 
+  void SMARTtableListCtrl::SetSMARTattribValue(
+    fastestUnsignedDataType SMARTattributeID,
+    fastestUnsignedDataType columnIndex,
+    const wxString & wxstrValue)
+  {
+    fastestUnsignedDataType lineNumber = m_SMARTattribIDtoLineNumber[
+      SMARTattributeID];
+    SetItem(
+      lineNumber, //long index
+      columnIndex /** column #/ index */,
+      wxstrValue);    
+  }
+  
+  void SMARTtableListCtrl::CreateLines()
+  {
+    fastestUnsignedDataType SMARTattributeID, lineNumber = 0;
+
+    std::set<int> & IDsOfSMARTattributesToObserve = wxGetApp().
+      m_IDsOfSMARTattributesToObserve;
+    std::set<int>::const_iterator IDofAttributeToObserverIter = 
+      IDsOfSMARTattributesToObserve.begin();
+
+    wxListItem wxListItem;
+    /** List items Need to be added via InsertItem(), else error: 
+     *  "assert index>=0 && < GetItemCount()" not fulfilled */
+    /** Traverse all SMART attribute IDs either got from server or read via  
+     *  config file.*/
+    for( ; IDofAttributeToObserverIter != IDsOfSMARTattributesToObserve.
+        end() ; IDofAttributeToObserverIter ++, lineNumber ++)
+    {
+      SMARTattributeID = * IDofAttributeToObserverIter;
+
+  //    wxListItem.SetText( wxString::Format(wxT("%u"), SMARTattributeID) );
+      wxListItem.SetId(/*lineNumber*/SMARTattributeID);
+      m_SMARTattribIDtoLineNumber[SMARTattributeID] = lineNumber;
+      InsertItem(wxListItem);
+    }
+#ifdef DEBUG
+    int itemCount = GetItemCount();
+    itemCount = itemCount;
+#endif
+  }
+      
   SMARTtableListCtrl::~SMARTtableListCtrl()
   {
     // TODO Auto-generated destructor stub

@@ -67,8 +67,23 @@ public:
      *  service address etc.*/
     serviceConnectionConfigFile,
     beyondLastProgramOptionName};
+protected:
+  /** This array is usually filled from:
+   *  -command line arguments
+   *  -or from config file */
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
+public:
+  std::wstring GetProgramOptionValue(const /*enum programOptionNames*/
+    fastestUnsignedDataType programOptionName) {
+//    const wchar_t * programOptionValue = L"";
+    std::wstring * p_stdwstrProgramOptionValue;
+    if( programOptionName < beyondLastProgramOptionName )
+      p_stdwstrProgramOptionValue = & s_programOptionValues[programOptionName];
+    return * p_stdwstrProgramOptionValue;
+    };
+  
   typedef void ( * CommandLineOptionHandler_type)();
+  //TODO use/implement
   std::map<std::wstring,CommandLineOptionHandler_type> s_programOptionName2handler;
   
   std::wstring m_stdwstrProgramePath;
@@ -84,7 +99,7 @@ public:
    *  SMARTmonitorClient.) */
   virtual fastestUnsignedDataType GetSMARTvaluesFromServer() {}
   void ProcessCommandLineArgs();
-  void HandleLogFileFolderProgramOption();
+  void HandleLogFileFolderProgramOption(std::wstring & cmdLineOptionValue);
   fastestUnsignedDataType InitializeSMART();
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
@@ -120,8 +135,8 @@ public:
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
   void OutputUsage();
   CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}
-  std::wstring GetCommandOptionValue(const wchar_t * const 
-    cmdLineOptionName);
+  
+  std::wstring GetCommandLineOptionValue(const wchar_t * const cmdLineOptionName);
   void GetCommandOptionNameAndValue(
     fastestUnsignedDataType & programArgumentIndex,
     std::wstring & cmdLineOptionName,
@@ -129,6 +144,7 @@ public:
     );
   std::wstring GetCommandOptionName(std::wstring & cmdLineArg);
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
+  
   typedef std::map<SMARTuniqueID,std::string> dataCarrierID2devicePath_type;
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
 protected:

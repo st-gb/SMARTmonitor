@@ -1,9 +1,6 @@
-/*
- * wxSMARTmonitiorDialog.cpp
- *
+/* wxSMARTmonitiorDialog.cpp
  *  Created on: 26.11.2013
- *      Author: mr.sys
- */
+ *      Author: mr.sys  */
 
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
@@ -43,7 +40,7 @@ BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
     EVT_BUTTON(wxID_OK, SMARTdialog::OnOK)
     EVT_BUTTON(wxID_EXIT, SMARTdialog::OnExit)
     EVT_BUTTON(showSupportedSMART_IDs, SMARTdialog::OnShowSupportedSMART_IDs)
-    EVT_BUTTON(CONNECT, SMARTdialog::ConnectToServer)
+    EVT_BUTTON(CONNECT, SMARTdialog::OnConnectToServer)
     EVT_CLOSE(SMARTdialog::OnCloseWindow)
     EVT_COMMAND(wxID_ANY, wxEVT_COMMAND_BUTTON_CLICKED,
       SMARTdialog::OnUpdateSMARTparameterValuesInGUI)
@@ -69,7 +66,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
       }
       else
       {
-        int res = wxGetApp().GetSMARTvaluesFromServer(sMARTuniqueIDandValuesSet);
+        int res = wxGetApp().GetSMARTvaluesFromServer(/*sMARTuniqueIDandValuesSet*/);
         if( res == 0 )
         {
           //p_myDialog->UpdateSMARTvaluesUI();
@@ -230,7 +227,7 @@ void SMARTdialog::OnExit(wxCommandEvent& WXUNUSED(event))
   Close(true);
 }
 
-void SMARTdialog::ConnectToServer(wxCommandEvent& WXUNUSED(event))
+void SMARTdialog::OnConnectToServer(wxCommandEvent& WXUNUSED(event))
 {
   wxGetApp().ConnectToServer();
 }
@@ -252,7 +249,7 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::state newState)
       const struct tm & timeOfLastSMARTvaluesUpdate = wxGetApp().
         GetLastSMARTvaluesUpdateTime();
       
-      std::string timeString = wxGetApp()::GetTimeAsString(
+      std::string timeString = UserInterface::GetTimeAsString(
         timeOfLastSMARTvaluesUpdate);
       wxstrTitle += wxString::Format( wxT("--last update:%s from %s--unconnected"),
         wxWidgets::GetwxString_Inline(timeString.c_str()), 
@@ -270,7 +267,9 @@ void SMARTdialog::ReBuildUserInterface()
    * once*/
   const bool allItemsDeleted = m_pwxlistctrl->DeleteAllItems();
   LOGN_DEBUG("all list control items deleted:" << (allItemsDeleted ? "yes" : "no" ))
-  SetSMARTattribIDandNameLabel();
+  
+  m_pwxlistctrl->CreateLines();
+  wxGetApp().SetSMARTattribIDandNameLabel();
 }
 
 //TODO enable showing supported SMART IDs for multiple disks
@@ -335,7 +334,7 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
   {
     m_pwxlistctrl->SetItem(
       index,
-      SMARTtableListCtrl::COL_IDX_rawValue /** column #/ index */,
+      ColumnIndices::rawValue /** column #/ index */,
       wxString::Format(wxT("%u"), wxGetApp().m_arSMARTrawValue[index]) );
     LOGN( "raw value:" << wxGetApp().m_arSMARTrawValue[index] )
 
@@ -367,7 +366,7 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
 
     m_pwxlistctrl->SetItem(
       index,
-      SMARTtableListCtrl::COL_IDX_lastUpdate /** column #/ index */,
+      ColumnIndices::lastUpdate /** column #/ index */,
       //wxString::Format(wxT("%u ms ago"), numberOfMilliSecondsPassedSinceLastSMARTquery )
       currentTime
       );
@@ -378,7 +377,7 @@ void SMARTdialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
 {
 //#ifdef _DEBUG
 //  ReadValuesRegarding1DataCarrierOnly();
-  UpdateSMARTvaluesUI();
+//  UpdateSMARTvaluesUI();
 }
 
 void SMARTdialog::StartAsyncUpdateThread()
@@ -437,7 +436,7 @@ void SMARTdialog::ReadSMARTvaluesAndUpdateUI()
   m_pwxlistctrl->DeleteAllItems();
 
   ReBuildUserInterface();
-  UpdateSMARTvaluesUI();
+//  UpdateSMARTvaluesUI();
 }
 
 void SMARTdialog::OnTimer(wxTimerEvent& event)

@@ -16,6 +16,7 @@
 
 #include "../SMARTmonitorBase.hpp"
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
+#include <UserInterface/columnIndices.hpp> 
 
 class SMARTmonitorClient 
   : public SMARTmonitorBase
@@ -24,11 +25,8 @@ public:
   SMARTmonitorClient();
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
-  
-  enum columnIndices { COL_IDX_SMART_ID = 0 , COL_IDX_SMARTparameterName,
-    COL_IDX_rawValue, COL_IDX_humanReadableRawValue, COL_IDX_lastUpdate, COL_IDX_beyondLast };
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
-  static fastestUnsignedDataType s_charPosOAttrNameBegin[COL_IDX_beyondLast];
+  static fastestUnsignedDataType s_charPosOAttrNameBegin[ColumnIndices::beyondLast];
   static char * s_columnAttriuteNames [];
       
   static bool s_atLeast1CriticalNonNullValue;
@@ -54,6 +52,7 @@ public:
   void GetSMARTdataViaXML(uint8_t * SMARTvalues, unsigned numBytesToRead,
     /*std::set<SMARTuniqueIDandValues> & */ SMARTuniqueIDandValues &);
   virtual void ChangeState(enum state newState) { };
+  void ConnectToServerAndGetSMARTvalues();
   void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName);
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
@@ -79,7 +78,10 @@ public:
   /** Operations that only need to be done once after connection to the service
       is established. 
       "virtual" is needed in order to generate a table of virtual functions. */
-  virtual void ReBuildUserInterface() { }
+  virtual void ReBuildUserInterface() { 
+    //SetSMARTdriveID();
+    SetSMARTattribIDandNameLabel();
+  }
   inline void UpdateTimeOfSMARTvalueRetrieval(
     const SMARTuniqueID & sMARTuniqueID,
     const fastestUnsignedDataType SMARTattributeID,
@@ -87,8 +89,9 @@ public:
   /*virtual*/ void UpdateSMARTvaluesUI();
   virtual void SetAttribute(
     const SMARTuniqueID &, 
-    fastestUnsignedDataType SMARTattributeID,
-    const enum columnIndices &,
+    fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
+    //TODO exchange enum with fastestUnsignedDataType for performance?
+    const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &) {}
   virtual void ShowStateAccordingToSMARTvalues(bool ) { }
   std::string m_stdstrServerAddress;

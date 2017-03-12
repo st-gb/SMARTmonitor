@@ -1,19 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   ConfigLoader.cpp
+/** File:   ConfigLoader.cpp
  * Author: sg
- * 
- * Created on 27. Dezember 2016, 20:14
- */
-
+ * Created on 27. Dezember 2016, 20:14 */
 #include <stdlib.h>
 
 #include "ConfigLoader.hpp" //class tinyxml2::ConfigLoader
+#include "FileSystem/File/GetAbsoluteFilePath.hpp" 
 #include <Controller/character_string/ConvertStdStringToTypename.hpp>
 #include <tinyxml2.h>
 #include <SMARTmonitorBase.hpp>
@@ -99,7 +90,8 @@ ConfigLoader::~ConfigLoader() {
   {
     std::string stdstrFullConfigFilePath;
 
-    //Need to hold the XMLDocument object here (utside of call to OpenConfigFile)
+    /** IMPORTANT: Need to hold the XMLDocument object here (outside of call to 
+     *  OpenConfigFile) */
     tinyxml2::XMLDocument tinyXML2Doc;
     tinyxml2::XMLElement * p_tinyxml2XMLelement = OpenConfigFile(
       stdwstrWorkingDirWithConfigFilePrefix, stdstrFullConfigFilePath,
@@ -198,29 +190,41 @@ ConfigLoader::~ConfigLoader() {
     return true;
   }
 
-  /** Also needed for the service: if e.g. only critical SMART parameters 
-   *  should be observed. */
+  void ConfigLoader::ReadServiceConnectionSettings(
+    const std::wstring & stdwstrWorkingDirWithConfigFilePrefix)
+  {
+    if( stdwstrWorkingDirWithConfigFilePrefix.empty() )
+      return;
+    std::string stdstrFullConfigFilePath = GetStdString_Inline(stdwstrWorkingDirWithConfigFilePrefix);
+    /** IMPORTANT: Need to hold the XMLDocument object here (outside of call to 
+     *  OpenConfigFile) */
+    tinyxml2::XMLDocument tinyXML2Doc;
+    tinyxml2::XMLElement * p_tinyxml2XMLelement = OpenConfigFile(
+      stdstrFullConfigFilePath,
+      tinyXML2Doc);
+    if( ! p_tinyxml2XMLelement )
+      return;
+    
+    ReadNetworkConfig(p_tinyxml2XMLelement);
+  }
+
   tinyxml2::XMLElement * ConfigLoader::OpenConfigFile(
-    const std::wstring & configFilePathWithoutFileExtension,
-    std::string & stdstrFullConfigFilePath,
+    const std::string & stdstrFullConfigFilePath,
     tinyxml2::XMLDocument & tinyXML2Doc)
   {
-  //  if(IsDebuggerPresent()==FALSE)
-//      {
-//      }
-    std::wstring fullConfigFilePath = configFilePathWithoutFileExtension + L"xml";
-
-    stdstrFullConfigFilePath = GetStdString_Inline(fullConfigFilePath);
     // Read the file. If there is an error, report it and exit.
     const tinyxml2::XMLError xmlResult = tinyXML2Doc.LoadFile(
       stdstrFullConfigFilePath.c_str() );
 
     if( xmlResult != XML_SUCCESS)
     {
+      std::string stdstrAbsFullConfigFilePath;
+      FileSystem::GetAbsolutePathA(
+        stdstrFullConfigFilePath.c_str(), stdstrAbsFullConfigFilePath );
       std::ostringstream std_oss;
       switch(xmlResult) {
         case XML_ERROR_FILE_NOT_FOUND :
-          std_oss << "File \"" << stdstrFullConfigFilePath << "\" not found";
+          std_oss << "File \"" << stdstrAbsFullConfigFilePath << "\" not found";
           LOGN_ERROR(std_oss.str() )
           break;
         case XML_ERROR_FILE_COULD_NOT_BE_OPENED :
@@ -244,7 +248,7 @@ ConfigLoader::~ConfigLoader() {
 //    }
 //    if( ! std_oss.str().empty() )
 //    {
-      std_oss << "\n" << tinyXML2Doc.GetErrorStr1()  
+      std_oss << ":\n" << tinyXML2Doc.GetErrorStr1()  
         << "\n" << tinyXML2Doc.GetErrorStr2();
       LOGN_ERROR(std_oss.str() )
       m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
@@ -262,6 +266,23 @@ ConfigLoader::~ConfigLoader() {
     }
     tinyxml2::XMLElement * p_tinyxml2XMLelement = tinyXML2Doc.RootElement();
     return p_tinyxml2XMLelement;
+  }
+  
+  /** Also needed for the service: if e.g. only critical SMART parameters 
+   *  should be observed. */
+  tinyxml2::XMLElement * ConfigLoader::OpenConfigFile(
+    const std::wstring & configFilePathWithoutFileExtension,
+    std::string & stdstrFullConfigFilePath,
+    tinyxml2::XMLDocument & tinyXML2Doc)
+  {
+  //  if(IsDebuggerPresent()==FALSE)
+//      {
+//      }
+    std::wstring fullConfigFilePath = configFilePathWithoutFileExtension + L"xml";
+
+    stdstrFullConfigFilePath = GetStdString_Inline(fullConfigFilePath);
+    
+    return OpenConfigFile(stdstrFullConfigFilePath, tinyXML2Doc);
     //throw FileException(fullConfigFilePath.c_str() );
   }
 } //end namespace tinyxml2

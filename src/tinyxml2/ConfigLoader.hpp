@@ -1,16 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   ConfigLoader.hpp
- * Author: sg
- *
- * Created on 27. Dezember 2016, 20:14
- */
-
+/** Author: sg
+ * Created on 27. Dezember 2016, 20:14 */
 #ifndef CONFIGLOADER_HPP
 #define CONFIGLOADER_HPP
 
@@ -38,10 +27,15 @@ namespace tinyxml2
     tinyxml2::XMLElement * ReadNetworkConfig(tinyxml2::XMLElement * );
     bool LoadSMARTparametersConfiguration(
       const std::wstring & stdwstrWorkingDirWithConfigFilePrefix );
+    
     tinyxml2::XMLElement * OpenConfigFile(
       const std::wstring & configFilePathWithoutFileExtension,
       std::string & stdstrFullConfigFilePath,
       tinyxml2::XMLDocument & tinyXML2Doc);
+    tinyxml2::XMLElement * OpenConfigFile(
+      const std::string & stdstrFullConfigFilePath,
+      tinyxml2::XMLDocument & tinyXML2Doc);
+    void ReadServiceConnectionSettings(const std::wstring & );
   private:
 
   };

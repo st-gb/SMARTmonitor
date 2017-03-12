@@ -18,6 +18,7 @@ class UserInterface
 public:
   ~UserInterface() { }
   virtual void ShowMessage(const char * const ) const = 0;
+  virtual void ShowConnectionState(const char * const pch, int timeOut) {}
   
   static std::string GetTimeAsString(const struct tm & timeOfLastSMARTvaluesUpdate);
   static void FormatTimeOfLastUpdate(

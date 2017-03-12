@@ -1,16 +1,6 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   NcursesUI.hpp
- * Author: root
- *
- * Created on 11. Januar 2017, 14:30
- */
-
+/* File:   NcursesUI.hpp
+ * Author: sg
+ * Created on 11. Januar 2017, 14:30 */
 #ifndef NCURSESUI_HPP
 #define NCURSESUI_HPP
 
@@ -18,6 +8,7 @@
 //#include <libraries/ncurses/form/Form.hpp>
 #include <libraries/ncurses/menu/Menu.hpp>
 
+/** Forward declaration.*/
 struct _win_st;
 
 /** This class is called NcursesUI because is intended to use ncurses menus */
@@ -35,6 +26,7 @@ public:
   void BeforeWait();// { }
   static void CreateUI();
   void CreateCommandLineArgsArrays(const int argumentCount, char * argumentVector []);
+  void Init();
   static void ServerAddressForm();
   static void MenuLoop();
   static struct _win_st * s_menuBar, * s_bodyWindow, * s_statusBar;
@@ -44,6 +36,8 @@ public:
 private:
   int m_lastLineNumber;
   static fastestUnsignedDataType s_GUIthreadID;
+  //TODO maybe use an 256 elements array here:
+  // array[SMARTattribID ] = line #
   attrID2Line_type attributeID2LineMapping;
   static Curses::Menu s_mainMenu, s_programMenu, s_serverMenu;
 //  static Ncurses::Form s_connToSrvForm;
@@ -56,9 +50,10 @@ private:
   void SetAttribute(
     const SMARTuniqueID &, 
     fastestUnsignedDataType SMARTattributeID,
-    const enum columnIndices &,
+    const enum ColumnIndices::columnIndices &,
     const std::string &);
   void ShowMessage(const char * const msg) const;
+  void ShowConnectionState(const char * const pch, int timeOut);
   static void ShowProgramMenu();
   static void ShowServerMenu();
 };

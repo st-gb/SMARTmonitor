@@ -100,7 +100,10 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
       std::ostringstream stdoss;
       do {
         unitPrefixChar = calcUnitPrefixFactorAndRemainder(remainder, unitPrefixFactor);
-        stdoss << unitPrefixFactor << unitPrefixChar;
+        if( unitPrefixChar == ' ' )
+          stdoss << unitPrefixFactor;
+        else
+          stdoss << unitPrefixFactor << unitPrefixChar;
       } while (unitPrefixChar != ' ');
       return stdoss.str();
     }

@@ -1,9 +1,6 @@
-/*
- * wxSMARTmonitorDialog.hpp
- *
+/*  wxSMARTmonitorDialog.hpp
  *  Created on: 26.11.2013
- *      Author: mr.sys
- */
+ *      Author: mr.sys  */
 
 #ifndef WXSMARTMONITORDIALOG_HPP_
 #define WXSMARTMONITORDIALOG_HPP_
@@ -29,11 +26,11 @@ class SMARTdialog: public wxDialog
   //enum IDs { CONNECT = wxID_HIGHEST + 1};
   wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
   enum IDs {TIMER_ID = 0, showSupportedSMART_IDs, CONNECT};
-  SMARTtableListCtrl * m_pwxlistctrl;
   wxTextCtrl * m_p_wxTextCtrl;
   wxButton * m_p_showSupportedSMART_IDs;
 //  wxTimer m_timer;
 public:
+  SMARTtableListCtrl * m_pwxlistctrl;
   SMARTaccess_type & m_SMARTaccess;
   wxCondition * m_p_wxCloseCondition;
   wxMutex m_wxCloseMutex;
@@ -57,7 +54,7 @@ protected:
   void OnOK(wxCommandEvent& event);
   void OnExit(wxCommandEvent& event);
   void OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event));
-  void ConnectToServer(wxCommandEvent& WXUNUSED(event));
+  void OnConnectToServer(wxCommandEvent& WXUNUSED(event));
   void OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event);
   void OnCloseWindow(wxCloseEvent& event);
   void OnTimer(wxTimerEvent& event);

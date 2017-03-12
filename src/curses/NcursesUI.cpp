@@ -1,6 +1,6 @@
 /* Author: sg
  * Created on 11. Januar 2017, 14:30 */
-#include "NcursesUI.hpp"
+#include "NcursesUI.hpp" //this class's header file
 #include "MainWindow.hpp" //class Curses::MainWindow
 #include "Controller/character_string/stdtstr.hpp"
 #include "OperatingSystem/multithread/GetCurrentThreadNumber.hpp"
@@ -10,22 +10,24 @@
 #include <libraries/curses/textfield.h> //editText(...))
 #include <libraries/curses/MessageBox.hpp> //class Ncurses::MessageBox
 #include <libraries/curses/color.h> //A_ATTR
+#include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
 
 #define NUM_MENU_BAR_LINES 1
 
-/** from PDcurses3.4/demos/tui.c : */
-#define BODYCOLOR        6
-#define BUTTON_COLOR     5
-#define STATUS_BAR_COLOR 3
+/** Adapted from PDcurses3.4/demos/tui.c : */
+#define BODY_WINDOW_COLOR 6
+#define BUTTON_COLOR      5
+#define STATUS_BAR_COLOR  3
 #define SMART_ATTRIBUTE_COLOR 1
-#define ATTR_INVERTED_COLOR 2
+#define ATTR_INVERTED_COLOR   2
 //#define A_ATTR  (A_ATTRIBUTES ^ A_COLOR)  /* A_BLINK, A_REVERSE, A_BOLD */
 
 /** Definitions of static variables. */
 Curses::Menu NcursesUI::s_mainMenu, NcursesUI::s_programMenu, 
   NcursesUI::s_serverMenu;
 //Ncurses::Form NcursesUI::s_connToSrvForm;
-struct _win_st * NcursesUI::s_menuBar, * NcursesUI::s_bodyWindow, * NcursesUI::s_statusBar;
+struct _win_st * NcursesUI::s_menuBar, * NcursesUI::s_bodyWindow, 
+  * NcursesUI::s_statusBar;
 NcursesUI * NcursesUI::s_p_NcursesUI;
 fastestUnsignedDataType NcursesUI::s_GUIthreadID;
 //static NcursesUI gs_ncursesUI;
@@ -33,7 +35,8 @@ fastestUnsignedDataType NcursesUI::s_GUIthreadID;
 extern Curses::EventQueue g_eventQueue;
 
 NcursesUI::NcursesUI(const int argumentCount, char * argumentVector [] )
-  : m_lastLineNumber(0)
+  : SMARTmonitorClient() //Call base class constructor.
+  , m_lastLineNumber(0)
 //    m_cmdLineArgStrings(argumentVector)
 {
   CreateCommandLineArgsArrays(argumentCount, argumentVector);
@@ -98,7 +101,7 @@ void NcursesUI::GetTextFromUser(const char * label, std::string & std_str )
 //      windowToShowMessageIn, 
     windowHeight , 
     bodyWindowWidth, /** y begin*/ 1 , /** first column */ 0 );
-  colorBox(p_MessageWindow, BODYCOLOR, 1);
+  colorBox(p_MessageWindow, BODY_WINDOW_COLOR, 1);
   mvwaddstr(p_MessageWindow, 1, 1, label);
   
   if( editText(p_MessageWindow, std_str, 29) == '\n')
@@ -125,7 +128,7 @@ void NcursesUI::ConnectToServer()
    * 2. foreground colour number,
    * 3. background colour number
    *   "& ~A_ATTR" : remove possible attributes like "A_BOLD" */
-  init_pair(BODYCOLOR    & ~A_ATTR, COLOR_WHITE, COLOR_BLUE);
+  init_pair(BODY_WINDOW_COLOR    & ~A_ATTR, COLOR_WHITE, COLOR_BLUE);
   init_pair(STATUS_BAR_COLOR    & ~A_ATTR, COLOR_WHITE, COLOR_CYAN);
   init_pair(EDITBOXCOLOR & ~A_ATTR, COLOR_WHITE, COLOR_BLACK);
   init_pair(SMART_ATTRIBUTE_COLOR & ~A_ATTR, COLOR_WHITE, COLOR_BLACK);
@@ -172,22 +175,50 @@ void NcursesUI::CreateUI()
     start_color();
     int maxNumColours = COLORS;
     //int maxNumColourPairs = COLOR_PAIR;
-    wattrset(s_menuBar, BODYCOLOR ); //COLOR_PAIR(color & A_CHARTEXT) | attr);
-    chtype attr = BODYCOLOR & A_ATTR;  /* extract Bold, Reverse, Blink bits */
+    wattrset(s_menuBar, BODY_WINDOW_COLOR ); //COLOR_PAIR(color & A_CHARTEXT) | attr);
+    chtype attr = BODY_WINDOW_COLOR & A_ATTR;  /* extract Bold, Reverse, Blink bits */
     wbkgd(s_menuBar, attr);
-    colorBox(s_menuBar, BODYCOLOR, 0);
-    colorBox(s_bodyWindow, BODYCOLOR, 1);
+    colorBox(s_menuBar, BODY_WINDOW_COLOR, 0);
+    colorBox(s_bodyWindow, BODY_WINDOW_COLOR, 1);
   //  CreateWindows();
   }
   CreateMenus();
 //  CreateForm();
 }
 
+//TODO unify with wxSMARTmonitorApp::OnInit() in base class (
+//  SMARTmonitorClient or SMARTmonitorBase)
+void NcursesUI::Init()
+{
+//  gs_ncursesUI.SetCommandLineArgs(argc, argv);
+  
+//  ncursesUI.CreateCommandLineArgsArrays();
+  ProcessCommandLineArgs();
+  
+  std::wstring stdwstrServiceConnectionConfigFile = GetProgramOptionValue(
+    serviceConnectionConfigFile);
+  
+  mp_configurationLoader->ReadServiceConnectionSettings(
+    s_programOptionValues[serviceConnectionConfigFile] );
+  
+  if( ! stdwstrServiceConnectionConfigFile.empty() )
+    ConnectToServerAndGetSMARTvalues();
+//  ncursesUI.InitializeLogger();
+  fastestUnsignedDataType initSMARTretCode = InitializeSMART();
+//  if( initSMARTretCode == SMARTmonitorBase::success )
+  {
+//  NcursesUI::ServerAddressForm();
+//  NcursesUI::CreateUI();
+    Curses::MainWindow win(*this);
+    NcursesUI::MenuLoop();
+  }
+}
+
 void NcursesUI::LayoutUserInterface()
 {
   wresize(s_menuBar, NUM_MENU_BAR_LINES, COLS);
   wresize(s_bodyWindow, LINES - NUM_MENU_BAR_LINES, COLS);
-  colorBox(s_bodyWindow, BODYCOLOR, 1);
+  colorBox(s_bodyWindow, BODY_WINDOW_COLOR, 1);
   wrefresh(s_bodyWindow);
 }
 
@@ -198,8 +229,8 @@ void NcursesUI::ReBuildUserInterface()
 
   fastestUnsignedDataType maxNumCharsNeeded, column = 0;
   const char * p_chAttrName;
-  for( fastestUnsignedDataType attributeType = COL_IDX_SMART_ID;
-      attributeType < COL_IDX_beyondLast; attributeType ++ )
+  for( fastestUnsignedDataType attributeType = ColumnIndices::SMART_ID;
+      attributeType < ColumnIndices::beyondLast; attributeType ++ )
   {
     p_chAttrName = SMARTmonitorClient::s_columnAttriuteNames[attributeType];
     mvwaddstr(s_bodyWindow, lineNumber, column, p_chAttrName );
@@ -220,13 +251,17 @@ void NcursesUI::ReBuildUserInterface()
 void NcursesUI::SetAttribute(
   const SMARTuniqueID & sMARTuniqueID, 
   fastestUnsignedDataType SMARTattributeID,
-  const enum columnIndices & columnIndex,
+  const enum ColumnIndices::columnIndices & columnIndex,
   const std::string & std_strValue)
 {
   attrID2Line_type::const_iterator iter = attributeID2LineMapping.find(
     SMARTattributeID);
   unsigned lineNumber;
-  setcolor( s_bodyWindow, columnIndex % 2 == 0 ? SMART_ATTRIBUTE_COLOR : ATTR_INVERTED_COLOR);
+  /** Alternate (inverted/complementary) colours for better readability: 
+   *  So the value for the next column can be displayed directly near/right of
+   *  the current value. */
+  setcolor( s_bodyWindow, columnIndex % 2 == 0 ? SMART_ATTRIBUTE_COLOR : 
+    ATTR_INVERTED_COLOR);
   const int maxx = getmaxx(s_bodyWindow);
   if( iter != attributeID2LineMapping.end() ) /** mapping exists/found */
   {
@@ -275,7 +310,7 @@ void NcursesUI::ShowMessage(const char * const message) const
 {
   if( OperatingSystem::GetCurrentThreadNumber() == s_GUIthreadID )
   {
-    Curses::MessageBox messageBox(BODYCOLOR, BUTTON_COLOR);
+    Curses::MessageBox messageBox(BODY_WINDOW_COLOR, BUTTON_COLOR);
     messageBox.ShowMessage(message, s_bodyWindow);
   }
   else//if the thread is another than the GUI thread then 
@@ -286,6 +321,29 @@ void NcursesUI::ShowMessage(const char * const message) const
   }
 }
 
+
+
+void UpdateConnTimeout()
+{
+  int f;
+  mvwprintw(NcursesUI::s_statusBar, 0, 0, 
+    "connecting to \"\" %u",f);
+  wrefresh(NcursesUI::s_statusBar);
+}
+
+void NcursesUI::ShowConnectionState(const char * const pch, int timeOutInS)
+{
+  //TODO make interruptable by user (e.g. via "cancel" button)
+//  while(timeOutInS --)
+//  {
+//    sleep(1);
+    //g_eventQueue.addEvent( UpdateConnTimeout );
+    mvwprintw(NcursesUI::s_statusBar, 0, 0, 
+      "connecting to \"%s\", timeout in ca. %us", pch, timeOutInS);
+    wrefresh(NcursesUI::s_statusBar);
+//  }
+}
+  
 void NcursesUI::ShowProgramMenu()
 {
   s_programMenu.InsideMenu(true, s_bodyWindow);
@@ -360,19 +418,6 @@ void NcursesUI::MenuLoop()
 int main(int argc, char * argv [])
 {
   NcursesUI ncursesUI(argc, argv);
-//  gs_ncursesUI.SetCommandLineArgs(argc, argv);
-  
-//  ncursesUI.CreateCommandLineArgsArrays();
-//  gs_ncursesUI.ProcessCommandLineArgs();
-//  ncursesUI.InitializeLogger();
-  fastestUnsignedDataType initSMARTretCode = ncursesUI.
-    InitializeSMART();
-//  if( initSMARTretCode == SMARTmonitorBase::success )
-  {
-//  NcursesUI::ServerAddressForm();
-//  NcursesUI::CreateUI();
-    Curses::MainWindow win(ncursesUI);
-    NcursesUI::MenuLoop();
-  }
+  ncursesUI.Init();
   return 0;
 }
