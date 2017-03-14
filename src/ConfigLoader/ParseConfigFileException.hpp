@@ -1,14 +1,10 @@
-/*
- * ParseConfigFileException.hpp
- *
+/** ParseConfigFileException.hpp
  *  Created on: 20.02.2015
- *      Author: mr.sys
- */
-
+ *      Author: mr.sys  */
 #ifndef CONFIGLOADER_PARSECONFIGFILEEXCEPTION_HPP_
 #define CONFIGLOADER_PARSECONFIGFILEEXCEPTION_HPP_
 
-#include <fastest_data_type.h> //fastestSignedDataType
+#include <hardware/CPU/fastest_data_type.h> //fastestSignedDataType
 #include <FileSystem/File/FileException.hpp>
 
 class ParseConfigFileException

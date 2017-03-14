@@ -10,7 +10,7 @@
 
 #include <stddef.h> //size_t in <atasmart.h>
 //#include <atasmart.h> //struct SkSmartAttributeParsedData
-#include <fastest_data_type.h> //fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 #include <string> //class std::string
 
 //typedef struct SkSmartAttributeParsedData SMARTentry;

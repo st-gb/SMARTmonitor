@@ -11,7 +11,7 @@
 #include "SMARTuniqueID.hpp" //struct SMARTuniqueID
 #include <stdint.h> //uint64_t
 //#include "SMARTaccessBase.hpp"
-#include <fastest_data_type.h>
+#include <hardware/CPU/fastest_data_type.h>
 
 //class SMARTaccessBase;
 

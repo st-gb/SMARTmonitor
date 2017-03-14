@@ -6,7 +6,7 @@
  */
 
 #include <attributes/SMARTuniqueIDandValues.hpp>
-#include <fastest_data_type.h>
+#include <hardware/CPU/fastest_data_type.h>
 #include "SMARTaccessBase.hpp"
 #include "hardware/CPU/atomic/AtomicExchange.h"
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN())

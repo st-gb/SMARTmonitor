@@ -1,14 +1,10 @@
-/*
- * SMARTreaderBase.hpp
- *
+/** SMARTreaderBase.hpp
  *  Created on: 31.07.2016
- *      Author: sg
- */
-
+ *      Author: sg */
 #ifndef SMARTACCESSBASE_HPP_
 #define SMARTACCESSBASE_HPP_
 
-#include <fastest_data_type.h>
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 #include <stddef.h> //size_t for <atasmart.h>
 #include <atasmart.h> //struct SkSmartAttributeParsedData
 #include <set> //class std::set
