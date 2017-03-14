@@ -34,6 +34,7 @@ public:
   ~wxSMARTmonitorApp();
 
   std::set<wxTopLevelWindow *> openTopLevelWindows;
+  void BeforeWait();
   void ChangeState(enum state newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();

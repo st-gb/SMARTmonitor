@@ -103,6 +103,15 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNon
     ShowSMARTokIcon();
 }
 
+void wxSMARTmonitorApp::BeforeWait()
+{
+  /** This function is usually called from a non-GUI thread. So we have to send
+   *  an event to let the GUI update happen in the UI thread to avoid a program 
+   * crash. */
+  wxCommandEvent UpdateSMARTvaluesEvent( wxEVT_COMMAND_BUTTON_CLICKED );
+  wxPostEvent(gs_dialog, UpdateSMARTvaluesEvent);
+}
+
 void wxSMARTmonitorApp::ChangeState(enum state newState)
 {
   //TODO ensure to/must be called in GUI thread
@@ -144,9 +153,14 @@ void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
 bool wxSMARTmonitorApp::OnInit()
 {
   CreateCommandLineArgsArrays();
-  ProcessCommandLineArgs();
-  InitializeLogger();
   CreateTaskBarIcon();
+  /** Show a dialog. Else when displaying messages no icon appears in the
+   *  task bar and this not able to switch there with alt+Tab.*/
+  gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), //m_wxSMARTvalueProcessor
+    m_SMARTvalueProcessor);
+  gs_dialog->Show(true);  
+  ProcessCommandLineArgs(); /** May display messages. */
+  InitializeLogger();
   //m_wxSMARTvalueProcessor.Init();
   //InitializeSMART();
   try
@@ -162,11 +176,6 @@ bool wxSMARTmonitorApp::OnInit()
 //      ShowMessage("0 SMART parameters to read -> exiting");
 //      return false;
 //    }
-    /** Show a dialog. Else when displaying messages no icon appears in the
-     *  task bar and this not able to switch there with alt+Tab.*/
-    gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), //m_wxSMARTvalueProcessor
-      m_SMARTvalueProcessor);
-    gs_dialog->Show(true);
     const fastestUnsignedDataType initSMARTresult = InitializeSMART();
     mp_configurationLoader->ReadServiceConnectionSettings(
       s_programOptionValues[serviceConnectionConfigFile] );
@@ -273,8 +282,10 @@ void wxSMARTmonitorApp::SetAttribute(
   
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 {
-  /** Only call UI functions in UI thread, else errors?! */
-  if( GetCurrentThreadNumber() == s_GUIthreadID )
+  unsigned currentThreadNumber = GetCurrentThreadNumber();
+  /** Only call UI functions in UI thread, else gets SIGABORT error when calling
+   *  "wxMessageBox(...)" . */
+  if( currentThreadNumber == s_GUIthreadID )
   { 
     wxString wxstrMessage = wxWidgets::GetwxString_Inline(str);
     wxMessageBox(wxstrMessage, m_appName );

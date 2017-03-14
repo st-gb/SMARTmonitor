@@ -128,7 +128,7 @@ void SMARTmonitorBase::OutputUsage() {
   for (fastestUnsignedDataType index = 0;
           s_commandLineOptions[index].optionName[0] != '\0'; ++index) {
     CommandLineOption & commandLineOption = s_commandLineOptions[index];
-    stdoss << commandLineOption.optionName << " " <<
+    stdoss << "-" << commandLineOption.optionName << " " <<
             commandLineOption.possibleOptionValue << "";
     stdoss << "\n";
   }
@@ -588,8 +588,8 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
         initSMARTretCode = accessToSMARTdenied;
         break;
       case SMARTaccessBase::noSingleSMARTdevice:
-        ShowMessage("no S.M.A.R.T. capable device present\n->program exits "
-                "(after showing this message)");
+//        ShowMessage("no S.M.A.R.T. capable device present\n->program exits "
+//                "(after showing this message)");
         initSMARTretCode = noSMARTcapableDevicePresent;
         break;
       case SMARTaccessBase::success:

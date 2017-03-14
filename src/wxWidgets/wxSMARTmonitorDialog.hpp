@@ -26,7 +26,9 @@ class SMARTdialog: public wxDialog
   //enum IDs { CONNECT = wxID_HIGHEST + 1};
   wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
   enum IDs {TIMER_ID = 0, showSupportedSMART_IDs, CONNECT};
-  wxTextCtrl * m_p_wxTextCtrl;
+  /** Called "data carrier" and not "drive" because SMART info affect data 
+   *  carriers / media and not "drives" (where they are inserted) */
+  wxTextCtrl * m_p_wxDataCarrierIDtextCtrl;
   wxButton * m_p_showSupportedSMART_IDs;
 //  wxTimer m_timer;
 public:

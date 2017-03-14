@@ -134,15 +134,15 @@ SMARTdialog::SMARTdialog(
   wxSizerFlags flags;
   flags.Border(wxALL, 10);
 
-  m_p_wxTextCtrl = new wxTextCtrl(this, wxID_ANY, wxT("") );
-  m_p_wxTextCtrl->SetEditable(false);
+  m_p_wxDataCarrierIDtextCtrl = new wxTextCtrl(this, wxID_ANY, wxT("") );
+  m_p_wxDataCarrierIDtextCtrl->SetEditable(false);
 
   wxSizer * const diskIDsizer = new wxBoxSizer(wxHORIZONTAL);
 
   m_p_showSupportedSMART_IDs = new wxButton(this, showSupportedSMART_IDs, 
     wxT("show supported SMART IDs"));
 
-  diskIDsizer->Add( m_p_wxTextCtrl,
+  diskIDsizer->Add( m_p_wxDataCarrierIDtextCtrl,
     /** "in the main orientation of the wxBoxSizer - where 0 stands for not
      * changeable" */
     1,
@@ -373,11 +373,11 @@ void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
   }
 }
 
+/**@brief Usually called by posting a wxEVT_COMMAND_BUTTON_CLICKED event */
 void SMARTdialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
 {
 //#ifdef _DEBUG
-//  ReadValuesRegarding1DataCarrierOnly();
-//  UpdateSMARTvaluesUI();
+  wxGetApp().UpdateSMARTvaluesUI();
 }
 
 void SMARTdialog::StartAsyncUpdateThread()
@@ -390,7 +390,7 @@ void SMARTdialog::StartAsyncUpdateThread()
       wxUpdateSMARTparameterValuesThreadFunc, this);
   }
 }
-
+//TODO make for more than 1 data carrier
 void SMARTdialog::SetSMARTdriveID()
 {
   LOGN("begin")
@@ -398,9 +398,7 @@ void SMARTdialog::SetSMARTdriveID()
     GetSMARTuniqueIDandValues();
   std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
     SMARTuniqueIDsAndValues.begin();
-  for(fastestUnsignedDataType currentDriveIndex = 0 /*, ucT4 = 0*/;
-//    currentDriveIndex < numberOfDifferentDrives; /*++ currentDriveIndex*/
-    SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
+  for( ; SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
     SMARTuniqueIDandValuesIter ++)
   {
     const SMARTuniqueID & SMARTuniqueID = SMARTuniqueIDandValuesIter->getSMARTuniqueID();
@@ -410,11 +408,7 @@ void SMARTdialog::SetSMARTdriveID()
     oss << " firmware:" << SMARTuniqueID.m_firmWareName;
     oss << " serial:" << SMARTuniqueID.m_serialNumber;
     std::string mediaInfo = oss.str();
-    m_p_wxTextCtrl->SetValue( wxWidgets::GetwxString_Inline(mediaInfo ) );
-//    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
-
-//    std::set<SkSmartAttributeParsedData>::const_iterator
-//      SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
+    m_p_wxDataCarrierIDtextCtrl->SetValue( wxWidgets::GetwxString_Inline(mediaInfo ) );
   }
 }
 
@@ -443,4 +437,3 @@ void SMARTdialog::OnTimer(wxTimerEvent& event)
 {
 //  ReadSMARTvaluesAndUpdateUI();
 }
-

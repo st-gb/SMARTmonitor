@@ -79,7 +79,7 @@ int GetConnectTimeOut(const int m_socketFileDesc)
 //  strMsg += hostName;
 //  ShowMessage(strMsg.c_str()
   //from http://stackoverflow.com/questions/4181784/how-to-set-socket-timeout-in-c-when-making-multiple-connections
-  struct timeval timevalSocketTimeout { 10, 0};
+  struct timeval timevalSocketTimeout = { 10, 0};
   socklen_t __optlen = sizeof(timevalSocketTimeout);
  
    int returnValue = setsockopt(m_socketFileDesc, SOL_SOCKET, SO_RCVTIMEO, 
@@ -621,23 +621,26 @@ void SMARTmonitorClient::HandleTransmissionError(
 fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
 {
   LOGN("reading 2 bytes from socket #" << m_socketFileDesc)
-  uint16_t numBytesToRead;
-  int numBytesRead = read(m_socketFileDesc, & numBytesToRead, 2);
-  if( numBytesRead < 2 ) {
+  uint16_t numDataBytesToRead;
+  const size_t numBytesToRead = 2;
+  int numBytesRead = read(m_socketFileDesc, & numDataBytesToRead, numBytesToRead);
+  if( numBytesRead < numBytesToRead ) {
     HandleTransmissionError(numBytesToReceive);
-    return 1;
+    return -1;
   }
-  numBytesToRead = ntohs(numBytesToRead);
-  LOGN_DEBUG("# bytes to read:" << numBytesToRead)
-  return numBytesToRead;
+  numDataBytesToRead = ntohs(numDataBytesToRead);
+  LOGN_DEBUG("# bytes to read:" << numDataBytesToRead)
+  return numDataBytesToRead;
 }
 
 fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
 {
   dataCarrierIDandSMARTidsContainer.clear();
   fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
+  if( numBytesToRead < 1 )
+    return readLessBytesThanIntended;
   LOGN_DEBUG("# of following bytes: " << numBytesToRead );
-  
+
   const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
   uint8_t * XMLdata = new uint8_t[numBytesToAllocate];
   if( XMLdata)
@@ -668,7 +671,8 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
   sMARTuniqueIDandValuesContainer.clear();
   int numBytesRead;
   fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
-  
+  if( numBytesToRead < 1 )
+    return readLessBytesThanIntended;
   const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
   uint8_t SMARTvalues[numBytesToAllocate];
   if( SMARTvalues)
