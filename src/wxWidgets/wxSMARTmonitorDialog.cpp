@@ -93,6 +93,14 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
   return 0;
 }
 
+void SMARTdialog::EnableServerInteractingControls(int n)
+{
+//  if( n != 0)
+//    m_p_ConnectAndDisconnectButton->SetLabelText(wxT("&Disconnect") );
+  m_p_ConnectAndDisconnectButton->Enable();
+  m_p_showSupportedSMART_IDs->Enable();
+}
+
 void SMARTdialog::InformAboutTerminationOfUpdateThread()
 {
   LOGN("locking close mutex")
@@ -229,6 +237,10 @@ void SMARTdialog::OnExit(wxCommandEvent& WXUNUSED(event))
 
 void SMARTdialog::OnConnectToServer(wxCommandEvent& WXUNUSED(event))
 {
+//  if( m_p_ConnectAndDisconnectButton->GetLabelText(wxT("&Disconnect") );
+  //TODO or more general: disable all service interacting buttons
+//  DisableServiceInteractingButtons();
+  m_p_ConnectAndDisconnectButton->Enable(false);
   wxGetApp().ConnectToServer();
 }
 
@@ -283,7 +295,7 @@ void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event))
 //    GetSMARTuniqueIDandValues();
   //m_SMARTaccess.GetSupportedSMART_IDs("/dev/sda", SMARTattributeNamesAndIDs);
   
-  SMARTmonitorClient::dataCarrierID2supportedSMARTattributesMap_type::const_iterator
+  dataCarrierID2supportedSMARTattributesMap_type::const_iterator
     iter = wxGetApp().dataCarrierIDandSMARTidsContainer.begin();
   if( iter != wxGetApp().dataCarrierIDandSMARTidsContainer.end() )
   {
@@ -293,6 +305,8 @@ void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event))
     wxGetApp().openTopLevelWindows.insert(p_SupportedSMART_IDsDialog);
     p_SupportedSMART_IDsDialog->Show(true);
   }
+  else
+    wxMessageBox(wxT("no data available (maybe not connected to server yet) "));
 }
 
 void SMARTdialog::EndAllThreadsAndCloseAllOtherTopLevelWindows()

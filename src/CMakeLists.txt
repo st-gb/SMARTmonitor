@@ -3,6 +3,11 @@
 cmake_minimum_required (VERSION 2.6)
 project (SMARTmonitor)
 
+if( NOT DEFINED COMMON_SOURCECODE_ROOT_PATH )
+  #By default "common_sourcecode" lies/lays 1 level above VTrans3/src
+  set(COMMON_SOURCECODE_ROOT_PATH ${PROJECT_SOURCE_DIR}/../../common_sourcecode)
+endif( NOT DEFINED COMMON_SOURCECODE_ROOT_PATH )
+
 #To create executable outside of "src" directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/..)
 
@@ -189,6 +194,8 @@ endif(${EXE_TYPE} STREQUAL "ncursesClient" )
 if( DEFINED SMARTmonClient )
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
+    ${PROJECT_SOURCE_DIR}/socket/SocketOperations.cpp
+    ${PROJECT_SOURCE_DIR}/tinyxml2/ProcessSMARTdata.cpp
     ${PROJECT_SOURCE_DIR}/client/SMARTmonitorClient.cpp )
 endif( DEFINED SMARTmonClient )
 

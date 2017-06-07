@@ -49,6 +49,7 @@ public:
   void SetSMARTdriveID();
   void SetState(enum SMARTmonitorClient::state newState);
   void ReBuildUserInterface();
+  void EnableServerInteractingControls(int );
   void InformAboutTerminationOfUpdateThread();
 
 protected:
@@ -66,7 +67,7 @@ protected:
     TaskBarIcon   *m_dockIcon;
 #endif
 
-    DECLARE_EVENT_TABLE()
+  DECLARE_EVENT_TABLE()
 };
 
 

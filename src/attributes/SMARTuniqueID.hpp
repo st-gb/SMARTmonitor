@@ -10,6 +10,9 @@
 
 #include <iostream>
 #include <sstream>
+#include <map> //class std::map
+#include <set> //class std::set
+#include <hardware/CPU/fastest_data_type.h>
 
 #ifdef __linux__
   #include <stddef.h> // size_t in "<atasmart.h>"
@@ -43,6 +46,11 @@
     void SetSerialNumber(const char *);
     void SetFirmwareName(const char *);
   };
+  
+  typedef std::set<fastestSignedDataType> supportedSMARTattributeIDs_type;
+  typedef std::map<SMARTuniqueID,supportedSMARTattributeIDs_type >
+    dataCarrierID2supportedSMARTattributesMap_type;
+
 //#endif
 //#endif
 

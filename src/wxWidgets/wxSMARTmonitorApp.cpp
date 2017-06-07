@@ -40,12 +40,19 @@ GCC_DIAG_ON(write-strings)
 #include <FileSystem/File/FileException.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(..)
+#include "ConnectToServerDialog.hpp"
 
 // global variables
-
 /*static*/ SMARTdialog *gs_dialog = NULL;
 /** defintions of static class members. */
 fastestUnsignedDataType wxSMARTmonitorApp::s_GUIthreadID;
+
+//from https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case
+const wxEventType AfterConnectToServerEventType = wxNewEventType(); // You get to choose the name yourself
+
+BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
+  EVT_COMMAND(wxID_ANY, AfterConnectToServerEventType, wxSMARTmonitorApp::OnAfterConnectToServer)
+END_EVENT_TABLE()
 
 //const wxString wxSMARTmonitorApp::appName = wxT("wxSMARTmonitor");
 
@@ -56,6 +63,7 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
 //      /*smartAttributesToObserve*/ (SMARTaccessBase::SMARTattributesType &)
 //      m_SMARTaccess.getSMARTattributesToObserve(),
 //      * this)
+  , m_pConnectToServerDialog(NULL)
 {
   s_GUIthreadID = GetCurrentThreadNumber();
   //InitializeLogger(); 
@@ -101,6 +109,40 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNon
     ShowSMARTwarningIcon();
   else
     ShowSMARTokIcon();
+}
+
+void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & e)
+{
+  if( m_pConnectToServerDialog )
+  {
+    m_pConnectToServerDialog->Close(true);
+    delete m_pConnectToServerDialog;
+    m_pConnectToServerDialog = NULL;
+  }
+  int connectResult = e.GetInt();
+  if( connectResult == 0)
+  {
+//    SuccessfullyConnectedToClient();
+    GetSMARTvaluesAndUpdateUI();
+    gs_dialog->EnableServerInteractingControls(connectResult);
+  }
+  else
+  {
+    gs_dialog->EnableServerInteractingControls(connectResult);
+    HandleConnectionError("");
+  }
+}
+
+/** Should only be called from the UI thread?!, else program crash? */
+void wxSMARTmonitorApp::AfterConnectToServer(int connectResult)
+{
+  /** To execute in UI thread.
+   * https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case */
+  wxCommandEvent AfterConnectToServerEvent( AfterConnectToServerEventType );
+  AfterConnectToServerEvent.SetInt(connectResult);
+  wxPostEvent(this, AfterConnectToServerEvent);
+//    return errorConnectingToService;
+//  OnAfterConnectToServer();
 }
 
 void wxSMARTmonitorApp::BeforeWait()
@@ -149,7 +191,9 @@ void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
   }
   m_commandLineArgs.Set(argc, (wchar_t **) m_cmdLineArgStrings);
 }
-
+/** http://docs.wxwidgets.org/trunk/classwx_app_console.html#a99953775a2fd83fa2456e390779afe15 : 
+ *  "This must be provided by the application, and will usually create the 
+ *  application's main window, optionally calling SetTopWindow()."  */
 bool wxSMARTmonitorApp::OnInit()
 {
   CreateCommandLineArgsArrays();
@@ -177,9 +221,16 @@ bool wxSMARTmonitorApp::OnInit()
 //      return false;
 //    }
     const fastestUnsignedDataType initSMARTresult = InitializeSMART();
+    std::wstring stdwstrServiceConnectionConfigFile = 
+      s_programOptionValues[serviceConnectionConfigFile];
     mp_configurationLoader->ReadServiceConnectionSettings(
-      s_programOptionValues[serviceConnectionConfigFile] );
-    if( initSMARTresult == SMARTaccessBase::success)
+      stdwstrServiceConnectionConfigFile );
+
+    //TODO execute after OnInit(): else no dialog is shown?
+    if( ! stdwstrServiceConnectionConfigFile.empty() )
+      ConnectToServerAndGetSMARTvalues();  
+    else 
+      if( initSMARTresult == SMARTaccessBase::success)
     {
       //TODO exchange by wxGetApp().StartAsyncUpdateThread();
       gs_dialog->StartAsyncUpdateThread();
@@ -199,6 +250,10 @@ bool wxSMARTmonitorApp::OnInit()
   //  gs_dialog->Show(true);
   return true;
 }
+
+//int wxSMARTmonitorApp::OnRun ()
+//{
+//}
 
 //TODO better call this function only once at startup?!
 bool wxSMARTmonitorApp::GetSMARTokayIcon(wxIcon & icon)
@@ -278,6 +333,15 @@ void wxSMARTmonitorApp::SetAttribute(
     /*lineNumber*/ SMARTattributeID, //long index
     columnIndex /** column #/ index */,
     wxstrValue);
+}
+  
+void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress, 
+  int connectTimeOutInSeconds)
+{
+  m_pConnectToServerDialog = new ConnectToServerDialog(pchServerAddress, connectTimeOutInSeconds, m_socketFileDesc);
+  m_pConnectToServerDialog->Show();
+  /** Ensures "connect" can't be pressed a second time */
+//  m_pConnectToServerDialog->ShowModal();
 }
   
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const

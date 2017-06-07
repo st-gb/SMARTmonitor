@@ -3,13 +3,15 @@
 
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/ConnectToServerDialog.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SMARTtableListCtrl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SupportedSMARTIDsDialog.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/wxSMARTmonitorApp.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/wxSMARTmonitorDialog.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/wxSMARTmonitorTaskBarIcon.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/wxSMARTvalueProcessor.cpp
- PARENT_SCOPE
+  #PARENT_SCOPE makes changes made in this script visible to the caller of this file
+  PARENT_SCOPE
 )
 
 set(CMAKE_LIST_FILE_PATHS
@@ -27,19 +29,19 @@ message("wxWidgets_USE_DEBUG: ${wxWidgets_USE_DEBUG}")
 
 #Set to appropriate version--releae, debug, 32/64 bit
 #Use wxWidgets >= v.2.9 as it provides an appropriate task bar support
-set( WXWIDGETS_SETUP_H_HEADER_PATH 
-  /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-3.0
-  #PARENT_SCOPE makes changes made in this script visible to the caller of this file
-  PARENT_SCOPE)
-set( WXWIDGETS_HEADER_PATH
-  /usr/include/wx-3.0
-  #PARENT_SCOPE makes changes made in this script visible to the caller of this file
-  PARENT_SCOPE)
+if( NOT DEFINED WXWIDGETS_SETUP_H_PATH )
+  message("warning: WXWIDGETS_SETUP_H_PATH is NOT defined->compiling will fail"
+   "on Linux it may be like: /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-2.8")
+endif( NOT DEFINED WXWIDGETS_SETUP_H_PATH )
+if( NOT DEFINED WXWIDGETS_INCLUDE_DIR )
+  message("warning: WXWIDGETS_INCLUDE_DIR is NOT defined->compiling will fail"
+   "on Linux it may be like: /usr/include/wx-2.8")
+endif( NOT DEFINED WXWIDGETS_INCLUDE_DIR )
   
 set(INCLUDE_DIRS
   ${INCLUDE_DIRS}
-  ${WXWIDGETS_SETUP_H_HEADER_PATH}
-  ${WXWIDGETS_HEADER_PATH}
+  ${WXWIDGETS_SETUP_H_PATH}
+  ${WXWIDGETS_INCLUDE_DIR}
   #PARENT_SCOPE makes changes made in this script visible to the caller of this file
   PARENT_SCOPE)
 

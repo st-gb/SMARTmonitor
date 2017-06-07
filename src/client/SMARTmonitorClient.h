@@ -32,9 +32,6 @@ public:
   static bool s_atLeast1CriticalNonNullValue;
   static nativeThread_type s_updateSMARTparameterValuesThread;
   static fastestUnsignedDataType s_updateUI;
-  typedef std::set<fastestSignedDataType> supportedSMARTattributeIDs_type;
-  typedef std::map<SMARTuniqueID,supportedSMARTattributeIDs_type >
-    dataCarrierID2supportedSMARTattributesMap_type;
   dataCarrierID2supportedSMARTattributesMap_type
     dataCarrierIDandSMARTidsContainer;
   
@@ -47,6 +44,7 @@ public:
   int m_socketFileDesc;
   
   virtual void GetTextFromUser(const char * label, std::string & ) { };
+  virtual void AfterConnectToServer(int connectResult) { };
   void HandleConnectionError(const char * hostName);
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(uint8_t * SMARTvalues, unsigned numBytesToRead,
@@ -54,7 +52,7 @@ public:
   virtual void ChangeState(enum state newState) { };
   void ConnectToServerAndGetSMARTvalues();
   void ConnectToServer();
-  fastestUnsignedDataType ConnectToServer(const char * hostName);
+  fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
     uint8_t * xmlDataByteArray,
     fastestUnsignedDataType numBytesToRead,
@@ -65,6 +63,7 @@ public:
   fastestSignedDataType ReadNumFollowingBytes();
   fastestUnsignedDataType GetSMARTvaluesFromServer(//std::set<SMARTuniqueIDandValues> & 
     );
+  void GetSMARTvaluesAndUpdateUI();
   void HandleTransmissionError(enum TransmissionError transmissionError);
   
   const struct tm & GetLastSMARTvaluesUpdateTime() const { 

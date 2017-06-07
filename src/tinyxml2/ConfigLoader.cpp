@@ -45,7 +45,10 @@ ConfigLoader::~ConfigLoader() {
       const char * p_chAttributeValue = p_tinyxml2XMLelement->Attribute("serviceHostName", 
         /** Value: specify '0' in order to retrieve the value */ NULL);
       if( p_chAttributeValue )
+      {
         m_r_SMARTmonitorBase.m_stdstrServiceHostName = p_chAttributeValue;
+        LOGN("setting service host name to " << p_chAttributeValue)
+      }
     }
     return p_tinyxml2XMLelement;
   }

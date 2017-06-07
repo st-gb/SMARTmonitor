@@ -16,7 +16,7 @@ END_EVENT_TABLE()
 
 SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
   //std::vector<SMARTattributeNameAndID> & SMARTattributeNamesAndIDs
-  SMARTmonitorClient::dataCarrierID2supportedSMARTattributesMap_type::const_iterator iter
+  dataCarrierID2supportedSMARTattributesMap_type::const_iterator iter
   )
   : wxDialog(NULL, wxID_ANY, wxT("supported SMART IDs"), wxDefaultPosition, //wxDefaultSize,
      wxSize(400,400),
@@ -75,11 +75,11 @@ wxSizer * SupportedSMART_IDsDialog::CreateGUI(
 }
 
 void SupportedSMART_IDsDialog::FillGUI(
-  const SMARTmonitorClient::supportedSMARTattributeIDs_type & supportedSMART_IDs)
+  const supportedSMARTattributeIDs_type & supportedSMART_IDs)
 {
   fastestUnsignedDataType SMART_ID;
 //  m_pwxlistctrl->SetItemCount(SMARTattributeNamesAndIDs.size() );
-   SMARTmonitorClient::supportedSMARTattributeIDs_type::const_iterator 
+   supportedSMARTattributeIDs_type::const_iterator 
     supportedSMART_IDsIter = supportedSMART_IDs.begin();
    
   SMARTaccessBase::constSMARTattributesContainerType & 

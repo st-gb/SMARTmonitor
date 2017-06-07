@@ -25,12 +25,12 @@ class SupportedSMART_IDsDialog
   wxListCtrl * m_pwxlistctrl;
 public:
   SupportedSMART_IDsDialog (//std::vector<SMARTattributeNameAndID> &
-    SMARTmonitorClient::dataCarrierID2supportedSMARTattributesMap_type::const_iterator);
+    dataCarrierID2supportedSMARTattributesMap_type::const_iterator);
   virtual
   ~SupportedSMART_IDsDialog ();
   enum columnIndices { COL_IDX_SMART_ID = 0 , COL_IDX_SMARTparameterName};
   wxSizer * CreateGUI(const SMARTuniqueID & dataCarrierID);
-  void FillGUI(const SMARTmonitorClient::supportedSMARTattributeIDs_type & 
+  void FillGUI(const supportedSMARTattributeIDs_type & 
     supportedSMART_IDs);
   void SetTitleFromDataCarrierID(const SMARTuniqueID & dataCarrierID);
   void OnCloseWindow(wxCloseEvent& event);

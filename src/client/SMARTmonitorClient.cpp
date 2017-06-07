@@ -2,17 +2,12 @@
  * Created on 20. November 2016, 17:43 */
 
 #include "SMARTmonitorClient.h" //class SMARTmonitorClient
-#include <sys/socket.h> //socket(...))
-#include <netinet/in.h> //sockaddr_in
-#include <netdb.h> //gethostbyname(...)
 #include <stdint.h> //uint8_t
-#include "tinyxml2.h" //
+//#include <tinyxml2/ProcessSMARTdata.hpp>
+//#include <socket/SocketOperations.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...))
-#include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
 #include "OperatingSystem/GetLastErrorCode.hpp" //OperatingSystem::GetLastErrorCode()
 #include "hardware/CPU/atomic/AtomicExchange.h"
-#include "Controller/character_string/ConvertStdStringToTypename.hpp"
-#include <OperatingSystem/time/GetCurrentTime.hpp>
 #include <SMARTvalueFormatter.hpp> //SMARTvalueFormatter::FormatHumanReadable())
 #include <compiler/GCC/enable_disable_warning.h> //GCC_DIAG_OFF(...)
 
@@ -47,221 +42,6 @@ SMARTmonitorClient::SMARTmonitorClient(const SMARTmonitorClient& orig) {
 SMARTmonitorClient::~SMARTmonitorClient() {
 }
 
-void SMARTmonitorClient::HandleConnectionError(const char * hostName)
-{
-  //TODO: show error via user interface
-  //Message("")
-  std::ostringstream oss;
-  oss << "error connecting to S.M.A.R.T. values service:\n";
-  //TODO the following is Linux-specific and should be OS-independent
-  //see http://man7.org/linux/man-pages/man2/connect.2.html
-  switch(errno )
-  {
-    //see http://man7.org/linux/man-pages/man2/connect.2.html
-    case ECONNREFUSED :
-      oss << "No process listening on the remote address \"" << hostName 
-        << "\", port:" << m_socketPortNumber;
-      break;
-    default :
-    {
-      int errorCode = OperatingSystem::GetLastErrorCode();
-      oss << OperatingSystem::EnglishMessageFromErrorCode( errorCode );
-    }
-    break;
-  }
-  ShowMessage(oss.str().c_str() );
-  LOGN_ERROR(oss.str() )
-}
-
-int GetConnectTimeOut(const int m_socketFileDesc)
-{
-//  std::string strMsg("connecting to ");
-//  strMsg += hostName;
-//  ShowMessage(strMsg.c_str()
-  //from http://stackoverflow.com/questions/4181784/how-to-set-socket-timeout-in-c-when-making-multiple-connections
-  struct timeval timevalSocketTimeout = { 10, 0};
-  socklen_t __optlen = sizeof(timevalSocketTimeout);
- 
-   int returnValue = setsockopt(m_socketFileDesc, SOL_SOCKET, SO_RCVTIMEO, 
-    /** https://linux.die.net/man/7/socket
-    * SO_RCVTIMEO and SO_SNDTIMEO
-    * "Specify the receiving or sending timeouts until reporting an error. 
-    * The argument is a struct timeval." */
-    (char *)& timevalSocketTimeout,
-    /** https://linux.die.net/man/2/getsockopt : 
-     * "For getsockopt(), optlen is a value-result argument, initially 
-     * containing the size of the buffer pointed to by optval, and modified on 
-     * return to indicate the actual size of the value returned." */
-    __optlen );
- 
-  returnValue = getsockopt(m_socketFileDesc, SOL_SOCKET, SO_RCVTIMEO, 
-    /** https://linux.die.net/man/7/socket
-    * SO_RCVTIMEO and SO_SNDTIMEO
-    * "Specify the receiving or sending timeouts until reporting an error. 
-    * The argument is a struct timeval." */
-    (char *)& timevalSocketTimeout,
-    /** https://linux.die.net/man/2/getsockopt : 
-     * "For getsockopt(), optlen is a value-result argument, initially 
-     * containing the size of the buffer pointed to by optval, and modified on 
-     * return to indicate the actual size of the value returned." */
-    & __optlen );
-  
-  returnValue = getsockopt(m_socketFileDesc, SOL_SOCKET, SO_SNDTIMEO, 
-    /** https://linux.die.net/man/7/socket
-    * SO_RCVTIMEO and SO_SNDTIMEO
-    * "Specify the receiving or sending timeouts until reporting an error. 
-    * The argument is a struct timeval." */
-    (char *)& timevalSocketTimeout,
-    /** https://linux.die.net/man/2/getsockopt : 
-     * "For getsockopt(), optlen is a value-result argument, initially 
-     * containing the size of the buffer pointed to by optval, and modified on 
-     * return to indicate the actual size of the value returned." */
-    & __optlen );
-  if(returnValue < 0)
-  {
-    const int lastOSerrorCode = OperatingSystem::GetLastErrorCode();
-    std::string st = OperatingSystem::EnglishMessageFromErrorCode(lastOSerrorCode);
-  }
-  socklen_t ntsnd = sizeof(ntsnd);
-  int SndTimeO;
-  //http://stackoverflow.com/questions/4181784/how-to-set-socket-timeout-in-c-when-making-multiple-connections
-  returnValue = getsockopt(m_socketFileDesc, SOL_SOCKET, SO_SNDTIMEO, 
-    (char *) & SndTimeO,
-                & ntsnd);
-  int timeout = 10000;
-  //https://linux.die.net/man/7/socket
-  returnValue = getsockopt(m_socketFileDesc, 6, 18, (char*) &timeout, & __optlen);
-  int socketTimeoutInS = 30;
-  return socketTimeoutInS;
-}
-
-inline int GetSocketFileDescriptor()
-{
-  /** http://pubs.opengroup.org/onlinepubs/009695399/functions/socket.html :
-   * "Upon successful completion, socket() shall return a non-negative integer, 
-   * the socket file descriptor. Otherwise, a value of -1 shall be returned 
-   * and errno set to indicate the error." */
-  const int socketFileDesc = socket(AF_INET, SOCK_STREAM,
-    /** socket.h : "If PROTOCOL is zero, one is chosen automatically." */
-    0 );
-  if (socketFileDesc < 0)
-  {
-    const unsigned long int lastOSerrorCode = OperatingSystem::GetLastErrorCode();
-    LOGN_ERROR("ERROR opening socket: OS error code " << lastOSerrorCode 
-      << " error message:" << OperatingSystem::EnglishMessageFromErrorCode(lastOSerrorCode) )
-  }
-  return socketFileDesc;
-}
-
-struct hostent * GetServerHostDataBaseEntry(const char * hostName)
-{
-  /** http://pubs.opengroup.org/onlinepubs/009695399/functions/gethostbyaddr.html :
-   * "Upon successful completion, these functions shall return a pointer to a 
-   * hostent structure if the requested entry was found, and a null pointer if 
-   * the end of the database was reached or the requested entry was not found.
-   * 
-   * Upon unsuccessful completion, gethostbyaddr() and gethostbyname() shall 
-   * set h_errno to indicate the error." */
-  struct hostent * p_serverHostDataBaseEntry = gethostbyname(hostName);
-  if (p_serverHostDataBaseEntry == NULL) {
-    //TODO check h_errno
-    LOGN_ERROR("host " << hostName << " not in database;error code:" << h_errno)
-  }
-  return p_serverHostDataBaseEntry;
-}
-
-void ConnectToSocketNonBlocking(int socketFD)
-{
-  //from http://www.linuxquestions.org/questions/programming-9/why-does-connect-block-for-a-long-time-708647/
-//  fcntl(sd, F_SETFL, curflags | O_NONBLOCK);
-  //http://stackoverflow.com/questions/29598508/how-to-get-out-from-a-tcp-blocking-connect-call
-  
-//  int flags = fcntl(socketFD, F_GETFL, 0);
-//  fcntl(socketFD, F_SETFL, flags | O_NONBLOCK);
-//
-//  result = connect(tcp_sock, ...);
-//  if (result == -1)
-//  {
-//    if (errno == EINPROGRESS)
-//    {
-//      fd_set wfd;
-//      FD_ZERO(&wfd);
-//      FD_SET(tcp_sock, &wfd);
-//
-//      struct timeval timeout;
-//      timeout.tv_sec = ...;
-//      timeout.tv_usec = ...;
-//
-//      result = select(tcp_sock+1, NULL, &wrd, NULL, &timeout);
-//      if (result > 0)
-//      {
-//          // connected
-//          fcntl(tcp_sock, F_SETFL, flags);
-//      }
-//      else if (result == 0)
-//      {
-//          // time out
-//      }
-//      else
-//      {
-//          // error
-//      }
-//    }
-//  }
-}
-  
-fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(const char * hostName) {
-  //from http://www.linuxhowtos.org/data/6/client.c
-  int portNumber = m_socketPortNumber, n;
-  struct sockaddr_in serv_addr;
-  struct hostent * p_serverHostDataBaseEntry;
-  
-  m_socketFileDesc = GetSocketFileDescriptor();
-  if(m_socketFileDesc < 0)
-    return errorOpeningSocket;  
-  LOGN("successfully opened socket");
-  
-  p_serverHostDataBaseEntry = GetServerHostDataBaseEntry(hostName);
-  if( ! p_serverHostDataBaseEntry )
-    return getHostByNameFailed;  
-  LOGN("got host name for \"" << hostName << "\":" << p_serverHostDataBaseEntry->h_name)
-
-  bzero( (char *) & serv_addr, sizeof(serv_addr) );
-  serv_addr.sin_family = AF_INET;
-  bcopy( (char *) p_serverHostDataBaseEntry->h_addr,
-    (char *) & serv_addr.sin_addr.s_addr,
-    p_serverHostDataBaseEntry->h_length);
-  serv_addr.sin_port = htons(portNumber);
-  
-  int socketTimeoutInS = GetConnectTimeOut(m_socketFileDesc);
-//  MessageBox msgBox();
-  
-  DWORD currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
-  //TODO execute socket connection in another thread than user interface thread.
-  // in order to be interruptable
-//  if( currentThreadNumber == s_UserInterfaceThreadID)
-//  {
-//  }
-  ShowConnectionState(hostName, socketTimeoutInS);
-//  ConnectToSocketNonBlocking();
-  
-  /** http://pubs.opengroup.org/onlinepubs/9699919799/functions/connect.html :
-   * "Upon successful completion, connect() shall return 0; otherwise, -1 shall
-   *  be returned and errno set to indicate the error." */
-  const int connectResult = connect(m_socketFileDesc,(struct sockaddr *) & serv_addr,
-    sizeof(serv_addr) );
-//  msgBox.Close();
-  if( connectResult < 0)
-  {
-    HandleConnectionError(hostName);
-    return errorConnectingToService;
-  }
-  else
-    LOGN("successfully connected")
-  //bzero(buffer,256);
-  return connectedToService;
-}
-
 void SMARTmonitorClient::EndUpdateUIthread()
 {
   if( s_updateSMARTparameterValuesThread.IsRunning() )
@@ -281,41 +61,55 @@ void SMARTmonitorClient::EndUpdateUIthread()
   }
 }
 
+void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
+{
+  ChangeState(connectedToService);
+  //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
+  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = mp_SMARTaccess->
+    GetSMARTuniqueIDandValues();
+  /*const int res =*/ GetSupportedSMARTidsFromServer();
+  LOGN("SMART unique ID and values container:" << &sMARTuniqueIDandValues)
+  /** Get # of attributes to in order build the user interface (write 
+   *  attribute ID an name into the table--creating the UI needs to be done 
+   *  only once because the attribute IDs received usually do not change).*/
+  const int getSMARTvaluesResult = GetSMARTvaluesFromServer(
+    /*sMARTuniqueIDandValues*/);
+  if (getSMARTvaluesResult == 0)
+  {
+    SetSMARTattributesToObserve(sMARTuniqueIDandValues);
+//      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
+    ReBuildUserInterface();
+    UpdateSMARTvaluesUI();
+    ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
+    m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
+      & SMARTmonitorBase::GetSMARTvaluesFromServer;
+    StartAsyncUpdateThread(
+      //UpdateSMARTvaluesThreadSafe 
+      m_getSMARTvaluesFunctionParams
+      );
+//      ((SMARTmonitorBase *)this)->StartAsyncUpdateThread(SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
+  }  
+}
+
 /** Called e.g. when server address was given via program options/
  *  as command line argument */
 void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
 {
-  const fastestUnsignedDataType res = ConnectToServer(
-    m_stdstrServiceHostName.c_str() );
-  if (res == connectedToService)
+  bool asyncConnectToService = true;
+  const fastestUnsignedDataType connectToServerResult = ConnectToServer(
+    m_stdstrServiceHostName.c_str(), asyncConnectToService );
+  if ( ! asyncConnectToService )
   {
-    ChangeState(connectedToService);
-    //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
-    std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = mp_SMARTaccess->
-      GetSMARTuniqueIDandValues();
-    /*const int res =*/ GetSupportedSMARTidsFromServer();
-    LOGN("SMART unique ID and values container:" << &sMARTuniqueIDandValues)
-    /** Get # of attributes to in order build the user interface (write 
-     *  attribute ID an name into the table--creating the UI needs to be done 
-     *  only once because the attribute IDs received usually do not change).*/
-    const int getSMARTvaluesResult = GetSMARTvaluesFromServer(
-      /*sMARTuniqueIDandValues*/);
-    if (getSMARTvaluesResult == 0) {
-      SetSMARTattributesToObserve(sMARTuniqueIDandValues);
-//      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
-      ReBuildUserInterface();
-      UpdateSMARTvaluesUI();
-      ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
-      m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
-        & SMARTmonitorBase::GetSMARTvaluesFromServer;
-      StartAsyncUpdateThread(
-        //UpdateSMARTvaluesThreadSafe 
-        m_getSMARTvaluesFunctionParams
-        );
-//      ((SMARTmonitorBase *)this)->StartAsyncUpdateThread(SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
+    AfterConnectToServer(connectToServerResult);
+    if( connectToServerResult == connectedToService)
+    {
+      GetSMARTvaluesAndUpdateUI();
     }
-  } else {
-    //wxGetApp().ShowMessage("");
+    else
+    {
+      //wxGetApp().ShowMessage("");
+//      AfterConnectToServer(connectToServerResult);
+    }
   }
 }
 
@@ -328,255 +122,6 @@ void SMARTmonitorClient::ConnectToServer() {
 
   SetServiceAddress(m_stdstrServerAddress);
   ConnectToServerAndGetSMARTvalues();
-}
-
-bool GetSMARTuniqueID(
-  tinyxml2::XMLElement * p_tinyxml2XMLelement, 
-  SMARTuniqueID & sMARTuniqueID)
-{
-  //tinyxml2::XMLAttribute * p_tinyxml2XMLattribute = 
-  const char * modelString = p_tinyxml2XMLelement->Attribute("model", 
-    /** Value: specify '0' in order to retrieve the value */ NULL);
-  const char * firmwareString = p_tinyxml2XMLelement->Attribute("firmware", 
-    /** Value: specify '0' in order to retrieve the value */ NULL);
-  const char * serialNumberString = p_tinyxml2XMLelement->Attribute(
-    "serial_number", 
-    /** Value: specify '0' in order to retrieve the value */ NULL);
-//      if( ! p_tinyxml2XMLattribute)
-//      {
-//        LOGN_ERROR("Failed to get XML model attribute")
-//        return;
-//      }
-  if( ! modelString ) {
-    LOGN_ERROR("failed to get model atribute value")
-    return false;
-  }
-  if( ! firmwareString ) {
-    LOGN_ERROR("failed to get firmware atribute value")
-    return false;
-  }
-  if( ! serialNumberString ) {
-    LOGN_ERROR("failed to get serial number atribute value")
-    return false;
-  }
-  sMARTuniqueID.SetModelName(modelString);
-  sMARTuniqueID.SetFirmwareName(firmwareString);
-  sMARTuniqueID.SetSerialNumber(serialNumberString);
-  LOGN("data carrier ID:" << sMARTuniqueID)
-  return true;
-}
-
-int CheckSMARTidRange(const int SMARTattributeID)
-{
-  if( SMARTattributeID >= NUM_DIFFERENT_SMART_ENTRIES)
-  {
-    LOGN_ERROR("SMART ID too high:" << SMARTattributeID)
-    return 1;
-  }
-  if( SMARTattributeID < 0)
-  {
-    LOGN_ERROR("SMART ID is negative:" << SMARTattributeID)
-    return -1;
-  }
-  return 0;
-}
-
-void HandleSingleSMARTentry(
-  tinyxml2::XMLElement * p_SMARTelement,
-  SMARTuniqueIDandValues & sMARTuniqueIDandValues)
-{
-  const int SMARTattributeID = p_SMARTelement->IntAttribute("ID", 0);
-  if( CheckSMARTidRange(SMARTattributeID) != 0)
-  {
-    LOGN_ERROR("SMART ID is not in range 0..255->not processing this SMART entry")
-    return;
-  }
-  const int64_t SMART_raw_value = p_SMARTelement->Int64Attribute("raw_value", 0);
-  SMARTvalue & sMARTvalue = sMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID];
-  if( SMART_raw_value < 0)
-  {
-    LOGN_ERROR("SMART raw value for attrib ID " << SMARTattributeID 
-      << " is negative:" << SMART_raw_value)
-    //sMARTuniqueIDandValues.m_successfullyReadSMARTrawValue[SMARTattributeID] = 0;
-    AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 0);
-    return;
-  }
-  AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 1);
-  const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
-  
-  AtomicExchange(& sMARTvalue.m_timeStampOfRetrieval, timeInS * 1000.0f );
-  
-  LOGN("adding SMART raw value " << SMART_raw_value << " (time:" << timeInS 
-    << ") to SMART ID " << SMARTattributeID)
-  sMARTvalue.SetRawValue(SMART_raw_value);
-}
-
-void GetSMARTrawValues(
-  tinyxml2::XMLElement * p_tinyxml2XMLelement, 
-  SMARTuniqueIDandValues & sMARTuniqueIDandValues)
-{
-  tinyxml2::XMLElement * p_SMARTelement = p_tinyxml2XMLelement->
-    FirstChildElement("SMART");
-  if( ! p_SMARTelement)
-  {
-    LOGN_ERROR("no SMART XML element name below the root element")
-    return;
-  }
-  /** from http://stackoverflow.com/questions/13919817/sscanf-and-locales-how-does-one-really-parse-things-like-3-14 :
-   *  For "FloatAttribute" which uses "sscanf" to use "." as a decimal point. */
-  setlocale(LC_NUMERIC, "C");
-  HandleSingleSMARTentry(p_SMARTelement, sMARTuniqueIDandValues);
-  
-  p_SMARTelement = p_SMARTelement->NextSiblingElement("SMART");
-  while(p_SMARTelement)
-  {
-    HandleSingleSMARTentry(p_SMARTelement, sMARTuniqueIDandValues);
-    p_SMARTelement = p_SMARTelement->NextSiblingElement("SMART");
-  }
-  LOGN("end")
-}
-
-void HandleXMLresult(const tinyxml2::XMLError XMLparsingResult)
-{
-  LOGN("result of parsing XML data:" << XMLparsingResult)
-  if( XMLparsingResult != tinyxml2::XML_SUCCESS)
-  {
-    LOGN_ERROR("XML error occured")
-    switch(XMLparsingResult)
-    {
-      case tinyxml2::XML_ERROR_PARSING_ELEMENT :
-        LOGN_ERROR("XML parsing error")
-        break;
-    }
-    return;
-  }
-}
-
-void ConvertStringToInt(
-  const char * const p_BeginOfNumber, 
-  SMARTmonitorClient::supportedSMARTattributeIDs_type & supportedSMARTattributeIDs )
-{
-  fastestUnsignedDataType number;
-  //std::string std_strConvertToNumber(p_BeginOfNumber);
-  
-  if( ConvertCharStringToTypename(number, p_BeginOfNumber) )
-  {
-    if( CheckSMARTidRange(number) == 0 )
-    {
-      LOGN_DEBUG( "string:" << p_BeginOfNumber << " as int:" << number )
-      supportedSMARTattributeIDs.insert( number );
-    }
-    else
-      LOGN_ERROR("SMART ID is not in range 0..255->not processing this SMART entry")
-  }
-  else
-    LOGN_ERROR("error converting " << p_BeginOfNumber << " to a number")
-}
-
-void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
-  uint8_t * xmlDataByteArray,
-  fastestUnsignedDataType numBytesToRead,
-  //std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainter
-  dataCarrierID2supportedSMARTattributesMap_type & 
-    dataCarrierID2supportedSMARTattributess)
-{
-  std::string std_strXMLdata( (const char *) xmlDataByteArray);
-  LOGN("XML data:" << std_strXMLdata)
-  //TODO source out into tinyxml2.cpp because this code is specific to the XML lib
-  tinyxml2::XMLDocument tinyXML2Doc;
-  const tinyxml2::XMLError XMLparsingResult = tinyXML2Doc.Parse(
-    std_strXMLdata.c_str(), 
-    numBytesToRead);
-  HandleXMLresult(XMLparsingResult);
-  if( XMLparsingResult != tinyxml2::XML_SUCCESS )
-  {
-    ShowMessage("error parsing the XML data->no further processing->exit");
-    LOGN_ERROR("error parsing the XML data->no further processing->exit")
-    return;
-  }
-  tinyxml2::XMLElement * p_tinyxml2XMLelement = tinyXML2Doc.RootElement();
-  if( ! p_tinyxml2XMLelement )
-  {
-    LOGN_ERROR("Failed to get XML root element")
-    return;
-  }
-  LOGN_DEBUG("got XML root element")
-  SMARTuniqueID sMARTuniqueID;
-  if( GetSMARTuniqueID(p_tinyxml2XMLelement, sMARTuniqueID) )
-  {
-    p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement("supportedSMART_IDs");
-    if( ! p_tinyxml2XMLelement )
-    {
-      LOGN_ERROR("no \"supportedSMART_IDs\" child element in XML data??")
-      return;
-    }
-    const char * supportedSMARTattributeIDsString = p_tinyxml2XMLelement->GetText();
-//      "supportedSMART_IDs", NULL);
-    if( supportedSMARTattributeIDsString == NULL )
-    {
-      LOGN_ERROR("no \"supportedSMART_IDs\" attribute in XML data??")
-      return;
-    }
-    LOGN_DEBUG( "text inside \"supportedSMART_IDs\":" << 
-      supportedSMARTattributeIDsString )
-    supportedSMARTattributeIDs_type supportedSMARTattributeIDs;
-    
-    const char * p_lastComma = (char * ) supportedSMARTattributeIDsString;
-    char * p_currentChar=(char * )supportedSMARTattributeIDsString;
-    for( ; *p_currentChar != '\0' ; ++ p_currentChar)
-    {
-      if( * p_currentChar == ',')
-      {
-        * p_currentChar = '\0';
-        ConvertStringToInt(p_lastComma, supportedSMARTattributeIDs);
-        p_lastComma = p_currentChar + 1;
-      }
-      //TODO
-//      GetSupportedSMARTattributes(p_tinyxml2XMLelement, supportedSMARTattributes);
-    }
-    if( p_lastComma < p_currentChar ) /** Process last attribute ID */
-      ConvertStringToInt(p_lastComma, supportedSMARTattributeIDs);
-      
-    dataCarrierID2supportedSMARTattributess.insert( std::make_pair(sMARTuniqueID, 
-      supportedSMARTattributeIDs) );
-  }
-}
-
-void SMARTmonitorClient::GetSMARTdataViaXML(
-  uint8_t * SMARTvalues, unsigned numBytesToRead,
-  //std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainter
-  SMARTuniqueIDandValues & sMARTuniqueIDandValues)
-{
-  std::string xmlData( (const char *) SMARTvalues);
-  LOGN("XML data:" << xmlData)
-  tinyxml2::XMLDocument tinyXML2Doc;
-  const tinyxml2::XMLError xmlErr = tinyXML2Doc.Parse(xmlData.c_str(), numBytesToRead);
-  LOGN("result of parsing XML data:" << xmlErr)
-  if( xmlErr != tinyxml2::XML_SUCCESS)
-  {
-    switch(xmlErr)
-    {
-      case tinyxml2::XML_ERROR_PARSING_ELEMENT :
-        LOGN_ERROR("XML parsing error")
-        break;
-    }
-    return;
-  }
-  tinyxml2::XMLElement * p_tinyxml2XMLelement = tinyXML2Doc.RootElement();
-  if( ! p_tinyxml2XMLelement )
-  {
-    LOGN_ERROR("Failed to get XML root element")
-    return;
-  }
-  LOGN("got XML root element")
-  SMARTuniqueID sMARTuniqueID;
-  GetSMARTuniqueID(p_tinyxml2XMLelement,sMARTuniqueID);
-  //SMARTuniqueIDandValues sMARTuniqueIDandValues(sMARTuniqueID);
-  sMARTuniqueIDandValues.SetDataCarrierID(sMARTuniqueID);
-  //TODO
-  GetSMARTrawValues(p_tinyxml2XMLelement, sMARTuniqueIDandValues);
-//  SMARTuniqueIDandValues.m_SMARTrawValues;
-  //sMARTuniqueIDandValuesContainter.insert(sMARTuniqueIDandValues);
 }
 
 void SMARTmonitorClient::HandleTransmissionError( 
@@ -599,7 +144,7 @@ void SMARTmonitorClient::HandleTransmissionError(
         break;
     }
   }
-  stdoss << "OS error #:" << errno ;
+  stdoss << "OS error #:" << errno << "\n";
   switch(transmissionError)
   {
     case numBytesToReceive :
@@ -616,21 +161,6 @@ void SMARTmonitorClient::HandleTransmissionError(
   //TODO set connection status of the user interface to "network errors"/"unconnected"
   ChangeState(unconnectedFromService);
   //TODO close socket, set status (also in UI) to unconnected
-}
-
-fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
-{
-  LOGN("reading 2 bytes from socket #" << m_socketFileDesc)
-  uint16_t numDataBytesToRead;
-  const size_t numBytesToRead = 2;
-  int numBytesRead = read(m_socketFileDesc, & numDataBytesToRead, numBytesToRead);
-  if( numBytesRead < numBytesToRead ) {
-    HandleTransmissionError(numBytesToReceive);
-    return -1;
-  }
-  numDataBytesToRead = ntohs(numDataBytesToRead);
-  LOGN_DEBUG("# bytes to read:" << numDataBytesToRead)
-  return numDataBytesToRead;
 }
 
 fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
@@ -658,54 +188,6 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
     GetSupportedSMARTattributesViaXML(XMLdata, numBytesToRead, 
       dataCarrierIDandSMARTidsContainer);
   }
-}
-
-fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
-//  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer
-  )
-{
-  LOGN("begin")
-  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer = 
-    mp_SMARTaccess->GetSMARTuniqueIDandValues();
-  enum transmission transmissionResult = unsetTransmResult;
-  sMARTuniqueIDandValuesContainer.clear();
-  int numBytesRead;
-  fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
-  if( numBytesToRead < 1 )
-    return readLessBytesThanIntended;
-  const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
-  uint8_t SMARTvalues[numBytesToAllocate];
-  if( SMARTvalues)
-  {
-    numBytesRead = read(m_socketFileDesc, SMARTvalues, numBytesToRead);
-    if (numBytesRead < numBytesToRead) {
-      HandleTransmissionError(SMARTdata);
-      LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
-        << numBytesToRead << ")");
-      return readLessBytesThanIntended; //TODO provide error handling (show message to user etc.)
-    }
-    SMARTvalues[numBytesToRead] = '\0';
-    SMARTuniqueIDandValues sMARTuniqueIDandValues;
-    GetSMARTdataViaXML(SMARTvalues, numBytesToRead, sMARTuniqueIDandValues);
-    LOGN("SMART unique ID and values object " << & sMARTuniqueIDandValues )
-    //sMARTuniqueIDandValuesContainer.f
-    std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert = 
-      sMARTuniqueIDandValuesContainer.insert(sMARTuniqueIDandValues);
-    LOGN("insered object into container?:" << insert.second);
-    if(insert.second)
-    {
-      LOGN("SMART unique ID and values object in container:" << &(*insert.first) )
-    }
-    //RebuildGUI();
-    OperatingSystem::GetCurrentTime(m_timeOfLastSMARTvaluesUpdate);
-//    delete [] SMARTvalues;
-  }
-  else
-  {
-    LOGN_ERROR("Failed to allocate " << numBytesToAllocate << " bytes")
-  }
-  LOGN("end")
-  return successfull;
 }
 
 /** These values are fixed and so need to be shown only once in the user
