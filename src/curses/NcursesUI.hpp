@@ -31,6 +31,8 @@ public:
   static void MenuLoop();
   static struct _win_st * s_menuBar, * s_bodyWindow, * s_statusBar;
   void ReBuildUserInterface();
+  void AfterConnectToServer(int connectResult);
+  
 //  void UpdateSMARTvaluesUI();
   void LayoutUserInterface();
 private:
@@ -41,7 +43,7 @@ private:
   attrID2Line_type attributeID2LineMapping;
   static Curses::Menu s_mainMenu, s_programMenu, s_serverMenu;
 //  static Ncurses::Form s_connToSrvForm;
-  void ChangeState(enum state newState);
+  void ChangeState(enum serverConnectionState newState);
   static void CreateMenus();
   static void ConnectToServer();
   static void Exit();

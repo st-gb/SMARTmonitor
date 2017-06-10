@@ -10,6 +10,8 @@
 
 #include <wx/app.h> //Base class wxApp
 #include <wx/dialog.h> //class wxDialog
+#include <wx/icon.h> //class wxIcon
+#include <wx/timer.h> //class wxTimer
 
 //#include "wxSMARTmonitorTaskBarIcon.hpp"
 //#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase
@@ -27,7 +29,11 @@ class wxSMARTmonitorApp
 {
   wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
   ConnectToServerDialog * m_pConnectToServerDialog/*(pch, timeOut )*/;
+  wxTimer m_wxtimer;
 public:
+  enum IDs {TIMER_ID = 0};
+  static wxIcon s_SMARTokIcon;
+  static wxIcon s_SMARTwarningIcon;
   //SMARTaccess_type & m_SMARTaccess;
   //static const wxString appName;
   TaskBarIcon * m_taskBarIcon;
@@ -39,12 +45,14 @@ public:
   std::set<wxTopLevelWindow *> openTopLevelWindows;
   void AfterConnectToServer(int connectResult);
   void BeforeWait();
-  void ChangeState(enum state newState);
+  void ChangeState(enum serverConnectionState newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
   void GetTextFromUser(const char * label, std::string & );
   bool OnInit();
+  void OnTimer(wxTimerEvent& event);
 //  int OnRun();
+  bool GetIcon(wxIcon & icon, wxString iconFileName, char * inMemoryIcon [] );
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
   void SetAttribute(
@@ -56,11 +64,15 @@ public:
   void ShowMessage(const char * const ) const;
   wxIcon ShowSMARTokIcon();
   wxIcon ShowSMARTwarningIcon();
+  void ShowIcon(const wxIcon & icon, const wxString & message );
   void ShowStateAccordingToSMARTvalues(bool b);
+  void StartServiceConnectionCountDown(const fastestUnsignedDataType);
   void ReBuildUserInterface();
   
   DECLARE_EVENT_TABLE()
   void OnAfterConnectToServer(wxCommandEvent & );
+  void OnShowMessage(wxCommandEvent & event);
+  void OnStartServiceConnectionCountDown(wxCommandEvent & event);
 };
 
 DECLARE_APP(wxSMARTmonitorApp) //wxGetApp()

@@ -18,6 +18,7 @@ class ConnectToServerDialog
 public:
   ConnectToServerDialog(
     const char * const pchServerAddress,
+    const fastestUnsignedDataType servicePortNumber,
     const fastestUnsignedDataType timeOutInSeconds,
     const int connectToServerSocketFileDescriptor);
   virtual ~ConnectToServerDialog();

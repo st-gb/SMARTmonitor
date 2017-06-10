@@ -218,7 +218,7 @@ void SMARTmonitorService::AddClient(const int clientSocketFileDesc)
   m_clientsCriticalSection.Leave();  
 }
 
-void SMARTmonitorService::AfterGetSMARTvaluesLoop() {
+void SMARTmonitorService::AfterGetSMARTvaluesLoop(int getSMARTvaluesResult) {
   LOGN("closing server socket file descr." << s_socketFileDesc)
   //from http://www.mombu.com/microsoft/t-how-to-cancel-a-blocking-socket-call-12612626.html
   //"Is the server multithreaded? If so, then closing the socket on another 

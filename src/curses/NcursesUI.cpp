@@ -321,7 +321,11 @@ void NcursesUI::ShowMessage(const char * const message) const
   }
 }
 
-
+void NcursesUI::AfterConnectToServer(int connectResult)
+{
+  if( connectResult == 0 )
+    ;
+}
 
 void UpdateConnTimeout()
 {
@@ -342,6 +346,9 @@ void NcursesUI::ShowConnectionState(const char * const pch, int timeOutInS)
       "connecting to \"%s\", timeout in ca. %us", pch, timeOutInS);
     wrefresh(NcursesUI::s_statusBar);
 //  }
+    //  std::ostringstream oss;
+    //  oss << "connecting to " << pch << " , timeout:" << timeOut << "seconds";
+    //  ShowMessage(oss.str().c_str() );
 }
   
 void NcursesUI::ShowProgramMenu()
@@ -354,7 +361,7 @@ void NcursesUI::ShowServerMenu()
   s_serverMenu.InsideMenu(true, s_bodyWindow);
 }
 
-void NcursesUI::ChangeState(enum state newState)
+void NcursesUI::ChangeState(enum serverConnectionState newState)
 {
   colorBox(s_statusBar, STATUS_BAR_COLOR, 0);
 //  setcolor(s_statusBar, STATUS_BAR_COLOR);

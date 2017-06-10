@@ -21,6 +21,7 @@ inline wxString GetTimeOutLabelText(const fastestUnsignedDataType timeOutInSecon
 
 ConnectToServerDialog::ConnectToServerDialog(
   const char * const pchServerAddress,
+  const fastestUnsignedDataType servicePortNumber,
   const fastestUnsignedDataType timeOutInSeconds,
   const int connectToServerSocketFileDescriptor)
   : wxDialog(NULL, wxID_ANY, wxT("") //, 
@@ -33,7 +34,8 @@ ConnectToServerDialog::ConnectToServerDialog(
   , m_connectToServerSocketFileDescriptor(connectToServerSocketFileDescriptor)
 {
   const wxString wxstrServerAddress = wxWidgets::GetwxString_Inline(pchServerAddress);
-  SetTitle( wxString::Format( wxT("connect to server %s"), wxstrServerAddress ));
+  SetTitle( wxString::Format( wxT("connect to server %s port:%u"), 
+    wxstrServerAddress, servicePortNumber ));
   wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
   m_p_wxStaticTextTimeout = new wxStaticText(this, wxID_ANY, GetTimeOutLabelText(timeOutInSeconds) );
   wxButton * p_wxCancelButton = new wxButton(this, wxID_CANCEL, wxT("cancel"));

@@ -38,7 +38,7 @@ public:
   void SendBytesToAllClients(std::string & xmlString);
   void AddClient(const int clientSocketFileDesc);
   void BeforeWait();
-  void AfterGetSMARTvaluesLoop();
+  void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult);
   void WaitForSignal();
   static DWORD ClientConnThreadFunc(void * p_v);
   void CloseAllClientSockets();

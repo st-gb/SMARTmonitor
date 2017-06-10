@@ -35,21 +35,24 @@ public:
   dataCarrierID2supportedSMARTattributesMap_type
     dataCarrierIDandSMARTidsContainer;
   
-  enum state {connectedToService, unconnectedFromService};
+  enum serverConnectionState {connectedToService, unconnectedFromService};
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
-  enum TransmissionError { numBytesToReceive, SMARTdata};
+  enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
   enum ConnectToServerResult{ connectionToServiceSucceeded = 0, 
     errorOpeningSocket, getHostByNameFailed, errorConnectingToService };
   
   int m_socketFileDesc;
+  fastestUnsignedDataType m_serviceConnectionCountDownInSeconds;
+  fastestUnsignedDataType m_serverConnectionState;
   
+  void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult);
   virtual void GetTextFromUser(const char * label, std::string & ) { };
   virtual void AfterConnectToServer(int connectResult) { };
   void HandleConnectionError(const char * hostName);
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(uint8_t * SMARTvalues, unsigned numBytesToRead,
     /*std::set<SMARTuniqueIDandValues> & */ SMARTuniqueIDandValues &);
-  virtual void ChangeState(enum state newState) { };
+  virtual void ChangeState(enum serverConnectionState newState) { };
   void ConnectToServerAndGetSMARTvalues();
   void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
@@ -61,12 +64,15 @@ public:
   void EndUpdateUIthread();
   fastestUnsignedDataType GetSupportedSMARTidsFromServer();
   fastestSignedDataType ReadNumFollowingBytes();
-  fastestUnsignedDataType GetSMARTvaluesFromServer(//std::set<SMARTuniqueIDandValues> & 
+  fastestUnsignedDataType GetSMARTattributeValuesFromServer(//std::set<SMARTuniqueIDandValues> & 
     );
   void GetSMARTvaluesAndUpdateUI();
   void HandleTransmissionError(enum TransmissionError transmissionError);
   
-  const struct tm & GetLastSMARTvaluesUpdateTime() const { 
+  const struct tm & GetLastSMARTvaluesUpdateTime() const {
+    //TODO because "tm" is a struct with multiple fields/members: 
+    // changes non-atomically in get SMART values thread.
+    // ->possible inconsistency 
     return m_timeOfLastSMARTvaluesUpdate; }
   struct tm m_timeOfLastSMARTvaluesUpdate;
   
@@ -74,6 +80,8 @@ public:
     m_stdstrServerAddress = str;
   }
   void SetSMARTattribIDandNameLabel();
+  virtual void StartServiceConnectionCountDown(
+    const fastestUnsignedDataType countDownInSeconds) {}
   /** Operations that only need to be done once after connection to the service
       is established. 
       "virtual" is needed in order to generate a table of virtual functions. */

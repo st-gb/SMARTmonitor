@@ -29,6 +29,7 @@ class SMARTdialog: public wxDialog
   /** Called "data carrier" and not "drive" because SMART info affect data 
    *  carriers / media and not "drives" (where they are inserted) */
   wxTextCtrl * m_p_wxDataCarrierIDtextCtrl;
+  wxTextCtrl * m_p_wxMessageTextCtrl;
   wxButton * m_p_showSupportedSMART_IDs;
 //  wxTimer m_timer;
 public:
@@ -42,15 +43,17 @@ public:
     const SMARTvalueProcessorBase & SMARTvalueProcessor);
   virtual ~SMARTdialog();
   
+  void SetStatus(wxString );
   void StartAsyncUpdateThread();
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();
   void UpdateSMARTvaluesUI();
   void UpdateUIregarding1DataCarrierOnly();
   void SetSMARTdriveID();
-  void SetState(enum SMARTmonitorClient::state newState);
+  void SetState(enum SMARTmonitorClient::serverConnectionState newState);
   void ReBuildUserInterface();
   void EnableServerInteractingControls(int );
   void InformAboutTerminationOfUpdateThread();
+  void ShowText(/*const char * const*/ wxString & );
 
 protected:
   void OnAbout(wxCommandEvent& event);
@@ -70,5 +73,6 @@ protected:
   DECLARE_EVENT_TABLE()
 };
 
-
+DECLARE_LOCAL_EVENT_TYPE(UpdateSMARTparameterValuesInGUIEventType, wxNewEventType())
+ 
 #endif /* WXSMARTMONITORDIALOG_HPP_ */

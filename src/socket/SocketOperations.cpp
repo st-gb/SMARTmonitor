@@ -25,7 +25,7 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   return numDataBytesToRead;
 }
 
-fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
+fastestUnsignedDataType SMARTmonitorClient::GetSMARTattributeValuesFromServer(
 //  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer
   )
 {
@@ -42,9 +42,13 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTvaluesFromServer(
   uint8_t SMARTvalues[numBytesToAllocate];
   if( SMARTvalues)
   {
+    /** http://man7.org/linux/man-pages/man2/read.2.html :
+     *  "On error, -1 is returned, and errno is set appropriately." */
     numBytesRead = read(m_socketFileDesc, SMARTvalues, numBytesToRead);
+    //TODO often numBytesRead < numBytesToRead if this function is called from 
+    //  "UpdateSMARTparameterValuesThreadFunc"
     if (numBytesRead < numBytesToRead) {
-      HandleTransmissionError(SMARTdata);
+      HandleTransmissionError(SMARTparameterValues);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
       return readLessBytesThanIntended; //TODO provide error handling (show message to user etc.)
@@ -166,7 +170,7 @@ int GetConnectTimeOut(const int m_socketFileDesc)
 
 int ConnectToSocketNonBlocking(
   int socketFileDescriptor, 
-  struct sockaddr_in serv_addr, 
+  struct sockaddr_in & serv_addr, 
   long int connectTimeoutInSeconds)
 {
   /** from http://www.linuxquestions.org/questions/programming-9/why-does-connect-block-for-a-long-time-708647/ */
@@ -177,10 +181,12 @@ int ConnectToSocketNonBlocking(
   int flags = fcntl(socketFileDescriptor, F_GETFL, 0);
   fcntl(socketFileDescriptor, F_SETFL, flags | O_NONBLOCK);
 
+  /** http://man7.org/linux/man-pages/man2/connect.2.html :
+      "If the connection or binding succeeds, zero is returned." */
   int result = connect(socketFileDescriptor, (struct sockaddr *) & serv_addr, sizeof(serv_addr) );
   if (result == -1)
   {
-    if (errno == EINPROGRESS)
+    if (errno == EINPROGRESS) /** For non-blocking sockets */
     {
       fd_set wfd;
       FD_ZERO(&wfd);
@@ -212,8 +218,13 @@ int ConnectToSocketNonBlocking(
           , & optlen //socklen_t *optlen
           );
         if( result == 0 && iSO_ERROR == 0)
+        {
+          
+          LOGN_INFO("successfully connected to " << serv_addr.sin_addr.s_addr )
+          //TODO result was success even if the server/service is not running
           /** Change back to blocking mode. */
           result = fcntl(socketFileDescriptor, F_SETFL, flags);
+        }
         else
           result = iSO_ERROR;
       }
@@ -257,7 +268,11 @@ DWORD SocketConnectThreadFunc(void * p_v)
 //      return errorConnectingToService;
     }
     else if( connectResult == 0)
+    {
       LOGN("successfully connected")
+      p_socketConnectThreadFuncParams->p_SMARTmonitorClient->ShowMessage(
+        "successfully connected to service");
+    }
     p_socketConnectThreadFuncParams->p_SMARTmonitorClient->
       AfterConnectToServer(connectResult);
     delete p_socketConnectThreadFuncParams;
@@ -339,12 +354,22 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   return unconnectedFromService;
 }
 
+void SMARTmonitorClient::AfterGetSMARTvaluesLoop(int getSMARTvaluesResult)
+{
+  close(m_socketFileDesc);
+  if(getSMARTvaluesResult != 0)
+  {
+    StartServiceConnectionCountDown(60);
+  }
+}
+
 void SMARTmonitorClient::HandleConnectionError(const char * hostName)
 {
   //TODO: show error via user interface
   //Message("")
   std::ostringstream oss;
-  oss << "error connecting to S.M.A.R.T. values service:\n";
+  oss << "error connecting to S.M.A.R.T. values service " << 
+    m_stdstrServiceHostName << ",port:" << m_socketPortNumber << "\n";
   //TODO the following is Linux-specific and should be OS-independent
   //see http://man7.org/linux/man-pages/man2/connect.2.html
   switch(errno )

@@ -44,14 +44,24 @@ GCC_DIAG_ON(write-strings)
 
 // global variables
 /*static*/ SMARTdialog *gs_dialog = NULL;
-/** defintions of static class members. */
+
+/** definitions of static class members. */
 fastestUnsignedDataType wxSMARTmonitorApp::s_GUIthreadID;
+wxIcon wxSMARTmonitorApp::s_SMARTokIcon;
+wxIcon wxSMARTmonitorApp::s_SMARTwarningIcon;
 
 //from https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case
-const wxEventType AfterConnectToServerEventType = wxNewEventType(); // You get to choose the name yourself
+//const wxEventType AfterConnectToServerEventType = wxNewEventType();
+DEFINE_LOCAL_EVENT_TYPE(AfterConnectToServerEventType)
+DEFINE_LOCAL_EVENT_TYPE(ShowMessageEventType)
+DEFINE_LOCAL_EVENT_TYPE(StartServiceConnectionCountDownEventType)
 
 BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
   EVT_COMMAND(wxID_ANY, AfterConnectToServerEventType, wxSMARTmonitorApp::OnAfterConnectToServer)
+  EVT_COMMAND(wxID_ANY, ShowMessageEventType, wxSMARTmonitorApp::OnShowMessage)
+  EVT_COMMAND(wxID_ANY, StartServiceConnectionCountDownEventType, 
+    wxSMARTmonitorApp::OnStartServiceConnectionCountDown)
+  EVT_TIMER(TIMER_ID, wxSMARTmonitorApp ::OnTimer)
 END_EVENT_TABLE()
 
 //const wxString wxSMARTmonitorApp::appName = wxT("wxSMARTmonitor");
@@ -64,6 +74,7 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
 //      m_SMARTaccess.getSMARTattributesToObserve(),
 //      * this)
   , m_pConnectToServerDialog(NULL)
+  , m_wxtimer(this, TIMER_ID)
 {
   s_GUIthreadID = GetCurrentThreadNumber();
   //InitializeLogger(); 
@@ -97,6 +108,29 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 #endif
 }
 
+void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
+  wxCommandEvent & event)
+{
+  m_serviceConnectionCountDownInSeconds = event.GetInt();
+  m_wxtimer.Start(1000);
+}
+
+void wxSMARTmonitorApp::StartServiceConnectionCountDown(
+  const fastestUnsignedDataType countDownInSeconds)
+{
+  if( GetCurrentThreadNumber() == s_GUIthreadID )
+  {
+    m_serviceConnectionCountDownInSeconds = countDownInSeconds;
+    m_wxtimer.Start(1000);
+  }
+  else
+  {
+    wxCommandEvent startServiceConnectionCountDown( StartServiceConnectionCountDownEventType );
+    startServiceConnectionCountDown.SetInt(countDownInSeconds);
+    wxPostEvent(this, startServiceConnectionCountDown);
+  }
+}
+
 void wxSMARTmonitorApp::ReBuildUserInterface() { 
   //SetSMARTdriveID();
 //  SetSMARTattribIDandNameLabel();
@@ -123,13 +157,20 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & e)
   if( connectResult == 0)
   {
 //    SuccessfullyConnectedToClient();
-    GetSMARTvaluesAndUpdateUI();
+    /*if( !*/ GetSMARTvaluesAndUpdateUI(); //)
+//      StartServiceConnectionCountDown(countDownInSeconds);
     gs_dialog->EnableServerInteractingControls(connectResult);
   }
   else
   {
+    /** If not closing the socket then socket file descriptor number increases?*/
+    close(m_socketFileDesc);
     gs_dialog->EnableServerInteractingControls(connectResult);
     HandleConnectionError("");
+    fastestUnsignedDataType countDownInSeconds = 60;
+//    gs_dialog->StartCountDown(countDownInSeconds);
+//    m_wxtimer.StartOnce(countDownInSeconds * 1000);
+    StartServiceConnectionCountDown(countDownInSeconds);
   }
 }
 
@@ -150,11 +191,11 @@ void wxSMARTmonitorApp::BeforeWait()
   /** This function is usually called from a non-GUI thread. So we have to send
    *  an event to let the GUI update happen in the UI thread to avoid a program 
    * crash. */
-  wxCommandEvent UpdateSMARTvaluesEvent( wxEVT_COMMAND_BUTTON_CLICKED );
+  wxCommandEvent UpdateSMARTvaluesEvent( UpdateSMARTparameterValuesInGUIEventType );
   wxPostEvent(gs_dialog, UpdateSMARTvaluesEvent);
 }
 
-void wxSMARTmonitorApp::ChangeState(enum state newState)
+void wxSMARTmonitorApp::ChangeState(enum serverConnectionState newState)
 {
   //TODO ensure to/must be called in GUI thread
   gs_dialog->SetState(newState);
@@ -191,6 +232,27 @@ void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
   }
   m_commandLineArgs.Set(argc, (wchar_t **) m_cmdLineArgStrings);
 }
+
+void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
+{
+//  if( m_serverConnectionState = connectedToService)
+//  else
+  if( m_serviceConnectionCountDownInSeconds --)
+  {
+    wxString wxstrServiceHostName = m_stdstrServiceHostName;
+    gs_dialog->SetStatus( wxString::Format(wxT("connection attempt to %s, port %u in %u seconds"),
+      wxstrServiceHostName.c_str(), 
+      m_socketPortNumber, 
+      m_serviceConnectionCountDownInSeconds ));
+  }
+  else
+  {
+    gs_dialog->SetStatus(wxT("") );
+    m_wxtimer.Stop();
+    ConnectToServerAndGetSMARTvalues();
+  }
+}
+
 /** http://docs.wxwidgets.org/trunk/classwx_app_console.html#a99953775a2fd83fa2456e390779afe15 : 
  *  "This must be provided by the application, and will usually create the 
  *  application's main window, optionally calling SetTopWindow()."  */
@@ -202,7 +264,10 @@ bool wxSMARTmonitorApp::OnInit()
    *  task bar and this not able to switch there with alt+Tab.*/
   gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), //m_wxSMARTvalueProcessor
     m_SMARTvalueProcessor);
-  gs_dialog->Show(true);  
+  gs_dialog->Show(true);
+  GetSMARTokayIcon(s_SMARTokIcon);
+  GetSMARTwarningIcon(s_SMARTwarningIcon);  
+
   ProcessCommandLineArgs(); /** May display messages. */
   InitializeLogger();
   //m_wxSMARTvalueProcessor.Init();
@@ -226,9 +291,13 @@ bool wxSMARTmonitorApp::OnInit()
     mp_configurationLoader->ReadServiceConnectionSettings(
       stdwstrServiceConnectionConfigFile );
 
+    ShowSMARTokIcon();
     //TODO execute after OnInit(): else no dialog is shown?
     if( ! stdwstrServiceConnectionConfigFile.empty() )
-      ConnectToServerAndGetSMARTvalues();  
+    {
+      m_wxtimer.StartOnce(1000);
+//      ConnectToServerAndGetSMARTvalues();
+    }
     else 
       if( initSMARTresult == SMARTaccessBase::success)
     {
@@ -255,68 +324,46 @@ bool wxSMARTmonitorApp::OnInit()
 //{
 //}
 
+bool wxSMARTmonitorApp::GetIcon(
+  wxIcon & icon,
+  wxString iconFileName, 
+  char * inMemoryIcon [] )
+{
+  /** http://docs.wxwidgets.org/trunk/classwx_bitmap.html:
+  *  "wxMSW supports BMP and ICO files, BMP and ICO resources;
+  *  wxGTK supports XPM files;" */
+  wxBitmapType wxbitmapType;
+  #ifdef _WIN32
+    wxbitmapType = wxBITMAP_TYPE_ICO;
+    iconFileName += wxT("ico")
+  #else //#ifdef __WXGTK__ //wxGTK
+    wxbitmapType = wxBITMAP_TYPE_XPM;
+    iconFileName += wxT("xpm");
+  #endif
+
+  bool bIconFileSuccessfullyLoaded = icon.LoadFile(
+    iconFileName,
+    wxbitmapType);
+  if( ! bIconFileSuccessfullyLoaded)
+  {
+    wxMessageBox( wxT("Loading icon file \n\"") + wxGetCwd() +
+      wxFILE_SEP_PATH + iconFileName + wxT( "\" failed") );
+    /** Loading a (custom) icon from file failed, so provide a pre-defined one.*/
+    icon = wxIcon(inMemoryIcon);
+  }
+  return bIconFileSuccessfullyLoaded;
+}
+
 //TODO better call this function only once at startup?!
 bool wxSMARTmonitorApp::GetSMARTokayIcon(wxIcon & icon)
 {
-//  wxIcon icon; //(/*smile_xpm*/  );
-  #ifdef _WIN32
-  wxString wxstrIconFileName = wxT("S.M.A.R.T._OK.ico");
-  #else
-  wxString wxstrIconFileName = wxT("S.M.A.R.T._OK.xpm");
-  #endif
-  bool bLoadFileRetVal = icon.LoadFile(
-    //http://docs.wxwidgets.org/trunk/classwx_bitmap.html:
-    //"wxMSW supports BMP and ICO files, BMP and ICO resources;
-    // wxGTK supports XPM files;"
-    #ifdef _WIN32
-      wxstrIconFileName,
-      wxBITMAP_TYPE_ICO
-    #else //#ifdef __WXGTK__ //wxGTK
-      wxstrIconFileName,
-      wxBITMAP_TYPE_XPM
-    #endif
-    );
-  if( ! bLoadFileRetVal)
-  {
-    wxMessageBox( wxT("Loading icon file \n\"") + wxGetCwd() +
-      wxFILE_SEP_PATH + wxstrIconFileName + wxT( "\" failed") );
-    /** Loading a (custom) icon from file failed, so provide a pre-defined one.*/
-    icon = wxIcon(S_M_A_R_T__OK_xpm);
-  }
-  return bLoadFileRetVal;
+  return GetIcon(icon, wxT("S.M.A.R.T._OK."), S_M_A_R_T__OK_xpm);
 }
 
 //TODO better call this function only once at startup?!
 bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 {
-//  wxIcon icon; //(/*smile_xpm*/  );
-  #ifdef _WIN32
-  wxString wxstrIconFileName = wxT("S.M.A.R.T._warning.ico");
-  #else
-  wxString wxstrIconFileName = wxT("S.M.A.R.T._warning.xpm");
-  #endif
-  bool bLoadFileRetVal = icon.LoadFile(
-    //http://docs.wxwidgets.org/trunk/classwx_bitmap.html:
-    //"wxMSW supports BMP and ICO files, BMP and ICO resources;
-    // wxGTK supports XPM files;"
-    #ifdef _WIN32
-      wxstrIconFileName,
-      wxBITMAP_TYPE_ICO
-    #else //#ifdef __WXGTK__ //wxGTK
-      wxstrIconFileName,
-      wxBITMAP_TYPE_XPM
-    #endif
-    );
-  if( ! bLoadFileRetVal)
-  {
-//    wxMessageBox( wxT("Loading icon file \n\"") + wxGetCwd() +
-//      wxFILE_SEP_PATH + wxstrIconFileName + wxT( "\" failed") );
-//#if defined(__WXGTK__) || defined(__WXMOTIF__)
-    /** Loading a (custom) icon from file failed, so provide a pre-defined one.*/
-    icon = wxIcon(S_M_A_R_T__warning_xpm);
-//#endif
-  }
-  return bLoadFileRetVal;
+  return GetIcon(icon, wxT("S.M.A.R.T._warning."), S_M_A_R_T__warning_xpm);
 }
 
 void wxSMARTmonitorApp::SetAttribute(
@@ -338,12 +385,20 @@ void wxSMARTmonitorApp::SetAttribute(
 void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress, 
   int connectTimeOutInSeconds)
 {
-  m_pConnectToServerDialog = new ConnectToServerDialog(pchServerAddress, connectTimeOutInSeconds, m_socketFileDesc);
+  m_pConnectToServerDialog = new ConnectToServerDialog(
+    pchServerAddress, m_socketPortNumber, connectTimeOutInSeconds, m_socketFileDesc);
   m_pConnectToServerDialog->Show();
   /** Ensures "connect" can't be pressed a second time */
 //  m_pConnectToServerDialog->ShowModal();
 }
-  
+
+void wxSMARTmonitorApp::OnShowMessage(wxCommandEvent & event)
+{
+    wxString wxstrMessage = event.GetString();
+//    wxMessageBox(wxstrMessage, m_appName );
+    gs_dialog->ShowText(wxstrMessage);  
+}
+
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 {
   unsigned currentThreadNumber = GetCurrentThreadNumber();
@@ -352,49 +407,44 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
   if( currentThreadNumber == s_GUIthreadID )
   { 
     wxString wxstrMessage = wxWidgets::GetwxString_Inline(str);
-    wxMessageBox(wxstrMessage, m_appName );
+//    wxMessageBox(wxstrMessage, m_appName );
+    gs_dialog->ShowText(wxstrMessage);
   }
   else
   {
-    //TODO poast an event with the message as content and synchronize to showing 
-    //  this message in the GUI thread
+    /** Post an event with the message as content to show 
+    *   this message in the GUI thread */
+    wxCommandEvent wxcommand_event(ShowMessageEventType);
+    wxcommand_event.SetString(GetwxString_Inline(str));
+    wxPostEvent( (wxSMARTmonitorApp *) this, wxcommand_event);
   }
+}
+
+void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
+{
+  wxString serviceLocation = wxWidgets::GetwxString_Inline(m_stdstrServiceHostName);
+
+  if( serviceLocation == wxT("") )
+    serviceLocation = wxT("direct SMART access");
+  wxString tooltip = wxString::Format( wxT("for %s:\n%s"), 
+    serviceLocation, message );
+  
+    //if ( wxGetApp().m_taskBarIcon == NULL )  
+  if ( ! m_taskBarIcon->SetIcon( icon, tooltip ) )
+    wxMessageBox(wxT("Could not set new taskbar icon."), wxT("wxSMARTmonitor") );
+  if( gs_dialog)
+    gs_dialog->SetIcon(icon);
 }
 
 wxIcon wxSMARTmonitorApp::ShowSMARTokIcon()
 {
-  wxIcon icon;
-  if( GetSMARTokayIcon(icon) )
-  {
-    //if ( wxGetApp().m_taskBarIcon == NULL )  
-    wxString serviceLocation = wxWidgets::GetwxString_Inline(m_stdstrServerAddress);
-    
-    wxString message;
-    if( serviceLocation != wxT("") )
-      message = wxString::Format( wxT("for %s:\n"
-        "raw value for all critical SMART parameters is 0"), 
-        serviceLocation);
-    if ( ! m_taskBarIcon->SetIcon( icon, message ) )
-      wxMessageBox(wxT("Could not set new icon."), wxT("wxSMARTmonitor") );
-    if( gs_dialog)
-      gs_dialog->SetIcon(icon);
-  }
-  return icon;
+  ShowIcon(s_SMARTokIcon, wxT("raw value for all critical SMART parameters is 0") );
+  return s_SMARTokIcon;
 }
 
 wxIcon wxSMARTmonitorApp::ShowSMARTwarningIcon()
 {
-  wxIcon icon;
-  if( GetSMARTwarningIcon(icon) )
-  {
-    wxString serviceLocation = wxWidgets::GetwxString_Inline(m_stdstrServerAddress);
-    
-    wxString warningMessage = wxString::Format( wxT("warning for %s:\n"
-      "raw value for at least 1 critical SMART parameter is > 0"), 
-      serviceLocation);
-    if ( ! m_taskBarIcon->SetIcon( icon, warningMessage ) )
-      wxMessageBox(wxT("Could not set new icon."), wxT("wxSMARTmonitor") );
-    gs_dialog->SetIcon(icon);
-  }
-  return icon;
+  ShowIcon(s_SMARTwarningIcon, wxT("raw value for at least 1 critical SMART "
+    "parameter is > 0") );
+  return s_SMARTwarningIcon;
 }

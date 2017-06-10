@@ -33,6 +33,10 @@ GCC_DIAG_ON(write-strings)
 //extern wxSMARTmonitorApp theApp;
 /** Static (class) variables. */
 
+//from https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case
+//const wxEventType UpdateSMARTparameterValuesInGUIEventType = wxNewEventType();
+DEFINE_LOCAL_EVENT_TYPE(UpdateSMARTparameterValuesInGUIEventType)
+
 //wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
     EVT_TIMER(TIMER_ID, SMARTdialog::OnTimer)
@@ -42,7 +46,7 @@ BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
     EVT_BUTTON(showSupportedSMART_IDs, SMARTdialog::OnShowSupportedSMART_IDs)
     EVT_BUTTON(CONNECT, SMARTdialog::OnConnectToServer)
     EVT_CLOSE(SMARTdialog::OnCloseWindow)
-    EVT_COMMAND(wxID_ANY, wxEVT_COMMAND_BUTTON_CLICKED,
+    EVT_COMMAND(wxID_ANY, UpdateSMARTparameterValuesInGUIEventType,
       SMARTdialog::OnUpdateSMARTparameterValuesInGUI)
 END_EVENT_TABLE()
 
@@ -66,13 +70,14 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
       }
       else
       {
-        int res = wxGetApp().GetSMARTvaluesFromServer(/*sMARTuniqueIDandValuesSet*/);
+        int res = wxGetApp().GetSMARTattributeValuesFromServer(/*sMARTuniqueIDandValuesSet*/);
         if( res == 0 )
         {
           //p_myDialog->UpdateSMARTvaluesUI();
           //https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#.22But_I_don.27t_need_a_whole_new_event_class....22
           wxCommandEvent UpdateUIevent( wxEVT_COMMAND_BUTTON_CLICKED );
           wxPostEvent(p_myDialog, UpdateUIevent);
+//          wxGetApp().BeforeWait();
         }
         else
           break;
@@ -91,6 +96,11 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
   }
   LOGN("end")
   return 0;
+}
+
+void SMARTdialog::SetStatus(wxString status)
+{
+  SetTitle(wxGetApp().GetAppDisplayName() + wxT("-") + status);
 }
 
 void SMARTdialog::EnableServerInteractingControls(int n)
@@ -140,7 +150,7 @@ SMARTdialog::SMARTdialog(
   wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
 
   wxSizerFlags flags;
-  flags.Border(wxALL, 10);
+//  flags.Border(wxALL, 0);
 
   m_p_wxDataCarrierIDtextCtrl = new wxTextCtrl(this, wxID_ANY, wxT("") );
   m_p_wxDataCarrierIDtextCtrl->SetEditable(false);
@@ -190,11 +200,21 @@ SMARTdialog::SMARTdialog(
   sizerBtns->Add(new wxButton(this, wxID_EXIT, wxT("E&xit")), flags);
 
   sizerTop->Add(sizerBtns, flags.Align(wxALIGN_CENTER_HORIZONTAL));
+  m_p_wxMessageTextCtrl = new wxTextCtrl(this, wxID_ANY, wxT(""), 
+    wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE );
+  m_p_wxMessageTextCtrl->SetEditable(false);
+  sizerTop->Add(
+    m_p_wxMessageTextCtrl,
+    /** "in the main orientation of the wxBoxSizer - where 0 stands for not changeable" */
+    0 //proportion
+    , wxEXPAND //int flag=0
+    , /*int border*/ 0);
+;
   SetSizerAndFit(sizerTop);
   Centre();
 
-  wxIcon okIcon = wxGetApp().ShowSMARTokIcon();
-  SetIcon(okIcon);
+//  wxIcon okIcon = wxGetApp().ShowSMARTokIcon();
+//  SetIcon(wxGetApp().s_SMARTokIcon);
 }
 
 SMARTdialog::~SMARTdialog()
@@ -244,14 +264,14 @@ void SMARTdialog::OnConnectToServer(wxCommandEvent& WXUNUSED(event))
   wxGetApp().ConnectToServer();
 }
 
-void SMARTdialog::SetState(enum SMARTmonitorClient::state newState)
+void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState newState)
 {
   switch(newState)
   {
     case SMARTmonitorClient::connectedToService :
     {
       const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
-        wxGetApp().m_stdstrServerAddress);
+        wxGetApp().m_stdstrServiceHostName);
       SetTitle( wxT("wxSMARTmonitor--data from ") + wxstrServiceAddress );
     }
       break;
@@ -270,6 +290,13 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::state newState)
     }
       break;
   }
+}
+
+void SMARTdialog::ShowText(/*const char * const*/ wxString & text)
+{
+  wxString wxstrText = wxNow() + wxT(" ") + //wxWidgets::GetwxString_Inline(text);
+    text;
+  m_p_wxMessageTextCtrl->SetValue(wxstrText);
 }
 
 void SMARTdialog::ReBuildUserInterface()
@@ -445,9 +472,4 @@ void SMARTdialog::ReadSMARTvaluesAndUpdateUI()
 
   ReBuildUserInterface();
 //  UpdateSMARTvaluesUI();
-}
-
-void SMARTdialog::OnTimer(wxTimerEvent& event)
-{
-//  ReadSMARTvaluesAndUpdateUI();
 }

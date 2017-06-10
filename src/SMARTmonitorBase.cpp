@@ -423,14 +423,17 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
             
 //    std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesSet = 
 //      p_SMARTmonitorBase->mp_SMARTaccess->GetSMARTuniqueIDandValues();
+    int res;
     do
     {
 //      int res = p_SMARTmonitorBase->UpdateSMARTvaluesThreadSafe();
 //      int res = ( (SMARTmonitorClient *) p_SMARTmonitorBase)->
 //        GetSMARTvaluesFromServer(sMARTuniqueIDandValuesSet);
-      int res = (*p_SMARTmonitorBase.*p_getSMARTvaluesFunction)();
+      res = (*p_SMARTmonitorBase.*p_getSMARTvaluesFunction)();
       if( res == 0 )
         p_SMARTmonitorBase->BeforeWait();
+      else
+        break;
 
       numberOfSecondsToWaitBetweenSMARTquery =
               numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
@@ -442,7 +445,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
       usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
     } while (SMARTmonitorBase::s_updateSMARTvalues);
 
-    p_SMARTmonitorBase->AfterGetSMARTvaluesLoop();
+    p_SMARTmonitorBase->AfterGetSMARTvaluesLoop(res);
   }
   return 0;
 }

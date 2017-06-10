@@ -97,7 +97,7 @@ public:
    *  (Only methods of this class can be used there, but becase the method
    *  is virtual it passes execution to the implementation in 
    *  SMARTmonitorClient.) */
-  virtual fastestUnsignedDataType GetSMARTvaluesFromServer() {}
+  virtual fastestUnsignedDataType GetSMARTattributeValuesFromServer() {}
   void ProcessCommandLineArgs();
   void HandleLogFileFolderProgramOption(std::wstring & cmdLineOptionValue);
   fastestUnsignedDataType InitializeSMART();
@@ -116,7 +116,7 @@ public:
     );
   fastestUnsignedDataType UpdateSMARTvaluesThreadSafe();
   virtual void BeforeWait() { }
-  virtual void AfterGetSMARTvaluesLoop() { }
+  virtual void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult) { }
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
     return s_numberOfMilliSecondsToWaitBetweenSMARTquery;
     }

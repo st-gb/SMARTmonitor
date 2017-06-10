@@ -14,7 +14,7 @@
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
 nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
-bool SMARTmonitorClient::s_atLeast1CriticalNonNullValue;
+bool SMARTmonitorClient::s_atLeast1CriticalNonNullValue = false;
 fastestUnsignedDataType SMARTmonitorClient::s_maxNumCharsNeededForDisplay [] =
  { 3, 30, 15, 20, 40};
 fastestUnsignedDataType SMARTmonitorClient::s_charPosOAttrNameBegin [] =
@@ -25,6 +25,7 @@ char * SMARTmonitorClient::s_columnAttriuteNames [] =
 GCC_DIAG_ON(write-strings)
 
 SMARTmonitorClient::SMARTmonitorClient() 
+  : m_serviceConnectionCountDownInSeconds(60)
 {
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
   /** Setting seconds to an invalid number (100) indicates that the time
@@ -58,21 +59,36 @@ void SMARTmonitorClient::EndUpdateUIthread()
     //m_p_wxCloseCondition->Wait();
     
     s_updateSMARTparameterValuesThread.WaitForTermination();
+    ChangeState(unconnectedFromService);
   }
 }
 
 void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 {
+  /** Before calling this function the connection should be established. */
+  //TODO possibly move this line to after successfull connection.
+  m_serverConnectionState = connectedToService;
   ChangeState(connectedToService);
   //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
   std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = mp_SMARTaccess->
     GetSMARTuniqueIDandValues();
-  /*const int res =*/ GetSupportedSMARTidsFromServer();
+  int result = GetSupportedSMARTidsFromServer();
+  if( result > 0 )
+  {
+    /** If not closing then the socket file descriptor number increases on 
+     *  next socket(...) call?! */
+    /** http://man7.org/linux/man-pages/man2/close.2.html :
+     * "close() returns zero on success." */
+    result = close(m_socketFileDesc);
+    //TODO use variable m_serviceConnectionCountDownInSeconds as parameter
+    StartServiceConnectionCountDown(60);
+    return;
+  }
   LOGN("SMART unique ID and values container:" << &sMARTuniqueIDandValues)
   /** Get # of attributes to in order build the user interface (write 
    *  attribute ID an name into the table--creating the UI needs to be done 
    *  only once because the attribute IDs received usually do not change).*/
-  const int getSMARTvaluesResult = GetSMARTvaluesFromServer(
+  const int getSMARTvaluesResult = GetSMARTattributeValuesFromServer(
     /*sMARTuniqueIDandValues*/);
   if (getSMARTvaluesResult == 0)
   {
@@ -80,15 +96,26 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 //      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
     ReBuildUserInterface();
     UpdateSMARTvaluesUI();
+    /** Show the state (SMART OK or warning) for the 1st time 
+     *  (in the user interface). E.g. show the icon and message belonging. 
+     *  Afterwards this method is only called if "s_atLeast1CriticalNonNullValue" changes.*/
     ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
     m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
-      & SMARTmonitorBase::GetSMARTvaluesFromServer;
+      & SMARTmonitorBase::GetSMARTattributeValuesFromServer;
     StartAsyncUpdateThread(
       //UpdateSMARTvaluesThreadSafe 
       m_getSMARTvaluesFunctionParams
       );
 //      ((SMARTmonitorBase *)this)->StartAsyncUpdateThread(SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
-  }  
+  }
+  else
+  {
+    /** If not closing then the socket file descriptor number increases on 
+     *  next socket(...) call?! */
+    close(m_socketFileDesc);
+    //TODO use variable m_serviceConnectionCountDownInSeconds as parameter
+    StartServiceConnectionCountDown(60);
+  }
 }
 
 /** Called e.g. when server address was given via program options/
@@ -150,15 +177,19 @@ void SMARTmonitorClient::HandleTransmissionError(
     case numBytesToReceive :
       stdoss << "ERROR reading the number of following bytes from socket";
       break;
+    case SMARTparameterValues :
+      stdoss << "ERROR reading SMART parameter values from socket";
+      break;
     case SMARTdata :
       stdoss << "ERROR reading SMART data from socket";
       break;
   }
   if( errorMessageForErrno )
-    stdoss << ":\n" << errorMessageForErrno;
+    stdoss << " for socket file descriptor #" << m_socketFileDesc << ":\n" << errorMessageForErrno;
   LOGN_ERROR(stdoss.str() );
   ShowMessage(stdoss.str().c_str());
   //TODO set connection status of the user interface to "network errors"/"unconnected"
+  m_serverConnectionState = connectedToService;
   ChangeState(unconnectedFromService);
   //TODO close socket, set status (also in UI) to unconnected
 }
