@@ -7,6 +7,8 @@
 #include <client/SMARTmonitorClient.h> //Base class SMARTmonitorClient
 //#include <libraries/ncurses/form/Form.hpp>
 #include <libraries/ncurses/menu/Menu.hpp>
+//#include <libraries/curses/MessageBox.hpp>
+#include "ConnectToServerDialog.hpp"
 
 /** Forward declaration.*/
 struct _win_st;
@@ -16,14 +18,16 @@ class NcursesUI
   : public SMARTmonitorClient
 {
 public:
-  NcursesUI() {}
+  NcursesUI() : s_connectionStatusWindow(/*1, 2*/) {}
   NcursesUI(const int argumentCount, char * argumentVector [] );
-  NcursesUI(const NcursesUI& orig);
+//  NcursesUI(const NcursesUI& orig);
   virtual ~NcursesUI();
   
+  ConnectToServerDialog s_connectionStatusWindow;
   typedef std::map<fastestUnsignedDataType, fastestUnsignedDataType> attrID2Line_type;
   static NcursesUI * s_p_NcursesUI;
   void BeforeWait();// { }
+  void BeforeConnectToServer();
   static void CreateUI();
   void CreateCommandLineArgsArrays(const int argumentCount, char * argumentVector []);
   void Init();
@@ -32,6 +36,7 @@ public:
   static struct _win_st * s_menuBar, * s_bodyWindow, * s_statusBar;
   void ReBuildUserInterface();
   void AfterConnectToServer(int connectResult);
+  void ChangeState(enum serverConnectionState newState);
   
 //  void UpdateSMARTvaluesUI();
   void LayoutUserInterface();
@@ -43,7 +48,6 @@ private:
   attrID2Line_type attributeID2LineMapping;
   static Curses::Menu s_mainMenu, s_programMenu, s_serverMenu;
 //  static Ncurses::Form s_connToSrvForm;
-  void ChangeState(enum serverConnectionState newState);
   static void CreateMenus();
   static void ConnectToServer();
   static void Exit();

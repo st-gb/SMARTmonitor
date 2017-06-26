@@ -36,6 +36,7 @@ extern Curses::EventQueue g_eventQueue;
 
 NcursesUI::NcursesUI(const int argumentCount, char * argumentVector [] )
   : SMARTmonitorClient() //Call base class constructor.
+  , s_connectionStatusWindow(/*1,2*/)
   , m_lastLineNumber(0)
 //    m_cmdLineArgStrings(argumentVector)
 {
@@ -45,8 +46,8 @@ NcursesUI::NcursesUI(const int argumentCount, char * argumentVector [] )
   CreateUI();
 }
 
-NcursesUI::NcursesUI(const NcursesUI& orig) {
-}
+//NcursesUI::NcursesUI(const NcursesUI& orig) {
+//}
 
 NcursesUI::~NcursesUI() {
   endwin(); /** End curses mode. */
@@ -214,6 +215,13 @@ void NcursesUI::Init()
   }
 }
 
+void NcursesUI::BeforeConnectToServer()
+{
+//  Curses::MessageBox messageBox(BODY_WINDOW_COLOR, BUTTON_COLOR);
+  s_connectionStatusWindow.SetSocketFileDescriptor(m_socketFileDesc);
+  s_connectionStatusWindow.EventLoop();
+}
+
 void NcursesUI::LayoutUserInterface()
 {
   wresize(s_menuBar, NUM_MENU_BAR_LINES, COLS);
@@ -308,12 +316,15 @@ void NcursesUI::SetSMARTdriveID()
 
 void NcursesUI::ShowMessage(const char * const message) const
 {
-  if( OperatingSystem::GetCurrentThreadNumber() == s_GUIthreadID )
+  //TODO: 
+  DWORD currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
+  const bool currentThreadIsUIthread = currentThreadNumber == s_GUIthreadID;
+  if( currentThreadIsUIthread )
   {
     Curses::MessageBox messageBox(BODY_WINDOW_COLOR, BUTTON_COLOR);
     messageBox.ShowMessage(message, s_bodyWindow);
   }
-  else//if the thread is another than the GUI thread then 
+//  else//if the thread is another than the GUI thread then 
   {
     //TODO
 //    MessageEvent(message);
@@ -321,10 +332,17 @@ void NcursesUI::ShowMessage(const char * const message) const
   }
 }
 
+void SuccessfullyConnectedToServer()
+{
+  NcursesUI::s_p_NcursesUI->ChangeState(SMARTmonitorClient::connectedToService);
+  NcursesUI::s_p_NcursesUI->GetSMARTvaluesAndUpdateUI();
+}
+
 void NcursesUI::AfterConnectToServer(int connectResult)
 {
+  s_connectionStatusWindow.Close();
   if( connectResult == 0 )
-    ;
+    g_eventQueue.addEvent(SuccessfullyConnectedToServer);
 }
 
 void UpdateConnTimeout()
@@ -337,14 +355,18 @@ void UpdateConnTimeout()
 
 void NcursesUI::ShowConnectionState(const char * const pch, int timeOutInS)
 {
+  std::ostringstream oss;
+  oss << "connecting to \"" << pch << "\",timeout in ca." << timeOutInS << "s";
+//  if( ! s_connectionStatusWindow.IsShown() )
+    s_connectionStatusWindow.ShowMessage(oss.str().c_str(), s_bodyWindow);
   //TODO make interruptable by user (e.g. via "cancel" button)
 //  while(timeOutInS --)
 //  {
 //    sleep(1);
     //g_eventQueue.addEvent( UpdateConnTimeout );
-    mvwprintw(NcursesUI::s_statusBar, 0, 0, 
-      "connecting to \"%s\", timeout in ca. %us", pch, timeOutInS);
-    wrefresh(NcursesUI::s_statusBar);
+    
+//  mvwaddstr(NcursesUI::s_statusBar, 0, 0, oss.str().c_str() );
+//  wrefresh(NcursesUI::s_statusBar);
 //  }
     //  std::ostringstream oss;
     //  oss << "connecting to " << pch << " , timeout:" << timeOut << "seconds";

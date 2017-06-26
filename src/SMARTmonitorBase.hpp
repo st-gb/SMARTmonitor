@@ -1,15 +1,6 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   SMARTmonitorBase.hpp
+/* File:   SMARTmonitorBase.hpp
  * Author: sg
- *
- * Created on 17. November 2016, 13:05
- */
+ * Created on 17. November 2016, 13:05 */
 
 #ifndef SMARTMONITORBASE_HPP
 #define SMARTMONITORBASE_HPP
@@ -21,12 +12,7 @@
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <set> //class std::set
-
-struct CommandLineOption
-{
-  const char * optionName;
-  const char * possibleOptionValue;
-};
+#include <Process/CommandLineOption.hpp>
 
 /** Forward declarations: */
 class ConfigurationLoaderBase;
@@ -122,7 +108,7 @@ public:
     }
   
   static fastestSignedDataType s_updateSMARTvalues;
-  static CommandLineOption s_commandLineOptions [] ;
+  static CommandLineOption/*<char>*/ s_commandLineOptions [] ;
   /*DWORD*/ uint64_t m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
 //  long int m_arSMART_ID[255]; //provide space for up t 255 SMART attribute values
   long int m_arTickCountOfLastQueryInMilliSeconds[255];

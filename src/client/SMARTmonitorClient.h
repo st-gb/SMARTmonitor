@@ -46,6 +46,8 @@ public:
   fastestUnsignedDataType m_serverConnectionState;
   
   void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult);
+  /** E.g. show a dialog that enables cancelling of connection in implementation. */
+  virtual void BeforeConnectToServer() = 0;
   virtual void GetTextFromUser(const char * label, std::string & ) { };
   virtual void AfterConnectToServer(int connectResult) { };
   void HandleConnectionError(const char * hostName);

@@ -188,17 +188,23 @@ int ConnectToSocketNonBlocking(
   {
     if (errno == EINPROGRESS) /** For non-blocking sockets */
     {
-      fd_set wfd;
-      FD_ZERO(&wfd);
-      FD_SET(socketFileDescriptor, &wfd);
+//      fd_set wfd;
+      fd_set readFileDescriptorSet;
+      FD_ZERO(&readFileDescriptorSet);
+      FD_SET(socketFileDescriptor, &readFileDescriptorSet);
 
-      struct timeval timeout;
-      timeout.tv_sec = connectTimeoutInSeconds;
-      timeout.tv_usec = 0;
+      struct timeval socketConnectTimeout;
+      socketConnectTimeout.tv_sec = connectTimeoutInSeconds;
+      socketConnectTimeout.tv_usec = 0;
 
-      result = select(socketFileDescriptor + 1, NULL, &wfd, NULL, &timeout);
+      /** https://linux.die.net/man/2/select : 
+        * "waiting until one or more of the file descriptors become
+          "ready" for some class of I/O operation (e.g., input possible)."  */
+      result = select(socketFileDescriptor + 1, & readFileDescriptorSet, NULL, NULL, &socketConnectTimeout);
+//      int errorNumber = errno;
       if (result > 0) /** connected */
       {
+//        FD_ISSET()
         //http://pubs.opengroup.org/onlinepubs/7908799/xns/getsockopt.html
         // "This option stores an int value."
         int iSO_ERROR;
@@ -266,6 +272,8 @@ DWORD SocketConnectThreadFunc(void * p_v)
     {
 //      HandleConnectionError(hostName);
 //      return errorConnectingToService;
+      /**Close the socket here because so it is done for all user interfaces.*/
+      close(p_socketConnectThreadFuncParams->socketFileDesc);
     }
     else if( connectResult == 0)
     {
@@ -341,6 +349,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
       SocketConnectThreadFuncParams {m_socketFileDesc, serv_addr, this, connectTimeoutInSeconds };
     /** call in another thread in order to enable breaking connection */
     connectThread.start(SocketConnectThreadFunc, p_socketConnectThreadFuncParams);
+    BeforeConnectToServer();
   }
   else
     return ConnectToSocketNonBlocking(

@@ -175,6 +175,7 @@ if( ${EXE_TYPE} STREQUAL "ncursesClient" )
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
     ${PROJECT_SOURCE_DIR}/curses/NcursesUI.cpp
+    ${PROJECT_SOURCE_DIR}/curses/ConnectToServerDialog.cpp
     ${PROJECT_SOURCE_DIR}/curses/MainWindow.cpp
     ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/color.c
     ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/EventQueue.cpp
