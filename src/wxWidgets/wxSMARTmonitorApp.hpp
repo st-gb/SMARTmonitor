@@ -33,6 +33,7 @@ class wxSMARTmonitorApp
 public:
   enum IDs {TIMER_ID = 0};
   static wxIcon s_SMARTokIcon;
+  static wxIcon s_SMARTstatusUnknownIcon;
   static wxIcon s_SMARTwarningIcon;
   //SMARTaccess_type & m_SMARTaccess;
   //static const wxString appName;
@@ -44,6 +45,7 @@ public:
 
   std::set<wxTopLevelWindow *> openTopLevelWindows;
   void AfterConnectToServer(int connectResult);
+  void BeforeConnectToServer() {};
   void BeforeWait();
   void ChangeState(enum serverConnectionState newState);
   void CreateCommandLineArgsArrays();
@@ -54,6 +56,7 @@ public:
 //  int OnRun();
   bool GetIcon(wxIcon & icon, wxString iconFileName, char * inMemoryIcon [] );
   bool GetSMARTokayIcon(wxIcon & icon);
+  bool GetSMARTstatusUnknownIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
   void SetAttribute(
     const SMARTuniqueID &, 
@@ -63,6 +66,7 @@ public:
   void ShowConnectionState(const char * const pch, int timeOut);
   void ShowMessage(const char * const ) const;
   wxIcon ShowSMARTokIcon();
+  wxIcon ShowSMARTstatusUnknownIcon();
   wxIcon ShowSMARTwarningIcon();
   void ShowIcon(const wxIcon & icon, const wxString & message );
   void ShowStateAccordingToSMARTvalues(bool b);

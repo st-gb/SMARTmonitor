@@ -6,7 +6,7 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <Controller/character_string/stdtstr.hpp> //GetStdWstring(...)
 #include <FileSystem/File/GetAbsoluteFilePath.hpp> // GetAbsoluteFilePath(...)
-#include <FileSystem/path_seperator.hpp>
+#include <FileSystem/path_seperator.h> //PATH_SEPERATOR_CHAR_STRING
 #include <Controller/Logger/LogFileAccessException.hpp>
 #include <SMARTaccessBase.hpp> //class SMARTaccessBase
 #include <tinyxml2/ConfigLoader.hpp> //class tinyxml2::ConfigLoader

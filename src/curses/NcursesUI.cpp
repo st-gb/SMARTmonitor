@@ -20,6 +20,12 @@
 #define STATUS_BAR_COLOR  3
 #define SMART_ATTRIBUTE_COLOR 1
 #define ATTR_INVERTED_COLOR   2
+#define GREEN_ON_BLACK 7
+#define BLACK_ON_GREEN 8
+#define RED_ON_BLACK 9
+#define SMART_VALUE_OK GREEN_ON_BLACK
+#define SMART_VALUE_OK_INVERTED BLACK_ON_GREEN
+#define SMART_VALUE_WARNING RED_ON_BLACK
 //#define A_ATTR  (A_ATTRIBUTES ^ A_COLOR)  /* A_BLINK, A_REVERSE, A_BOLD */
 
 /** Definitions of static variables. */
@@ -134,6 +140,9 @@ void NcursesUI::ConnectToServer()
   init_pair(EDITBOXCOLOR & ~A_ATTR, COLOR_WHITE, COLOR_BLACK);
   init_pair(SMART_ATTRIBUTE_COLOR & ~A_ATTR, COLOR_WHITE, COLOR_BLACK);
   init_pair(ATTR_INVERTED_COLOR & ~A_ATTR, COLOR_BLACK, COLOR_WHITE);
+  init_pair(SMART_VALUE_OK & ~A_ATTR, COLOR_RED, COLOR_WHITE);
+  init_pair(GREEN_ON_BLACK & ~A_ATTR, COLOR_GREEN, COLOR_BLACK);
+  init_pair(BLACK_ON_GREEN & ~A_ATTR, COLOR_BLACK, COLOR_GREEN);
   init_pair(BUTTON_COLOR & ~A_ATTR, COLOR_WHITE, COLOR_RED);
 #endif
 }
@@ -260,16 +269,36 @@ void NcursesUI::SetAttribute(
   const SMARTuniqueID & sMARTuniqueID, 
   fastestUnsignedDataType SMARTattributeID,
   const enum ColumnIndices::columnIndices & columnIndex,
-  const std::string & std_strValue)
+  const std::string & std_strValue,
+  enum SMARTvalueRating sMARTvalueRating)
 {
   attrID2Line_type::const_iterator iter = attributeID2LineMapping.find(
     SMARTattributeID);
   unsigned lineNumber;
-  /** Alternate (inverted/complementary) colours for better readability: 
-   *  So the value for the next column can be displayed directly near/right of
-   *  the current value. */
-  setcolor( s_bodyWindow, columnIndex % 2 == 0 ? SMART_ATTRIBUTE_COLOR : 
-    ATTR_INVERTED_COLOR);
+  switch( sMARTvalueRating )
+  {
+    case noCriticalValue :
+      /** Alternate (inverted/complementary) colours for better readability: 
+       *  So the value for the next column can be displayed directly near/right of
+       *  the current value. */
+      setcolor( s_bodyWindow, columnIndex % 2 == 0 ? SMART_ATTRIBUTE_COLOR : 
+        ATTR_INVERTED_COLOR);
+      break;
+    case SMARTvalueOK :
+      /** Alternate (inverted/complementary) colours for better readability: 
+       *  So the value for the next column can be displayed directly near/right of
+       *  the current value. */
+      setcolor( s_bodyWindow, columnIndex % 2 == 0 ? SMART_VALUE_OK : 
+        SMART_VALUE_OK_INVERTED);
+      break;
+    case SMARTvalueWarning:
+      /** Alternate (inverted/complementary) colours for better readability: 
+       *  So the value for the next column can be displayed directly near/right of
+       *  the current value. */
+      setcolor( s_bodyWindow, columnIndex % 2 == 0 ? SMART_ATTRIBUTE_COLOR : 
+        ATTR_INVERTED_COLOR);
+      break;
+  }
   const int maxx = getmaxx(s_bodyWindow);
   if( iter != attributeID2LineMapping.end() ) /** mapping exists/found */
   {

@@ -39,7 +39,7 @@ DEFINE_LOCAL_EVENT_TYPE(UpdateSMARTparameterValuesInGUIEventType)
 
 //wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
-    EVT_TIMER(TIMER_ID, SMARTdialog::OnTimer)
+//    EVT_TIMER(TIMER_ID, SMARTdialog::OnTimer)
     EVT_BUTTON(wxID_ABOUT, SMARTdialog::OnAbout)
     EVT_BUTTON(wxID_OK, SMARTdialog::OnOK)
     EVT_BUTTON(wxID_EXIT, SMARTdialog::OnExit)
@@ -98,9 +98,11 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
   return 0;
 }
 
-void SMARTdialog::SetStatus(wxString status)
+void SMARTdialog::SetStatus(const wxString & status)
 {
-  SetTitle(wxGetApp().GetAppDisplayName() + wxT("-") + status);
+  /** Create title as local variable for easier debugging. */
+  wxString title = wxGetApp().GetAppDisplayName() + wxT("-") + status;
+  SetTitle(title);
 }
 
 void SMARTdialog::EnableServerInteractingControls(int n)
@@ -296,6 +298,7 @@ void SMARTdialog::ShowText(/*const char * const*/ wxString & text)
 {
   wxString wxstrText = wxNow() + wxT(" ") + //wxWidgets::GetwxString_Inline(text);
     text;
+  //TODO make the message fit (vertically) into the window
   m_p_wxMessageTextCtrl->SetValue(wxstrText);
 }
 

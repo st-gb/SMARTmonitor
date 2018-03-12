@@ -26,8 +26,22 @@ static SMARTmonitorService/*<char>*/ * gp_SMARTmonitor;//(argc, argv);
 
 static void End(const char * const signalName)
 {
-  LOGN("received " << signalName << "signal")
-  gp_SMARTmonitor->EndUpdateSMARTvaluesThread();
+  LOGN("received " << signalName << " signal")
+  //TODO fails to shutdown service:
+//2017-03-14 19:52:01,265 INFO [Thread-16645] :: End received interruptsignal
+//2017-03-14 19:52:01,265 INFO [Thread-16645] SMARTmonitorService EndUpdateSMARTvaluesThread ending get SMART values loop
+//2017-03-14 19:52:01,284 INFO [Thread-16648] SMARTmonitorService AfterGetSMARTvaluesLoop closing server socket file descr.4
+//2017-03-14 19:52:01,284 INFO [Thread-16648] SMARTmonitorService AfterGetSMARTvaluesLoop successfully shut down server socket
+//2017-03-14 19:52:01,284 INFO [Thread-16648] SMARTmonitorService AfterGetSMARTvaluesLoop locking mutex for signalling
+//2017-03-14 19:52:01,284 INFO [Thread-16648] SMARTmonitorService AfterGetSMARTvaluesLoop signalling the main thread to end
+//2017-03-14 19:52:01,284 INFO [Thread-16648] SMARTmonitorService AfterGetSMARTvaluesLoop pthread signal succeeded
+//2017-03-14 19:52:01,284 INFO [Thread-16648] SMARTmonitorService AfterGetSMARTvaluesLoop Unlocking mutex for signalling
+//2017-03-14 19:52:01,284 INFO [Thread-16648] SMARTmonitorService AfterGetSMARTvaluesLoop end
+//2017-03-14 19:52:01,285 ERROR [Thread-16645] SMARTmonitorService ClientConnThreadFunc Failed to accept client
+//2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService ClientConnThreadFunc after "wait for socket connection" loop
+//2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService ClientConnThreadFunc end
+//2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService WaitForSignal locking signal mutex
+//2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService WaitForSignal Waiting for signal  gp_SMARTmonitor->EndUpdateSMARTvaluesThread();
 }
 
 static void signal_handler(int signum)

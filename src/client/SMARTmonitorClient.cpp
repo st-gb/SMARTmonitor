@@ -123,6 +123,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
 {
   bool asyncConnectToService = true;
+//  BeforeConnectToServer();
   const fastestUnsignedDataType connectToServerResult = ConnectToServer(
     m_stdstrServiceHostName.c_str(), asyncConnectToService );
   if ( ! asyncConnectToService )
@@ -148,6 +149,7 @@ void SMARTmonitorClient::ConnectToServer() {
   GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
 
   SetServiceAddress(m_stdstrServerAddress);
+//  BeforeConnectToServer();
   ConnectToServerAndGetSMARTvalues();
 }
 
@@ -255,7 +257,8 @@ void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
       sMARTuniqueID,
       SMARTattributeID,
       ColumnIndices::SMART_ID,
-      std_oss.str()
+      std_oss.str(),
+      noCriticalValue
       );
     
     /** Now get the attribute name belonging to SMART ID */
@@ -271,7 +274,8 @@ void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
         sMARTuniqueID,
         SMARTattributeID,
         ColumnIndices::SMARTparameterName,
-        SMARTattributeFromConfig.GetName()
+        SMARTattributeFromConfig.GetName(),
+        noCriticalValue
         );
 //      wxSMARTattribName = wxWidgets::GetwxString_Inline(
 //        SMARTattributeFromConfig.GetName() );
@@ -302,7 +306,8 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
     SMARTattributeID,
     ColumnIndices::lastUpdate /** column #/ index */,
     //wxString::Format(wxT("%u ms ago"), numberOfMilliSecondsPassedSinceLastSMARTquery )
-    timeFormatString
+    timeFormatString,
+    noCriticalValue
     );
 }
 
@@ -323,6 +328,8 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
   std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
     SMARTuniqueIDsAndValues.begin();
   fastestUnsignedDataType SMARTattributeID;
+  enum SMARTvalueRating sMARTvalueRating;
+//  const numSMARTattributeIDbits = sizeof(SMARTattributeID) * 8;
   uint64_t SMARTrawValue;
   const std::set<int> & IDsOfSMARTattributesToObserve =
     m_IDsOfSMARTattributesToObserve;
@@ -374,16 +381,36 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
 //          stdstrHumanReadableRawValue);
         std::ostringstream std_oss;
          std_oss << SMARTrawValue;
+        bool critical = SMARTattributesFromConfigFileIter->IsCritical();
+        LOGN_DEBUG("attribute ID " << SMARTattributesFromConfigFileIter->
+          GetAttributeID() << " is critical?:" << critical
+          //(critical==true ? "yes" : "no") 
+          )
+        //TODO pass warning or OK fpr critical SMART IDs to function
+        //e.g. use highmost bits of SMARTattributeID for that purpose
+        if(critical)
+        {
+          //std::numeric_limits<>::min();
+//          SMARTattributeID &= 2 << (numSMARTattributeIDbits - 1)
+          if( SMARTrawValue == 0)
+            sMARTvalueRating = SMARTvalueOK;
+          else
+            sMARTvalueRating = SMARTvalueWarning;
+        }
+        else
+          sMARTvalueRating = noCriticalValue;
         SetAttribute(
           sMARTuniqueID,
           SMARTattributeID,
           ColumnIndices::rawValue /** column #/ index */,
-          std_oss.str() );
+          std_oss.str(),
+          sMARTvalueRating);
         SetAttribute(
           sMARTuniqueID,
           SMARTattributeID,
           ColumnIndices::humanReadableRawValue, 
-          stdstrHumanReadableRawValue);
+          stdstrHumanReadableRawValue,
+          sMARTvalueRating);
                 
         /** https://cboard.cprogramming.com/c-programming/115586-64-bit-integers-printf.html
         *   : "%llu": Linux %llu, "%I64u": Windows */
@@ -395,11 +422,6 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
 //          return DoFormatWchar ( f1 , wxArgNormalizerWchar < T1 > ( a1 , fmt , 1 ) . get ( ) ) ;
 //        }
 //          wxString::Format( wxT("%llu"), SMARTrawValue)
-        bool critical = SMARTattributesFromConfigFileIter->IsCritical();
-        LOGN_DEBUG("attribute ID " << SMARTattributesFromConfigFileIter->
-          GetAttributeID() << " is critical?:" << critical
-          //(critical==true ? "yes" : "no") 
-          )
 //        if( critical && SMARTrawValue > 0)
 //        {
 //          atLeast1CriticalNonNullValue = true;

@@ -71,6 +71,15 @@ set( CXX_DEFINITIONS
   -DUNICODE
 )
 
+message( "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}" )
+if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  set( CXX_DEFINITIONS
+    ${CXX_DEFINITIONS}
+    -D_DEBUG
+    )
+endif()
+message( "CXX_DEFINITIONS: ${CXX_DEFINITIONS}" )
+
 #add_subdirectory(./libConfig
 #  #EXCLUDE_FROM_ALL
 #  )

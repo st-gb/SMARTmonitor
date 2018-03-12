@@ -40,6 +40,7 @@ public:
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
   enum ConnectToServerResult{ connectionToServiceSucceeded = 0, 
     errorOpeningSocket, getHostByNameFailed, errorConnectingToService };
+  enum SMARTvalueRating {noCriticalValue, SMARTvalueOK, SMARTvalueWarning };
   
   int m_socketFileDesc;
   fastestUnsignedDataType m_serviceConnectionCountDownInSeconds;
@@ -101,7 +102,8 @@ public:
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
-    const std::string &) {}
+    const std::string &,
+    const enum SMARTvalueRating) {}
   virtual void ShowStateAccordingToSMARTvalues(bool ) { }
   std::string m_stdstrServerAddress;
 protected:

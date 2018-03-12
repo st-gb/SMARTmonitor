@@ -3,10 +3,14 @@
  * Created on 6. Juni 2017, 18:22 */
 
 #include "ConnectToServerDialog.hpp"
+#include "wxSMARTmonitorApp.hpp"
 #include <wx/sizer.h> //class wxBoxSizer
 #include <wx/stattext.h> //class wxStaticText
 #include <wx/button.h> //class wxButton
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+
+#include "wxSMARTmonitorDialog.hpp"
+extern SMARTdialog * gs_dialog;
 
 BEGIN_EVENT_TABLE(ConnectToServerDialog, wxDialog)
   EVT_TIMER(TIMER_ID, ConnectToServerDialog::OnTimer)
@@ -24,7 +28,8 @@ ConnectToServerDialog::ConnectToServerDialog(
   const fastestUnsignedDataType servicePortNumber,
   const fastestUnsignedDataType timeOutInSeconds,
   const int connectToServerSocketFileDescriptor)
-  : wxDialog(NULL, wxID_ANY, wxT("") //, 
+  : wxDialog(/*NULL*/ gs_dialog, 
+        wxID_ANY, wxT("") //, 
 //      wxDefaultPosition, //wxDefaultSize,
 //      wxSize(400,400),
 //      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER

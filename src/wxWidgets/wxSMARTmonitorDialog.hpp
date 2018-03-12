@@ -43,7 +43,7 @@ public:
     const SMARTvalueProcessorBase & SMARTvalueProcessor);
   virtual ~SMARTdialog();
   
-  void SetStatus(wxString );
+  void SetStatus(const wxString &);
   void StartAsyncUpdateThread();
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();
   void UpdateSMARTvaluesUI();

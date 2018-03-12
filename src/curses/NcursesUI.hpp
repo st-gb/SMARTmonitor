@@ -57,7 +57,8 @@ private:
     const SMARTuniqueID &, 
     fastestUnsignedDataType SMARTattributeID,
     const enum ColumnIndices::columnIndices &,
-    const std::string &);
+    const std::string &,
+    enum SMARTvalueRating);
   void ShowMessage(const char * const msg) const;
   void ShowConnectionState(const char * const pch, int timeOut);
   static void ShowProgramMenu();

@@ -30,6 +30,7 @@
  *  to ‘char*’" when including the "xpm" file */
 GCC_DIAG_OFF(write-strings)
 #include "../S.M.A.R.T._OK.xpm"
+#include "../S.M.A.R.T._unknown.xpm"
 #include "../S.M.A.R.T._warning.xpm"
 GCC_DIAG_ON(write-strings)
 
@@ -48,6 +49,7 @@ GCC_DIAG_ON(write-strings)
 /** definitions of static class members. */
 fastestUnsignedDataType wxSMARTmonitorApp::s_GUIthreadID;
 wxIcon wxSMARTmonitorApp::s_SMARTokIcon;
+wxIcon wxSMARTmonitorApp::s_SMARTstatusUnknownIcon;
 wxIcon wxSMARTmonitorApp::s_SMARTwarningIcon;
 
 //from https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case
@@ -240,10 +242,13 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
   if( m_serviceConnectionCountDownInSeconds --)
   {
     wxString wxstrServiceHostName = m_stdstrServiceHostName;
-    gs_dialog->SetStatus( wxString::Format(wxT("connection attempt to %s, port %u in %u seconds"),
+    /** Create title as local variable for easier debugging. */
+    wxString status = wxString::Format(
+      wxT("connection attempt to %s, port %u in %u seconds"),
       wxstrServiceHostName.c_str(), 
       m_socketPortNumber, 
-      m_serviceConnectionCountDownInSeconds ));
+      m_serviceConnectionCountDownInSeconds);
+    gs_dialog->SetStatus(status);
   }
   else
   {
@@ -266,6 +271,7 @@ bool wxSMARTmonitorApp::OnInit()
     m_SMARTvalueProcessor);
   gs_dialog->Show(true);
   GetSMARTokayIcon(s_SMARTokIcon);
+  GetSMARTstatusUnknownIcon(s_SMARTstatusUnknownIcon);
   GetSMARTwarningIcon(s_SMARTwarningIcon);  
 
   ProcessCommandLineArgs(); /** May display messages. */
@@ -291,12 +297,13 @@ bool wxSMARTmonitorApp::OnInit()
     mp_configurationLoader->ReadServiceConnectionSettings(
       stdwstrServiceConnectionConfigFile );
 
-    ShowSMARTokIcon();
+//    ShowSMARTokIcon();
+    ShowSMARTstatusUnknownIcon();
     //TODO execute after OnInit(): else no dialog is shown?
     if( ! stdwstrServiceConnectionConfigFile.empty() )
     {
-      m_wxtimer.StartOnce(1000);
-//      ConnectToServerAndGetSMARTvalues();
+//      m_wxtimer.StartOnce(1000);
+      ConnectToServerAndGetSMARTvalues();
     }
     else 
       if( initSMARTresult == SMARTaccessBase::success)
@@ -360,6 +367,11 @@ bool wxSMARTmonitorApp::GetSMARTokayIcon(wxIcon & icon)
   return GetIcon(icon, wxT("S.M.A.R.T._OK."), S_M_A_R_T__OK_xpm);
 }
 
+bool wxSMARTmonitorApp::GetSMARTstatusUnknownIcon(wxIcon & icon)
+{
+  return GetIcon(icon, wxT("S.M.A.R.T._unknown."), S_M_A_R_T__unknown_xpm);
+}
+
 //TODO better call this function only once at startup?!
 bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 {
@@ -385,9 +397,16 @@ void wxSMARTmonitorApp::SetAttribute(
 void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress, 
   int connectTimeOutInSeconds)
 {
+#ifdef _DEBUG
+  int currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
+  if( currentThreadNumber = s_GUIthreadID )
+    ;
+#endif
   m_pConnectToServerDialog = new ConnectToServerDialog(
     pchServerAddress, m_socketPortNumber, connectTimeOutInSeconds, m_socketFileDesc);
+  //TODO dialog appears in foreground
   m_pConnectToServerDialog->Show();
+//  m_pConnectToServerDialog->ShowWindowModal();
   /** Ensures "connect" can't be pressed a second time */
 //  m_pConnectToServerDialog->ShowModal();
 }
@@ -438,13 +457,19 @@ void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 
 wxIcon wxSMARTmonitorApp::ShowSMARTokIcon()
 {
-  ShowIcon(s_SMARTokIcon, wxT("raw value for all critical SMART parameters is 0") );
+  ShowIcon(s_SMARTokIcon, wxT("raw value for all critical S.M.A.R.T. parameters is 0") );
   return s_SMARTokIcon;
+}
+
+wxIcon wxSMARTmonitorApp::ShowSMARTstatusUnknownIcon()
+{
+  ShowIcon(s_SMARTstatusUnknownIcon, wxT("unknown S.M.A.R.T. status") );
+  return s_SMARTstatusUnknownIcon;
 }
 
 wxIcon wxSMARTmonitorApp::ShowSMARTwarningIcon()
 {
-  ShowIcon(s_SMARTwarningIcon, wxT("raw value for at least 1 critical SMART "
+  ShowIcon(s_SMARTwarningIcon, wxT("raw value for at least 1 critical S.M.A.R.T. "
     "parameter is > 0") );
   return s_SMARTwarningIcon;
 }
