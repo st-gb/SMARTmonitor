@@ -1,0 +1,8 @@
+<options>
+<networkConnection
+  portNumber="1000"
+  serviceHostName="localhost"
+  retryWaitTimeInS="300"
+/>
+</options>
+

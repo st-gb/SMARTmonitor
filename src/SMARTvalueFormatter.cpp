@@ -87,8 +87,10 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
   fastestUnsignedDataType SMARTattributeID,
   const uint64_t & SMARTrawValue)
 {
-  switch (SMARTattributeID) {
+  switch (SMARTattributeID)
+  {
     case SMARTattributeNames::PowerOnTime :
+    case SMARTattributeNames::HeadFlyingHours :
       return OutputPowerOnTimeAssumingMilliS(SMARTrawValue);
     case SMARTattributeNames::TemperatureInMilliKelvin :
       return OutputTemperatureInCelsius(SMARTrawValue);

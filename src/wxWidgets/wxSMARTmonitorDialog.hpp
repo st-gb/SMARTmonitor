@@ -54,7 +54,9 @@ public:
   void EnableServerInteractingControls(int );
   void InformAboutTerminationOfUpdateThread();
   void ShowText(/*const char * const*/ wxString & );
-
+  void ShowMessage(
+    wxString & text, 
+    enum UserInterface::MessageType::messageTypes msgType);
 protected:
   void OnAbout(wxCommandEvent& event);
   void OnOK(wxCommandEvent& event);

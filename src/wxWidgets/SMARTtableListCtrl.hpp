@@ -6,6 +6,9 @@
 
 #include <wx/listctrl.h> //Base class wxListCtrl
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
+#include <client/SMARTmonitorClient.h>//enum SMARTmonitorClient::SMARTvalueRating
+
+//enum SMARTmonitorClient::SMARTvalueRating;
 
 namespace wxWidgets
 {
@@ -31,7 +34,8 @@ namespace wxWidgets
     void SetSMARTattribValue(
       fastestUnsignedDataType SMARTattributeID,
       fastestUnsignedDataType columnIndex,
-      const wxString & wxstrValue);
+      const wxString & wxstrValue,
+      const enum SMARTmonitorClient::SMARTvalueRating);
     virtual
     ~SMARTtableListCtrl();
   };

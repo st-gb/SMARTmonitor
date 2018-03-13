@@ -60,11 +60,14 @@ public:
   bool GetSMARTwarningIcon(wxIcon & icon);
   void SetAttribute(
     const SMARTuniqueID &, 
-    fastestUnsignedDataType SMARTattributeID,
-    const enum ColumnIndices::columnIndices &,
-    const std::string &);
+    fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
+    //TODO exchange enum with fastestUnsignedDataType for performance?
+    const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
+    const std::string &,
+    const enum SMARTvalueRating);
   void ShowConnectionState(const char * const pch, int timeOut);
   void ShowMessage(const char * const ) const;
+  void ShowMessage(const char * const, enum MessageType::messageTypes msg) const;
   wxIcon ShowSMARTokIcon();
   wxIcon ShowSMARTstatusUnknownIcon();
   wxIcon ShowSMARTwarningIcon();

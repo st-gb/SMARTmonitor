@@ -90,6 +90,9 @@ public:
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
   virtual void ShowMessage(const char * const msg) const;
+  /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
+   *  subclass?! */
+  virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const = 0;
   SMARTaccess_type * mp_SMARTaccess;
   SMARTvalueProcessorBase m_SMARTvalueProcessor;
   void SetCommandLineArgs(int argc, char ** argv);

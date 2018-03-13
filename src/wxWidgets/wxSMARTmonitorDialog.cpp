@@ -302,6 +302,31 @@ void SMARTdialog::ShowText(/*const char * const*/ wxString & text)
   m_p_wxMessageTextCtrl->SetValue(wxstrText);
 }
 
+void SMARTdialog::ShowMessage(
+  wxString & text, 
+  enum UserInterface::MessageType::messageTypes msgType)
+{
+  wxString wxstrText = wxNow() + wxT(" ") + //wxWidgets::GetwxString_Inline(text);
+    text;
+  //TODO make the message fit (vertically) into the window
+  switch(msgType)
+  {
+    case UserInterface::MessageType::error:
+      m_p_wxMessageTextCtrl->SetBackgroundColour(*wxRED);
+      break;
+    case UserInterface::MessageType::warning:
+      m_p_wxMessageTextCtrl->SetBackgroundColour(*wxYELLOW);
+      break;
+    case UserInterface::MessageType::success:
+      m_p_wxMessageTextCtrl->SetBackgroundColour(*wxGREEN);
+      break;
+    default:
+      m_p_wxMessageTextCtrl->SetBackgroundColour(*wxWHITE);
+      break;
+  }
+  m_p_wxMessageTextCtrl->SetValue(wxstrText);  
+}
+/** Rebuilds the lines for SMART IDs and parameter names. */
 void SMARTdialog::ReBuildUserInterface()
 {
   SetSMARTdriveID();

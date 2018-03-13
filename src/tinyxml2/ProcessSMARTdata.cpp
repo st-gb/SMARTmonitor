@@ -201,7 +201,7 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
   HandleXMLresult(XMLparsingResult);
   if( XMLparsingResult != tinyxml2::XML_SUCCESS )
   {
-    ShowMessage("error parsing the XML data->no further processing->exit");
+    ShowMessage("error parsing the XML data for supported SMART attributes", MessageType::error);
     LOGN_ERROR("error parsing the XML data->no further processing->exit")
     return;
   }

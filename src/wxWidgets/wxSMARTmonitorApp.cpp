@@ -146,16 +146,18 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNon
   else
     ShowSMARTokIcon();
 }
-
-void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & e)
+/** Usually called via wxWidgets events.(from another thread) */
+void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 {
   if( m_pConnectToServerDialog )
   {
-    m_pConnectToServerDialog->Close(true);
-    delete m_pConnectToServerDialog;
+    const bool successfullyClosed = m_pConnectToServerDialog->Close(true);
+//    delete m_pConnectToServerDialog;
+    /** http://docs.wxwidgets.org/3.0/classwx_window.html#a6bf0c5be864544d9ce0560087667b7fc */
+    const bool successfullyDestroyed = m_pConnectToServerDialog->Destroy();
     m_pConnectToServerDialog = NULL;
   }
-  int connectResult = e.GetInt();
+  int connectResult = commandEvent.GetInt();
   if( connectResult == 0)
   {
 //    SuccessfullyConnectedToClient();
@@ -382,7 +384,9 @@ void wxSMARTmonitorApp::SetAttribute(
   const SMARTuniqueID & sMARTuniqueID, 
   fastestUnsignedDataType SMARTattributeID,
   const enum ColumnIndices::columnIndices & columnIndex,
-  const std::string & std_strValue)
+  const std::string & std_strValue,
+  const enum SMARTvalueRating sMARTvalueRating
+  )
 {
   wxString wxstrValue = wxWidgets::GetwxString_Inline(std_strValue );
   //TODO: Maybe implement this in class wxWidgets::SMARTtableListCtrl as this 
@@ -391,7 +395,8 @@ void wxSMARTmonitorApp::SetAttribute(
   gs_dialog->m_pwxlistctrl->SetSMARTattribValue(
     /*lineNumber*/ SMARTattributeID, //long index
     columnIndex /** column #/ index */,
-    wxstrValue);
+    wxstrValue,
+    sMARTvalueRating);
 }
   
 void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress, 
@@ -415,7 +420,31 @@ void wxSMARTmonitorApp::OnShowMessage(wxCommandEvent & event)
 {
     wxString wxstrMessage = event.GetString();
 //    wxMessageBox(wxstrMessage, m_appName );
-    gs_dialog->ShowText(wxstrMessage);  
+    gs_dialog->ShowMessage(wxstrMessage, 
+      (UserInterface::MessageType::messageTypes) event.GetInt() );
+}
+
+void wxSMARTmonitorApp::ShowMessage(
+  const char * const message, 
+  enum MessageType::messageTypes msgType) const
+{
+  unsigned currentThreadNumber = GetCurrentThreadNumber();
+  /** Only call UI functions in UI thread, else gets SIGABORT error when calling
+   *  "wxMessageBox(...)" . */
+  if( currentThreadNumber == s_GUIthreadID )
+  {
+    wxString wxstrMessage = wxWidgets::GetwxString_Inline(message);
+    gs_dialog->ShowMessage(wxstrMessage, msgType);
+  }
+  else
+  {
+    /** Post an event with the message as content to show 
+    *   this message in the GUI thread */
+    wxCommandEvent wxcommand_event(ShowMessageEventType);
+    wxcommand_event.SetString(GetwxString_Inline(message));
+    wxcommand_event.SetInt(msgType);
+    wxPostEvent( (wxSMARTmonitorApp *) this, wxcommand_event);
+  }
 }
 
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const
@@ -424,7 +453,7 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
   /** Only call UI functions in UI thread, else gets SIGABORT error when calling
    *  "wxMessageBox(...)" . */
   if( currentThreadNumber == s_GUIthreadID )
-  { 
+  {
     wxString wxstrMessage = wxWidgets::GetwxString_Inline(str);
 //    wxMessageBox(wxstrMessage, m_appName );
     gs_dialog->ShowText(wxstrMessage);
@@ -435,6 +464,7 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
     *   this message in the GUI thread */
     wxCommandEvent wxcommand_event(ShowMessageEventType);
     wxcommand_event.SetString(GetwxString_Inline(str));
+    wxcommand_event.SetInt(-1);
     wxPostEvent( (wxSMARTmonitorApp *) this, wxcommand_event);
   }
 }

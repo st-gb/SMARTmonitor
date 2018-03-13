@@ -279,7 +279,7 @@ DWORD SocketConnectThreadFunc(void * p_v)
     {
       LOGN("successfully connected")
       p_socketConnectThreadFuncParams->p_SMARTmonitorClient->ShowMessage(
-        "successfully connected to service");
+        "successfully connected to service", UserInterface::MessageType::success);
     }
     p_socketConnectThreadFuncParams->p_SMARTmonitorClient->
       AfterConnectToServer(connectResult);
@@ -344,6 +344,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   if( asyncConnect )
   {
     ShowConnectionState(hostName, connectTimeoutInSeconds);
+    //TODO make as member variable (else is deleted if this block ends).
     nativeThread_type connectThread;
     SocketConnectThreadFuncParams * p_socketConnectThreadFuncParams = new 
       SocketConnectThreadFuncParams {m_socketFileDesc, serv_addr, this, connectTimeoutInSeconds };
@@ -396,6 +397,6 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName)
     }
     break;
   }
-  ShowMessage(oss.str().c_str() );
+  ShowMessage(oss.str().c_str(), MessageType::error );
   LOGN_ERROR(oss.str() )
 }

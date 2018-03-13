@@ -189,7 +189,7 @@ void SMARTmonitorClient::HandleTransmissionError(
   if( errorMessageForErrno )
     stdoss << " for socket file descriptor #" << m_socketFileDesc << ":\n" << errorMessageForErrno;
   LOGN_ERROR(stdoss.str() );
-  ShowMessage(stdoss.str().c_str());
+  ShowMessage(stdoss.str().c_str(), MessageType::error);
   //TODO set connection status of the user interface to "network errors"/"unconnected"
   m_serverConnectionState = connectedToService;
   ChangeState(unconnectedFromService);
@@ -203,7 +203,12 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
   if( numBytesToRead < 1 )
     return readLessBytesThanIntended;
   LOGN_DEBUG("# of following bytes: " << numBytesToRead );
-
+  std::ostringstream std_oss;
+  std_oss << "# of bytes for supported SMART IDs: " << numBytesToRead;
+  UserInterface::MessageType::messageTypes msgType = UserInterface::MessageType::error;
+  if( numBytesToRead > 0 )
+    msgType = UserInterface::MessageType::success;
+  ShowMessage(std_oss.str().c_str(), msgType);
   const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
   uint8_t * XMLdata = new uint8_t[numBytesToAllocate];
   if( XMLdata)
@@ -221,6 +226,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
     GetSupportedSMARTattributesViaXML(XMLdata, numBytesToRead, 
       dataCarrierIDandSMARTidsContainer);
   }
+  return 0;
 }
 
 /** These values are fixed and so need to be shown only once in the user
@@ -368,7 +374,7 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
       }
       
       const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];
-      sMARTvalue.IsConsistent(SMARTrawValue);
+      bool isConsistent = sMARTvalue.IsConsistent(SMARTrawValue);
 //      memory_barrier(); //TODO: not really necessary??
       int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
       

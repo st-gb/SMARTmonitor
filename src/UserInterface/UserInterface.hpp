@@ -16,8 +16,13 @@ struct tm;
 class UserInterface
 {
 public:
+  class MessageType{
+    public:
+    enum messageTypes { success, error, warning};
+  };
   ~UserInterface() { }
   virtual void ShowMessage(const char * const ) const = 0;
+  virtual void ShowMessage(const char * const, enum MessageType::messageTypes msg) const = 0;
   virtual void ShowConnectionState(const char * const pch, int timeOut) {}
   
   static std::string GetTimeAsString(const struct tm & timeOfLastSMARTvaluesUpdate);
