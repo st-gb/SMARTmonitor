@@ -3,7 +3,7 @@
 #include <netdb.h> //gethostbyname(...)
 #include <fcntl.h> //fcntl(...)
 
-#include "SocketOperations.h"
+//#include "SocketOperations.h"
 #include <client/SMARTmonitorClient.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <OperatingSystem/time/GetCurrentTime.hpp>

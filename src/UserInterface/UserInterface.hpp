@@ -22,6 +22,7 @@ public:
   };
   ~UserInterface() { }
   virtual void ShowMessage(const char * const ) const = 0;
+  ///messageType e.g. for filtering/highlighting errors coloured (red etc.).
   virtual void ShowMessage(const char * const, enum MessageType::messageTypes msg) const = 0;
   virtual void ShowConnectionState(const char * const pch, int timeOut) {}
   

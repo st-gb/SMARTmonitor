@@ -25,6 +25,7 @@
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <wx/taskbar.h>
 #include <wx/filefn.h> //wxFILE_SEP_PATH
+///GCC_DIAG_ON(...), GCC_DIAG_OFF(...) preprocessor macros
 #include "compiler/GCC/enable_disable_warning.h"
 /** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
  *  to ‘char*’" when including the "xpm" file */
@@ -37,7 +38,9 @@ GCC_DIAG_ON(write-strings)
 #include <iostream> //class std::cerr
 #include <OperatingSystem/multithread/GetCurrentThreadNumber.hpp>
 #include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
-#include <Windows/HideMinGWconsoleWindow.h>
+#ifdef MinGW
+#include <OperatingSystem/Windows/HideMinGWconsoleWindow.h>
+#endif
 #include <FileSystem/File/FileException.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(..)
@@ -93,8 +96,9 @@ IMPLEMENT_APP(wxSMARTmonitorApp)
 void wxSMARTmonitorApp::CreateTaskBarIcon()
 {
   /** wxTaskBarIcon::IsAvailable exists since wxWidgets 2.9.0 */
-#if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8
-  if ( wxTaskBarIcon::IsAvailable() )
+#if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8 || wxMAJOR_VERSION > 2
+  if (///https://docs.wxwidgets.org/trunk/classwx_task_bar_icon.html#a287bb3303f01651f50c8de17e314a147;
+     /** "Since 2.9.0*/ wxTaskBarIcon::IsAvailable() )
     wxGetApp().m_taskBarIcon = new TaskBarIcon();
   else
   {
@@ -229,8 +233,14 @@ void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
   m_ar_stdwstrCmdLineArgs = new std::wstring[argc];
   //TODO move to "common_sourcecode"
   for(fastestUnsignedDataType index = 0; index < argc; ++index)
-  {
-    m_ar_stdwstrCmdLineArgs[index] = wxWidgets::GetStdWstring_Inline(argv[index]);
+  { //TODO accessing "argv[]" and converting to std::wstring be too inefficient.
+    m_ar_stdwstrCmdLineArgs[index] = wxWidgets::GetStdWstring_Inline(
+      ///"wxAppConsoleBase.argv" has type "wxCmdLineArgsArray" if wxUSE_UNICODE
+      /// is defined (in wxWidgets 3.0?) wxCmdLineArgsArray::operator [] returns
+      /// a wxString from wxArrayString::operator []
+      argv[/**wxCmdLineArgsArray's operator []" has parameter type "size_t" or
+       * "int", so cast.*/ (size_t) index].c_str()
+      );
     LOGN( (index+1) << ". program argument:" << m_ar_stdwstrCmdLineArgs[index])
     m_cmdLineArgStrings[index] = m_ar_stdwstrCmdLineArgs[index].c_str();
   }

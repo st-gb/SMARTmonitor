@@ -6,13 +6,14 @@
 #define SMARTMONITORBASE_HPP
 
 #include <string> //std::wstring
-#include <Process/CommandLineArgs.hpp> //class CommandLineArgs
+#include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
+///struct CommandLineOption
+#include <OperatingSystem/Process/CommandLineOption.hpp>
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <SMARTvalueProcessorBase.hpp> //
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <set> //class std::set
-#include <Process/CommandLineOption.hpp>
 
 /** Forward declarations: */
 class ConfigurationLoaderBase;
@@ -23,13 +24,16 @@ class SMARTmonitorBase;
 struct GetSMARTvaluesFunctionParams
 {
   SMARTmonitorBase * p_SMARTmonitorBase;
-  //pointer to member functio of SMARTmonitorBase
+  //pointer to member function of SMARTmonitorBase
   typedef fastestUnsignedDataType (SMARTmonitorBase::*GetSMARTvaluesFunctionType)();
   GetSMARTvaluesFunctionType p_getSMARTvaluesFunction = NULL;
 };
 
 /** Use character type in order to pass to to CommandLineArgs member variable*/
-/*template<typename charType>*/ class SMARTmonitorBase
+/*template<typename charType>*/
+///Base class for all clients/services. Operations and attributes that can be 
+// used by all are located here.
+class SMARTmonitorBase
   : public UserInterface
 {
 public:
@@ -96,6 +100,8 @@ public:
   SMARTaccess_type * mp_SMARTaccess;
   SMARTvalueProcessorBase m_SMARTvalueProcessor;
   void SetCommandLineArgs(int argc, char ** argv);
+  ///Should be usable by different targets, e.g. service, wxWidgets or curses.
+  /// client. Therefore the parameters.
   void StartAsyncUpdateThread(
     //GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
     struct GetSMARTvaluesFunctionParams & getSMARTvaluesFunctionParams);
@@ -120,6 +126,7 @@ public:
   std::string m_stdstrServiceHostName;
   fastestUnsignedDataType m_retryWaitTimeInS;
   void InitializeLogger();
+  ///A std::set ensures no double entries exist.
   std::set<int> m_IDsOfSMARTattributesToObserve;
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
   void OutputUsage();

@@ -86,7 +86,9 @@ void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
   }
   else
   {
-    liRawSMARTattrValue = rawSMARTattrValue;
+//    liRawSMARTattrValue = rawSMARTattrValue;
+    //TODO atomic necessary?
+    AtomicExchange( (long int *) m_rawValue, rawSMARTattrValue);
     m_rawValueCheckSum = rawSMARTattrValue;
   }
 }
@@ -100,8 +102,8 @@ void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
 bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
 {
   /** important:-1.Use same datatype as atomic functions because of its size 
-     -2. use an unsigned type else there were miscalutions. */
-  unsigned long int liRawSMARTattrValue, rawValueCheckSum = 0;
+     -2. use an unsigned type else there were miscalculations. */
+  long int liRawSMARTattrValue, rawValueCheckSum = 0;
   /** If shorter than a uint64_t */
   if( SMARTaccessBase::s_sizeOfLongIntInBytes < 8 )
   {
@@ -131,8 +133,9 @@ bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
     }
   }
   else
-  {
-    rawValueCheckSum = * (uint64_t *) m_rawValue;
+  {//TODO runtime error by here.
+    //TODO beim kopieren Big/Little endian beachten?
+    rawValueCheckSum = /*(uint64_t *)*/ m_rawValue[0];
     rawValue = * (uint64_t *) m_rawValue;
   }
 #ifdef DEBUG

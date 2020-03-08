@@ -132,7 +132,7 @@ namespace libConfig
       GetSMARTattributesToObserve(* p_root);
 
       const libconfig::Setting & SMART_parameters =
-        r_root["SMART_parameters"];        
+        r_root["SMART_parameters"];
       const int numCritical_SMART_parameters = SMART_parameters.getLength();
       std::tstring std_tstr;
       bool criticalSMARTattribute = false;

@@ -3,10 +3,11 @@
 cmake_minimum_required (VERSION 2.6)
 project (SMARTmonitor)
 
-if( NOT DEFINED COMMON_SOURCECODE_ROOT_PATH )
+if(NOT DEFINED COMMON_SOURCECODE_ROOT_PATH OR COMMON_SOURCECODE_ROOT_PATH STREQUAL "")
+  message("COMMON_SOURCECODE_ROOT_PATH not defined")
   #By default "common_sourcecode" lies/lays 1 level above VTrans3/src
   set(COMMON_SOURCECODE_ROOT_PATH ${PROJECT_SOURCE_DIR}/../../common_sourcecode)
-endif( NOT DEFINED COMMON_SOURCECODE_ROOT_PATH )
+endif()
 
 #To create executable outside of "src" directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/..)
@@ -18,9 +19,8 @@ set(CMAKE_LIST_FILE_PATHS
 set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_DEBUG_POSTFIX "_debug")
 #set(<variable> <value>  ... <valueN>)
-#set(COMMON_SOURCECODE_ROOT_PATH /home/sg/SourceCodeManagement/common_sourcecode)
 #set(WXWIDGETS_SOURCECODE_ROOT_PATH )
-#set(TINYXML2_ROOT_PATH /home/sg/SourceCodeManagement/tinyxml2-master )
+set(TINYXML2_ROOT_PATH ../../../tinyxml2-master )
 
 #from http://stackoverflow.com/questions/12896988/passing-the-argument-to-cmake-via-command-prompt
 # on command line: "-DEXE_TYPE:STRING=wxGUI"
@@ -51,12 +51,12 @@ set( INCLUDE_DIRS
 )
 message("include directories: ${INCLUDE_DIRS}")
 
-#set(PROJECT_BINARY_DIR /home/sg/SourceCodeManagement/VTrans3/build)
+#set(PROJECT_BINARY_DIR ../build)
 #http://stackoverflow.com/questions/6594796/how-do-i-make-cmake-output-into-a-bin-dir
 #set(CMAKE_BINARY_DIR ${CMAKE_BINARY_DIR}/../build)
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "../bin/")
-#set(CMAKE_CURRENT_BINARY_DIRECTORY /home/sg/SourceCodeManagement/VTrans3/bin)
+#set(CMAKE_CURRENT_BINARY_DIRECTORY ../bin)
 
 message("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 message("PROJECT_BINARY_DIR: ${PROJECT_BINARY_DIR}")
@@ -116,6 +116,7 @@ set( ATTRIBUTE_DATA_SOURCE_FILES
 )
 
 if (UNIX)
+  #needs apt-get install libatasmart-dev
   message("UNIX defined")
   set( LIBRARIES
     ${LIBRARIES}
@@ -129,24 +130,21 @@ if (UNIX)
     ${PROJECT_SOURCE_DIR}/UserInterface/UserInterface.cpp
     ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/POSIX/GetBlockDeviceFiles.c
     ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/POSIX/multithread/pthreadBasedI_Thread.cpp
-  	${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
-	  ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp
   )
   #message("CLIENT_SERVER_BASE_SOURCE_FILES: ${CLIENT_SERVER_BASE_SOURCE_FILES}")
 endif (UNIX)
 
+set(CmnSrcLogger ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
+include(CmnSrcLogger/Logger.cmake)
 set(LOGGER_SOURCE_FILES
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/preprocessor_logging_macros.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Logger.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/LogLevel.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Appender/FormattedLogEntryProcessor.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Appender/RollingFileOutput.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Formatter/I_LogFormatter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Formatter/HTMLlogFormatter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Formatter/Log4jFormatter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/OutputHandler/I_LogEntryOutputter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/OutputHandler/StdCoutLogWriter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/OutputHandler/StdOfStreamLogWriter.cpp
+  ${SG_BasicLoggerSrcFilePaths}
+  ${CmnSrcLogger}/Appender/RollingFileOutput.cpp
+  ${CmnSrcLogger}/Formatter/HTMLlogFormatter.cpp
+  ${CmnSrcLogger}/Formatter/Log4jFormatter.cpp
+  ${CmnSrcLogger}/OutputHandler/StdCoutLogWriter.cpp
+  ${CmnSrcLogger}/OutputHandler/StdOfStreamLogWriter.cpp
 )
 
 #Source files needed for both client/GUI and server builds.
@@ -177,29 +175,10 @@ if( ${EXE_TYPE} STREQUAL "UNIX_service")
 endif(${EXE_TYPE} STREQUAL "UNIX_service")
 
 if( ${EXE_TYPE} STREQUAL "ncursesClient" )
-#  add_subdirectory(./ncurses
-#    #EXCLUDE_FROM_ALL
-#    )  
-#    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/ncurses/form/Form.cpp
-  set(SOURCE_FILE_PATHS
-    ${SOURCE_FILE_PATHS}
-    ${PROJECT_SOURCE_DIR}/curses/NcursesUI.cpp
-    ${PROJECT_SOURCE_DIR}/curses/ConnectToServerDialog.cpp
-    ${PROJECT_SOURCE_DIR}/curses/MainWindow.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/color.c
-    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/EventQueue.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/GetChar.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/MessageBox.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/textfield.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/ncurses/menu/Menu.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/InputProcessorStack.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/libraries/curses/Window.cpp
-  )
-  set( LIBRARIES
-    ${LIBRARIES}
-    ncurses menu form)
-  set(SMARTmonClient ON)
+  include(curses/cursesClient.cmake)
 endif(${EXE_TYPE} STREQUAL "ncursesClient" )
+
+set(TinyXML2dir ../../tinyxml2-master)
 
 if( DEFINED SMARTmonClient )
   set(SOURCE_FILE_PATHS
@@ -268,6 +247,8 @@ set(ARCHIVE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
 )
 
+#TODO source out to a separate file:
+#include(${CmnSrc}/cr8src_archive.cmake)
 #following: package source files into archive file
 set(RELATIVE_SOURCE_FILE_PATH, "")
 execute_process(COMMAND rm ${EXE_NAME}_source.zip)
