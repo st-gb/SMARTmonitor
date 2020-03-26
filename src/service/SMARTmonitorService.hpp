@@ -32,7 +32,7 @@ public:
   enum SocketSendReturnCodes { successfullyWroteAllBytes, readingEndOfSocketClosed, 
     wroteLessBytesThanIntended, SocketSendReturnCode_Unset } ;
   fastestUnsignedDataType BindAndListenToSocket();
-  void EndUpdateSMARTvaluesThread();
+  static void EndUpdateSMARTvaluesThread();
   int SendBytesTo1Client(const int clientSocketFileDesc, 
     const std::string & xmlString);
   void SendBytesToAllClients(std::string & xmlString);
@@ -44,7 +44,7 @@ public:
   void CloseAllClientSockets();
   void RemoveFileDescsOfBrokenSocketConns(
     std::vector<int> & fileDescsToDelete);
-  
+  static void End(const char signalName []);
   static int s_socketFileDesc;
 private:
   // std::vector<int> m_clientSocketFileDescVector;
@@ -54,6 +54,7 @@ private:
   pthread_cond_t cond;
   pthread_mutex_t mutex;
   nativeCriticalSection_type m_clientsCriticalSection;
+  static SMARTmonitorService * p_SMARTmonSvc;
   void SendSupportedSMART_IDsToClient(const int clientSocketFileDesc);
 };
 

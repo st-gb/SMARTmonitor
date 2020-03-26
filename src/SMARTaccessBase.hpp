@@ -18,13 +18,14 @@ class SMARTaccessBase
 private:
 //  std::set<SkIdentifyParsedData> m_SMARTuniqueIDs;
 public:
-  typedef std::set<SMARTentry> SMARTattributesContainerType;
-  typedef const SMARTattributesContainerType constSMARTattributesContainerType;
-  typedef SMARTattributesContainerType::const_iterator 
+  ///attr=attribute Def=definition Cont=container
+  typedef std::set<SMARTentry> SMARTattrDefContType;
+  typedef const SMARTattrDefContType constSMARTattributesContainerType;
+  typedef SMARTattrDefContType::const_iterator 
     SMARTattributesContainerConstIterType;
   static fastestUnsignedDataType s_sizeOfLongIntInBytes;
 protected:
-  SMARTattributesContainerType SMARTattributesToObserve;
+  SMARTattrDefContType SMARTattrDefs;
   std::set<SMARTuniqueIDandValues> m_SMARTuniqueIDandValues;
 public:
   enum retCodes { success = 0, accessDenied, noSingleSMARTdevice, 
@@ -36,12 +37,13 @@ public:
   /** Implement functionality in subclasses because the SMART access part is
    *  specific to Linux, Windows or used SMART library and so on.*/
   virtual enum retCodes ReadSMARTValuesForAllDrives() = 0;
-  constSMARTattributesContainerType & getSMARTattributes() const
+  ///def=definition: https://en.wiktionary.org/wiki/def
+  constSMARTattributesContainerType & getSMARTattrDefs() const
   {
-    return SMARTattributesToObserve;
+    return SMARTattrDefs;
   }
   fastestUnsignedDataType GetNumberOfSMARTparametersToRead() const {
-    return SMARTattributesToObserve.size();
+    return SMARTattrDefs.size();
   }
 
   fastestUnsignedDataType GetNumberOfDifferentDrives() const {
@@ -51,7 +53,7 @@ public:
     return m_SMARTuniqueIDandValues;
   }
   fastestUnsignedDataType GetNumSMARTattributesToObserve() const {
-    return SMARTattributesToObserve.size(); }
+    return SMARTattrDefs.size(); }
   
   virtual int GetSupportedSMART_IDs(
     const char * const device,

@@ -1,13 +1,16 @@
 #! /bin/sh
+#https://wiki.debian.org/LSBInitScripts:
+# The following "INIT INFO" block is used by update-rc.d
+# Required-Start,Required-Stop:
+# http://refspecs.linuxfoundation.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/facilname.html
 ### BEGIN INIT INFO
-# Provides:          send S.M.A.R.T. values to (GUI/TUI) client
-# Required-Start:    
+# Provides:          read S.M.A.R.T. values and send to (GUI/TUI) client
+# Required-Start:    $network
 # Required-Stop:     
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Example initscript
-# Description:       This file should be used to construct scripts to be
-#                    placed in /etc/init.d.
+# Short-Description: S.M.A.R.T.
+# Description:       
 ### END INIT INFO
 
 # Author: Stefan Gebauer <s.gebauer@it-gebauer.de>

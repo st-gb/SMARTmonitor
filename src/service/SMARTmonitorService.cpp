@@ -11,6 +11,7 @@
 
 /** Definitions of class (static) variables. */
 int SMARTmonitorService::s_socketFileDesc = 0;
+SMARTmonitorService * SMARTmonitorService::p_SMARTmonSvc;
 
 SMARTmonitorService::SMARTmonitorService() 
   //: 
@@ -21,6 +22,7 @@ SMARTmonitorService::SMARTmonitorService()
   /** from https://computing.llnl.gov/tutorials/pthreads/#ConditionVariables */
    pthread_mutex_init(& mutex, NULL);
    pthread_cond_init (&cond, NULL);
+  p_SMARTmonSvc = this;
 }
 
 SMARTmonitorService::SMARTmonitorService(const SMARTmonitorService& orig) {
@@ -174,7 +176,7 @@ fastestUnsignedDataType SMARTmonitorService::BindAndListenToSocket()
 
 DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
 {
-  LOGN("begin")
+  LOGN_DEBUG("begin")
   SMARTmonitorService * p_SMARTmonitor = (SMARTmonitorService * ) p_v;
   if( p_SMARTmonitor )
   {
@@ -184,6 +186,7 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
       socklen_t sizeOfClientAddrInB = sizeof(client_address);
       LOGN("Waiting for a socket client to accept on file descr." << 
         s_socketFileDesc << ",port " << p_SMARTmonitor->m_socketPortNumber)
+      ///accept(...) is blocking, can be cancelled with "shutdown(...)"
       const int clientSocketFileDesc = accept(
         s_socketFileDesc, 
         (struct sockaddr *) & client_address, 
@@ -205,7 +208,7 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
     /**Prevent the bind(...) failure after restarting this program (not tested)*/
     p_SMARTmonitor->CloseAllClientSockets();
   }
-  LOGN("end")
+  LOGN_DEBUG("end")
   return 0;
 }
 
@@ -360,7 +363,7 @@ void SMARTmonitorService::BeforeWait()
   fastestUnsignedDataType SMARTattributeID;
   uint64_t SMARTrawValue;
   const std::set<SMARTentry> & SMARTattributesToObserve =
-    SMARTaccess.getSMARTattributes();
+    SMARTaccess.getSMARTattrDefs();
   LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
 
   std::ostringstream oss;

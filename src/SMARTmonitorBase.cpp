@@ -47,7 +47,7 @@ SMARTmonitorBase::SMARTmonitorBase()
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
   mp_SMARTaccess = &m_SMARTvalueProcessor.getSMARTaccess();
   mp_configurationLoader = new tinyxml2::ConfigLoader(
-    (SMARTaccessBase::SMARTattributesContainerType &) mp_SMARTaccess->getSMARTattributes(), * this);
+    (SMARTaccessBase::SMARTattrDefContType &) mp_SMARTaccess->getSMARTattrDefs(), * this);
   //  InitializeLogger();
   
   //TODO
@@ -126,10 +126,10 @@ void SMARTmonitorBase::OutputUsage() {
      "option VALUE>\n\n"
     "avaiable options:\n";
   for (fastestUnsignedDataType index = 0;
-          s_commandLineOptions[index].optionName[0] != '\0'; ++index) {
+    s_commandLineOptions[index].optionName[0] != '\0'; ++index) {
     CommandLineOption & commandLineOption = s_commandLineOptions[index];
     stdoss << "-" << commandLineOption.optionName << " " <<
-            commandLineOption.possibleOptionValue << "";
+    commandLineOption.possibleOptionValue << "";
     stdoss << "\n";
   }
   std::string str = stdoss.str();
@@ -146,7 +146,7 @@ std::wstring SMARTmonitorBase::GetCommandLineOptionValue(
   if (programArgumentIndex != UINT_MAX) {
     std::wstring cmdLineOptionName;
     std::wstring cmdLineOptionValue;
-    GetCommandOptionNameAndValue(
+    GetCmdLineOptionNameAndValue(
             programArgumentIndex,
             cmdLineOptionName,
             cmdLineOptionValue
@@ -156,14 +156,14 @@ std::wstring SMARTmonitorBase::GetCommandLineOptionValue(
   return L"";
 }
 
-void SMARTmonitorBase::GetCommandOptionNameAndValue(
+void SMARTmonitorBase::GetCmdLineOptionNameAndValue(
   fastestUnsignedDataType & programArgumentIndex,
   std::wstring & cmdLineOptionName,
   std::wstring & cmdLineOptionValue
   )
 {
   const wchar_t * pwchCmdLineOption = m_commandLineArgs.GetArgument(
-          programArgumentIndex);
+    programArgumentIndex);
   std::wstring std_wstrCmdLineOption = pwchCmdLineOption;
   //  std::wstring cmdLineOptionName;
   int charPosOfEqualSign = std_wstrCmdLineOption.find('=');
@@ -254,7 +254,7 @@ void SMARTmonitorBase::ProcessCommandLineArgs()
       /* programArgumentIndex += 2 */)
     {
       //      cmdLineOptionName = GetCommandOptionName(cmdLineOption);
-      GetCommandOptionNameAndValue(programArgumentIndex, cmdLineOptionName,
+      GetCmdLineOptionNameAndValue(programArgumentIndex, cmdLineOptionName,
               cmdLineOptionValue);
 
       //      cmdLineOptionValue = GetCommandOptionValue(/*cmdLineOptionName.c_str()*/
@@ -264,12 +264,15 @@ void SMARTmonitorBase::ProcessCommandLineArgs()
                 << L"\"" << std::endl;
         atLeast1UnknwonCmdLineOption = true;
       }
+      //TODO do here: execute cmdLineOption[cmdLineOptIdx].pfn
       else if (cmdLineOptionName == L"svcConnConfFile") {
         s_programOptionValues[serviceConnectionConfigFile] = cmdLineOptionValue;
       }
       else if (cmdLineOptionName == L"logfilefolder") {
         HandleLogFileFolderProgramOption(cmdLineOptionValue);
       }
+      else if (cmdLineOptionName == L"loglevel")
+        g_logger.SetLogLevel(GetStdString_Inline(cmdLineOptionValue) );
     }
     if(atLeast1UnknwonCmdLineOption)
       showUsage = true;
@@ -290,7 +293,8 @@ void SMARTmonitorBase::InitializeLogger() {
   //std::string stdstrLogFileDirectory;
   m_stdstrLogFilePath += GetStdString_Inline(m_stdwstrProgramePath);
   try {
-    g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel::debug);
+    g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel:://debug
+      info);
   }  catch (const LogFileAccessException & lfae) {
     std::cout << lfae.GetErrorMessageA() << std::endl;
   }
@@ -338,6 +342,7 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
 
 fastestUnsignedDataType SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
 {
+  LOGN_DEBUG("begin")
   DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
   SMARTaccess_type & SMARTaccess = *mp_SMARTaccess;
   if (dwRetVal == SMARTaccessBase::success)
@@ -358,7 +363,7 @@ fastestUnsignedDataType SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
     fastestUnsignedDataType SMARTattributeID;
     uint64_t SMARTrawValue;
     const std::set<SMARTentry> & SMARTattributesToObserve =
-            SMARTaccess.getSMARTattributes();
+            SMARTaccess.getSMARTattrDefs();
     LOGN("# SMART attributes to observe:" << SMARTattributesToObserve.size())
             //TODO crashed in loop header at "iter++"
             bool consistent;
@@ -399,6 +404,11 @@ fastestUnsignedDataType SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
   return dwRetVal;
 }
 
+///Function that can be used by clients and service.
+///It shouldn't be called from the UI thread because getting S.M.A.R.T. infos
+/// needs some milliseconds->blocks the UI in this time.
+/// SMARTmonitorBase::BeforeWait(...) can be used to display the values
+/// (asynchronously in the UI thread via messages etc.).
 DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   void * p_v)
 {
@@ -406,12 +416,12 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   struct GetSMARTvaluesFunctionParams * getSMARTvaluesFunctionParams =
     (struct GetSMARTvaluesFunctionParams *) p_v;
   if( ! /*p_SMARTmonitorBase*/ getSMARTvaluesFunctionParams)
-    return 1;
+    return 1;//TODO return enum
   {
     SMARTmonitorBase * p_SMARTmonitorBase = getSMARTvaluesFunctionParams->
       p_SMARTmonitorBase;
     if( ! p_SMARTmonitorBase )
-      return 2;
+      return 2;//TODO return enum
     
     const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
       SMARTmonitorBase::GetNumberOfMilliSecondsToWaitBetweenSMARTquery();
@@ -439,6 +449,12 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
               numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
       while (numberOfSecondsToWaitBetweenSMARTquery-- &&
               SMARTmonitorBase::s_updateSMARTvalues) {
+        /**If this program ends it needs max. the sleep time to terminate.
+        * The lower the argument for sleep the more responsive this 
+        * program gets.
+        * Alternatives (needn't wait the whole time):
+        * -WaitForSingleObject(...) for MS Windows API
+        * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
         sleep(1);
       }
       //Sleep in microseconds (1/1000th of a millisecond))
@@ -613,4 +629,14 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
 void SMARTmonitorBase::ShowMessage(const char * const msg) const {
   LOGN(msg)
   std::cout << msg << std::endl;
+}
+
+void SMARTmonitorBase::ShowMessage(const char * const msg,
+  UserInterface::MessageType::messageTypes msgType) const
+{
+  switch(msgType){
+  case MessageType::error: LOGN_ERROR(msg) break;
+  case MessageType::warning: LOGN_WARNING(msg) break;
+  case MessageType::success: LOGN_SUCCESS(msg) break;
+  }
 }

@@ -137,7 +137,7 @@ if (UNIX)
 endif (UNIX)
 
 set(CmnSrcLogger ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
-include(CmnSrcLogger/Logger.cmake)
+include(${CmnSrcLogger}/Logger.cmake)
 set(LOGGER_SOURCE_FILES
   ${SG_BasicLoggerSrcFilePaths}
   ${CmnSrcLogger}/Appender/RollingFileOutput.cpp

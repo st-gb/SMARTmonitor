@@ -96,7 +96,7 @@ public:
   virtual void ShowMessage(const char * const msg) const;
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
-  virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const = 0;
+  virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const;
   SMARTaccess_type * mp_SMARTaccess;
   SMARTvalueProcessorBase m_SMARTvalueProcessor;
   void SetCommandLineArgs(int argc, char ** argv);
@@ -127,13 +127,14 @@ public:
   fastestUnsignedDataType m_retryWaitTimeInS;
   void InitializeLogger();
   ///A std::set ensures no double entries exist.
+  /// Only SMART attr IDs in this container are read and updated in UI.
   std::set<int> m_IDsOfSMARTattributesToObserve;
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
   void OutputUsage();
   CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}
   
   std::wstring GetCommandLineOptionValue(const wchar_t * const cmdLineOptionName);
-  void GetCommandOptionNameAndValue(
+  void GetCmdLineOptionNameAndValue(
     fastestUnsignedDataType & programArgumentIndex,
     std::wstring & cmdLineOptionName,
     std::wstring & cmdLineOptionValue
