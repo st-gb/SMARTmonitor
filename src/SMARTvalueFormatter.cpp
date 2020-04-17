@@ -58,7 +58,7 @@ char calcUnitPrefixFactorAndRemainder(
   return unitPrefixes[One_kExp];
 }
 
-std::string SMARTvalueFormatter::OutputTemperatureInCelsius(
+std::string SMARTvalueFormatter::GetDegCfrom_mK(
   const uint64_t & SMARTrawValue)
 {
   std::ostringstream stdoss;
@@ -68,7 +68,7 @@ std::string SMARTvalueFormatter::OutputTemperatureInCelsius(
   return stdoss.str();
 }
 
-std::string SMARTvalueFormatter::OutputPowerOnTimeAssumingMilliS(
+std::string SMARTvalueFormatter::GetTimeFrom_ms(
   const uint64_t & SMARTrawValue)
 {
   std::ostringstream stdoss;
@@ -89,11 +89,30 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
 {
   switch (SMARTattributeID)
   {
+    /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
+    * "The raw value of this attribute shows total count of hours (or minutes,
+    * or seconds, depending on manufacturer) in power-on state."*/
     case SMARTattributeNames::PowerOnTime :
     case SMARTattributeNames::HeadFlyingHours :
-      return OutputPowerOnTimeAssumingMilliS(SMARTrawValue);
-    case SMARTattributeNames::TemperatureInMilliKelvin :
-      return OutputTemperatureInCelsius(SMARTrawValue);
+      return GetTimeFrom_ms(SMARTrawValue);
+    /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes.
+    *"Value is equal to (100-temp. °C), allowing manufacturer to set a minimum
+    * threshold which corresponds to a maximum temperature. This also follows
+    * the convention of 100 being a best-case value and lower values being
+    * undesirable. However, some older drives may instead report raw Temperature
+    * (identical to 0xC2) or Temperature minus 50 here.*/
+    case SMARTattributeNames::TempDiffOrAirflowTemp:
+     ///If temp. in Celsius: and 100-temp. °C: maximum is 100-(-273)=373
+     if(SMARTrawValue > 1000)///Assume unit milliKelvin if value is large
+      /**thtps://en.wikipedia.org/wiki/S.M.A.R.T.: "some older drives may 
+      * instead report raw Temperature (identical to 0xC2)"*/
+      return GetDegCfrom_mK(SMARTrawValue);
+    /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes:
+     * "Lowest byte of the raw value contains the exact temperature value (
+     *   Celsius degrees)."*/
+    case SMARTattributeNames::DevTemp :
+     if(SMARTrawValue > 1000)///Assume unit milliKelvin if value is large
+      return GetDegCfrom_mK(SMARTrawValue);
     default:
     {
       uint64_t remainder = SMARTrawValue;

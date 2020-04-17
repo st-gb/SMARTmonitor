@@ -2,6 +2,7 @@
 #https://wiki.debian.org/LSBInitScripts:
 # The following "INIT INFO" block is used by update-rc.d
 # Required-Start,Required-Stop:
+#https://wiki.debian.org/LSBInitScripts/DependencyBasedBoot
 # http://refspecs.linuxfoundation.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/facilname.html
 ### BEGIN INIT INFO
 # Provides:          read S.M.A.R.T. values and send to (GUI/TUI) client

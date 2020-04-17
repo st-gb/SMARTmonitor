@@ -4,12 +4,9 @@
  * and open the template in the editor.
  */
 
-/* 
- * File:   SMARTvalueFormatter.hpp
+/** File:   SMARTvalueFormatter.hpp
  * Author: sg
- *
- * Created on 2. Januar 2017, 23:13
- */
+ * Created on 2. Januar 2017, 23:13 */
 
 #ifndef SMARTVALUEFORMATTER_HPP
 #define SMARTVALUEFORMATTER_HPP
@@ -26,8 +23,8 @@ public:
   static std::string FormatHumanReadable(
     fastestUnsignedDataType SMARTattributeID, 
     const uint64_t & SMARTrawValue);
-  static std::string OutputTemperatureInCelsius(const uint64_t & SMARTrawValue);
-  static std::string OutputPowerOnTimeAssumingMilliS(const uint64_t & SMARTrawValue);
+  static std::string GetDegCfrom_mK(const uint64_t & SMARTrawValue);
+  static std::string GetTimeFrom_ms(const uint64_t & SMARTrawValue);
 private:
 
 };

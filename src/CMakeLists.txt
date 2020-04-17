@@ -1,11 +1,12 @@
 #from https://cmake.org/cmake-tutorial/
-
+#This file should be structured so that all subprojects/tests can be build with
+#shared/common CMake include files.
 cmake_minimum_required (VERSION 2.6)
 project (SMARTmonitor)
 
 if(NOT DEFINED COMMON_SOURCECODE_ROOT_PATH OR COMMON_SOURCECODE_ROOT_PATH STREQUAL "")
   message("COMMON_SOURCECODE_ROOT_PATH not defined")
-  #By default "common_sourcecode" lies/lays 1 level above VTrans3/src
+  #By default "common_sourcecode" lies/lays at the same level as SMARTmonitor
   set(COMMON_SOURCECODE_ROOT_PATH ${PROJECT_SOURCE_DIR}/../../common_sourcecode)
 endif()
 
@@ -30,7 +31,7 @@ message("executable type to build:${EXE_TYPE}")
 #see http://accountingplusplus.blogspot.de/2010/12/cmake-wxwidgets.html :
 if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(WXWIDGETS ON)
-  set(SMARTmonClient ON)
+  set(SMARTmonClientDerived ON)
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
 
 if( DEFINED WXWIDGETS )
@@ -115,26 +116,10 @@ set( ATTRIBUTE_DATA_SOURCE_FILES
   ${PROJECT_SOURCE_DIR}/attributes/SMARTuniqueIDandValues.cpp
 )
 
-if (UNIX)
-  #needs apt-get install libatasmart-dev
+if(UNIX)
   message("UNIX defined")
-  set( LIBRARIES
-    ${LIBRARIES}
-    pthread
-  )
-  add_subdirectory(./libATA_SMART
-    #EXCLUDE_FROM_ALL
-    )
-  set( CLIENT_SERVER_BASE_SOURCE_FILES
-    ${CLIENT_SERVER_BASE_SOURCE_FILES}
-    ${PROJECT_SOURCE_DIR}/UserInterface/UserInterface.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/POSIX/GetBlockDeviceFiles.c
-    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/POSIX/multithread/pthreadBasedI_Thread.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp
-  )
-  #message("CLIENT_SERVER_BASE_SOURCE_FILES: ${CLIENT_SERVER_BASE_SOURCE_FILES}")
-endif (UNIX)
+  include(Unix.cmake)
+endif()
 
 set(CmnSrcLogger ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
 include(${CmnSrcLogger}/Logger.cmake)
@@ -180,13 +165,9 @@ endif(${EXE_TYPE} STREQUAL "ncursesClient" )
 
 set(TinyXML2dir ../../tinyxml2-master)
 
-if( DEFINED SMARTmonClient )
-  set(SOURCE_FILE_PATHS
-    ${SOURCE_FILE_PATHS}
-    ${PROJECT_SOURCE_DIR}/socket/SocketOperations.cpp
-    ${PROJECT_SOURCE_DIR}/tinyxml2/ProcessSMARTdata.cpp
-    ${PROJECT_SOURCE_DIR}/client/SMARTmonitorClient.cpp )
-endif( DEFINED SMARTmonClient )
+if(DEFINED SMARTmonClientDerived)#define for all clients
+  include(client/SMARTmonClientDerived.cmake)
+endif()
 
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}

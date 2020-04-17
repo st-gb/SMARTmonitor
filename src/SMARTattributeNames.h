@@ -23,17 +23,18 @@ extern "C" {
 /** See https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes */
 enum SMARTattributeNames 
 {
-    /** https://de.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#.C3.9Cbliche_Parameter : 
-    Laufleistung in Stunden oder Sekunden (inklusive Standby)
-    Deutet auf Abnutzung hin, sagt aber nichts über Nutzungsumstände in dieser Zeit aus.
-    Bei einigen Modellen von Maxtor, z. B. bei der Maxtor DiamondMax 10 6L250S0 
-    * sind das Minuten. */
+  /** https://de.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#.C3.9Cbliche_Parameter : 
+   Laufleistung in Stunden oder Sekunden (inklusive Standby)
+   Deutet auf Abnutzung hin, sagt aber nichts über Nutzungsumstände in dieser Zeit aus.
+   Bei einigen Modellen von Maxtor, z. B. bei der Maxtor DiamondMax 10 6L250S0 
+   * sind das Minuten. */
   PowerOnTime = 9,
+  TempDiffOrAirflowTemp=190,
+  DevTemp = 194,
   /** https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes: 
     * "Time spent during the positioning of the drive heads. Some Fujitsu 
    *  drives report the count of link resets during a data transfer. */
-  HeadFlyingHours = 240,
-  TemperatureInMilliKelvin = 194
+  HeadFlyingHours = 240
 };
 
 #ifdef __cplusplus
