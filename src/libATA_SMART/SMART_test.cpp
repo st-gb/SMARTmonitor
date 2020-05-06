@@ -69,7 +69,7 @@ void ReadSMARTValues(/*uint8_t id*/ const char device [])
       uint64_t milliSeconds;
       i = sk_disk_smart_get_power_on(p_skDisk, & milliSeconds);
       if( i == 0)
-        SMARTvalueFormatter::OutputPowerOnTimeAssumingMilliS(milliSeconds);
+        SMARTvalueFormatter::GetTimeFrom_ms(milliSeconds);
 
       uint64_t sectors;
       i = sk_disk_smart_get_bad(p_skDisk, & sectors);
@@ -81,7 +81,7 @@ void ReadSMARTValues(/*uint8_t id*/ const char device [])
       if( i == 0)
         std::cout << "successfully got temperature of drive:"
           << mkelvin << "mK=" << mkelvin/1000 << "K="
-          << SMARTvalueFormatter::OutputTemperatureInCelsius(mkelvin) << std::endl;
+          << SMARTvalueFormatter::GetDegCfrom_mK(mkelvin) << std::endl;
       else
         std::cout << "failed to get temperature of drive:" << i << " errno:" << errno << std::endl;
 //    const SkSmartAttributeInfo * p = lookup_attribute(& skDisk, id);

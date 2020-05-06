@@ -77,23 +77,6 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattributeValuesFromServer(
   return successfull;
 }
 
-struct hostent * GetServerHostDataBaseEntry(const char * hostName)
-{
-  /** http://pubs.opengroup.org/onlinepubs/009695399/functions/gethostbyaddr.html :
-   * "Upon successful completion, these functions shall return a pointer to a 
-   * hostent structure if the requested entry was found, and a null pointer if 
-   * the end of the database was reached or the requested entry was not found.
-   * 
-   * Upon unsuccessful completion, gethostbyaddr() and gethostbyname() shall 
-   * set h_errno to indicate the error." */
-  struct hostent * p_serverHostDataBaseEntry = gethostbyname(hostName);
-  if (p_serverHostDataBaseEntry == NULL) {
-    //TODO check h_errno
-    LOGN_ERROR("host " << hostName << " not in database;error code:" << h_errno)
-  }
-  return p_serverHostDataBaseEntry;
-}
-
 struct SocketConnectThreadFuncParams
 {
   int socketFileDesc;
@@ -106,68 +89,7 @@ struct SocketConnectThreadFuncParams
   }
 };
 
-int GetConnectTimeOut(const int m_socketFileDesc)
-{
-//  std::string strMsg("connecting to ");
-//  strMsg += hostName;
-//  ShowMessage(strMsg.c_str()
-  //from http://stackoverflow.com/questions/4181784/how-to-set-socket-timeout-in-c-when-making-multiple-connections
-  struct timeval timevalSocketTimeout = { 10, 0};
-  socklen_t __optlen = sizeof(timevalSocketTimeout);
- 
-   int returnValue = setsockopt(m_socketFileDesc, SOL_SOCKET, SO_RCVTIMEO, 
-    /** https://linux.die.net/man/7/socket
-    * SO_RCVTIMEO and SO_SNDTIMEO
-    * "Specify the receiving or sending timeouts until reporting an error. 
-    * The argument is a struct timeval." */
-    (char *)& timevalSocketTimeout,
-    /** https://linux.die.net/man/2/getsockopt : 
-     * "For getsockopt(), optlen is a value-result argument, initially 
-     * containing the size of the buffer pointed to by optval, and modified on 
-     * return to indicate the actual size of the value returned." */
-    __optlen );
- 
-  returnValue = getsockopt(m_socketFileDesc, SOL_SOCKET, SO_RCVTIMEO, 
-    /** https://linux.die.net/man/7/socket
-    * SO_RCVTIMEO and SO_SNDTIMEO
-    * "Specify the receiving or sending timeouts until reporting an error. 
-    * The argument is a struct timeval." */
-    (char *)& timevalSocketTimeout,
-    /** https://linux.die.net/man/2/getsockopt : 
-     * "For getsockopt(), optlen is a value-result argument, initially 
-     * containing the size of the buffer pointed to by optval, and modified on 
-     * return to indicate the actual size of the value returned." */
-    & __optlen );
-  
-  returnValue = getsockopt(m_socketFileDesc, SOL_SOCKET, SO_SNDTIMEO, 
-    /** https://linux.die.net/man/7/socket
-    * SO_RCVTIMEO and SO_SNDTIMEO
-    * "Specify the receiving or sending timeouts until reporting an error. 
-    * The argument is a struct timeval." */
-    (char *)& timevalSocketTimeout,
-    /** https://linux.die.net/man/2/getsockopt : 
-     * "For getsockopt(), optlen is a value-result argument, initially 
-     * containing the size of the buffer pointed to by optval, and modified on 
-     * return to indicate the actual size of the value returned." */
-    & __optlen );
-  if(returnValue < 0)
-  {
-    const int lastOSerrorCode = OperatingSystem::GetLastErrorCode();
-    std::string st = OperatingSystem::EnglishMessageFromErrorCode(lastOSerrorCode);
-  }
-  socklen_t ntsnd = sizeof(ntsnd);
-  int SndTimeO;
-  //http://stackoverflow.com/questions/4181784/how-to-set-socket-timeout-in-c-when-making-multiple-connections
-  returnValue = getsockopt(m_socketFileDesc, SOL_SOCKET, SO_SNDTIMEO, 
-    (char *) & SndTimeO,
-                & ntsnd);
-  int timeout = 10000;
-  //https://linux.die.net/man/7/socket
-  returnValue = getsockopt(m_socketFileDesc, 6, 18, (char*) &timeout, & __optlen);
-  int socketTimeoutInS = 30;
-  return socketTimeoutInS;
-}
-
+///Non-Blocking is an alternative option to set a self-defined connect timeout.
 int ConnectToSocketNonBlocking(
   int socketFileDescriptor, 
   struct sockaddr_in & serv_addr, 
@@ -287,24 +209,6 @@ DWORD SocketConnectThreadFunc(void * p_v)
     return connectResult;
   }
   return -1;
-}
-
-inline int GetSocketFileDescriptor()
-{
-  /** http://pubs.opengroup.org/onlinepubs/009695399/functions/socket.html :
-   * "Upon successful completion, socket() shall return a non-negative integer, 
-   * the socket file descriptor. Otherwise, a value of -1 shall be returned 
-   * and errno set to indicate the error." */
-  const int socketFileDesc = socket(AF_INET, SOCK_STREAM,
-    /** socket.h : "If PROTOCOL is zero, one is chosen automatically." */
-    0 );
-  if (socketFileDesc < 0)
-  {
-    const unsigned long int lastOSerrorCode = OperatingSystem::GetLastErrorCode();
-    LOGN_ERROR("ERROR opening socket: OS error code " << lastOSerrorCode 
-      << " error message:" << OperatingSystem::EnglishMessageFromErrorCode(lastOSerrorCode) )
-  }
-  return socketFileDesc;
 }
 
 fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(

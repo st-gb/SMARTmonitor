@@ -1,0 +1,7 @@
+client:
+"strace -p " >>client process ID<< " -e read"
+to view which data came to the client
+e.g. "strace -p `pidof wxSMARTmonitor_GUI` -e read"
+"strace -p `pidof wxSMARTmonitor_GUI` -e read=8"
+
+server: use Wireshark to see which data come from the server
