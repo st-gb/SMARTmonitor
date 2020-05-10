@@ -481,6 +481,7 @@ void SMARTdialog::SetSMARTdriveID()
   }
 }
 
+#ifdef directSMARTaccess
 void SMARTdialog::ReadSMARTvaluesAndUpdateUI()
 {
   DWORD dwRetVal = wxGetApp().mp_SMARTaccess->ReadSMARTValuesForAllDrives();
@@ -501,3 +502,4 @@ void SMARTdialog::ReadSMARTvaluesAndUpdateUI()
   ReBuildUserInterface();
 //  UpdateSMARTvaluesUI();
 }
+#endif

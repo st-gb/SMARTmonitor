@@ -67,7 +67,7 @@ public:
   void EndUpdateUIthread();
   fastestUnsignedDataType GetSupportedSMARTidsFromServer();
   fastestSignedDataType ReadNumFollowingBytes();
-  fastestUnsignedDataType GetSMARTattributeValuesFromServer(//std::set<SMARTuniqueIDandValues> & 
+  fastestUnsignedDataType GetSMARTattrValsFromSrv(//std::set<SMARTuniqueIDandValues> & 
     );
   void GetSMARTvaluesAndUpdateUI();
   void HandleTransmissionError(enum TransmissionError transmissionError);

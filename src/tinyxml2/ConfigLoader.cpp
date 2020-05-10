@@ -12,9 +12,9 @@
 namespace tinyxml2
 {
 ConfigLoader::ConfigLoader(
-  std::set<SMARTentry> & smartAttributesToObserve,
+  SMARTmonitorBase::SMARTattrDefType & SMARTattrDefs,
   SMARTmonitorBase & r_userInterface)
-  : ConfigurationLoaderBase(smartAttributesToObserve, r_userInterface)
+  : ConfigurationLoaderBase(SMARTattrDefs, r_userInterface)
 {
   
 }
@@ -80,7 +80,7 @@ ConfigLoader::~ConfigLoader() {
           {
             LOGN_DEBUG("adding SMART attribute with ID " << SMARTattributeID
               << " as SMART parameter to observe/monitor")
-            m_r_SMARTmonitorBase.m_IDsOfSMARTattributesToObserve.insert(SMARTattributeID);
+            m_r_SMARTmonitorBase.m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
           }
         }
       }
@@ -104,9 +104,9 @@ ConfigLoader::~ConfigLoader() {
     
     //const char * arch = p_tinyxml2XMLelement->Value();
 //    m_smartAttributesToObserve.clear();
-    mp_smartAttributes->clear();
+    SMARTmonitorBase::clearSMARTattrDefs();
 
-      SMARTentry sMARTentry;
+      SMARTattrDef sMARTattrDef;
         //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
 
       ReadNetworkConfig(p_tinyxml2XMLelement);
@@ -133,13 +133,13 @@ ConfigLoader::~ConfigLoader() {
 //      for(int SMARTparameterIndex = 0; SMARTparameterIndex
 //        < numCritical_SMART_parameters; ++ SMARTparameterIndex)
       char * p_ch;
-      int smartAttributeID;
+      int sMARTattrID;
       std::string std_strCritical;
       std::string std_strAttribName, std_strAttribDetails;
       do
       {
-        smartAttributeID = p_tinyxml2XMLelement->IntAttribute("Id", 0);
-        if( smartAttributeID != 0 )
+        sMARTattrID = p_tinyxml2XMLelement->IntAttribute("Id", 0);
+        if( sMARTattrID != 0 )
         {
           p_ch = (char *) p_tinyxml2XMLelement->Attribute("Name", 
             /** Value: specify '0' in order to retrieve the value */ NULL);
@@ -158,26 +158,24 @@ ConfigLoader::~ConfigLoader() {
               criticalSMARTattribute = true;
           }
 
-          sMARTentry.SetCritical(criticalSMARTattribute);
+          sMARTattrDef.SetCritical(criticalSMARTattribute);
           LOGN_DEBUG("Critical value for " << 
-            smartAttributeID << ":" << criticalSMARTattribute )
+            sMARTattrID << ":" << criticalSMARTattribute )
           if( ! std_strAttribName.empty() )
           {
-            sMARTentry.SetAttributeID(smartAttributeID);
+            sMARTattrDef.SetAttributeID(sMARTattrID);
 //            attributeNamesFromConfigFile.insert(std_strAttribName);
 //            std::set<std::string>::const_iterator citer =
 //              attributeNamesFromConfigFile.find(std_strAttribName);
 //            if( citer != attributeNamesFromConfigFile.end() )
               //use pointer from member var instead of from stack.
-              sMARTentry.SetName(std_strAttribName.c_str() );
+              sMARTattrDef.SetName(std_strAttribName.c_str() );
 
-            /*m_smartAttributesToObserve.*/ mp_smartAttributes->insert(
-              /*std::make_pair(smartAttributeID,*/ sMARTentry//)
-              );
+            SMARTmonitorBase::Add(sMARTattrDef);
           LOGN_DEBUG( "using SMART entry at address " << 
-            &  (* mp_smartAttributes->find(sMARTentry) ) )
-            LOGN("adding SMART ID" << smartAttributeID << "to " 
-                << mp_smartAttributes)
+            SMARTmonitorBase::getSMARTattrDef(sMARTattrID) )
+            LOGN("adding SMART ID" << sMARTattrID /*<< "to " 
+              << mp_smartAttributes*/)
           }
         }
         else

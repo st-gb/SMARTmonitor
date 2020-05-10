@@ -8,7 +8,9 @@ if(NOT DEFINED COMMON_SOURCECODE_ROOT_PATH OR COMMON_SOURCECODE_ROOT_PATH STREQU
   message("COMMON_SOURCECODE_ROOT_PATH not defined")
   #By default "common_sourcecode" lies/lays at the same level as SMARTmonitor
   set(COMMON_SOURCECODE_ROOT_PATH ${PROJECT_SOURCE_DIR}/../../common_sourcecode)
+  set(cmnSrcDir ${COMMON_SOURCECODE_ROOT_PATH})
 endif()
+set(SMARTmonSrcDir ${PROJECT_SOURCE_DIR})
 
 #To create executable outside of "src" directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/..)
@@ -43,15 +45,6 @@ if( DEFINED WXWIDGETS )
   )
 endif ( DEFINED WXWIDGETS )
 
-set( INCLUDE_DIRS 
-  ${INCLUDE_DIRS} #inlcude the wxWidgets dirs from above
-  ${COMMON_SOURCECODE_ROOT_PATH}
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
-  ${PROJECT_SOURCE_DIR}
-  ${TINYXML2_ROOT_PATH}
-)
-message("include directories: ${INCLUDE_DIRS}")
-
 #set(PROJECT_BINARY_DIR ../build)
 #http://stackoverflow.com/questions/6594796/how-do-i-make-cmake-output-into-a-bin-dir
 #set(CMAKE_BINARY_DIR ${CMAKE_BINARY_DIR}/../build)
@@ -62,15 +55,6 @@ message("include directories: ${INCLUDE_DIRS}")
 message("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 message("PROJECT_BINARY_DIR: ${PROJECT_BINARY_DIR}")
 message("TINYXML2_ROOT_PATH: ${TINYXML2_ROOT_PATH}")
-
-set( CXX_DEFINITIONS
-  -DCOMPILE_LOGGER_MULTITHREAD_SAFE
-  #-D__WXDEBUG__
-  -DUSE_OWN_LOGGER
-  -DCOMPILE_WITH_LOG
-  -DCOMPILE_AS_EXECUTABLE
-  -DUNICODE
-)
 
 message( "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}" )
 if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
@@ -88,8 +72,6 @@ message (STATUS "${CMAKE_CURRENT_LIST_FILE} LIBRARIES: ${LIBRARIES}")
 
 #include_directories("${PROJECT_BINARY_DIR}")
 
-#https://www.johnlamp.net/cmake-tutorial-4-libraries-and-subdirectories.html
-include_directories( ${INCLUDE_DIRS} )
 #if( DEBUG)
 #  /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-2.8
 
@@ -109,46 +91,16 @@ include_directories( ${INCLUDE_DIRS} )
 #set(SOURCE_FILE_PATHS_TEMP ${SOURCE_FILE_PATHS})
 #list(REMOVE_ITEM SOURCE_FILE_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/testing.cpp)
 
-set( ATTRIBUTE_DATA_SOURCE_FILES
-  ${PROJECT_SOURCE_DIR}/attributes/SMARTattributeNameAndID.cpp
-  ${PROJECT_SOURCE_DIR}/attributes/SMARTentry.cpp
-  ${PROJECT_SOURCE_DIR}/attributes/SMARTuniqueID.cpp
-  ${PROJECT_SOURCE_DIR}/attributes/SMARTuniqueIDandValues.cpp
+include(clientSrvSrcFiles.cmake)
+set( INCLUDE_DIRS 
+  ${INCLUDE_DIRS} #include the wxWidgets dirs from above
+  ${InclDirs}
 )
+message("include directories: ${INCLUDE_DIRS}")
 
-if(UNIX)
-  message("UNIX defined")
-  include(Unix.cmake)
-endif()
+#https://www.johnlamp.net/cmake-tutorial-4-libraries-and-subdirectories.html
+include_directories( ${InclDirs} )
 
-set(CmnSrcLogger ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
-include(${CmnSrcLogger}/Logger.cmake)
-set(LOGGER_SOURCE_FILES
-  ${SG_BasicLoggerSrcFilePaths}
-  ${CmnSrcLogger}/Appender/RollingFileOutput.cpp
-  ${CmnSrcLogger}/Formatter/HTMLlogFormatter.cpp
-  ${CmnSrcLogger}/Formatter/Log4jFormatter.cpp
-  ${CmnSrcLogger}/OutputHandler/StdCoutLogWriter.cpp
-  ${CmnSrcLogger}/OutputHandler/StdOfStreamLogWriter.cpp
-)
-
-#Source files needed for both client/GUI and server builds.
-set(CLIENT_SERVER_BASE_SOURCE_FILES
-  ${CLIENT_SERVER_BASE_SOURCE_FILES}
-  ${LOGGER_SOURCE_FILES}
-  ${PROJECT_SOURCE_DIR}/tinyxml2/ConfigLoader.cpp
-  ${TINYXML2_ROOT_PATH}/tinyxml2.cpp
-  ${PROJECT_SOURCE_DIR}/SMARTmonitorBase.cpp
-  ${PROJECT_SOURCE_DIR}/SMARTaccessBase.cpp
-  ${PROJECT_SOURCE_DIR}/SMARTvalueFormatter.cpp
-  #${PROJECT_SOURCE_DIR}/SMARTvalueProcessorBase.cpp
-  #${COMMON_SOURCECODE_ROOT_PATH}/Controller/character_string/stdtstr.cpp
-  #${COMMON_SOURCECODE_ROOT_PATH}/data_structures/Trie/byteTrie/ByteTrie.cpp
-  #${COMMON_SOURCECODE_ROOT_PATH}/data_structures/Trie/byteTrie/Trie.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/multithread/I_Thread.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/character_string/stdtstr.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/FileSystem/PathSeperatorChar.cpp
-)
 
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
   set(SOURCE_FILE_PATHS
@@ -168,13 +120,6 @@ set(TinyXML2dir ../../tinyxml2-master)
 if(DEFINED SMARTmonClientDerived)#define for all clients
   include(client/SMARTmonClientDerived.cmake)
 endif()
-
-set(SOURCE_FILE_PATHS
-  ${SOURCE_FILE_PATHS}
-  ${CLIENT_SERVER_BASE_SOURCE_FILES}
-  ${CONFIGURATION_READER_SOURCE_FILES}
-  ${ATTRIBUTE_DATA_SOURCE_FILES}
-)
 
 add_definitions(${CXX_DEFINITIONS})
 #add_library(${LIBRARIES} )

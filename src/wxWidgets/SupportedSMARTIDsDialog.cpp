@@ -97,11 +97,10 @@ void SupportedSMART_IDsDialog::FillGUI(
     item.SetText( wxString::Format(wxT("%u"), SMART_ID ) );
     m_pwxlistctrl->InsertItem( item );
     
-    SMARTattributesIter = r_SMARTattributesContainer.find( SMARTentry(SMART_ID) );
-    if( SMARTattributesIter != r_SMARTattributesContainer.end() )
-    {
+    SMARTattrDef * p_sMARTattrDef;
+    if( (p_sMARTattrDef = wxGetApp().getSMARTattrDef(SMART_ID)) != NULL ){
       wxSMARTattribName = wxWidgets::GetwxString_Inline(
-        SMARTattributesIter->GetName() );
+        p_sMARTattrDef->GetName() );
       m_pwxlistctrl->SetItem(lineNumber, 1, wxSMARTattribName);
     }
   }

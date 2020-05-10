@@ -26,6 +26,9 @@ CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. \"server.xml"},
   {""}
 };
+/** E.g. 32 bit Linux: size of long int is 4 bytes*/
+fastestUnsignedDataType SMARTmonitorBase::s_sizeOfLongIntInBytes = sizeof(long int);
+SMARTattrDef SMARTmonitorBase::SMARTattrDefs[] ;
 
 /** Initialized with default values. */
 std::wstring SMARTmonitorBase::s_programOptionValues[beyondLastProgramOptionName] = {
@@ -45,9 +48,11 @@ SMARTmonitorBase::SMARTmonitorBase()
 {
   /** For calling ::UpdateSMARTparameterValuesThreadFunc(void *) */
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
+#ifdef directSMARTaccess
   mp_SMARTaccess = &m_SMARTvalueProcessor.getSMARTaccess();
+#endif
   mp_configurationLoader = new tinyxml2::ConfigLoader(
-    (SMARTaccessBase::SMARTattrDefContType &) mp_SMARTaccess->getSMARTattrDefs(), * this);
+    (SMARTattrDefType &) SMARTattrDefs, * this);
   //  InitializeLogger();
   
   //TODO
@@ -61,6 +66,60 @@ SMARTmonitorBase::~SMARTmonitorBase() {
     delete [] m_cmdLineArgStrings;
   if( m_ar_stdwstrCmdLineArgs)
     delete [] m_ar_stdwstrCmdLineArgs;
+}
+
+void SMARTmonitorBase::clearSMARTattrDefs()
+{
+//  SMARTattrDefs.clear();
+  for(fastestUnsignedDataType idx; idx < NUM_DIFFERENT_SMART_ENTRIES; idx++){
+    SMARTattrDefs[idx].SetAttributeID(0);
+    SMARTattrDefs[idx].SetName("");
+    SMARTattrDefs[idx].SetCritical(false);
+  }
+}
+
+void SMARTmonitorBase::Add(const SMARTattrDef & sMARTattrDef)
+{
+  SMARTattrDefs[sMARTattrDef.GetAttributeID()] = sMARTattrDef;
+}
+
+int SMARTmonitorBase::GetNumSMARTattrDefs()const
+{
+  fastestUnsignedDataType numSMARTattrDefs = 0;
+//  numSMARTattrDefs = SMARTattrDefs.size();
+  for(fastestUnsignedDataType idx = 0;idx < NUM_DIFFERENT_SMART_ENTRIES; idx++){
+    if(SMARTattrDefs[idx].GetAttributeID() != 0)
+      numSMARTattrDefs++;
+  }
+  return numSMARTattrDefs;
+}
+
+SMARTattrDef * SMARTmonitorBase::getSMARTattrDef(const unsigned attrID)/*const*/{
+  //TODO make faster: SMART attrib definition should be an array element:
+  // SMARTattrDef[SMARTattributeID]
+//    SMARTattrContConstIterType SMARTattrDefIter = SMARTattrDefs.begin();
+//    SMARTattributesIter = r_SMARTattributesContainer.find( SMARTattrDef(SMART_ID) );
+//    if( SMARTattributesIter != r_SMARTattributesContainer.end() )
+//  for( ; SMARTattrDefIter->GetAttributeID() < SMARTattributeID && 
+//     SMARTattrDefIter != SMARTattrDefs.end(); SMARTattrDefIter++)
+//  {
+//    LOGN_DEBUG("using SMART entry at address " << 
+//      & (* SMARTattrDefIter) )
+//    if(SMARTattributeID == SMARTattrDefIter->GetAttributeID())
+//      SMARTattrDefFound = true;
+//  }
+  return & SMARTattrDefs[attrID];
+}
+
+bool SMARTmonitorBase::getSMARTattrDef(const unsigned attrID, SMARTattrDef & sad)
+  /*const*/
+{
+//  bool SMARTattrDefFound = false;
+  SMARTattrDef * p_SMARTattrDef = getSMARTattrDef(attrID);
+  if(p_SMARTattrDef)
+    sad = *p_SMARTattrDef;
+    return true;
+  return false;
 }
 
 //https://gcc.gnu.org/onlinedocs/cpp/Stringification.html#Stringification
@@ -98,7 +157,7 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
   //  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
   //    wxGetApp().mp_SMARTaccess->getSMARTattributesToObserve();
   //TODO add SMART attribute IDs to SMARTattributesToObserve
-  m_IDsOfSMARTattributesToObserve.clear();
+  m_IDsOfSMARTattrsToObserve.clear();
   std::set<SMARTuniqueIDandValues>::const_iterator iter =
           SMARTuniqueIDandValuesContainer.begin();
   for (; iter != SMARTuniqueIDandValuesContainer.end(); iter++) {
@@ -110,7 +169,7 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
       if(SMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID].
            m_successfullyReadSMARTrawValue)
       {
-        m_IDsOfSMARTattributesToObserve.insert(SMARTattributeID);
+        m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
         LOGN_DEBUG("adding SMART attribute ID " << SMARTattributeID)
       }
     }
@@ -230,7 +289,8 @@ void SMARTmonitorBase::HandleLogFileFolderProgramOption(
       stdwstrLogfilepathCmdLineArg += FileSystem::dirSeperatorChar;
   }
   m_stdstrLogFilePath = GetStdString_Inline(stdwstrLogfilepathCmdLineArg);
-  m_stdstrLogFilePath += GetStdString_Inline(m_stdwstrProgramePath);
+  m_stdstrLogFilePath += GetStdString_Inline(//m_stdwstrProgramePath);
+    GetExeFileName(m_commandLineArgs.GetProgramPath()) );
 }
 
 void SMARTmonitorBase::ProcessCommandLineArgs()
@@ -340,6 +400,7 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
   }
 }
 
+#ifdef directSMARTaccess
 fastestUnsignedDataType SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
 {
   LOGN_DEBUG("begin")
@@ -362,22 +423,19 @@ fastestUnsignedDataType SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
             SMARTuniqueIDsAndValues.begin();
     fastestUnsignedDataType SMARTattributeID;
     uint64_t SMARTrawValue;
-    const std::set<SMARTentry> & SMARTattributesToObserve =
-            SMARTaccess.getSMARTattrDefs();
-    LOGN("# SMART attributes to observe:" << SMARTattributesToObserve.size())
             //TODO crashed in loop header at "iter++"
             bool consistent;
     for (fastestUnsignedDataType currentDriveIndex = 0 /*, ucT4 = 0*/;
             currentDriveIndex < numberOfDifferentDrives;
             ++currentDriveIndex, SMARTuniqueIDandValuesIter++) {
       //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
-      std::set<SMARTentry>::const_iterator
-      SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
+      SMARTattrToObsType::const_iterator
+        SMARTattrsToObserveIter = m_IDsOfSMARTattrsToObserve.begin();
       uint64_t currentSMARTrawValue;
       //TODO crashes here (iterator-related?!-> thread access problem??)
-      for (; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
-              SMARTattributesToObserveIter++) {
-        SMARTattributeID = SMARTattributesToObserveIter->GetAttributeID();
+      for (; SMARTattrsToObserveIter != m_IDsOfSMARTattrsToObserve.end();
+              SMARTattrsToObserveIter++) {
+        SMARTattributeID = * SMARTattrsToObserveIter;
 
         consistent = SMARTuniqueIDandValuesIter->m_SMARTvalues[
                 SMARTattributeID].IsConsistent(m_arSMARTrawValue[lineNumber]);
@@ -403,6 +461,7 @@ fastestUnsignedDataType SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
     ;
   return dwRetVal;
 }
+#endif
 
 ///Function that can be used by clients and service.
 ///It shouldn't be called from the UI thread because getting S.M.A.R.T. infos
@@ -466,6 +525,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   return 0;
 }
 
+#ifdef multithread
 void SMARTmonitorBase::StartAsyncUpdateThread(
   GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
     getSMARTvaluesFunctionType
@@ -473,7 +533,7 @@ void SMARTmonitorBase::StartAsyncUpdateThread(
 {
   LOGN_DEBUG("begin")
   /** Preconditions */
-  if (mp_SMARTaccess->GetNumSMARTattributesToObserve() > 0) {
+  if (m_IDsOfSMARTattrsToObserve.size() > 0) {
     m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction = 
       getSMARTvaluesFunctionType;
     m_updateSMARTparameterValuesThread.start(
@@ -491,7 +551,7 @@ void SMARTmonitorBase::StartAsyncUpdateThread(
   )
 {
   /** Preconditions */
-  if (mp_SMARTaccess->GetNumSMARTattributesToObserve() > 0) {
+  if (m_IDsOfSMARTattrsToObserve.size() > 0) {
 //    struct GetSMARTvaluesFunctionParams
 //      getSMARTvaluesFunctionParams = {this, getSMARTvaluesFunctionType };
     m_updateSMARTparameterValuesThread.start(
@@ -500,6 +560,7 @@ void SMARTmonitorBase::StartAsyncUpdateThread(
       );
   }
 }
+#endif
 
 void SMARTmonitorBase::ConstructConfigFilePathFromExeDirPath(
   const std::wstring & stdwstrAbsoluteFilePath,
@@ -531,8 +592,8 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   std::wstring stdwstrThisExecutable_sFilePath(wchThisExecutable_sFilePath);
   LOGN("this exe's file path: \"" << std::wstring(wchThisExecutable_sFilePath) << "\"")
 
-  std::string currentWorkingDir;
-  OperatingSystem::GetCurrentWorkingDirA_inl(currentWorkingDir);
+  std::string stdstrCurrWorkDir;
+  OperatingSystem::GetCurrentWorkingDirA_inl(stdstrCurrWorkDir);
 
   //  std::wstring stdwstrAbsoluteFilePath = GetAbsoluteFilePath(
   //    GetStdWstring(currentWorkingDir), 
@@ -544,7 +605,7 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   LOGN("this exe's absolute file path: \"" << stdwstrAbsoluteFilePath << "\"")
 
   LOGN("this exe's current working dir: \"" << GetStdWstring(
-    currentWorkingDir) << "\"")
+    stdstrCurrWorkDir) << "\"")
 
     //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
     //have to be taken into account
@@ -554,9 +615,13 @@ void SMARTmonitorBase::ConstructConfigFilePath(
     //    ConstructConfigFilePathFromExeFilePath(
     //      stdwstrAbsoluteFilePath,
     //      stdwstrThisExecutable_sFilePath);
-    ConstructConfigFilePathFromExeDirPath(
-            stdwstrAbsoluteFilePath,
-            fullConfigFilePathWithoutExtension);
+//    ConstructConfigFilePathFromExeDirPath(
+//      stdwstrAbsoluteFilePath,
+//      stdwstrConfigPathWithoutExtension);
+    
+    std::string absCfgFilePathWoutExt = stdstrCurrWorkDir + 
+      PATH_SEPERATOR_CHAR + std::string("SMARTmonitor.");
+    stdwstrConfigPathWithoutExtension = GetStdWstring(absCfgFilePathWoutExt);
   }
   //  else /** At least 1 program argument passed. */
   //  {
@@ -578,7 +643,6 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   //  //  wxWidgets::wxSMARTreader smartReader;
   //  /*std::wstring*/ stdwstrConfigPathWithoutExtension =
   //    wxWidgets::GetStdWstring_Inline(fullConfigFilePathWithoutExtension);
-  stdwstrConfigPathWithoutExtension = fullConfigFilePathWithoutExtension;
   LOGN("using config file path: \"" << stdwstrConfigPathWithoutExtension << "\"")
 }
 
@@ -599,11 +663,12 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
     //      return false;
     //    }
     //if( smartReader.m_oSMARTDetails.size())
+#ifdef directSMARTaccess
     DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
     switch (dwRetVal) {
-      case SMARTaccessBase::accessDenied:
-        ShowMessage("access denied to S.M.A.R.T.\n->restart this program as an"
-          " administrator\nin order to get the S.M.A.R.T. values directly");
+     case SMARTaccessBase::accessDenied:
+       ShowMessage("direct access denied to S.M.A.R.T.\n->restart this program"
+        " as an administrator\nin order to get the S.M.A.R.T. values directly");
         initSMARTretCode = accessToSMARTdenied;
         break;
       case SMARTaccessBase::noSingleSMARTdevice:
@@ -615,6 +680,7 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
         LOGN("SMART successfully accessed")
         break;
     }
+#endif
   } catch (const ParseConfigFileException & e) {
     LOGN("parse config file exc")
     ShowMessage("There was at least 1 error reading the configuration file\n"

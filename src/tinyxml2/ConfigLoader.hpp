@@ -4,6 +4,7 @@
 #define CONFIGLOADER_HPP
 
 #include <ConfigLoader/ConfigurationLoaderBase.hpp>
+#include <SMARTmonitorBase.hpp>///typedef SMARTmonitorBase::SMARTattrDefType
 
 /** Forward declarations (compiles faster than #including header file(s). */
 namespace tinyxml2
@@ -18,7 +19,7 @@ namespace tinyxml2
   {
   public:
     ConfigLoader(
-      std::set<SMARTentry> & smartAttributesToObserve,
+      SMARTmonitorBase::SMARTattrDefType & SMARTattrDefs,
       SMARTmonitorBase & r_userInterface);
     ConfigLoader(const ConfigLoader& orig);
     virtual ~ConfigLoader();

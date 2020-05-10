@@ -13,6 +13,7 @@
 #include <set> //class std::set
 #include <attributes/SMARTentry.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN
+#include <SMARTmonitorBase.hpp>///SMARTmonitorBase::SMARTattrDefType
 
 /** Forward declaration. */
 class SMARTmonitorBase;
@@ -23,10 +24,10 @@ protected:
   SMARTmonitorBase & m_r_SMARTmonitorBase;
 public:
 //  std::set<SMARTentry> & m_smartAttributesToObserve;
-  std::set<SMARTentry> * mp_smartAttributes;
+  SMARTmonitorBase::SMARTattrDefType * mp_SMARTattrDefs;
 
   ConfigurationLoaderBase(/*const*/
-    std::set<SMARTentry> & smartAttributesToObserve,
+    SMARTmonitorBase::SMARTattrDefType & SMARTattrDefs,
     SMARTmonitorBase & r_SMARTmonitorBase
     )
 //      m_smartAttributesToObserve(smartAttributesToObserve)
@@ -34,7 +35,7 @@ public:
   {
     //TODO logging here causes crashs (if executed before opening log file?) ?
 //    LOGN(smartAttributesToObserve.size() )
-    mp_smartAttributes = & smartAttributesToObserve;
+    mp_SMARTattrDefs = & SMARTattrDefs;
   }
   virtual ~ConfigurationLoaderBase() {}
   

@@ -85,7 +85,7 @@ namespace wxWidgets
     fastestUnsignedDataType SMARTattributeID, lineNumber = 0;
 
     std::set<int> & IDsOfSMARTattributesToObserve = wxGetApp().
-      m_IDsOfSMARTattributesToObserve;
+      m_IDsOfSMARTattrsToObserve;
     std::set<int>::const_iterator IDofAttributeToObserverIter = 
       IDsOfSMARTattributesToObserve.begin();
 

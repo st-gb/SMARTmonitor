@@ -1,6 +1,6 @@
 #include "SMARTentry.hpp"
 
-bool operator < (const SMARTentry & left, const SMARTentry & right)
+bool operator < (const SMARTattrDef & left, const SMARTattrDef & right)
 {
   return left./*id*/GetAttributeID() < right./*id*/GetAttributeID();
 }

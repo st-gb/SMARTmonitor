@@ -9,12 +9,23 @@
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 #include "OperatingSystem/GetLastErrorCode.hpp" //OperatingSystem::GetLastErrorCode()
 #include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
+#include <OperatingSystem/BSD/socket/prepCnnctToSrv.h>///prepCnnctToSrv(...)
+#include <OperatingSystem/BSD/socket/socketTimeout.h>///getSocketTimeout(...)
+
+using namespace OperatingSystem::BSD::sockets;
 
 fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
 {
   LOGN("reading 2 bytes from socket #" << m_socketFileDesc)
   uint16_t numDataBytesToRead;
   const size_t numBytesToRead = 2;
+  //https://stackoverflow.com/questions/3053757/read-from-socket:
+  int numBinRead = 0;
+  ioctl(m_socketFileDesc, FIONREAD, &numBinRead);
+  LOGN_DEBUG("# bytes in read buffer for socket:" << numBinRead)
+  //TODO connection to service error here when expecting data for the 2nd time 
+  // running the wx GUI. errno: 11 from GetSMARTattrValsFromSrv
+  // Maybe because the 2nd time is from another thread.
   int numBytesRead = read(m_socketFileDesc, & numDataBytesToRead, numBytesToRead);
   if( numBytesRead < numBytesToRead ) {
     HandleTransmissionError(numBytesToReceive);
@@ -25,16 +36,19 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   return numDataBytesToRead;
 }
 
-fastestUnsignedDataType SMARTmonitorClient::GetSMARTattributeValuesFromServer(
+fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
 //  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer
   )
 {
-  LOGN("begin")
-  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer = 
-    mp_SMARTaccess->GetSMARTuniqueIDandValues();
+  LOGN_DEBUG("begin")
+  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValsCont = 
+    SMARTuniqueIDsAndValues;
   enum transmission transmissionResult = unsetTransmResult;
-  sMARTuniqueIDandValuesContainer.clear();
+  sMARTuniqueIDandValsCont.clear();
   int numBytesRead;
+  ///Value is 0 if connect to server for the 2nd call of this function.
+  ///Value is garbage if connect to server in another thread for the 2nd call 
+  /// of this function.
   fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
   if( numBytesToRead < 1 )
     return readLessBytesThanIntended;
@@ -59,7 +73,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattributeValuesFromServer(
     LOGN("SMART unique ID and values object " << & sMARTuniqueIDandValues )
     //sMARTuniqueIDandValuesContainer.f
     std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert = 
-      sMARTuniqueIDandValuesContainer.insert(sMARTuniqueIDandValues);
+      sMARTuniqueIDandValsCont.insert(sMARTuniqueIDandValues);
     LOGN("insered object into container?:" << insert.second);
     if(insert.second)
     {
@@ -214,29 +228,16 @@ DWORD SocketConnectThreadFunc(void * p_v)
 fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   const char * hostName, bool asyncConnect)
 {
-  //from http://www.linuxhowtos.org/data/6/client.c
-  int portNumber = m_socketPortNumber, n;
-  struct sockaddr_in serv_addr;
-  struct hostent * p_serverHostDataBaseEntry;
-  
-  m_socketFileDesc = GetSocketFileDescriptor();
-  if(m_socketFileDesc < 0)
-    return errorOpeningSocket;
-  LOGN("successfully opened socket");
-  
-  p_serverHostDataBaseEntry = GetServerHostDataBaseEntry(hostName);
-  if( ! p_serverHostDataBaseEntry )
-    return getHostByNameFailed;  
-  LOGN("got host name for \"" << hostName << "\":" << p_serverHostDataBaseEntry->h_name)
-
-  bzero( (char *) & serv_addr, sizeof(serv_addr) );
-  serv_addr.sin_family = AF_INET;
-  bcopy( (char *) p_serverHostDataBaseEntry->h_addr,
-    (char *) & serv_addr.sin_addr.s_addr,
-    p_serverHostDataBaseEntry->h_length);
-  serv_addr.sin_port = htons(portNumber);
-  
-  int connectTimeoutInSeconds = GetConnectTimeOut(m_socketFileDesc);
+  struct sockaddr_in srvAddr;
+  fastestUnsignedDataType prepCnnctToSrvRslt = prepCnnctToSrv(hostName,
+    m_socketPortNumber, & srvAddr, AF_INET, & m_socketFileDesc);
+  if(prepCnnctToSrvRslt != prepCnnctToSrvSucceeded)
+    return prepCnnctToSrvRslt;
+  ///TCP: client sends "SYN"; server sends "ACK", client "SYNACK"
+  double cnnctTimeoutInS;
+  GetSocketTimeoutInS(m_socketFileDesc, & cnnctTimeoutInS);
+  if(cnnctTimeoutInS == 0)
+    cnnctTimeoutInS = 30;
 //  MessageBox msgBox();
   
   DWORD currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
@@ -245,22 +246,27 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
 //  if( currentThreadNumber == s_UserInterfaceThreadID)
 //  {
 //  }
+#ifdef multithread
   if( asyncConnect )
   {
-    ShowConnectionState(hostName, connectTimeoutInSeconds);
+    ShowConnectionState(hostName, cnnctTimeoutInS);
     //TODO make as member variable (else is deleted if this block ends).
     nativeThread_type connectThread;
     SocketConnectThreadFuncParams * p_socketConnectThreadFuncParams = new 
-      SocketConnectThreadFuncParams {m_socketFileDesc, serv_addr, this, connectTimeoutInSeconds };
+      SocketConnectThreadFuncParams {m_socketFileDesc, srvAddr, this, cnnctTimeoutInS };
     /** call in another thread in order to enable breaking connection */
     connectThread.start(SocketConnectThreadFunc, p_socketConnectThreadFuncParams);
     BeforeConnectToServer();
   }
   else
-    return ConnectToSocketNonBlocking(
-      m_socketFileDesc, 
-      serv_addr, 
-      connectTimeoutInSeconds);
+#endif
+  /** http://man7.org/linux/man-pages/man2/connect.2.html :
+      "If the connection or binding succeeds, zero is returned." */
+//    return ConnectToSocketNonBlocking(
+//      m_socketFileDesc, 
+//      serv_addr, 
+//      connectTimeoutInSeconds);
+    return connect(m_socketFileDesc, (struct sockaddr *) & srvAddr, sizeof(srvAddr) );
 //  ShowConnectToServerStatus("cancel connection");
 //  close(m_socketFileDesc);
 //  connectThread.WaitForTermination();
@@ -286,6 +292,9 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName)
     m_stdstrServiceHostName << ",port:" << m_socketPortNumber << "\n";
   //TODO the following is Linux-specific and should be OS-independent
   //see http://man7.org/linux/man-pages/man2/connect.2.html
+  //TODO errno must come from connect(...), no other function call inbetween
+  //TODO use error description from common_sourcecode/.../BSD/socket
+  //BlockingCnnct::getoPossibleCause
   switch(errno )
   {
     //see http://man7.org/linux/man-pages/man2/connect.2.html

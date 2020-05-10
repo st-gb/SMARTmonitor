@@ -74,6 +74,7 @@ std::string SMARTvalueFormatter::GetTimeFrom_ms(
   std::ostringstream stdoss;
   stdoss.precision(1);
   //stdoss << std::fixed << (float) SMARTrawValue / 3600000 << " h";
+  ///1h=60min,1min=60s=>1h=3600s, 1s=1000ms <=> 1h=3,600,000 ms
   const float hours = (float) SMARTrawValue / 3600000.0f;
   const fastestUnsignedDataType numDays = hours / 24;
   const float hoursRemainder = hours - (numDays * 24);

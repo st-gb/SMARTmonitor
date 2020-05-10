@@ -13,7 +13,9 @@
 
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
+#ifdef multithread
 nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
+#endif
 bool SMARTmonitorClient::s_atLeast1CriticalNonNullValue = false;
 fastestUnsignedDataType SMARTmonitorClient::s_maxNumCharsNeededForDisplay [] =
  { 3, 30, 15, 20, 40};
@@ -43,6 +45,7 @@ SMARTmonitorClient::SMARTmonitorClient(const SMARTmonitorClient& orig) {
 SMARTmonitorClient::~SMARTmonitorClient() {
 }
 
+#ifdef multithread
 void SMARTmonitorClient::EndUpdateUIthread()
 {
   if( s_updateSMARTparameterValuesThread.IsRunning() )
@@ -62,6 +65,7 @@ void SMARTmonitorClient::EndUpdateUIthread()
     ChangeState(unconnectedFromService);
   }
 }
+#endif
 
 void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 {
@@ -70,8 +74,8 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
   m_serverConnectionState = connectedToService;
   ChangeState(connectedToService);
   //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
-  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = mp_SMARTaccess->
-    GetSMARTuniqueIDandValues();
+  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = 
+    SMARTuniqueIDsAndValues;
   int result = GetSupportedSMARTidsFromServer();
   if( result > 0 )
   {
@@ -88,7 +92,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
   /** Get # of attributes to in order build the user interface (write 
    *  attribute ID an name into the table--creating the UI needs to be done 
    *  only once because the attribute IDs received usually do not change).*/
-  const int getSMARTvaluesResult = GetSMARTattributeValuesFromServer(
+  const int getSMARTvaluesResult = GetSMARTattrValsFromSrv(
     /*sMARTuniqueIDandValues*/);
   if (getSMARTvaluesResult == 0)
   {
@@ -101,11 +105,15 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
      *  Afterwards this method is only called if "s_atLeast1CriticalNonNullValue" changes.*/
     ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
     m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
-      & SMARTmonitorBase::GetSMARTattributeValuesFromServer;
+      & SMARTmonitorBase::GetSMARTattrValsFromSrv;
+#ifdef multithread
     StartAsyncUpdateThread(
       //UpdateSMARTvaluesThreadSafe 
       m_getSMARTvaluesFunctionParams
       );
+#else
+    UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
+#endif
 //      ((SMARTmonitorBase *)this)->StartAsyncUpdateThread(SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
   }
   else
@@ -122,7 +130,14 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
  *  as command line argument */
 void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
 {
-  bool asyncConnectToService = true;
+  LOGN_DEBUG("begin")
+  if(GetNumSMARTattrDefs() == 0)
+  {
+    ShowMessage("no SMART attribute definition from config file. ->Don't know "
+      "whether a SMART attribute is critical");
+    return;
+  }
+  bool asyncConnectToService = /*true*/ false;
 //  BeforeConnectToServer();
   const fastestUnsignedDataType connectToServerResult = ConnectToServer(
     m_stdstrServiceHostName.c_str(), asyncConnectToService );
@@ -142,9 +157,11 @@ void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
 }
 
 void SMARTmonitorClient::ConnectToServer() {
+#ifdef multithread
   /** Terminate a possibly running update UI thread (e.g.. already connected
    *   to a service). */
   EndUpdateUIthread();
+#endif
 //  std::string stdstrServerAddress;
   GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
 
@@ -234,24 +251,20 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
 void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
 {
   LOGN("begin")
-  const std::set<SMARTentry> & SMARTattributesFromConfigFile =
-    mp_SMARTaccess->getSMARTattributes();
-  LOGN("begin " << & SMARTattributesFromConfigFile)
+//  LOGN("begin " << & SMARTattributesFromConfigFile)
   unsigned lineNumber = 0;
 //  wxString wxSMARTattribName;
 
-  std::set<SMARTentry>::const_iterator
-    SMARTattributesToObserveIter = SMARTattributesFromConfigFile.begin();
   fastestUnsignedDataType SMARTattributeID;
   
   std::set<int>::const_iterator IDofAttributeToObserverIter = 
-    m_IDsOfSMARTattributesToObserve.begin();
-  SMARTentry sMARTentry;
+    m_IDsOfSMARTattrsToObserve.begin();
+  SMARTattrDef sMARTentry;
   //TODO only dummy object!
   SMARTuniqueID sMARTuniqueID;
   /** Traverse all SMART attribute IDs either got from server or read via config 
    *  file.*/
-  for( ; IDofAttributeToObserverIter != m_IDsOfSMARTattributesToObserve.
+  for( ; IDofAttributeToObserverIter != m_IDsOfSMARTattrsToObserve.
       end() ; IDofAttributeToObserverIter ++, lineNumber++)
   {
     SMARTattributeID = * IDofAttributeToObserverIter;
@@ -268,19 +281,18 @@ void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
       );
     
     /** Now get the attribute name belonging to SMART ID */
-    sMARTentry.SetAttributeID(SMARTattributeID);
-    SMARTattributesToObserveIter = SMARTattributesFromConfigFile.find(sMARTentry);
-    if( SMARTattributesToObserveIter != SMARTattributesFromConfigFile.end() )
+    SMARTattrDef * p_sMARTattrDef = SMARTmonitorBase::getSMARTattrDef(
+      SMARTattributeID);
+    if( p_sMARTattrDef != NULL)
     {
-      const SMARTentry & SMARTattributeFromConfig =
-        *SMARTattributesToObserveIter;
+      const SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
       //SMARTattributeToObserve.name
       SetAttribute(
         //TODO only dummy object!
         sMARTuniqueID,
         SMARTattributeID,
         ColumnIndices::SMARTparameterName,
-        SMARTattributeFromConfig.GetName(),
+        sMARTattrDef.GetName(),
         noCriticalValue
         );
 //      wxSMARTattribName = wxWidgets::GetwxString_Inline(
@@ -322,14 +334,10 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
   unsigned lineNumber = 0;
   bool atLeast1CriticalNonNullValue = false;
 
-  const fastestUnsignedDataType numberOfDifferentDrives = mp_SMARTaccess->
-    GetNumberOfDifferentDrives();
-  SMARTaccessBase::constSMARTattributesContainerType & SMARTattributesFromConfigFile =
-    mp_SMARTaccess->getSMARTattributes();
+  const fastestUnsignedDataType numberOfDifferentDrives = 
+    SMARTuniqueIDsAndValues.size();
 
   //memory_barrier(); //TODO necessary at all??
-  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = mp_SMARTaccess->
-    GetSMARTuniqueIDandValues();
   LOGN("SMART unique ID and values container:" << & SMARTuniqueIDsAndValues )
   std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
     SMARTuniqueIDsAndValues.begin();
@@ -338,7 +346,7 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
 //  const numSMARTattributeIDbits = sizeof(SMARTattributeID) * 8;
   uint64_t SMARTrawValue;
   const std::set<int> & IDsOfSMARTattributesToObserve =
-    m_IDsOfSMARTattributesToObserve;
+    m_IDsOfSMARTattrsToObserve;
 #ifdef DEBUG
 //  int itemCount = m_pwxlistctrl->GetItemCount();
 #endif
@@ -356,40 +364,36 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
     LOGN("SMART unique ID and values object " << &(*SMARTuniqueIDandValuesIter) )
     std::set<int>::const_iterator
       IDsOfSMARTattributesToObserveIter = IDsOfSMARTattributesToObserve.begin();
-    SMARTaccessBase::SMARTattributesContainerConstIterType 
-      SMARTattributesFromConfigFileIter = SMARTattributesFromConfigFile.begin();
     
-    /** Loop over attribute IDs to observe */
+    /** Loop over attribute IDs to observe */ //TODO if list is empty nothing is updated
     for( ; IDsOfSMARTattributesToObserveIter != IDsOfSMARTattributesToObserve.end();
         IDsOfSMARTattributesToObserveIter ++)
     {
       SMARTattributeID = *IDsOfSMARTattributesToObserveIter;
       //TODO attribute IDs of SMART values to observe may not be a subset of
       // SMART attributes in config file!
-      while( SMARTattributesFromConfigFileIter->GetAttributeID() != SMARTattributeID)
-      {
-        SMARTattributesFromConfigFileIter++;
-        LOGN_DEBUG( "using SMART entry at address " << 
-          & (* SMARTattributesFromConfigFileIter) )
-      }
-      
+      SMARTattrDef * p_sMARTattrDef = getSMARTattrDef(SMARTattributeID);
+      if(p_sMARTattrDef){
       const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];
       bool isConsistent = sMARTvalue.IsConsistent(SMARTrawValue);
 //      memory_barrier(); //TODO: not really necessary??
       int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
       
       //memory_barrier(); //TODO: not really necessary??
-      if( successfullyUpdatedSMART )
+      if( /*successfullyUpdatedSMART*/ isConsistent )
       {
+        SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
         stdstrHumanReadableRawValue = SMARTvalueFormatter::FormatHumanReadable(
           SMARTattributeID, SMARTrawValue);
 //        wxstrRawValueString = wxWidgets::GetwxString_Inline(
 //          stdstrHumanReadableRawValue);
         std::ostringstream std_oss;
          std_oss << SMARTrawValue;
-        bool critical = SMARTattributesFromConfigFileIter->IsCritical();
-        LOGN_DEBUG("attribute ID " << SMARTattributesFromConfigFileIter->
-          GetAttributeID() << " is critical?:" << critical
+        if(/*SMARTattrDefFound*/sMARTattrDef.GetAttributeID() != 0)
+        {
+        bool critical = sMARTattrDef.IsCritical();
+        LOGN_DEBUG("attribute ID " << sMARTattrDef.GetAttributeID() << 
+          " is critical?:" << critical
           //(critical==true ? "yes" : "no") 
           )
         //TODO pass warning or OK fpr critical SMART IDs to function
@@ -439,6 +443,7 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
           sMARTuniqueID,
           SMARTattributeID,
           sMARTvalue.m_timeStampOfRetrieval);
+      }
       }
       else
       {

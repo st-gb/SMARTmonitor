@@ -134,8 +134,9 @@ namespace libatasmart
   {
     uint64_t rawSMARTattrValue;
     const char * attributeName;
-    constSMARTattributesContainerType::const_iterator 
-      constSMARTattributesToObserveConstIter = SMARTattrDefs.begin();
+//    SMARTmonitorBase::SMARTattrToObsType::const_iterator 
+//      constSMARTattrsToObsConstIter = sMARTmonBase.m_IDsOfSMARTattrsToObserve.
+//      begin();
 //            std::pair<std::set<SkIdentifyParsedData>::iterator, bool> insert =
 //              m_SMARTuniqueIDs.insert(*p_SkIdentifyParsedData);
 
@@ -154,12 +155,18 @@ namespace libatasmart
     std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert =
         m_SMARTuniqueIDandValues.insert(sMARTuniqueIDandValues);
 //              if( insert.second == true )/** If actually inserted into std::set*/
+//    {
+    for( //; constSMARTattrsToObsConstIter !=
+      //sMARTattrDefs.end(); ++ constSMARTattrsToObsConstIter
+      ;SMARTattributeID ++; SMARTattributeID < NUM_DIFFERENT_SMART_ENTRIES)
     {
-      for( ; constSMARTattributesToObserveConstIter !=
-        SMARTattrDefs.end(); ++ constSMARTattributesToObserveConstIter )
-      {
-        SMARTattributeID = constSMARTattributesToObserveConstIter->GetAttributeID();
-        attributeName = constSMARTattributesToObserveConstIter->GetName();
+      //TODO only retrieve the data of the SMART IDs to observe list (and where
+      // a definition is available?) Only get SMART info if it is supported??
+      SMARTattrDef * p_SMARTattrDef = SMARTmonitorBase::getSMARTattrDef(
+        SMARTattributeID);
+      if(p_SMARTattrDef){
+//        SMARTattributeID = constSMARTattributesToObserveConstIter->GetAttributeID();
+        attributeName = p_SMARTattrDef->GetName();
         i = readAttribute(/*attributeName*/SMARTattributeID, 
               (SkDisk *) p_skDisk, rawSMARTattrValue);
         LOGN_INFO( "SMART raw value for SMART ID " << SMARTattributeID << ":"
