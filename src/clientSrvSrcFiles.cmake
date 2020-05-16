@@ -1,6 +1,7 @@
 #This file should be used by
 #-src/CMakeLists.txt to build the different targets
 #-the minimal SMARTmonitorClient derived class
+
 #Source files needed for both client/GUI and server builds.
 if(DEFINED multithread)
   message("multithread defined")

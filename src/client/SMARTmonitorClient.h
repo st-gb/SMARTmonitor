@@ -25,6 +25,9 @@ public:
   SMARTmonitorClient();
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
+#ifdef _DEBUG
+  DWORD GetSMARTvalsAndUpd8UIthreadID = 0;
+#endif
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
   static fastestUnsignedDataType s_charPosOAttrNameBegin[ColumnIndices::beyondLast];
   static char * s_columnAttriuteNames [];
@@ -38,9 +41,7 @@ public:
   enum serverConnectionState {connectedToService, unconnectedFromService};
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
-  enum ConnectToServerResult{ connectionToServiceSucceeded = 0, 
-    errorOpeningSocket, getHostByNameFailed, errorConnectingToService };
-  enum SMARTvalueRating {noCriticalValue, SMARTvalueOK, SMARTvalueWarning };
+  enum SMARTvalueRating{noCriticalValue,SMARTvalueOK,SMARTvalueWarning,unknown};
   
   int m_socketFileDesc;
   fastestUnsignedDataType m_serviceConnectionCountDownInSeconds;
@@ -50,6 +51,10 @@ public:
   /** E.g. show a dialog that enables cancelling of connection in implementation. */
   virtual void BeforeConnectToServer() = 0;
   virtual void GetTextFromUser(const char * label, std::string & ) { };
+  ///Called after connection attempt to the server.(either from the thread that
+  ///prepared the server connection or from another). So UI operations should 
+  /// be ensured to run in UI thread via events etc..)
+  ///Can be used to hide a "connect to server" window.
   virtual void AfterConnectToServer(int connectResult) { };
   void HandleConnectionError(const char * hostName);
   //TODO could use ByteArray datatype here
@@ -69,6 +74,8 @@ public:
   fastestSignedDataType ReadNumFollowingBytes();
   fastestUnsignedDataType GetSMARTattrValsFromSrv(//std::set<SMARTuniqueIDandValues> & 
     );
+  ///Should be called in user interface thread? (because it calls functions to 
+  /// create the user interface)
   void GetSMARTvaluesAndUpdateUI();
   void HandleTransmissionError(enum TransmissionError transmissionError);
   

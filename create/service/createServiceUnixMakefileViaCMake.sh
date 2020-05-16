@@ -19,4 +19,6 @@ cmake \
 -DCMAKE_CXX_FLAGS_DEBUG="-g3 -gdwarf-2" \
 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -DEXE_TYPE:STRING=UNIX_service \
+#The service usually needs direct access to S.M.A.R.T.
+-DdirectSMARTaccess:BOOL=ON \
 src

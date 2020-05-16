@@ -81,13 +81,8 @@ void SupportedSMART_IDsDialog::FillGUI(
 //  m_pwxlistctrl->SetItemCount(SMARTattributeNamesAndIDs.size() );
    supportedSMARTattributeIDs_type::const_iterator 
     supportedSMART_IDsIter = supportedSMART_IDs.begin();
-   
-  SMARTaccessBase::constSMARTattributesContainerType & 
-    r_SMARTattributesContainer = wxGetApp().mp_SMARTaccess->getSMARTattributes();
-    
+  
   wxString wxSMARTattribName;
-  SMARTaccessBase::SMARTattributesContainerType::const_iterator 
-    SMARTattributesIter;
   for( fastestUnsignedDataType lineNumber = 0; lineNumber < supportedSMART_IDs.
     size() ; ++ lineNumber, supportedSMART_IDsIter++)
   {

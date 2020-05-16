@@ -343,21 +343,26 @@ void SMARTmonitorBase::ProcessCommandLineArgs()
     OutputUsage();
 }
 
-void SMARTmonitorBase::InitializeLogger() {
+bool SMARTmonitorBase::InitializeLogger() {
   LogLevel::CreateLogLevelStringToNumberMapping();
-  //std::string stdstrLogFilePath("SMARTmonitor.txt");
-  m_stdwstrProgramePath = GetExeFileName(m_commandLineArgs.
-          GetProgramPath());
-  m_stdwstrProgramePath += L"_log.txt";
 
-  //std::string stdstrLogFileDirectory;
-  m_stdstrLogFilePath += GetStdString_Inline(m_stdwstrProgramePath);
+  bool success = false;
+  if( m_stdstrLogFilePath.empty() )
+  {
+    //std::string stdstrLogFilePath("SMARTmonitor.txt");
+    m_stdwstrProgramePath = GetExeFileName(m_commandLineArgs.GetProgramPath());
+    m_stdwstrProgramePath += L"_log.txt";
+    m_stdstrLogFilePath += GetStdString_Inline(m_stdwstrProgramePath);
+  }
+  else///May be specified on command line/in configuration file
+    m_stdstrLogFilePath += "_log.txt";
   try {
-    g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel:://debug
+    success = g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel:://debug
       info);
   }  catch (const LogFileAccessException & lfae) {
     std::cout << lfae.GetErrorMessageA() << std::endl;
   }
+  return success;
 }
 
 void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
@@ -400,8 +405,27 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
   }
 }
 
+void  SMARTmonitorBase::EnsureSMARTattrToObsExist()
+{
+  if(m_IDsOfSMARTattrsToObserve.empty() )
+  {
 #ifdef directSMARTaccess
-fastestUnsignedDataType SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
+    //TODO add supported S.M.A.R.T. IDs to IDs of S.M.A.R.T. attributes to 
+    // observe;multiple devices should be possible
+//    mp_SMARTaccess->GetSupportedSMART_IDs(device, SMARTattributeNamesAndIDs);
+#else
+    for(int SMARTattributeID = 0; SMARTattributeID <
+          NUM_DIFFERENT_SMART_ENTRIES; SMARTattributeID++) {
+      m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
+      LOGN_DEBUG("adding SMART attribute ID " << SMARTattributeID)
+    }
+#endif
+  }
+}
+
+#ifdef directSMARTaccess
+///Reads directly from the devices
+fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 {
   LOGN_DEBUG("begin")
   DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
@@ -471,6 +495,9 @@ fastestUnsignedDataType SMARTmonitorBase::UpdateSMARTvaluesThreadSafe()
 DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   void * p_v)
 {
+#ifdef multithread
+  I_Thread::SetCurrentThreadName("upd8 SMART");
+#endif
 //  SMARTmonitorBase * p_SMARTmonitorBase = (SMARTmonitorBase *) p_v;
   struct GetSMARTvaluesFunctionParams * getSMARTvaluesFunctionParams =
     (struct GetSMARTvaluesFunctionParams *) p_v;

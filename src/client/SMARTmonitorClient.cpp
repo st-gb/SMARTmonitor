@@ -69,6 +69,18 @@ void SMARTmonitorClient::EndUpdateUIthread()
 
 void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 {
+#ifdef _DEBUG
+  /**Prevent the update thread from running more than once (this brings socket
+   * problems--read the wrong size of bytes to receive)*/
+  if( GetSMARTvalsAndUpd8UIthreadID == 0)
+    GetSMARTvalsAndUpd8UIthreadID = OperatingSystem::GetCurrentThreadNumber();
+  else
+  {
+//  std::string fnName = compiler::GetCurrFnName();
+    ShowMessage("a thread already started GetSMARTvaluesAndUpdateUI");
+    return;
+  }
+#endif
   /** Before calling this function the connection should be established. */
   //TODO possibly move this line to after successfull connection.
   m_serverConnectionState = connectedToService;
@@ -146,7 +158,7 @@ void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
     AfterConnectToServer(connectToServerResult);
     if( connectToServerResult == connectedToService)
     {
-      GetSMARTvaluesAndUpdateUI();
+//      GetSMARTvaluesAndUpdateUI();
     }
     else
     {
@@ -213,6 +225,7 @@ void SMARTmonitorClient::HandleTransmissionError(
   //TODO close socket, set status (also in UI) to unconnected
 }
 
+//TODO Is socket-specific -> move to "socket" folder?!
 fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
 {
   dataCarrierIDandSMARTidsContainer.clear();
@@ -329,6 +342,8 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
     );
 }
 
+///Updates the user interface (UI), e.g. for GUIs/TUIs it updates the cells
+/// of the S.M.A.R.T. values table.
 void SMARTmonitorClient::UpdateSMARTvaluesUI()
 {
   unsigned lineNumber = 0;
@@ -409,6 +424,9 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
         }
         else
           sMARTvalueRating = noCriticalValue;
+        }
+        else
+          sMARTvalueRating = unknown;
         SetAttribute(
           sMARTuniqueID,
           SMARTattributeID,

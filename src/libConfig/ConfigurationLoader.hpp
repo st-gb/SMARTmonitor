@@ -29,7 +29,7 @@ namespace libConfig
     std::set<std::string> attributeNamesFromConfigFile;
   public:
     ConfigurationLoader(
-      std::set</*SkSmartAttributeParsedData*/SMARTentry> & smartAttributesToObserve,
+      SMARTmonitorBase::SMARTattrDefType & sMARTattrDefs,
       SMARTmonitorBase & r_userInterface);
     virtual
     ~ConfigurationLoader();

@@ -136,7 +136,7 @@ public:
       getSMARTvaluesFunctionType
     );
 #endif
-  fastestUnsignedDataType UpdateSMARTvaluesThreadSafe();
+  fastestUnsignedDataType Upd8SMARTvalsDrctlyThreadSafe();
   virtual void BeforeWait() { }
   virtual void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult) { }
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
@@ -152,11 +152,17 @@ public:
   //TODO this member isn't needed for the service
   std::string m_stdstrServiceHostName;
   fastestUnsignedDataType m_retryWaitTimeInS;
-  void InitializeLogger();
+  bool InitializeLogger();
+  void EnsureSMARTattrToObsExist();
   ///A std::set ensures no double entries exist.
   /// Only SMART attr IDs in this container are read and updated in UI.
   typedef std::set<int> SMARTattrToObsType;
+  //TODO this should be per data carrier? Because if nothing is specified it 
+  // could get the S.M.A.R.T. IDs to observe from the supported S.M.A.R.T. 
+  // attributes list (via direct S.M.A.R.T. access). And the supported 
+  // S.M.A.R.T. IDs differ between drives.
   SMARTattrToObsType m_IDsOfSMARTattrsToObserve;
+  fastestUnsignedDataType GetNumSMARTattrToObs(){return m_IDsOfSMARTattrsToObserve.size(); }
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
   void OutputUsage();
   CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}

@@ -95,6 +95,8 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
     * or seconds, depending on manufacturer) in power-on state."*/
     case SMARTattributeNames::PowerOnTime :
     case SMARTattributeNames::HeadFlyingHours :
+     //TODO could do a diff of OS uptime (GetTickCount(...) under MS Windows)
+     // and values to determine the time unit.
       return GetTimeFrom_ms(SMARTrawValue);
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes.
     *"Value is equal to (100-temp. °C), allowing manufacturer to set a minimum

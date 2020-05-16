@@ -23,6 +23,7 @@ if [ $# -ge $NUM_ARGS_NEEDED ]; then
 fi
 
 # "-pg" option for "gprof" profiling
+AdditionalCMakeArgs=$3
 
 cmake \
 -G "Unix Makefiles" \
@@ -39,6 +40,7 @@ cmake \
 -DWXWIDGETS_SETUP_H_PATH:STRING=$WXWIDGETS_SETUP_H_PATH \
 -DCOMMON_SOURCECODE_ROOT_PATH:STRING=$COMMON_SOURCECODE_ROOT_PATH \
 -DTINYXML2_ROOT_PATH:STRING=$TINYXML2_ROOT_PATH \
+$AdditionalCMakeArgs \
 ./src
 else
   echo "ERROR:at least" $MINIMAL_NUM_ARGS_NEEDED " args needed:"

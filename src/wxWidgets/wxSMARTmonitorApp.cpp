@@ -82,6 +82,9 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
   , m_wxtimer(this, TIMER_ID)
 {
   s_GUIthreadID = GetCurrentThreadNumber();
+#ifdef multithread
+  I_Thread::SetCurrentThreadName("UI");
+#endif
   //InitializeLogger(); 
   //mp_SMARTaccess = & m_wxSMARTvalueProcessor.getSMARTaccess();
   //LOGN("SMART access pointer:" << mp_SMARTaccess)
@@ -150,7 +153,8 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNon
   else
     ShowSMARTokIcon();
 }
-/** Usually called via wxWidgets events.(from another thread) */
+/** Usually called via wxWidgets events (from another thread) to run in user 
+ * interface thread.*/
 void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 {
   if( m_pConnectToServerDialog )
@@ -279,13 +283,15 @@ bool wxSMARTmonitorApp::OnInit()
   CreateTaskBarIcon();
   /** Show a dialog. Else when displaying messages no icon appears in the
    *  task bar and this not able to switch there with alt+Tab.*/
-  gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), //m_wxSMARTvalueProcessor
-    m_SMARTvalueProcessor);
+  gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor")//,
+    //m_wxSMARTvalueProcessor
+    /*m_SMARTvalueProcessor*/);
   gs_dialog->Show(true);
   GetSMARTokayIcon(s_SMARTokIcon);
   GetSMARTstatusUnknownIcon(s_SMARTstatusUnknownIcon);
   GetSMARTwarningIcon(s_SMARTwarningIcon);  
 
+  LogLevel::CreateLogLevelStringToNumberMapping();
   ProcessCommandLineArgs(); /** May display messages. */
   InitializeLogger();
   //m_wxSMARTvalueProcessor.Init();
@@ -320,8 +326,15 @@ bool wxSMARTmonitorApp::OnInit()
     else 
       if( initSMARTresult == SMARTaccessBase::success)
     {
+      EnsureSMARTattrToObsExist();
       //TODO exchange by wxGetApp().StartAsyncUpdateThread();
-      gs_dialog->StartAsyncUpdateThread();
+      //GetSMARTvaluesFunctionParams getSMARTvaluesFunctionParams;
+//      m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
+//        & SMARTmonitorBase::UpdateSMARTvaluesThreadSafe;
+//      StartAsyncUpdateThread(m_getSMARTvaluesFunctionParams);
+      //gs_dialog->m_pwxlistctrl->SetItemCount(NUM_DIFFERENT_SMART_ENTRIES);
+      gs_dialog->ReBuildUserInterface();
+      gs_dialog->StartAsyncDrctUpd8Thread();
     }
 //    else if( result == SMARTaccessBase::noSingleSMARTdevice )
 //      return false;
