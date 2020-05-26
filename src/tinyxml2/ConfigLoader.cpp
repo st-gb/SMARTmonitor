@@ -12,7 +12,7 @@
 namespace tinyxml2
 {
 ConfigLoader::ConfigLoader(
-  SMARTmonitorBase::SMARTattrDefType & SMARTattrDefs,
+  SMARTmonitorBase::SMARTattrDefsType & SMARTattrDefs,
   SMARTmonitorBase & r_userInterface)
   : ConfigurationLoaderBase(SMARTattrDefs, r_userInterface)
 {

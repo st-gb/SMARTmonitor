@@ -2,6 +2,28 @@
 #-src/CMakeLists.txt to build the different targets
 #-the minimal SMARTmonitorClient derived class
 
+set(cmnSrcDir ${COMMON_SOURCECODE_ROOT_PATH})
+
+#TODO make for different variables as "getAbsPath" function in 
+# common_sourcecode: getAbsPath(cmnSrcDir "${SMARTmonSrcDir}/../../common_sourcecode")
+if(NOT DEFINED cmnSrcDir OR cmnSrcDir STREQUAL "")
+  #By default "common_sourcecode" lies/lays at the same level as SMARTmonitor /
+  #is located 1 level above ${SMARTmonSrcDir}
+  set(cmnSrcDir ${SMARTmonSrcDir}/../../common_sourcecode)
+  message("cmnSrcDir empty or not defined->using default path:${cmnSrcDir}")
+endif()
+#https://stackoverflow.com/questions/39027269/cmake-convert-relative-path-to-absolute-path-with-build-directory-as-current-d
+get_filename_component(absPath ${cmnSrcDir} ABSOLUTE)
+#get_filename_component(absPath "${cmnSrcDir}"
+#  REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
+set(COMMON_SOURCECODE_ROOT_PATH ${cmnSrcDir})
+message("cmnSrcDir:" ${absPath})
+
+set(TINYXML2_ROOT_PATH ${SMARTmonSrcDir}/../../../tinyxml2-master )
+#include(${cmnSrcDir}/CMake/getAbsPath.cmake)
+#getAbsPath(${TINYXML2_ROOT_PATH} "${SMARTmonSrcDir}/../../../tinyxml2-master")
+message("TINYXML2_ROOT_PATH: ${TINYXML2_ROOT_PATH}")
+
 #Source files needed for both client/GUI and server builds.
 if(DEFINED multithread)
   message("multithread defined")
@@ -59,7 +81,7 @@ if(directSMARTaccess)
   )
 endif()
 
-if(multithreaded)
+if(multithread)
   set(CXX_DEFINITIONS
     ${CXX_DEFINITIONS}
     -DCOMPILE_LOGGER_MULTITHREAD_SAFE)

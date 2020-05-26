@@ -1,6 +1,6 @@
 set(CmnSrcOS ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem)
 
-if(multithreaded)
+if(multithread)
   set( LIBRARIES
     ${LIBRARIES}
     pthread#(Only) needed if multithreaded
@@ -10,7 +10,7 @@ if(multithreaded)
     ${CmnSrcOS}/POSIX/multithread/pthreadBasedI_Thread.cpp
   )
 else()
-  message("multithreaded not defined")
+  message(${CMAKE_CURRENT_LIST_FILE}":multithread not defined")
 endif()
 
 set(CLIENT_SERVER_BASE_SOURCE_FILES

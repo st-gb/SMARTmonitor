@@ -28,7 +28,7 @@ CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
 };
 /** E.g. 32 bit Linux: size of long int is 4 bytes*/
 fastestUnsignedDataType SMARTmonitorBase::s_sizeOfLongIntInBytes = sizeof(long int);
-SMARTattrDef SMARTmonitorBase::SMARTattrDefs[] ;
+SMARTattrDef SMARTmonitorBase::SMARTattrDefs[];
 
 /** Initialized with default values. */
 std::wstring SMARTmonitorBase::s_programOptionValues[beyondLastProgramOptionName] = {
@@ -52,7 +52,7 @@ SMARTmonitorBase::SMARTmonitorBase()
   mp_SMARTaccess = &m_SMARTvalueProcessor.getSMARTaccess();
 #endif
   mp_configurationLoader = new tinyxml2::ConfigLoader(
-    (SMARTattrDefType &) SMARTattrDefs, * this);
+    (SMARTattrDefsType &) SMARTattrDefs, * this);
   //  InitializeLogger();
   
   //TODO

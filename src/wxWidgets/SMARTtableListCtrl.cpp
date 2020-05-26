@@ -84,20 +84,20 @@ namespace wxWidgets
   {
     fastestUnsignedDataType SMARTattributeID, lineNumber = 0;
 
-    std::set<int> & IDsOfSMARTattributesToObserve = wxGetApp().
+    SMARTattrToObsType & IDsOfSMARTattrToObs = wxGetApp().
       m_IDsOfSMARTattrsToObserve;
-    std::set<int>::const_iterator IDofAttributeToObserverIter = 
-      IDsOfSMARTattributesToObserve.begin();
+    SMARTattrToObsType::const_iterator IDofAttrToObsIter = 
+      IDsOfSMARTattrToObs.begin();
 
     wxListItem wxListItem;
     /** List items Need to be added via InsertItem(), else error: 
      *  "assert index>=0 && < GetItemCount()" not fulfilled */
     /** Traverse all SMART attribute IDs either got from server or read via  
      *  config file.*/
-    for( ; IDofAttributeToObserverIter != IDsOfSMARTattributesToObserve.
-        end() ; IDofAttributeToObserverIter ++, lineNumber ++)
+    for( ; IDofAttrToObsIter != IDsOfSMARTattrToObs.
+        end() ; IDofAttrToObsIter ++, lineNumber ++)
     {
-      SMARTattributeID = * IDofAttributeToObserverIter;
+      SMARTattributeID = * IDofAttrToObsIter;
 
   //    wxListItem.SetText( wxString::Format(wxT("%u"), SMARTattributeID) );
       wxListItem.SetId(/*lineNumber*/SMARTattributeID);

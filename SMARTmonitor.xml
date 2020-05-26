@@ -41,8 +41,14 @@ The raw value of this attribute shows the total number of attempts to transfer d
 NOTE: Shift of disks is possible as a result of a strong shock or a fall, or for other reasons." />
   <SMART_parameter Id="223" Name="Load/Unload Retry Count" Details="Count of times head changes position." />
   <SMART_parameter Id="240" Name="Head FLying Hours/Transfer Error Rate" Details="Time spent during the positioning of the drive heads./Count of times the link is reset during a data transfer." />
-  <SMART_parameter Id="241" Name="Total LBAs Written" Details="Total count of Logical Block Addresses (LBAs) written." />
-  <SMART_parameter Id="242" Name="Total LBAs Read" Details="Total count of Logical Block Addresses (LBAs) read." />
+  <!-- Value seems to be gigabytes for the SSD model FS256G39TND-N210A
+   firmware:30001P10 (serial:EJ7CN55981080CH09) because the value is 440k337
+   after 627 days 17 h Power-On Hours and 87380824 kB ~=87 GB written to disk
+   (via "iostat/dev/sda" Unix command) after 9 days and 20 h uptime.
+   So name it "total _data_ written"-->
+  <SMART_parameter Id="241" Name="Total Data Written" 
+   Details="Total count of data (different units:often LBAs/sectors) written to data carrier."/>
+  <SMART_parameter Id="242" Name="Total Data Read" Details="Total count of Logical Block Addresses (LBAs) read." />
   <SMART_parameter Id="254" Name="Free Fall Protection" Details="Count of 'Free Fall Events' detected." />
  </SMART_parameters>
 </options>

@@ -1,29 +1,27 @@
 #from https://cmake.org/cmake-tutorial/
 #This file should be structured so that all subprojects/tests can be build with
-#shared/common CMake include files.
-cmake_minimum_required (VERSION 2.6)
-project (SMARTmonitor)
+#shared/common CMake include (.cmake) files.
 
-if(NOT DEFINED COMMON_SOURCECODE_ROOT_PATH OR COMMON_SOURCECODE_ROOT_PATH STREQUAL "")
-  message("COMMON_SOURCECODE_ROOT_PATH not defined")
-  #By default "common_sourcecode" lies/lays at the same level as SMARTmonitor
-  set(COMMON_SOURCECODE_ROOT_PATH ${PROJECT_SOURCE_DIR}/../../common_sourcecode)
-  set(cmnSrcDir ${COMMON_SOURCECODE_ROOT_PATH})
-endif()
+#https://stackoverflow.com/questions/15662497/difference-between-cmake-current-source-dir-and-cmake-current-list-dir
+# https://cmake.org/cmake/help/v2.8.3/cmake.html#variable:CMAKE_CURRENT_LIST_DIR
+# : CMAKE_CURRENT_LIST_DIR used in wxWidgetsGUI.cmake since CMake 2.8.3
+cmake_minimum_required(VERSION 2.8.3)
+project(SMARTmonitor)
+
 set(SMARTmonSrcDir ${PROJECT_SOURCE_DIR})
 
 #To create executable outside of "src" directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/..)
 
-set(CMAKE_LIST_FILE_PATHS
-  ${CMAKE_CURRENT_LIST_FILE}
+#Add all CMake script file paths to this variable (for including in an archive).
+set(CMakeScriptFilePaths
+  ${CMAKE_CURRENT_LIST_FILE}#this CMake file
 )
 
 set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_DEBUG_POSTFIX "_debug")
 #set(<variable> <value>  ... <valueN>)
 #set(WXWIDGETS_SOURCECODE_ROOT_PATH )
-set(TINYXML2_ROOT_PATH ../../../tinyxml2-master )
 
 #from http://stackoverflow.com/questions/12896988/passing-the-argument-to-cmake-via-command-prompt
 # on command line: "-DEXE_TYPE:STRING=wxGUI"
@@ -36,14 +34,11 @@ if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(SMARTmonClientDerived ON)
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
 
-if( DEFINED WXWIDGETS )
+include(clientSrvSrcFiles.cmake)
+if(DEFINED WXWIDGETS)
   message("WXWIDGETS is defined")
-  #see https://cmake.org/cmake/help/v3.0/command/add_subdirectory.html :
-  #additionally use CMakeLists.txt from "wxWidgets" folder
-  add_subdirectory(wxWidgets 
-    #EXCLUDE_FROM_ALL
-  )
-endif ( DEFINED WXWIDGETS )
+  include(wxWidgets/wxWidgetsGUI.cmake)
+endif()
 
 #set(PROJECT_BINARY_DIR ../build)
 #http://stackoverflow.com/questions/6594796/how-do-i-make-cmake-output-into-a-bin-dir
@@ -91,7 +86,6 @@ message (STATUS "${CMAKE_CURRENT_LIST_FILE} LIBRARIES: ${LIBRARIES}")
 #set(SOURCE_FILE_PATHS_TEMP ${SOURCE_FILE_PATHS})
 #list(REMOVE_ITEM SOURCE_FILE_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/testing.cpp)
 
-include(clientSrvSrcFiles.cmake)
 set( INCLUDE_DIRS 
   ${INCLUDE_DIRS} #include the wxWidgets dirs from above
   ${InclDirs}
@@ -127,17 +121,6 @@ add_definitions(${CXX_DEFINITIONS})
 #TARGET_LINK_LIBRARIES( ${LIBRARIES})
 
 #target_link_libraries(${LIBRARIES})
-
-if(DEFINED WXWIDGETS)
-  #https://wiki.wxwidgets.org/CMake
-  set(wxWidgets_CONFIGURATION mswud)
-  SET(wxWidgets_USE_LIBS core base adv)
-  find_package(wxWidgets COMPONENTS core base adv REQUIRED)
-  include(${wxWidgets_USE_FILE})
-
-  message("wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
-  message (STATUS "wxWidgets type: ${wxWidgets_CONFIGURATION}")
-endif (DEFINED WXWIDGETS)
 
 if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(EXE_NAME wx${PROJECT_NAME}_GUI)

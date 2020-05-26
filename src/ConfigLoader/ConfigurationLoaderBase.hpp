@@ -24,10 +24,10 @@ protected:
   SMARTmonitorBase & m_r_SMARTmonitorBase;
 public:
 //  std::set<SMARTentry> & m_smartAttributesToObserve;
-  SMARTmonitorBase::SMARTattrDefType * mp_SMARTattrDefs;
+  SMARTmonitorBase::SMARTattrDefsType * mp_SMARTattrDefs;
 
   ConfigurationLoaderBase(/*const*/
-    SMARTmonitorBase::SMARTattrDefType & SMARTattrDefs,
+    SMARTmonitorBase::SMARTattrDefsType & SMARTattrDefs,
     SMARTmonitorBase & r_SMARTmonitorBase
     )
 //      m_smartAttributesToObserve(smartAttributesToObserve)

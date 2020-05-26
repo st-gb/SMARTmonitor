@@ -65,12 +65,12 @@ void HandleSingleSMARTentry(
     LOGN_ERROR("SMART ID is not in range 0..255->not processing this SMART entry")
     return;
   }
-  const int64_t SMART_raw_value = p_SMARTelement->Int64Attribute("raw_value", 0);
+  const int64_t SMARTrawVal = p_SMARTelement->Int64Attribute("raw_value", 0);
   SMARTvalue & sMARTvalue = sMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID];
-  if( SMART_raw_value < 0)
+  if( SMARTrawVal < 0)
   {
     LOGN_ERROR("SMART raw value for attrib ID " << SMARTattributeID 
-      << " is negative:" << SMART_raw_value)
+      << " is negative:" << SMARTrawVal)
     //sMARTuniqueIDandValues.m_successfullyReadSMARTrawValue[SMARTattributeID] = 0;
     AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 0);
     return;
@@ -80,9 +80,9 @@ void HandleSingleSMARTentry(
   
   AtomicExchange(& sMARTvalue.m_timeStampOfRetrieval, timeInS * 1000.0f );
   
-  LOGN("adding SMART raw value " << SMART_raw_value << " (time:" << timeInS 
+  LOGN("adding SMART raw value " << SMARTrawVal << " (time:" << timeInS 
     << ") to SMART ID " << SMARTattributeID)
-  sMARTvalue.SetRawValue(SMART_raw_value);
+  sMARTvalue.SetRawValue(SMARTrawVal);
 }
 
 void GetSMARTrawValues(

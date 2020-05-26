@@ -19,7 +19,7 @@ namespace tinyxml2
   {
   public:
     ConfigLoader(
-      SMARTmonitorBase::SMARTattrDefType & SMARTattrDefs,
+      SMARTmonitorBase::SMARTattrDefsType & SMARTattrDefs,
       SMARTmonitorBase & r_userInterface);
     ConfigLoader(const ConfigLoader& orig);
     virtual ~ConfigLoader();

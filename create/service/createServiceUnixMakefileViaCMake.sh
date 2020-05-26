@@ -9,6 +9,7 @@ CPP_COMPILER=/usr/bin/g++
 COMMON_SOURCECODE_ROOT_PATH=../../common_sourcecode
 #TINYXML2_ROOT_PATH = ../tinyxml2-master
 
+#"DdirectSMARTaccess":The service usually needs direct access to S.M.A.R.T.
 cmake \
 -G "Unix Makefiles" \
 -DCMAKE_BUILD_TYPE=Debug \
@@ -19,6 +20,5 @@ cmake \
 -DCMAKE_CXX_FLAGS_DEBUG="-g3 -gdwarf-2" \
 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -DEXE_TYPE:STRING=UNIX_service \
-#The service usually needs direct access to S.M.A.R.T.
 -DdirectSMARTaccess:BOOL=ON \
 src

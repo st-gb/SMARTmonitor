@@ -42,7 +42,7 @@ public:
   ///attr=attribute Def=definition Cont=container
   typedef std::/*set<SMARTattrDef>*/ map<unsigned,SMARTattrDef> 
     SMARTattrDefContType;
-  typedef SMARTattrDef * SMARTattrDefType;
+  typedef SMARTattrDef * SMARTattrDefsType;
   typedef const SMARTattrDefContType constSMARTattrDefContType;
   typedef SMARTattrDefContType::const_iterator 
     SMARTattrContConstIterType;
