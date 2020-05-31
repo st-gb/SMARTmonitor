@@ -147,61 +147,15 @@ if(DEFINED WXWIDGETS)
   target_link_libraries(${EXE_NAME} ${wxWidgets_LIBRARIES})
 endif (DEFINED WXWIDGETS)
 
-message ("EXE_NAME_: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")
+message("EXE_NAME: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")
 
 target_link_libraries(${EXE_NAME} ${LIBRARIES})
 
-set(ARCHIVE_FILE_PATHS
-  ${CMAKE_LIST_FILE_PATHS}
-  ${SOURCE_FILE_PATHS}
-)
+if(cre8SrcArchive)
+  include(${CmnSrc}/CMake/cr8srcArchive.cmake)
+endif()
 
-#TODO source out to a separate file:
-#include(${CmnSrc}/cr8src_archive.cmake)
-#following: package source files into archive file
-set(RELATIVE_SOURCE_FILE_PATH, "")
-execute_process(COMMAND rm ${EXE_NAME}_source.zip)
-#https://cmake.org/cmake/help/v3.0/command/foreach.html
-file(WRITE ${EXE_TYPE}source_file_paths.txt "" )
-foreach( SOURCE_FILE_PATH ${ARCHIVE_FILE_PATHS} )
-  #see https://cmake.org/cmake/help/v3.0/command/file.html
-  file(APPEND ${EXE_TYPE}source_file_paths.txt ${SOURCE_FILE_PATH} )
-  file(APPEND ${EXE_TYPE}source_file_paths.txt "\n" )
-  #${CMAKE_COMMAND} -E tar "cfv" "sources.zip" --format=zip ${SOURCE_FILE_PATH}
-  execute_process(COMMAND cd /home/sg/SourceCodeManagement/ )
-  #see https://cmake.org/pipermail/cmake/2004-December/005934.html
-  string(REGEX REPLACE "^/home/sg/SourceCodeManagement/" "" 
-    RELATIVE_SOURCE_FILE_PATH ${SOURCE_FILE_PATH} )
-  #message (STATUS "RELATIVE_SOURCE_FILE_PATH:" ${RELATIVE_SOURCE_FILE_PATH} )
-  #execute_process(
-    #COMMAND cd /home/sg/SourceCodeManagement/ 
-    #COMMAND zip ${EXE_NAME}source.zip ./${RELATIVE_SOURCE_FILE_PATH} 
-  #  COMMAND tar --strip 3 --append -f ${EXE_NAME}_source.zip ${SOURCE_FILE_PATH} 
-  #)
-endforeach()
-
-#http://stackoverflow.com/questions/7050997/zip-files-using-cmake
-add_custom_target(create_zip COMMAND
-    ${CMAKE_COMMAND} -E tar "cfv" "sources.zip" --format=zip
-       ${SOURCE_FILE_PATHS}
-  )
-
-#cpack --config CPackSourceConfig.cmake
-#http://stackoverflow.com/questions/17495906/copying-files-and-including-them-in-a-cpack-archive
-#https://cmake.org/Wiki/CMake/CPackExample
-#INSTALL(SOURCE ${SOURCE_FILE_PATHS} DESTINATION source)
-set(CPACK_GENERATOR "ZIP")
-include(CPack)
-
-#target_link_libraries (VTrans3 wxWidgets)
-
-#http://stackoverflow.com/questions/8934295/add-source-in-a-subdirectory-to-a-cmake-project
-
-#https://cmake.org/pipermail/cmake/2006-October/011548.html
-set(CPACK_SOURCE_IGNORE_FILES
-"Makefile\\\\.in$"
-"~$"
-"^${PROJECT_SOURCE_DIR}.*/CVS/"
-"^${PROJECT_SOURCE_DIR}/debian/"
-"^${PROJECT_SOURCE_DIR}/old/"
-)
+include(${cmnSrcDir}/CMake/writeItemsToFile.cmake)
+Set(srcFilePathsFileName ${EXE_TYPE}_source_file_paths.txt)
+#For debugging purposes
+#write1ItemPerLneToFile(${EXE_TYPE}_source_file_paths.txt "${SOURCE_FILE_PATHS}")

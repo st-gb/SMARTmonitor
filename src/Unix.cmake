@@ -1,7 +1,7 @@
 set(CmnSrcOS ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem)
 
 if(multithread)
-  set( LIBRARIES
+  set(LIBRARIES
     ${LIBRARIES}
     pthread#(Only) needed if multithreaded
    )
@@ -20,14 +20,7 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
 )
 #Needed for direct access to S.M.A.R.T. data, i.e. at least for server/service
 if(directSMARTaccess)
-  add_subdirectory(./libATA_SMART
-    #EXCLUDE_FROM_ALL
-    )
-  set( CLIENT_SERVER_BASE_SOURCE_FILES
-    ${CLIENT_SERVER_BASE_SOURCE_FILES}
-    #GetBlockDeviceFiles(...) for ReadSMARTValuesForAllDrives(...)
-    ${CmnSrcOS}/POSIX/GetBlockDeviceFiles.c
-  )
+  include(${CMAKE_CURRENT_LIST_DIR}/libATA_SMART/libATA_SMART.cmake)
 else()
   message("directSMARTaccess not defined")
 endif()

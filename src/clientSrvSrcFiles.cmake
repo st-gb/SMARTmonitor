@@ -46,7 +46,7 @@ set( CXX_DEFINITIONS ${CXX_DEFINITIONS}
 
 set(ATTRIBUTE_DATA_SOURCE_FILES
   ${SMARTmonSrcDir}/attributes/SMARTattributeNameAndID.cpp
-  ${SMARTmonSrcDir}/attributes/SMARTentry.cpp
+  ${SMARTmonSrcDir}/attributes/SMARTattrDef.cpp
   ${SMARTmonSrcDir}/attributes/SMARTuniqueID.cpp
   ${SMARTmonSrcDir}/attributes/SMARTuniqueIDandValues.cpp
 )
