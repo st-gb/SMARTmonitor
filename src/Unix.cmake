@@ -21,6 +21,9 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
 #Needed for direct access to S.M.A.R.T. data, i.e. at least for server/service
 if(directSMARTaccess)
   include(${CMAKE_CURRENT_LIST_DIR}/libATA_SMART/libATA_SMART.cmake)
+  set(CLIENT_SERVER_BASE_SOURCE_FILES
+    ${CLIENT_SERVER_BASE_SOURCE_FILES}
+    ${directSMARTaccessSrcFilePaths})
 else()
   message("directSMARTaccess not defined")
 endif()

@@ -68,60 +68,6 @@ SMARTmonitorBase::~SMARTmonitorBase() {
     delete [] m_ar_stdwstrCmdLineArgs;
 }
 
-void SMARTmonitorBase::clearSMARTattrDefs()
-{
-//  SMARTattrDefs.clear();
-  for(fastestUnsignedDataType idx; idx < NUM_DIFFERENT_SMART_ENTRIES; idx++){
-    SMARTattrDefs[idx].SetAttributeID(0);
-    SMARTattrDefs[idx].SetName("");
-    SMARTattrDefs[idx].SetCritical(false);
-  }
-}
-
-void SMARTmonitorBase::Add(const SMARTattrDef & sMARTattrDef)
-{
-  SMARTattrDefs[sMARTattrDef.GetAttributeID()] = sMARTattrDef;
-}
-
-int SMARTmonitorBase::GetNumSMARTattrDefs()const
-{
-  fastestUnsignedDataType numSMARTattrDefs = 0;
-//  numSMARTattrDefs = SMARTattrDefs.size();
-  for(fastestUnsignedDataType idx = 0;idx < NUM_DIFFERENT_SMART_ENTRIES; idx++){
-    if(SMARTattrDefs[idx].GetAttributeID() != 0)
-      numSMARTattrDefs++;
-  }
-  return numSMARTattrDefs;
-}
-
-SMARTattrDef * SMARTmonitorBase::getSMARTattrDef(const unsigned attrID)/*const*/{
-  //TODO make faster: SMART attrib definition should be an array element:
-  // SMARTattrDef[SMARTattributeID]
-//    SMARTattrContConstIterType SMARTattrDefIter = SMARTattrDefs.begin();
-//    SMARTattributesIter = r_SMARTattributesContainer.find( SMARTattrDef(SMART_ID) );
-//    if( SMARTattributesIter != r_SMARTattributesContainer.end() )
-//  for( ; SMARTattrDefIter->GetAttributeID() < SMARTattributeID && 
-//     SMARTattrDefIter != SMARTattrDefs.end(); SMARTattrDefIter++)
-//  {
-//    LOGN_DEBUG("using SMART entry at address " << 
-//      & (* SMARTattrDefIter) )
-//    if(SMARTattributeID == SMARTattrDefIter->GetAttributeID())
-//      SMARTattrDefFound = true;
-//  }
-  return & SMARTattrDefs[attrID];
-}
-
-bool SMARTmonitorBase::getSMARTattrDef(const unsigned attrID, SMARTattrDef & sad)
-  /*const*/
-{
-//  bool SMARTattrDefFound = false;
-  SMARTattrDef * p_SMARTattrDef = getSMARTattrDef(attrID);
-  if(p_SMARTattrDef)
-    sad = *p_SMARTattrDef;
-    return true;
-  return false;
-}
-
 //https://gcc.gnu.org/onlinedocs/cpp/Stringification.html#Stringification
 #define xstringify(s) stringify(s)
 #define stringify(s) #s

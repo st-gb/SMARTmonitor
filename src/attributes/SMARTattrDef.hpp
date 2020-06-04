@@ -15,7 +15,6 @@
 
 //typedef struct SkSmartAttributeParsedData SMARTentry;
 
-//TODO rename to SMARTattrDef?
 class SMARTattrDef
 {
   bool m_criticalAttribute;

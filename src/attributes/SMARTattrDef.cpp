@@ -1,4 +1,4 @@
-#include "SMARTentry.hpp"
+#include "SMARTattrDef.hpp"
 
 bool operator < (const SMARTattrDef & left, const SMARTattrDef & right)
 {

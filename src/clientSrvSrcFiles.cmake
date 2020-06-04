@@ -2,22 +2,7 @@
 #-src/CMakeLists.txt to build the different targets
 #-the minimal SMARTmonitorClient derived class
 
-set(cmnSrcDir ${COMMON_SOURCECODE_ROOT_PATH})
-
-#TODO make for different variables as "getAbsPath" function in 
-# common_sourcecode: getAbsPath(cmnSrcDir "${SMARTmonSrcDir}/../../common_sourcecode")
-if(NOT DEFINED cmnSrcDir OR cmnSrcDir STREQUAL "")
-  #By default "common_sourcecode" lies/lays at the same level as SMARTmonitor /
-  #is located 1 level above ${SMARTmonSrcDir}
-  set(cmnSrcDir ${SMARTmonSrcDir}/../../common_sourcecode)
-  message("cmnSrcDir empty or not defined->using default path:${cmnSrcDir}")
-endif()
-#https://stackoverflow.com/questions/39027269/cmake-convert-relative-path-to-absolute-path-with-build-directory-as-current-d
-get_filename_component(absPath ${cmnSrcDir} ABSOLUTE)
-#get_filename_component(absPath "${cmnSrcDir}"
-#  REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
-set(COMMON_SOURCECODE_ROOT_PATH ${cmnSrcDir})
-message("cmnSrcDir:" ${absPath})
+include(setCmnSrcDir.cmake)
 
 set(TINYXML2_ROOT_PATH ${SMARTmonSrcDir}/../../../tinyxml2-master )
 #include(${cmnSrcDir}/CMake/getAbsPath.cmake)
@@ -45,6 +30,7 @@ set( CXX_DEFINITIONS ${CXX_DEFINITIONS}
 )
 
 set(ATTRIBUTE_DATA_SOURCE_FILES
+  #Make as CMake variable "SMARTattrSrcFiles" ?
   ${SMARTmonSrcDir}/attributes/SMARTattributeNameAndID.cpp
   ${SMARTmonSrcDir}/attributes/SMARTattrDef.cpp
   ${SMARTmonSrcDir}/attributes/SMARTuniqueID.cpp
