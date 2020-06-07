@@ -68,13 +68,7 @@ public:
   struct GetSMARTvaluesFunctionParams m_getSMARTvaluesFunctionParams;
   std::set<SMARTuniqueIDandValues> & GetSMARTuniqueIDsAndVals() { return 
     SMARTuniqueIDsAndValues; }
-  //TODO all SMARTattrDef functions into a class?
-  int GetNumSMARTattrDefs() const;
-  static void Add(const SMARTattrDef & sMARTattrDef);
-  static void clearSMARTattrDefs();
-  static SMARTattrDef * getSMARTattrDef(const unsigned attrID)/*const*/;
-  static bool getSMARTattrDef(const unsigned attrID, SMARTattrDef &)/*const*/;
-
+  
   enum programOptionNames { logFileFolder = 0, 
     /** This is used for service clients (i.e. TUIs/GUIs) to specify the 
      *  service address etc.*/
