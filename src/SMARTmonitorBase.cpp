@@ -26,9 +26,6 @@ CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. \"server.xml"},
   {""}
 };
-/** E.g. 32 bit Linux: size of long int is 4 bytes*/
-fastestUnsignedDataType SMARTmonitorBase::s_sizeOfLongIntInBytes = sizeof(long int);
-SMARTattrDef SMARTmonitorBase::SMARTattrDefs[];
 
 /** Initialized with default values. */
 std::wstring SMARTmonitorBase::s_programOptionValues[beyondLastProgramOptionName] = {

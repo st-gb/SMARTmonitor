@@ -188,7 +188,7 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
   uint8_t * xmlDataByteArray,
   fastestUnsignedDataType numBytesToRead,
   //std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainter
-  dataCarrierID2supportedSMARTattributesMap_type & 
+  dataCarrierID2supportedSMARTattrMap_type & 
     dataCarrierID2supportedSMARTattributess)
 {
   std::string std_strXMLdata( (const char *) xmlDataByteArray);

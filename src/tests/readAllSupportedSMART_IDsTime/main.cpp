@@ -10,12 +10,12 @@ int main(int argCount, char * argVec [])
   std::string dvcPath = "/dev/sda";
   cxxopts::HandleCmdLineOpts(argCount, argVec, dvcPath);
 
-  std::set<SMARTuniqueIDandValues> sMARTuniqueIDsAndVals;
+  SMARTaccessBase::SMARTuniqueIDandValsContType sMARTuniqueIDsAndVals;
   SMARTaccess_type sMARTaccess(sMARTuniqueIDsAndVals);
   
   SMARTuniqueID sMARTuniqueID;
   sMARTaccess.fill(dvcPath.c_str(), sMARTuniqueID);
-  std::set<SMARTattributeNameAndID> suppSMARTattrNamesAndIDs;
+  suppSMART_IDsType suppSMARTattrNamesAndIDs;
   if(sMARTaccess.GetSupportedSMART_IDs(dvcPath.c_str(),suppSMARTattrNamesAndIDs)
     != 0){
     std::cerr << "Failed to get supported S.M.A.R:T. IDs for " << dvcPath <<

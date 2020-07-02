@@ -1,15 +1,6 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   SMARTattributeNames.h
- * Author: sg
- *
- * Created on 2. Januar 2017, 23:36
- */
+/** File: SMARTattributeNames.h
+ * Author: Stefan Gebauer, M.Sc. Comp. Sc./Informatik (TU Berlin)
+ * Created on 2. Januar 2017, 23:36 */
 
 #ifndef SMARTATTRIBUTENAMES_H
 #define SMARTATTRIBUTENAMES_H
@@ -31,7 +22,7 @@ enum SMARTattributeNames
   PowerOnTime = 9,
   TempDiffOrAirflowTemp=190,
   DevTemp = 194,
-  /** https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes: 
+  /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes :
     * "Time spent during the positioning of the drive heads. Some Fujitsu 
    *  drives report the count of link resets during a data transfer. */
   HeadFlyingHours = 240,
@@ -55,7 +46,8 @@ enum SMARTattributeNames
    *  "# B written since OS start diff"
    * S.M.A.R.T. value at "t2" - S.M.A.R.T. value at "t1"=S.M.A.R.T. value diff
    *  unit ~= "# B written since OS start diff" / "S.M.A.R.T. value diff" */
-  TotalDataWritten = 241///"Data" because unit is not always "LBA"
+  TotalDataWritten = 241,///"Data" because unit is not always "LBA"
+  TotalDataRead = 242///"Data" because unit is not always "LBAs"
 };
 
 #ifdef __cplusplus

@@ -35,6 +35,8 @@ public:
   long int m_timeStampOfRetrieval;
   long int m_successfullyReadSMARTrawValue;
   
+  ///Declared here to have no dependancy to SMARTaccessBase or SMARTmonitorBase
+  static fastestUnsignedDataType s_sizeOfLongIntInBytes;
   void SetRawValue(/*long int * ,*/ const uint64_t & rawSMARTattrValue);
   bool IsConsistent(uint64_t &) const;
 };

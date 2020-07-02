@@ -10,9 +10,15 @@
 
 /** @brief Puts all SMARTattrDef accessing functions into a class.
 * You may subclass from this to make functions belong to other class.*/
-class SMARTattrDefAccss
+class SMARTattrDefAccss///def=definition: https://en.wiktionary.org/wiki/def
 {
+///attr=attribute Def=definition Cont=container
+//  typedef std::set<SMARTattrDef> SMARTattrDefContType;
+//  typedef const SMARTattrDefContType constSMARTattrsContType;
+//  typedef SMARTattrDefContType::const_iterator 
+//    SMARTattrsContConstIterType;
 protected:
+//  SMARTattrDefContType SMARTattrDefs;
   /**If SMART attribute definitions are in an array, access to it is very fast*/
   static SMARTattrDef SMARTattrDefs[NUM_DIFFERENT_SMART_ENTRIES];
   

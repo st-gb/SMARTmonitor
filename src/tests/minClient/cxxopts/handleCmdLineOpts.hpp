@@ -2,7 +2,8 @@
 
 /** Needs header file from https://github.com/jarro2783/cxxopts
 * For steps see https://github.com/jarro2783/cxxopts/blob/master/README.md */
-#include <cxxopts.hpp>///class cxxopts::Options from Jarryd Beck
+///class cxxopts::Options from Jarryd Beck
+#include <cxxopts.hpp>///https://github.com/jarro2783/cxxopts/blob/master/INSTALL
 #include <libraries/cxxopts/handleArg.hpp>///cxxopts::handleArg(...)
 
 namespace cxxopts{

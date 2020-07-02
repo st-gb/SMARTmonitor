@@ -1,4 +1,4 @@
-#include <libraries/cxxopts/handleArg.hpp>
+#include <libraries/cxxopts/handleArg.hpp>///cxxopts::handleArg(...)
 
 namespace cxxopts{
 inline int HandleCmdLineOpts(int argCount, char * args[],std::string & dvcPath){
@@ -14,7 +14,11 @@ inline int HandleCmdLineOpts(int argCount, char * args[],std::string & dvcPath){
     std::cout << cmdLineOpts.help() << std::endl;
   try{
     auto cmdLineOptsParseRslt = cmdLineOpts.parse(argCount, args);
-    cxxopts::handleArg(cmdLineOptsParseRslt, "device", dvcPath);
+    const std::string errMsg =cxxopts::handleArg(cmdLineOptsParseRslt, "device",
+      dvcPath);
+    if( ! errMsg.empty() )
+      std::cerr << "Error getting device path from command line:" << errMsg <<
+        std::endl;
   }catch(cxxopts::OptionException & e){}
 }
 }

@@ -9,9 +9,9 @@ include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
 set(srcFilePaths
   main.cpp
   #TODO Make 3 source files as CMake variable "SMARTattrSrcFiles" and use here?
-  ${SMARTmonSrcDir}/attributes/SMARTattributeNameAndID.cpp
-  ${SMARTmonSrcDir}/attributes/SMARTuniqueID.cpp
-  ${SMARTmonSrcDir}/attributes/SMARTuniqueIDandValues.cpp
+  ${SMARTmonSrcDir}/attributes/SMARTattributeNameAndID.cpp#For SMARTaccessBase
+  ${SMARTmonSrcDir}/attributes/SMARTuniqueID.cpp#For class SMARTaccessBase
+  ${SMARTmonSrcDir}/attributes/SMARTuniqueIDandValues.cpp#For SMARTaccessBase
   ${SMARTmonSrcDir}/SMARTaccessBase.cpp
   )
 
@@ -24,6 +24,7 @@ include_directories(${SMARTmonSrcDir} ${cmnSrcDir})
 
 include(${cmnSrcDir}/CMake/ShowMsg_CompLvl.cmake)
 showInclDirs(6)
+show1ItmPerLne(6 "source file paths:" "${srcFilePaths}")
 
 add_executable(${PROJECT_NAME} ${srcFilePaths})
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})

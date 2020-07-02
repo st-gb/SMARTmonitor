@@ -15,7 +15,7 @@
 
 //typedef struct SkSmartAttributeParsedData SMARTentry;
 
-class SMARTattrDef
+class SMARTattrDef///def=definition: https://en.wiktionary.org/wiki/def
 {
   bool m_criticalAttribute;
   fastestUnsignedDataType m_attributeID;

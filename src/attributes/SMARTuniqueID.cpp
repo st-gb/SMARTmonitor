@@ -1,11 +1,11 @@
-/*
- * SMARTuniqueID.cpp
- *
- *  Created on: 05.08.2016
- *      Author: sg
- */
+/** SMARTuniqueID.cpp
+ * Created on: 05.08.2016
+ * Author:Stefan Gebauer, M.Sc.Comp.Sc.*/
 
+///standard C/C++ libs
+#include <sstream>///class std::ostringstream
 #include <string.h> //strcmp
+
 #include "SMARTuniqueID.hpp" //struct SMARTuniqueID
 
 #define STRING_ARE_IDENTICAL 0
@@ -30,22 +30,12 @@ bool operator < (const SMARTuniqueID & left,
   return false;
 }
 
-#ifdef __linux__
-  SMARTuniqueID::SMARTuniqueID(const SkIdentifyParsedData & l)
-  {
-    strncpy(m_firmWareName, l.firmware, 9);
-    strncpy(m_modelName, l.model, 41);
-    strncpy(m_serialNumber, l.serial, 21);
-//    LOGN("SMART unique ID:" << str() )
-  }
-
   SMARTuniqueID::~SMARTuniqueID()
   {
 //    delete [] firmware; firmware = NULL;
 //    delete [] model; model = NULL;
 //    delete [] serial; serial = NULL;
   }
-#endif
 
   void SMARTuniqueID::SetModelName(const char * modelName) {
     strncpy(m_modelName, modelName, 41);
