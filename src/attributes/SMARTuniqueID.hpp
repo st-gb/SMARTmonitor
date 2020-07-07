@@ -16,7 +16,7 @@
 ///numSMART_SNbytes, numSMART_FWbytes, numSMARTmodelBytes, numDifferentSMART_IDs
 #include <hardware/dataCarrier/ATA3Std.h>
 
-#include <SMARTattributeNames.h>///enum SMARTattributeNames
+#include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
 #include "SMARTattributeNameAndID.hpp"///class SMARTattributeNameAndID
 
 /** Same structure as SkIdentifyParsedData in Linux' "atasmart.h" */
@@ -31,7 +31,8 @@ struct SMARTuniqueID {
 //  SMARTuniqueID(const SkIdentifyParsedData & l);
 #endif
   ~SMARTuniqueID();
-  ///Fetched in an interval: make access fast
+  /** SMART IDs are fetched in an interval->make access fast. Must be sorted
+  * ascending for the algorithms to work.*/
   fastestUnsignedDataType m_SMART_IDsToRd[numDifferentSMART_IDs];
   
   /** \brief Intersection of both SMART IDs supported by data carrier and SMART
@@ -59,7 +60,6 @@ struct SMARTuniqueID {
 //      else///return error code
     }
     else{
-      fastestUnsignedDataType sMARTattrToReadIdx = 0;
       fastestUnsignedDataType sMART_IDtoRead, suppSMART_ID;
       fastestUnsignedDataType SMART_IDsToReadIdx = 0;
       for(suppSMART_IDsType::const_iterator iter =
@@ -72,19 +72,23 @@ struct SMARTuniqueID {
         suppSMART_ID = iter->GetID();
         do{
         sMART_IDtoRead = SMART_IDsToRead[SMART_IDsToReadIdx];
-        if( sMART_IDtoRead == 0)///Last entry reached
+        if( sMART_IDtoRead == 0){///Last entry reached
+          iter = suppSMARTattrNamesAndIDs.end();
+          iter--;
           break;
+        }
         if(sMART_IDtoRead == suppSMART_ID)
         {
-          m_SMART_IDsToRd[sMARTattrToReadIdx++] = sMART_IDtoRead;
-          //SMART_IDsToReadIdx++;//TODO why 2nd inc.?
+          m_SMART_IDsToRd[SMART_IDsToReadIdx++] = sMART_IDtoRead;
           break;///Get next supported SMART ID
         }
-        SMART_IDsToReadIdx++;
+        else if(sMART_IDtoRead < suppSMART_ID)
+          SMART_IDsToReadIdx++;
         }while(SMART_IDsToReadIdx < numDifferentSMART_IDs &&
            sMART_IDtoRead < suppSMART_ID);
       }
-      m_SMART_IDsToRd[sMARTattrToReadIdx] = 0;
+      if(SMART_IDsToReadIdx < numDifferentSMART_IDs)
+        m_SMART_IDsToRd[SMART_IDsToReadIdx] = 0;
     }
   }
   

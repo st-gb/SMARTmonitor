@@ -1,5 +1,5 @@
-/** File:   ConfigLoader.cpp
- * Author: sg
+/** File:  ConfigLoader.cpp
+ * Author: Stefan Gebauer,M.Sc.Comp.Sc./Informatik (TU Berlin)
  * Created on 27. Dezember 2016, 20:14 */
 #include <stdlib.h>
 
@@ -12,7 +12,7 @@
 namespace tinyxml2
 {
 ConfigLoader::ConfigLoader(
-  SMARTmonitorBase::SMARTattrDefsType & SMARTattrDefs,
+  SMARTmonitorBase::SMARTattrDefsType /*&*/ SMARTattrDefs,
   SMARTmonitorBase & r_userInterface)
   : ConfigurationLoaderBase(SMARTattrDefs, r_userInterface)
 {
@@ -53,44 +53,53 @@ ConfigLoader::~ConfigLoader() {
     return p_tinyxml2XMLelement;
   }
   
-  void ConfigLoader::GetSMARTattributesToObserve(
-    const tinyxml2::XMLElement * p_tinyxml2XMLelement)
-  {
+void ConfigLoader::GetSMARTattributesToObserve(
+  const tinyxml2::XMLElement * p_tinyxml2XMLele)
+{
 //    const tinyxml2::XMLElement * SMART_parameters_to_observe =
-    p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
-      "SMART_parameters_to_observe");
-    if( ! p_tinyxml2XMLelement )
-      return;
-    //TODO better make a copy of the array (else it is being changed)?
-    /*const*/ char * SMARTparamsToObserve = (char *) p_tinyxml2XMLelement->GetText();
-    const int SMARTparamsToObserveCharLen = strlen(SMARTparamsToObserve);
-    int SMARTattributeID;
-    std::istringstream std_iss;
-    //std::string std_strSMARTparamsToObserve(SMARTparamsToObserve);
-    for (int charIndex = 0; charIndex < SMARTparamsToObserveCharLen; ++charIndex)
+  p_tinyxml2XMLele = p_tinyxml2XMLele->FirstChildElement(
+    "SMART_parameters_to_observe");
+  if( ! p_tinyxml2XMLele )
+    return;
+  //TODO better make a copy of the array (else it is being changed)?
+  /*const*/ char * SMARTparamsToObs = (char *) p_tinyxml2XMLele->GetText();
+  const int SMARTparamsToObserveCharLen = strlen(SMARTparamsToObs);
+  char * SMARTparamsToObsNumBgn = SMARTparamsToObs;
+  int SMARTattributeID;
+  std::istringstream std_iss;
+  //std::string std_strSMARTparamsToObserve(SMARTparamsToObserve);
+  fastestUnsignedDataType SMARTattrIDtoObsIdx = 0;
+  for (int charIndex = 0; charIndex < SMARTparamsToObserveCharLen; ++charIndex)
+  {
+    if( SMARTparamsToObs[charIndex] == ',' )
     {
-      if( SMARTparamsToObserve[charIndex] == ',' )
+      SMARTparamsToObs[charIndex] = '\0';
+      if( ConvertCharStringToTypename(SMARTattributeID, SMARTparamsToObsNumBgn) )
       {
-        SMARTparamsToObserve[charIndex] = '\0';
-        if( ConvertCharStringToTypename(SMARTattributeID, SMARTparamsToObserve) )
-        {
-          //std_iss >> SMARTattributeID;
+        //std_iss >> SMARTattributeID;
 //          SMARTattributeID = strtol(SMARTparamsToObserveCharLen, SMARTparamsToObserve);
 //          if(  )
-          {
-            LOGN_DEBUG("adding SMART attribute with ID " << SMARTattributeID
-              << " as SMART parameter to observe/monitor")
-            m_r_SMARTmonitorBase.m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
-          }
+        {
+          LOGN_DEBUG("adding SMART attribute with ID " << SMARTattributeID
+            << " as SMART parameter to observe/monitor")
+        m_r_SMARTmonitorBase.m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
+
+        if(SMARTattrIDtoObsIdx < numDifferentSMART_IDs)
+          m_r_SMARTmonitorBase.m_SMARTattrIDsToObs[SMARTattrIDtoObsIdx++] = 
+            SMARTattributeID;
         }
       }
+      SMARTparamsToObsNumBgn = SMARTparamsToObs + charIndex + 1;
     }
   }
+  if(SMARTattrIDtoObsIdx < numDifferentSMART_IDs)
+    m_r_SMARTmonitorBase.m_SMARTattrIDsToObs[SMARTattrIDtoObsIdx] = 0;
+}
 
-  bool ConfigLoader::LoadSMARTparametersConfiguration(
+bool ConfigLoader::LoadSMARTparametersConfiguration(
     //libconfig::Setting & root
-    const std::wstring & stdwstrWorkingDirWithConfigFilePrefix )
-  {
+  const std::wstring & stdwstrWorkingDirWithConfigFilePrefix )
+{
     std::string stdstrFullConfigFilePath;
 
     /** IMPORTANT: Need to hold the XMLDocument object here (outside of call to 
@@ -104,7 +113,7 @@ ConfigLoader::~ConfigLoader() {
     
     //const char * arch = p_tinyxml2XMLelement->Value();
 //    m_smartAttributesToObserve.clear();
-    SMARTmonitorBase::clearSMARTattrDefs();
+  SMARTaccessBase::clearSMARTattrDefs();
 
       SMARTattrDef sMARTattrDef;
         //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
@@ -171,9 +180,9 @@ ConfigLoader::~ConfigLoader() {
               //use pointer from member var instead of from stack.
               sMARTattrDef.SetName(std_strAttribName.c_str() );
 
-            SMARTmonitorBase::Add(sMARTattrDef);
+        SMARTaccessBase::Add(sMARTattrDef);
           LOGN_DEBUG( "using SMART entry at address " << 
-            SMARTmonitorBase::getSMARTattrDef(sMARTattrID) )
+        SMARTaccessBase::getSMARTattrDef(sMARTattrID) )
             LOGN("adding SMART ID" << sMARTattrID /*<< "to " 
               << mp_smartAttributes*/)
           }

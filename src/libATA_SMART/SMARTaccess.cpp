@@ -45,15 +45,35 @@ namespace libatasmart
       (fastestUnsignedDataType) p_SkSmartAttributeParsedData->id )
   }
 
-  //TODO sk_disk_smart_parse_attributes calls this callback for all 255 SMART
-  //IDs. So the comparison may be
-  /** Attention : function must have the same signature as 
-   * SkSmartAttributeParseCallback */
-  void getSMARTrawValueCallback(
-    SkDisk * p_SkDisk,
-    const SkSmartAttributeParsedData * p_SkSmartAttributeParsedData,
-    struct libatasmart::attr_helper * p_libatasmart_attribHelper)
-  {
+inline void cpySMARTattrThreadSafe(SMARTvalue & sMARTvalue, const uint64_t & 
+  rawSMARTattrVal)
+{
+  sMARTvalue.SetRawValue(rawSMARTattrVal);
+  AtomicExchange( (long int *) & sMARTvalue.m_successfullyReadSMARTrawValue, 1);
+  long double uptimeInSeconds;
+  OperatingSystem::GetUptimeInS(uptimeInSeconds);
+#ifdef DEBUG_
+  std::string str;
+  UserInterface::FormatTimeOfLastUpdate(uptimeInSeconds,str);
+#endif
+  AtomicExchange( (long int *) & sMARTvalue.m_timeStampOfRetrieval, 
+    (long int) (uptimeInSeconds * 1000.0) );
+#ifdef _DEBUG
+  uint64_t SMARTrawValueFromMem;
+  bool bConsistent = sMARTvalue.IsConsistent(SMARTrawValueFromMem);
+#endif
+}
+
+//TODO sk_disk_smart_parse_attributes calls this callback for all 255 SMART
+//IDs. So the comparison may be
+/** Is called in sk_disk_smart_parse_attributes(...) for every supported SMART
+ *  attribute of the disk. Attention : function must have the same signature as 
+ * SkSmartAttributeParseCallback */
+void getSMARTrawValueCallback(
+  SkDisk * p_SkDisk,
+  const SkSmartAttributeParsedData * p_SkSmartAttributeParsedData,
+  struct libatasmart::attr_helper * p_libatasmart_attrHelper)
+{
   //  std::cout << "a->name: " << a->name << " " << g_stdStrAttributeName.c_str() << std::endl;
   //  if (a->pretty_unit != SK_SMART_ATTRIBUTE_UNIT_NONE)
   //  {
@@ -61,84 +81,86 @@ namespace libatasmart
   //    return;
   //  }
 //    LOGN( "current attrib:" << p_SkSmartAttributeParsedData->name )
-
-    /** If strings are identical. */
-    if( p_libatasmart_attribHelper->IDtoLookFor == p_SkSmartAttributeParsedData->id //||
-//        strcmp(p_SkSmartAttributeParsedData->name, /*g_stdStrAttributeName.c_str()*/
-//          p_libatasmart_attribHelper->attributeName.c_str() ) == 0
-      )
-    {
-      LOGN( p_SkSmartAttributeParsedData->name << " found")
-  //    std::cout << "a->name matches " << g_stdStrAttributeName.c_str() << std::endl;
-      if( ! p_libatasmart_attribHelper->found //||
-//        p_SkSmartAttributeParsedData->pretty_value > *p_libatasmart_attribHelper->value
-        )
-      {
-      *p_libatasmart_attribHelper->value =
-      /** For SSD model HFS256G39TND-N210A firmware 30001P10 serial
-       * EJ7CN55981080CH09:for S.M.A.R.T. ID 241 (total LBAs/data written)
-       * SkSmartAttributeParsedData.pretty_value = 181395
-       * SkSmartAttributeParsedData.pretty_unit = SK_SMART_ATTRIBUTE_UNIT_MB =>
-       *  181395 * 1024*1024 B=190206443520 B=190GB-> wrong value
-       * SkSmartAttributeParsedData.raw value is: 21 30 => 21*256+30=5406
-       * -if unit=LBA & logical sector size: 5406 * 512 B =  27678is72 B
-       * -if unit=LBA & physical sector size: 5406 4096 B = 22142976 B 
-       * In reality SkSmartAttributeParsedData.raw for this SSD: unit ~= GiB */
-        //p_SkSmartAttributeParsedData->pretty_value;
-        ///Lowmost byte of array "raw" at array index 0
-        *(uint64_t*) p_SkSmartAttributeParsedData->raw;
+  SMARTuniqueIDandValues * p_sMARTuniqueIDandValues = 
+    p_libatasmart_attrHelper->p_sMARTuniqueIDandValues;
+  const SMARTuniqueID & sMARTuniqueID = p_sMARTuniqueIDandValues->
+    getSMARTuniqueID();
+  const fastestUnsignedDataType * IDsOfSMARTattrsToRd = sMARTuniqueID.
+    m_SMART_IDsToRd;
+  
+  const fastestUnsignedDataType SMARTattrID = p_SkSmartAttributeParsedData->id;
+  SMARTaccessBase * pSMARTacc = p_libatasmart_attrHelper->pSMARTacc;
+  
+  while(IDsOfSMARTattrsToRd[p_libatasmart_attrHelper->currSMART_IDtoReadIdx] <
+    SMARTattrID){
+    if(IDsOfSMARTattrsToRd[p_libatasmart_attrHelper->currSMART_IDtoReadIdx] == 0)
+      break;
+    p_libatasmart_attrHelper->currSMART_IDtoReadIdx++;
+  }
+  
+  /** If strings are identical. */
+  if(IDsOfSMARTattrsToRd[p_libatasmart_attrHelper->currSMART_IDtoReadIdx] ==
+     SMARTattrID)
+  {
+    SMARTvalue & sMARTvalue = p_sMARTuniqueIDandValues->m_SMARTvalues
+      [SMARTattrID];
+    uint64_t rawSMARTattrVal =///Lowmost byte at array index 0
+      *(uint64_t*) p_SkSmartAttributeParsedData->raw;
+    LOGN( p_SkSmartAttributeParsedData->name << " found")
+    /** For SSD model HFS256G39TND-N210A firmware 30001P10 serial
+     * EJ7CN55981080CH09:for S.M.A.R.T. ID 241 (total LBAs/data written)
+     * SkSmartAttributeParsedData.pretty_value = 181395
+     * SkSmartAttributeParsedData.pretty_unit = SK_SMART_ATTRIBUTE_UNIT_MB =>
+     *  181395 * 1024*1024 B=190206443520 B=190GB-> wrong value
+     * SkSmartAttributeParsedData.raw value is: 21 30 => 21*256+30=5406
+     * -if unit=LBA & logical sector size: 5406 * 512 B =  27678is72 B
+     * -if unit=LBA & physical sector size: 5406 4096 B = 22142976 B 
+     * In reality SkSmartAttributeParsedData.raw for this SSD: unit ~= GiB */
 #ifdef DEBUG
-        const uint8_t * p_rawData = p_SkSmartAttributeParsedData->raw;
-        std::ostringstream stdoss;
-        stdoss << "raw data for " <<  p_libatasmart_attribHelper->IDtoLookFor 
-          << ":";
-        for(fastestUnsignedDataType idx = 0; idx < numSMARTrawValB; idx++){
-          stdoss << (unsigned) p_rawData[idx] << " ";
-          ///Lowmost byte at array index 0
-//          *( (uint8_t *) p_libatasmart_attribHelper->value + i) = p_rawData[i];
-        }
-        std::string str = stdoss.str();
-        LOGN(str)
-#endif
-        p_libatasmart_attribHelper->found = TRUE;
+      ///Lowmost byte of array "raw" at array index 0
+      const uint8_t * p_rawData = p_SkSmartAttributeParsedData->raw;
+      std::ostringstream stdoss;
+      stdoss << "raw data for " << SMARTattrID << ":";
+      for(fastestUnsignedDataType idx = 0; idx < numSMARTrawValB; idx++){
+        stdoss << (unsigned) p_rawData[idx] << " ";
       }
-    }
+      std::string str = stdoss.str();
+      LOGN(str)
+#endif
+    /**Unit auto-detection has to be done here because the data carrier to
+    * retrieve additional data for is here (and not at client side).*/
+    pSMARTacc->possiblyAutoDetectUnit(SMARTattrID, rawSMARTattrVal, 
+      (SMARTuniqueID &) sMARTuniqueID, p_libatasmart_attrHelper->device);
+    cpySMARTattrThreadSafe(sMARTvalue, rawSMARTattrVal);
+  }
+  else
+    AtomicExchange( (long int *) & p_sMARTuniqueIDandValues->
+      m_SMARTvalues[SMARTattrID].m_successfullyReadSMARTrawValue, 0);
 }
 
-  int readAttribute(/*const char attributeName []*/
-    fastestUnsignedDataType SMARTattributeID, 
-    SkDisk * p_skDisk, 
-    uint64_t & value)
+int readSMARTAttrs(
+  SkDisk * p_skDisk, 
+  struct attr_helper & libatasmart_attribHelper
+  )
+{
+//   assert(d);
+//   assert(kelvin);
+  /** sk_disk_smart_parse_attributes reads all supported attributes?*/
+  int retVal = sk_disk_smart_parse_attributes(
+    p_skDisk,
+    (SkSmartAttributeParseCallback) getSMARTrawValueCallback,
+    & libatasmart_attribHelper);
+  if( retVal < 0 )
   {
-    //g_stdStrAttributeName = attributeName;
-    struct attr_helper libatasmart_attribHelper;
-
-  //   assert(d);
-  //   assert(kelvin);
-     libatasmart_attribHelper.found = FALSE;
-     libatasmart_attribHelper.value = & value;
-     libatasmart_attribHelper.IDtoLookFor = SMARTattributeID;
-     //libatasmart_attribHelper.attributeName = attributeName;
-     //TODO sk_disk_smart_parse_attributes reads all supported attributes?->
-     // is done for all SMART attributes to read.->takes much longer
-     int retVal = sk_disk_smart_parse_attributes(
-       p_skDisk,
-       (SkSmartAttributeParseCallback) getSMARTrawValueCallback,
-       & libatasmart_attribHelper);
-     //TODO "sk_disk_smart_parse_attributes" traverses all attributes and calls
-     // the callback function
-    if( retVal < 0 )
-    {
-      LOGN("sk_disk_smart_parse_attributes retVal:" << retVal)
-      return -1;
-    }
-    if( ! libatasmart_attribHelper.found) {
-      errno = ENOENT;
-      return -2;
-    }
-    value = * libatasmart_attribHelper.value;
-    return 0;
+    LOGN("sk_disk_smart_parse_attributes retVal:" << retVal)
+    return -1;
   }
+/*  if( ! libatasmart_attribHelper.found) {
+    errno = ENOENT;
+    return -2;
+  }*/
+  return 0;
+}
 
   //\param sMARTuniqueIDsandVals : shoud be usable by a minimal program etc..->
   // without many dependencies like large classes
@@ -154,7 +176,6 @@ namespace libatasmart
     // TODO Auto-generated destructor stub
   }
 
-
 /** \brief Uses lock-free atomic exchange operations (faster than critical 
  * sections) because the read of S.M.A.R.T. values in the server may be in 
  * another thread than the write to the clients. */
@@ -165,7 +186,7 @@ void SMARTaccess::copySMARTvalues(
     //const SkIdentifyParsedData * p_SkIdentifyParsedData
     SMARTuniqueID & sMARTuniqueID,
     const char device [])
-  {
+{
     uint64_t rawSMARTattrValue;
     const char * attributeName;
 //    SMARTmonitorBase::SMARTattrToObsType::const_iterator 
@@ -180,25 +201,17 @@ void SMARTaccess::copySMARTvalues(
 
     
     LOGN("SMART unique ID:" << sMARTuniqueID.str() )
-    SMARTuniqueIDandValues sMARTuniqueIDandValues(sMARTuniqueID);
     SMARTuniqueIDandValues * p_sMARTuniqueIDandValues;
     fastestUnsignedDataType SMARTattrID /*= citer->id*/=0;
 
     int i;
-    long double timeCountInSeconds;
-    std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert =
-        m_SMARTuniqueIDsandVals.insert(sMARTuniqueIDandValues);
+  std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert =
+    m_SMARTuniqueIDsandVals.insert/*emplace*/(SMARTuniqueIDandValues(
+      sMARTuniqueID));
+  LOGN_DEBUG( (insert.second == true ? "inserted" : "changed")
+    << " SMARTuniqueIDandValues object")
 //              if( insert.second == true )/** If actually inserted into std::set*/
 //    {
-  for( //; constSMARTattrsToObsConstIter !=
-      //sMARTattrDefs.end(); ++ constSMARTattrsToObsConstIter
-//    ;SMARTattributeID < NUM_DIFFERENT_SMART_ENTRIES; SMARTattributeID ++
-    fastestUnsignedDataType sMART_IDsToReadIdx = 0; sMARTuniqueID.
-    m_SMART_IDsToRd[sMART_IDsToReadIdx] != 0 &&
-    ///Prevent stack overflow
-    sMART_IDsToReadIdx <= numDifferentSMART_IDs; sMART_IDsToReadIdx++)
-  {
-    SMARTattrID = sMARTuniqueID.m_SMART_IDsToRd[sMART_IDsToReadIdx];
       //TODO only retrieve the data of the SMART IDs to observe list (and where
       // a definition is available?) Only get SMART info if it is supported??
 //      SMARTattrDef * p_SMARTattrDef = SMARTaccessBase::getSMARTattrDef(
@@ -206,8 +219,14 @@ void SMARTaccess::copySMARTvalues(
 //    if(p_SMARTattrDef){
 //        SMARTattributeID = constSMARTattributesToObserveConstIter->GetAttributeID();
 //        attributeName = p_SMARTattrDef->GetName();
-        i = readAttribute(/*attributeName*/SMARTattrID, 
-              (SkDisk *) p_skDisk, rawSMARTattrValue);
+
+  struct attr_helper libatasmartAttrHelper;
+  libatasmartAttrHelper.pSMARTacc = this;
+  libatasmartAttrHelper.p_sMARTuniqueIDandValues = (SMARTuniqueIDandValues *) &
+    (*(insert.first));
+  libatasmartAttrHelper.device = device;
+
+  i = readSMARTAttrs((SkDisk *) p_skDisk, libatasmartAttrHelper);
         LOGN_INFO( "SMART raw value for SMART ID " << SMARTattrID << ":"
           << rawSMARTattrValue)
       /** Assign the pointer before the branch instruction because it is also
@@ -220,45 +239,9 @@ void SMARTaccess::copySMARTvalues(
 //        std::set<SMARTuniqueIDandValues>::iterator it = insert.first;
 //       const SMARTuniqueID & currentSMARTuniqueIDandValuesSMARTuniqueID = it->getSMARTuniqueID();
 //          LOGN_DEBUG("SMART unique ID:" << p_sMARTuniqueIDandValues->getSMARTuniqueID().str())
-        /**Unit auto-detection has to be done here because the data carrier
-        * to retrieve additional data for is here (and not at client side).*/
-        possiblyAutoDetectUnit(SMARTattrID, rawSMARTattrValue, 
-          sMARTuniqueID, device);
-#ifdef DEBUG
-          //long val = p_sMARTuniqueIDandValues->m_SMARTrawValues[SMARTattributeID];
-          //TODO 64 bit value is converted to long int value
-          
-#endif            /** E.g. 32 bit Linux: size of long int is 4 bytes */
-          //liRawSMARTattrValue = s_smartID2LongInt
-          //TODO: SIGSEGV here: p_sMARTuniqueIDandValues is NULL (0)
-          p_sMARTuniqueIDandValues->m_SMARTvalues[SMARTattrID].SetRawValue(
-            rawSMARTattrValue);
-#ifdef DEBUG
-          
-#endif
-          AtomicExchange( (long int *) & p_sMARTuniqueIDandValues->
-            m_SMARTvalues[SMARTattrID].m_successfullyReadSMARTrawValue, 1);
-          OperatingSystem::GetTimeCountInSeconds(timeCountInSeconds);
-          AtomicExchange( (long int *) & p_sMARTuniqueIDandValues->
-            m_SMARTvalues[SMARTattrID].m_timeStampOfRetrieval, 
-            (long int) (timeCountInSeconds * 1000.0) );
-#ifdef __linux__
-//                  timeval timevalCurrentTime;
-//                  ::gettimeofday( & timevalCurrentTime, 0);
-#endif
-        uint64_t SMARTrawValueFromMem;
-        bool bConsistent = p_sMARTuniqueIDandValues->m_SMARTvalues[
-          SMARTattrID].IsConsistent(SMARTrawValueFromMem);
-        LOGN_DEBUG( (insert.second == true ? "inserted" : "changed")
-            << " raw value for SMART attribute\"" << attributeName
-            << "\" (id=" << SMARTattrID << "):"
-            << rawSMARTattrValue << " "
-            << SMARTrawValueFromMem)
         }
         else
         {
-          AtomicExchange( (long int *) & p_sMARTuniqueIDandValues->
-            m_SMARTvalues[SMARTattrID].m_successfullyReadSMARTrawValue, 0);
         LOGN( "reading SMART value for SMART attribute "
             //\"" << attributeName << "\""
           " (id=" << SMARTattrID << ") failed:"
@@ -268,7 +251,6 @@ void SMARTaccess::copySMARTvalues(
 //              std::cerr << "Failed to get attribute value for \"" << attributName << "\":"
 //                << strerror(errno) << std::endl;
           //return retVa;
-      }
 //    }
 }
 
@@ -425,8 +407,8 @@ enum SMARTaccessBase::retCodes SMARTaccess::ReadSMARTValuesForAllDrives(
             case SMARTaccessBase::accessDenied :
               overallRetCode = SMARTaccessBase::accessDenied;
               break;
-          }
         }
+      }
       dvcFileNameBgn = arch + index + /** "+1" to be beyond 'tab' */ 1 ;
     }
   }

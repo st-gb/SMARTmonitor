@@ -17,6 +17,7 @@ class SMARTattrDefAccss///def=definition: https://en.wiktionary.org/wiki/def
 //  typedef const SMARTattrDefContType constSMARTattrsContType;
 //  typedef SMARTattrDefContType::const_iterator 
 //    SMARTattrsContConstIterType;
+  typedef SMARTattrDef * SMARTattrDefsType;
 protected:
 //  SMARTattrDefContType SMARTattrDefs;
   /**If SMART attribute definitions are in an array, access to it is very fast*/
@@ -74,6 +75,7 @@ static SMARTattrDef * getSMARTattrDef(const fastestUnsignedDataType SMARTattrID)
   return & SMARTattrDefs[SMARTattrID];
 }
 
+static SMARTattrDefsType /*&*/ getSMARTattrDefs(){ return SMARTattrDefs;}
 private:
 
 };

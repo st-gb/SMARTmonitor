@@ -7,6 +7,8 @@
 #include <string.h> //strcmp
 
 #include "SMARTuniqueID.hpp" //struct SMARTuniqueID
+///numSMART_FWbytes, numSMARTmodelBytes, numSMART_FWbytes
+#include <hardware/dataCarrier/ATA3Std.h>
 
 #define STRING_ARE_IDENTICAL 0
 
@@ -62,11 +64,17 @@ bool operator < (const SMARTuniqueID & left,
   }*/
 
 //see https://en.wikipedia.org/wiki/Assignment_operator_(C%2B%2B)
-SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & l)
+SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & orig)
 {
 //  SMARTuniqueID copy;
-  strncpy(m_firmWareName, l.m_firmWareName, 9);
-  strncpy(m_modelName, l.m_modelName, 41);
-  strncpy(m_serialNumber, l.m_serialNumber, 21);
+  strncpy(m_firmWareName, orig.m_firmWareName, numSMART_FWbytes+1);
+  strncpy(m_modelName, orig.m_modelName, numSMARTmodelBytes+1);
+  strncpy(m_serialNumber, orig.m_serialNumber, numSMART_SNbytes+1);
+  
+  fastestUnsignedDataType idx = 0;
+  for(; idx < numDifferentSMART_IDs && orig.m_SMART_IDsToRd[idx] != 0; idx++ )
+    m_SMART_IDsToRd[idx] = orig.m_SMART_IDsToRd[idx];
+  if(idx < numDifferentSMART_IDs)
+    m_SMART_IDsToRd[idx] = 0;
   return *this;
 }

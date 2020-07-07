@@ -28,9 +28,11 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
   SMARTuniqueID & sMARTuniqueID,
   const std::string & stdstrDataCarrierPath)
 {
-  //get device path belonging to sMARTuniqueID.
-//  const char * dataCarrierPath = //getDevicePath(sMARTuniqueID);
-  const uint64_t numBwrittenSinceOSstart = /*OperatingSystem::*/dataCarrier::
-    getNumBwrittenSinceOSstart(stdstrDataCarrierPath);
-  sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, numBwrittenSinceOSstart);
+  if(SMARTattrID == SMARTattributeNames::TotalDataWritten){
+    //get device path belonging to sMARTuniqueID.
+  //  const char * dataCarrierPath = //getDevicePath(sMARTuniqueID);
+    const uint64_t numBwrittenSinceOSstart = /*OperatingSystem::*/dataCarrier::
+      getNumBwrittenSinceOSstart(stdstrDataCarrierPath);
+    sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, numBwrittenSinceOSstart);
+  }
 }

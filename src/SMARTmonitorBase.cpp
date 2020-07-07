@@ -42,14 +42,17 @@ SMARTmonitorBase::SMARTmonitorBase()
     mp_configurationLoader(NULL),
     m_cmdLineArgStrings(NULL),
     m_ar_stdwstrCmdLineArgs(NULL)
+#ifdef directSMARTaccess
+  , m_SMARTaccess(SMARTuniqueIDsAndValues)
+#endif
 {
   /** For calling ::UpdateSMARTparameterValuesThreadFunc(void *) */
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
 #ifdef directSMARTaccess
-  mp_SMARTaccess = &m_SMARTvalueProcessor.getSMARTaccess();
+  mp_SMARTaccess = & m_SMARTaccess;
 #endif
   mp_configurationLoader = new tinyxml2::ConfigLoader(
-    (SMARTattrDefsType &) SMARTattrDefs, * this);
+    (SMARTattrDefsType /*&*/) SMARTaccessBase::getSMARTattrDefs(), * this);
   //  InitializeLogger();
   
   //TODO
@@ -371,7 +374,8 @@ void  SMARTmonitorBase::EnsureSMARTattrToObsExist()
 fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 {
   LOGN_DEBUG("begin")
-  DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
+  DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives(
+    m_SMARTattrIDsToObs);
   SMARTaccess_type & SMARTaccess = *mp_SMARTaccess;
   if (dwRetVal == SMARTaccessBase::success)
   {
@@ -382,7 +386,7 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
     //    for(unsigned ucT1 = 0, ucT4 = 0; ucT1 < m_SMARTvalueProcessor.m_ucDrivesWithInfo; ++ ucT1)
     //    {
     const fastestUnsignedDataType numberOfDifferentDrives = SMARTaccess.
-            GetNumberOfDifferentDrives();
+      GetNumberOfDifferentDrives();
     std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = SMARTaccess.
             GetSMARTuniqueIDandValues();
     LOGN("address:" << &SMARTuniqueIDsAndValues)
@@ -511,6 +515,8 @@ void SMARTmonitorBase::StartAsyncUpdateThread(
       & m_getSMARTvaluesFunctionParams
       );
   }
+  else
+    ShowMessage("No S.M.A.R.T. attributes to observe", MessageType::error);
   LOGN_DEBUG("end")
 }
 
@@ -634,7 +640,8 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
     //    }
     //if( smartReader.m_oSMARTDetails.size())
 #ifdef directSMARTaccess
-    DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives();
+    DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives(
+      m_SMARTattrIDsToObs);
     switch (dwRetVal) {
      case SMARTaccessBase::accessDenied:
        ShowMessage("direct access denied to S.M.A.R.T.\n->restart this program"

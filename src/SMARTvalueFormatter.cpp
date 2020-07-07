@@ -1,19 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   SMARTvalueFormatter.cpp
- * Author: sg
- * 
- * Created on 2. Januar 2017, 23:13
- */
+/** File:   SMARTvalueFormatter.cpp
+ * Author: Stefan Gebauer, M.Sc.Comp.Sc./Informatik (TU Berlin)
+ * Created on 2. Januar 2017, 23:13 */
 
 #include "SMARTvalueFormatter.hpp"
 #include <preprocessor_macros/logging_preprocessor_macros.h>
-#include <SMARTattributeNames.h>
+#include <hardware/dataCarrier/SMARTattributeNames.h>
 
 SMARTvalueFormatter::SMARTvalueFormatter() {
 }
@@ -68,17 +59,28 @@ std::string SMARTvalueFormatter::GetDegCfrom_mK(
   return stdoss.str();
 }
 
+std::string SMARTvalueFormatter::GetTimeFrom_h(const uint64_t & SMARTrawValue)
+{
+  std::ostringstream stdoss;
+  const fastestUnsignedDataType numDays = SMARTrawValue / 24;
+  stdoss << std::fixed << numDays << "d" << SMARTrawValue % 24 << "h";
+  return stdoss.str();
+}
+
 std::string SMARTvalueFormatter::GetTimeFrom_ms(
   const uint64_t & SMARTrawValue)
 {
   std::ostringstream stdoss;
-  stdoss.precision(1);
+  stdoss.precision(1);///1 digit after comma
   //stdoss << std::fixed << (float) SMARTrawValue / 3600000 << " h";
   ///1h=60min,1min=60s=>1h=3600s, 1s=1000ms <=> 1h=3,600,000 ms
   const float hours = (float) SMARTrawValue / 3600000.0f;
+  const unsigned minRemainder = SMARTrawValue % 60000;
   const fastestUnsignedDataType numDays = hours / 24;
+  //TODO when min is "0" no output is neccessary?
   const float hoursRemainder = hours - (numDays * 24);
-  stdoss << std::fixed << numDays << "d" << hoursRemainder << "h";
+  stdoss << std::fixed << numDays << "d" << hoursRemainder << "h" << 
+    minRemainder << "min";
   return stdoss.str();
 }
 
@@ -86,7 +88,7 @@ std::string SMARTvalueFormatter::GetTimeFrom_ms(
  *  only a little payload (code bloat) */
 std::string SMARTvalueFormatter::FormatHumanReadable(
   fastestUnsignedDataType SMARTattributeID,
-  const uint64_t & SMARTrawValue)
+  const uint64_t & SMARTrawVal)
 {
   switch (SMARTattributeID)
   {
@@ -94,10 +96,11 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
     * "The raw value of this attribute shows total count of hours (or minutes,
     * or seconds, depending on manufacturer) in power-on state."*/
     case SMARTattributeNames::PowerOnTime :
+      return GetTimeFrom_h(SMARTrawVal);
     case SMARTattributeNames::HeadFlyingHours :
      //TODO could do a diff of OS uptime (GetTickCount(...) under MS Windows)
      // and values to determine the time unit.
-      return GetTimeFrom_ms(SMARTrawValue);
+      return GetTimeFrom_ms(SMARTrawVal);
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes.
     *"Value is equal to (100-temp. °C), allowing manufacturer to set a minimum
     * threshold which corresponds to a maximum temperature. This also follows
@@ -106,20 +109,20 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
     * (identical to 0xC2) or Temperature minus 50 here.*/
     case SMARTattributeNames::TempDiffOrAirflowTemp:
      ///If temp. in Celsius: and 100-temp. °C: maximum is 100-(-273)=373
-     if(SMARTrawValue > 1000)///Assume unit milliKelvin if value is large
+     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
       /**thtps://en.wikipedia.org/wiki/S.M.A.R.T.: "some older drives may 
       * instead report raw Temperature (identical to 0xC2)"*/
-      return GetDegCfrom_mK(SMARTrawValue);
+      return GetDegCfrom_mK(SMARTrawVal);
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes:
      * "Lowest byte of the raw value contains the exact temperature value (
      *   Celsius degrees)."*/
     case SMARTattributeNames::DevTemp :
-     if(SMARTrawValue > 1000)///Assume unit milliKelvin if value is large
-      return GetDegCfrom_mK(SMARTrawValue);
+     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
+      return GetDegCfrom_mK(SMARTrawVal);
     default:
     {
-      uint64_t remainder = SMARTrawValue;
-      uint64_t unitPrefixFactor = SMARTrawValue;
+      uint64_t remainder = SMARTrawVal;
+      uint64_t unitPrefixFactor = SMARTrawVal;
       char unitPrefixChar;
       std::ostringstream stdoss;
       do {

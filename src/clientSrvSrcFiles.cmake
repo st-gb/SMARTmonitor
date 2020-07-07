@@ -2,7 +2,7 @@
 #-src/CMakeLists.txt to build the different targets
 #-the minimal SMARTmonitorClient derived class
 
-include(setCmnSrcDir.cmake)
+include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
 
 set(TINYXML2_ROOT_PATH ${SMARTmonSrcDir}/../../../tinyxml2-master )
 #include(${cmnSrcDir}/CMake/getAbsPath.cmake)
@@ -33,6 +33,7 @@ set(ATTRIBUTE_DATA_SOURCE_FILES
   #Make as CMake variable "SMARTattrSrcFiles" ?
   ${SMARTmonSrcDir}/attributes/SMARTattributeNameAndID.cpp
   ${SMARTmonSrcDir}/attributes/SMARTattrDef.cpp
+  ${SMARTmonSrcDir}/attributes/SMARTattrDefAccss.cpp
   ${SMARTmonSrcDir}/attributes/SMARTuniqueID.cpp
   ${SMARTmonSrcDir}/attributes/SMARTuniqueIDandValues.cpp
 )

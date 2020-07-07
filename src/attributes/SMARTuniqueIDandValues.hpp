@@ -30,7 +30,7 @@ public:
   //calculation of array size adapted from 
   // http://stackoverflow.com/questions/4079243/how-can-i-use-sizeof-in-a-preprocessor-macro
   // Data types must be long int for atomic operations
-  long int m_rawValue [sizeof(long int) < 8 ? 8 / sizeof(long int) : 8];
+  long int m_rawValue [sizeof(long int) < 8 ? 8 / sizeof(long int) : 1];
   long int m_rawValueCheckSum;
   long int m_timeStampOfRetrieval;
   long int m_successfullyReadSMARTrawValue;

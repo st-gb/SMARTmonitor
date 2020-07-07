@@ -1,9 +1,6 @@
-/*
- * SMARTentry.hpp
- *
+/** SMARTentry.hpp
  *  Created on: 06.08.2016
- *      Author: sg
- */
+ *  Author: Stefan Gebauer,M.Sc.Comp.Sc.(TU Berlin)*/
 
 #ifndef ATTRIBUTES_SMARTENTRY_HPP_
 #define ATTRIBUTES_SMARTENTRY_HPP_

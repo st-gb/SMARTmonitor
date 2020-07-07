@@ -130,5 +130,5 @@ void UserInterface::FormatTimeOfLastUpdate(
   std::string & timeFormatString)
 {
   FmtViaOSS(timeStampOfRetrievalInMs, timeFormatString);
-  timeFormatString += " uptime";///" pure runtime after bootup"
+//  timeFormatString += " uptime";///" pure runtime after bootup"
 }

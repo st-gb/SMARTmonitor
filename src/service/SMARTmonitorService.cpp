@@ -364,7 +364,7 @@ void SMARTmonitorService::BeforeWait()
   uint64_t SMARTrawValue;
   const std::set<SMARTentry> & SMARTattributesToObserve =
     SMARTaccess.getSMARTattrDefs();
-  LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
+  LOGN( "# SMART attributes to observe:" << m_IDsOfSMARTattrsToObserve.size() )
 
   std::ostringstream oss;
   oss.precision(3); //Allow 3 digits right of decimal point
@@ -380,17 +380,17 @@ void SMARTmonitorService::BeforeWait()
       << " serial_number=\"" << SMARTuniqueID.m_serialNumber << "\">";
     
 //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
-    std::set<SMARTentry>::const_iterator
-      SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
+    SMARTattrToObsType::const_iterator
+      SMARTattrToObsIter = m_IDsOfSMARTattrsToObserve.begin();
 //    long int currentSMARTrawValue;
     //TimeCountInNanosec_type timeCountInNanoSeconds;
 //    long double timeCountInSeconds;
     SMARTvalue sMARTvalue;
     //TODO crashes here (iterator-related?!-> thread access problem??)
-    for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
-        SMARTattributesToObserveIter ++, ++lineNumber )
+    for( ; SMARTattrToObsIter != m_IDsOfSMARTattrsToObserve.end();
+        SMARTattrToObsIter ++, ++lineNumber )
     {
-      SMARTattributeID = SMARTattributesToObserveIter->GetAttributeID();
+      SMARTattributeID = *SMARTattrToObsIter;
       //OperatingSystem::GetTimeCountInNanoSeconds(timeCountInNanoSeconds);
       //OperatingSystem::GetTimeCountInSeconds(timeCountInSeconds);
       sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];

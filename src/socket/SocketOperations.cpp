@@ -1,6 +1,5 @@
 #include <sys/socket.h> //socket(...))
 #include <netinet/in.h> //sockaddr_in
-#include <netdb.h> //gethostbyname(...)
 #include <fcntl.h> //fcntl(...)
 
 //#include "SocketOperations.h"
@@ -253,7 +252,8 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
     //TODO make as member variable (else is deleted if this block ends).
     nativeThread_type connectThread;
     SocketConnectThreadFuncParams * p_socketConnectThreadFuncParams = new 
-      SocketConnectThreadFuncParams {m_socketFileDesc, srvAddr, this, cnnctTimeoutInS };
+      SocketConnectThreadFuncParams {m_socketFileDesc, srvAddr, this,
+        (fastestUnsignedDataType)cnnctTimeoutInS };
     /** call in another thread in order to enable breaking connection */
     connectThread.start(SocketConnectThreadFunc, p_socketConnectThreadFuncParams);
     BeforeConnectToServer();
@@ -295,7 +295,7 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName)
   //TODO errno must come from connect(...), no other function call inbetween
   //TODO use error description from common_sourcecode/.../BSD/socket
   //BlockingCnnct::getoPossibleCause
-  switch(errno )
+  switch(errno)
   {
     //see http://man7.org/linux/man-pages/man2/connect.2.html
     case ECONNREFUSED :

@@ -143,12 +143,14 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
 {
   LOGN_DEBUG("begin")
-  if(GetNumSMARTattrDefs() == 0)
+#ifdef directSMARTaccess
+  if(m_SMARTaccess.GetNumSMARTattrDefs() == 0)
   {
     ShowMessage("no SMART attribute definition from config file. ->Don't know "
       "whether a SMART attribute is critical");
     return;
   }
+#endif
   bool asyncConnectToService = /*true*/ false;
 //  BeforeConnectToServer();
   const fastestUnsignedDataType connectToServerResult = ConnectToServer(
@@ -158,7 +160,9 @@ void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
     AfterConnectToServer(connectToServerResult);
     if( connectToServerResult == connectedToService)
     {
-//      GetSMARTvaluesAndUpdateUI();
+#ifndef multithread
+      GetSMARTvaluesAndUpdateUI();
+#endif
     }
     else
     {
@@ -294,7 +298,7 @@ void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
       );
     
     /** Now get the attribute name belonging to SMART ID */
-    SMARTattrDef * p_sMARTattrDef = SMARTmonitorBase::getSMARTattrDef(
+    SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
       SMARTattributeID);
     if( p_sMARTattrDef != NULL)
     {
@@ -387,9 +391,15 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
       SMARTattributeID = *IDsOfSMARTattributesToObserveIter;
       //TODO attribute IDs of SMART values to observe may not be a subset of
       // SMART attributes in config file!
-      SMARTattrDef * p_sMARTattrDef = getSMARTattrDef(SMARTattributeID);
+      SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
+        SMARTattributeID);
       if(p_sMARTattrDef){
-      const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];
+      const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[
+        SMARTattributeID];
+#ifdef _DEBUG
+      const SMARTuniqueIDandValues & sMARTuniqueIDandValues = 
+        *SMARTuniqueIDandValuesIter;
+#endif
       bool isConsistent = sMARTvalue.IsConsistent(SMARTrawValue);
 //      memory_barrier(); //TODO: not really necessary??
       int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;

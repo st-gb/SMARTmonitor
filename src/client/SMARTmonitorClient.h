@@ -35,7 +35,7 @@ public:
   static bool s_atLeast1CriticalNonNullValue;
   static nativeThread_type s_updateSMARTparameterValuesThread;
   static fastestUnsignedDataType s_updateUI;
-  dataCarrierID2supportedSMARTattributesMap_type
+  dataCarrierID2supportedSMARTattrMap_type
     dataCarrierIDandSMARTidsContainer;
   
   enum serverConnectionState {connectedToService, unconnectedFromService};
@@ -49,7 +49,8 @@ public:
   
   void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult);
   /** E.g. show a dialog that enables cancelling of connection in implementation. */
-  virtual void BeforeConnectToServer() = 0;
+  virtual void BeforeConnectToServer()/**Implement for not to override by a 
+    small test program*/{};
   virtual void GetTextFromUser(const char * label, std::string & ) { };
   ///Called after connection attempt to the server.(either from the thread that
   ///prepared the server connection or from another). So UI operations should 
@@ -67,7 +68,7 @@ public:
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
     uint8_t * xmlDataByteArray,
     fastestUnsignedDataType numBytesToRead,
-    dataCarrierID2supportedSMARTattributesMap_type & supportedSMARTattributess
+    dataCarrierID2supportedSMARTattrMap_type & supportedSMARTattributess
     );
   void EndUpdateUIthread();
   fastestUnsignedDataType GetSupportedSMARTidsFromServer();

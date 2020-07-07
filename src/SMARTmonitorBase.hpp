@@ -14,8 +14,8 @@
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <set> //class std::set
-#include <attributes/SMARTentry.hpp>///class SMARTentry
 #include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
+#include <SMARTaccType.hpp>///typedef SMARTaccess_type
 
 /** Forward declarations: */
 class ConfigurationLoaderBase;
@@ -46,9 +46,7 @@ public:
   typedef const SMARTattrDefContType constSMARTattrDefContType;
   typedef SMARTattrDefContType::const_iterator 
     SMARTattrContConstIterType;
-  static fastestUnsignedDataType s_sizeOfLongIntInBytes;
 //  SMARTattrDefContType SMARTattrDefs;
-  static SMARTattrDef SMARTattrDefs[NUM_DIFFERENT_SMART_ENTRIES];
 protected:
   std::set<SMARTuniqueIDandValues> SMARTuniqueIDsAndValues;
 public:
@@ -116,6 +114,7 @@ public:
   virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const;
 #ifdef directSMARTaccess
   SMARTaccess_type * mp_SMARTaccess;
+  SMARTaccess_type m_SMARTaccess;
   SMARTvalueProcessorBase m_SMARTvalueProcessor;
 #endif
   void SetCommandLineArgs(int argc, char ** argv);
@@ -156,6 +155,7 @@ public:
   // attributes list (via direct S.M.A.R.T. access). And the supported 
   // S.M.A.R.T. IDs differ between drives.
   SMARTattrToObsType m_IDsOfSMARTattrsToObserve;
+  fastestUnsignedDataType m_SMARTattrIDsToObs[numDifferentSMART_IDs];
   fastestUnsignedDataType GetNumSMARTattrToObs(){return m_IDsOfSMARTattrsToObserve.size(); }
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
   void OutputUsage();

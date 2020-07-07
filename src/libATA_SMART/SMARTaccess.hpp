@@ -21,14 +21,13 @@
 ///see https://github.com/Rupan/libatasmart/blob/master/atasmart.c
 namespace libatasmart
 {
-//  std::string g_stdStrAttributeName;
 
-  struct attr_helper {
-    uint64_t *value;
-    SkBool found;
-    fastestUnsignedDataType IDtoLookFor;
-    std::string attributeName;
-  };
+struct attr_helper {
+  SMARTuniqueIDandValues * p_sMARTuniqueIDandValues;
+  fastestUnsignedDataType currSMART_IDtoReadIdx = 0;
+  const char * device;
+  SMARTaccessBase * pSMARTacc;
+};
 
   int getSupportedSMART_IDs(const char * const,
     std::vector<SMARTattributeNameAndID> & );
@@ -38,7 +37,7 @@ namespace libatasmart
     const SkSmartAttributeParsedData * a,
     struct libatasmart::attr_helper *ah);
 
-  int readAttribute(/*const char attributeName []*/
+  int readSMARTAttrs(/*const char attributeName []*/
     fastestUnsignedDataType SMARTattributeID,
     SkDisk * p_skDisk, 
     uint64_t & value);
