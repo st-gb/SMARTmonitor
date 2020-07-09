@@ -100,18 +100,19 @@ public:
     //SetSMARTdriveID();
     SetSMARTattribIDandNameLabel();
   }
+  void setIDandLabel(const fastestUnsignedDataType SMARTattrID, void * data);
+  void upd8rawAndH_andTime(const fastestUnsignedDataType SMARTattrID,
+    const SMARTvalue &, void * data);
   inline void UpdateTimeOfSMARTvalueRetrieval(
-    const SMARTuniqueID & sMARTuniqueID,
     const fastestUnsignedDataType SMARTattributeID,
-    const long int timeStampOfRetrieval);
+    const long int timeStampOfRetrieval, void * data);
   /*virtual*/ void UpdateSMARTvaluesUI();
   virtual void SetAttribute(
-    const SMARTuniqueID &, 
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
-    const enum SMARTvalueRating) {}
+    const enum SMARTvalueRating, /**e.g. pointer to list ctrl */void * data){}
   virtual void ShowStateAccordingToSMARTvalues(bool ) { }
   std::string m_stdstrServerAddress;
 protected:

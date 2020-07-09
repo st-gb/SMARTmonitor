@@ -1,6 +1,6 @@
 /** SupportedSMARTIDsDialog.cpp
  *  Created on: 29.10.2016
- *      Author: SG  */
+ *  Author:Stefan Gebauer, M.Sc.Comp.Sc.*/
 #include <wx/listctrl.h> //class wxListCtrl
 #include <wx/sizer.h> // class wxBoxSizer
 #include <wx/defs.h> //wxID_ANY
@@ -8,6 +8,7 @@
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include "wxSMARTmonitorApp.hpp" //wxGetApp()
+#include <sstream>///class std::ostringstream
 //#include <attributes/SMARTuniqueID.hpp>
 
 BEGIN_EVENT_TABLE(SupportedSMART_IDsDialog, wxDialog)
@@ -15,17 +16,17 @@ BEGIN_EVENT_TABLE(SupportedSMART_IDsDialog, wxDialog)
 END_EVENT_TABLE()
 
 SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
-  //std::vector<SMARTattributeNameAndID> & SMARTattributeNamesAndIDs
-  dataCarrierID2supportedSMARTattributesMap_type::const_iterator iter
+  const SMARTuniqueID & sMARTuniqueID,
+  SMARTmonitorClient & sMARTmonClient
   )
   : wxDialog(NULL, wxID_ANY, wxT("supported SMART IDs"), wxDefaultPosition, //wxDefaultSize,
      wxSize(400,400),
      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
-  SetTitleFromDataCarrierID(iter->first);  
-  wxSizer * sizerTop = CreateGUI(iter->first);
+  SetTitleFromDataCarrierID(sMARTuniqueID);
+  wxSizer * sizerTop = CreateGUI(sMARTuniqueID);
 
-  FillGUI(iter->second);
+  FillGUI((SMARTuniqueID &) sMARTuniqueID, sMARTmonClient);
   SetSizerAndFit(sizerTop);
   Centre();
 }
@@ -33,6 +34,33 @@ SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
 SupportedSMART_IDsDialog::~SupportedSMART_IDsDialog ()
 {
   // TODO Auto-generated destructor stub
+}
+
+void SupportedSMART_IDsDialog::create2ColListCtrl()
+{
+//  m_pwxlistctrl = new wxListCtrl( (wxWindow *) this, wxID_ANY, 
+//    wxDefaultPosition, wxDefaultSize, wxLC_REPORT);
+  /** Adapted from http://wiki.wxwidgets.org/WxListCtrl#Minimal_example_to_get_started*/
+  // Add first column
+  wxListItem col0;
+  col0.SetId(COL_IDX_SMART_ID);
+  col0.SetText( _("ID") );
+  col0.SetWidth(40);
+  m_pwxlistctrl->InsertColumn(COL_IDX_SMART_ID, col0);
+
+  // Add second column
+  wxListItem col1;
+  col1.SetId(COL_IDX_SMARTparameterName);
+  col1.SetText( _("parameter name") );
+  col1.SetWidth(200);
+  m_pwxlistctrl->InsertColumn(COL_IDX_SMARTparameterName, col1);
+}
+
+void SupportedSMART_IDsDialog::cr8ListCtrl()
+{
+//  create2ColListCtrl();
+  m_pwxlistctrl = new wxWidgets::SMARTtableListCtrl( (wxWindow *) this, 
+    wxID_ANY, wxDefaultPosition, wxDefaultSize);
 }
 
 wxSizer * SupportedSMART_IDsDialog::CreateGUI(
@@ -52,52 +80,57 @@ wxSizer * SupportedSMART_IDsDialog::CreateGUI(
     0,
     wxEXPAND, 1);
 
-  m_pwxlistctrl = new wxListCtrl( (wxWindow *) this, wxID_ANY, wxDefaultPosition,
-    wxDefaultSize, wxLC_REPORT);
-
-  /** Adapted from http://wiki.wxwidgets.org/WxListCtrl#Minimal_example_to_get_started*/
-  // Add first column
-  wxListItem col0;
-  col0.SetId(COL_IDX_SMART_ID);
-  col0.SetText( _("ID") );
-  col0.SetWidth(40);
-  m_pwxlistctrl->InsertColumn(COL_IDX_SMART_ID, col0);
-
-  // Add second column
-  wxListItem col1;
-  col1.SetId(COL_IDX_SMARTparameterName);
-  col1.SetText( _("parameter name") );
-  col1.SetWidth(200);
-  m_pwxlistctrl->InsertColumn(COL_IDX_SMARTparameterName, col1);
+  cr8ListCtrl();
 
   sizerTop->Add( m_pwxlistctrl, 1, wxEXPAND, 0);
   return sizerTop;
 }
 
 void SupportedSMART_IDsDialog::FillGUI(
-  const supportedSMARTattributeIDs_type & supportedSMART_IDs)
+  SMARTuniqueID & sMARTuniqueID
+  ,SMARTmonitorClient & sMARTmonClient
+  )
 {
   fastestUnsignedDataType SMART_ID;
 //  m_pwxlistctrl->SetItemCount(SMARTattributeNamesAndIDs.size() );
-   supportedSMARTattributeIDs_type::const_iterator 
-    supportedSMART_IDsIter = supportedSMART_IDs.begin();
   
-  wxString wxSMARTattribName;
-  for( fastestUnsignedDataType lineNumber = 0; lineNumber < supportedSMART_IDs.
-    size() ; ++ lineNumber, supportedSMART_IDsIter++)
+#ifdef directSMARTaccess
+  //TODO # supported SMART IDs is 30? -> less space
+  fastestUnsignedDataType sMARTattrIDsToRead[numDifferentSMART_IDs];
+  fastestUnsignedDataType arrIdx = 0;
+  for(; arrIdx < numDifferentSMART_IDs; arrIdx++)
+    sMARTattrIDsToRead[arrIdx] = arrIdx + 1;
+  if(arrIdx < numDifferentSMART_IDs)
+    sMARTattrIDsToRead[arrIdx] = 0;
+  
+  //Get supported SMART IDs for data carrier identifier
+  std::string dvc = wxGetApp().s_dataCarrierID2devicePath[sMARTuniqueID];
+  wxGetApp().m_SMARTaccess.readSMARTforDevice(
+    dvc.c_str(),
+    sMARTuniqueID,
+    wxGetApp().s_dataCarrierID2devicePath,
+    sMARTattrIDsToRead);
+  const SMARTuniqueIDandValues & sMARTuniqueIDandValues = *wxGetApp().
+    m_SMARTaccess.GetSMARTuniqueIDandValues().find(SMARTuniqueIDandValues(
+    sMARTuniqueID));
+#endif
+  
+  for(fastestUnsignedDataType lineNumber = 0; lineNumber < numDifferentSMART_IDs
+    && sMARTuniqueID.supportedSMART_IDs[lineNumber] != 0; ++ lineNumber)
   {
     wxListItem item;
-    SMART_ID = *supportedSMART_IDsIter;
+    SMART_ID = sMARTuniqueID.supportedSMART_IDs[lineNumber];
     item.SetId(lineNumber); //item line number
-    item.SetText( wxString::Format(wxT("%u"), SMART_ID ) );
     m_pwxlistctrl->InsertItem( item );
+    ///Necessary for indirectly called SMARTtableListCtrl::SetSMARTattribValue(
+    m_pwxlistctrl->m_SMARTattribIDtoLineNumber[SMART_ID] = lineNumber;
     
-    SMARTattrDef * p_sMARTattrDef;
-    if( (p_sMARTattrDef = wxGetApp().getSMARTattrDef(SMART_ID)) != NULL ){
-      wxSMARTattribName = wxWidgets::GetwxString_Inline(
-        p_sMARTattrDef->GetName() );
-      m_pwxlistctrl->SetItem(lineNumber, 1, wxSMARTattribName);
-    }
+    wxGetApp().setIDandLabel(SMART_ID, m_pwxlistctrl);
+#ifdef directSMARTaccess
+    sMARTmonClient.upd8rawAndH_andTime(SMART_ID, 
+      sMARTuniqueIDandValues.m_SMARTvalues[SMART_ID], //sMARTuniqueID, 
+      m_pwxlistctrl);
+#endif
   }
 }
 

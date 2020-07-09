@@ -51,7 +51,8 @@ public:
    *  specific to Linux, Windows or used SMART library and so on.*/
   virtual enum retCodes ReadSMARTValuesForAllDrives(
     ///May be a subset of supported SMART IDs.
-    const fastestUnsignedDataType SMARTattrIDsToRead[]) = 0;
+    const fastestUnsignedDataType SMARTattrIDsToRead[],
+    dataCarrierID2devicePath_type &) = 0;
 
   fastestUnsignedDataType GetNumberOfDifferentDrives() const {
     return m_SMARTuniqueIDsandVals.size();

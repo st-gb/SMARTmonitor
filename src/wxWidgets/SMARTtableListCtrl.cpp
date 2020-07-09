@@ -51,9 +51,9 @@ namespace wxWidgets
     InsertColumn(ColumnIndices::humanReadableRawValue, column);
 
     column.SetId(ColumnIndices::lastUpdate);
-    column.SetText( wxT("last update") );
+    column.SetText( wxT("last update [uptime]") );
     //TODO calculate width needed for the last update time string
-    column.SetWidth(300);
+    column.SetWidth(150);
     InsertColumn(ColumnIndices::lastUpdate, column);
   }
 
@@ -80,23 +80,22 @@ namespace wxWidgets
 //    }
   }
   
-  void SMARTtableListCtrl::CreateLines()
-  {
+void SMARTtableListCtrl::CreateLines(const SMARTmonitorBase::SMARTattrToObsType
+  & IDsOfSMARTattrs)
+{
     fastestUnsignedDataType SMARTattributeID, lineNumber = 0;
 
-    SMARTattrToObsType & IDsOfSMARTattrToObs = wxGetApp().
-      m_IDsOfSMARTattrsToObserve;
-    SMARTattrToObsType::const_iterator IDofAttrToObsIter = 
-      IDsOfSMARTattrToObs.begin();
+  SMARTmonitorBase::SMARTattrToObsType::const_iterator IDofAttrToObsIter =
+    IDsOfSMARTattrs.begin();
 
     wxListItem wxListItem;
     /** List items Need to be added via InsertItem(), else error: 
      *  "assert index>=0 && < GetItemCount()" not fulfilled */
     /** Traverse all SMART attribute IDs either got from server or read via  
      *  config file.*/
-    for( ; IDofAttrToObsIter != IDsOfSMARTattrToObs.
-        end() ; IDofAttrToObsIter ++, lineNumber ++)
-    {
+  for( ; IDofAttrToObsIter != IDsOfSMARTattrs.end() ; IDofAttrToObsIter ++,
+    lineNumber ++)
+  {
       SMARTattributeID = * IDofAttrToObsIter;
 
   //    wxListItem.SetText( wxString::Format(wxT("%u"), SMARTattributeID) );
@@ -109,7 +108,7 @@ namespace wxWidgets
     itemCount = itemCount;
 #endif
   }
-      
+
   SMARTtableListCtrl::~SMARTtableListCtrl()
   {
     // TODO Auto-generated destructor stub

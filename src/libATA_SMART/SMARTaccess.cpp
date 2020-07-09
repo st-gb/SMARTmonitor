@@ -64,8 +64,6 @@ inline void cpySMARTattrThreadSafe(SMARTvalue & sMARTvalue, const uint64_t &
 #endif
 }
 
-//TODO sk_disk_smart_parse_attributes calls this callback for all 255 SMART
-//IDs. So the comparison may be
 /** Is called in sk_disk_smart_parse_attributes(...) for every supported SMART
  *  attribute of the disk. Attention : function must have the same signature as 
  * SkSmartAttributeParseCallback */
@@ -81,29 +79,30 @@ void getSMARTrawValueCallback(
   //    return;
   //  }
 //    LOGN( "current attrib:" << p_SkSmartAttributeParsedData->name )
-  SMARTuniqueIDandValues * p_sMARTuniqueIDandValues = 
+  const SMARTuniqueIDandValues * p_sMARTuniqueIDandValues =
     p_libatasmart_attrHelper->p_sMARTuniqueIDandValues;
   const SMARTuniqueID & sMARTuniqueID = p_sMARTuniqueIDandValues->
     getSMARTuniqueID();
-  const fastestUnsignedDataType * IDsOfSMARTattrsToRd = sMARTuniqueID.
-    m_SMART_IDsToRd;
+  const fastestUnsignedDataType * IDsOfSMARTattrsToRd =
+    p_libatasmart_attrHelper->IDsOfSMARTattrsToRd;
   
   const fastestUnsignedDataType SMARTattrID = p_SkSmartAttributeParsedData->id;
   SMARTaccessBase * pSMARTacc = p_libatasmart_attrHelper->pSMARTacc;
   
-  while(IDsOfSMARTattrsToRd[p_libatasmart_attrHelper->currSMART_IDtoReadIdx] <
-    SMARTattrID){
-    if(IDsOfSMARTattrsToRd[p_libatasmart_attrHelper->currSMART_IDtoReadIdx] == 0)
+  fastestUnsignedDataType & currSMART_IDtoReadIdx = p_libatasmart_attrHelper->
+    currSMART_IDtoReadIdx;
+  while(IDsOfSMARTattrsToRd[currSMART_IDtoReadIdx] < SMARTattrID){
+    if(IDsOfSMARTattrsToRd[currSMART_IDtoReadIdx] == 0)
       break;
-    p_libatasmart_attrHelper->currSMART_IDtoReadIdx++;
+    currSMART_IDtoReadIdx++;
   }
   
   /** If strings are identical. */
   if(IDsOfSMARTattrsToRd[p_libatasmart_attrHelper->currSMART_IDtoReadIdx] ==
      SMARTattrID)
   {
-    SMARTvalue & sMARTvalue = p_sMARTuniqueIDandValues->m_SMARTvalues
-      [SMARTattrID];
+    SMARTvalue & sMARTvalue = (SMARTvalue &) p_sMARTuniqueIDandValues->
+      m_SMARTvalues[SMARTattrID];
     uint64_t rawSMARTattrVal =///Lowmost byte at array index 0
       *(uint64_t*) p_SkSmartAttributeParsedData->raw;
     LOGN( p_SkSmartAttributeParsedData->name << " found")
@@ -182,13 +181,10 @@ int readSMARTAttrs(
 //TODO test if AtomExchange is necessary/effective at all. Maybe better
 // exchange a pointer to the raw value instead of exchanging itself
 void SMARTaccess::copySMARTvalues(
-    const SkDisk * p_skDisk, 
-    //const SkIdentifyParsedData * p_SkIdentifyParsedData
-    SMARTuniqueID & sMARTuniqueID,
-    const char device [])
+  const SkDisk * p_skDisk,
+  struct attr_helper & libatasmartAttrHelper
+  )
 {
-    uint64_t rawSMARTattrValue;
-    const char * attributeName;
 //    SMARTmonitorBase::SMARTattrToObsType::const_iterator 
 //      constSMARTattrsToObsConstIter = sMARTmonBase.m_IDsOfSMARTattrsToObserve.
 //      begin();
@@ -199,17 +195,7 @@ void SMARTaccess::copySMARTvalues(
     // "* p_SkIdentifyParsedData" (seems that parts of the "firmware"
     //  string is copied into "serial"
 
-    
-    LOGN("SMART unique ID:" << sMARTuniqueID.str() )
-    SMARTuniqueIDandValues * p_sMARTuniqueIDandValues;
-    fastestUnsignedDataType SMARTattrID /*= citer->id*/=0;
-
     int i;
-  std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert =
-    m_SMARTuniqueIDsandVals.insert/*emplace*/(SMARTuniqueIDandValues(
-      sMARTuniqueID));
-  LOGN_DEBUG( (insert.second == true ? "inserted" : "changed")
-    << " SMARTuniqueIDandValues object")
 //              if( insert.second == true )/** If actually inserted into std::set*/
 //    {
       //TODO only retrieve the data of the SMART IDs to observe list (and where
@@ -220,18 +206,9 @@ void SMARTaccess::copySMARTvalues(
 //        SMARTattributeID = constSMARTattributesToObserveConstIter->GetAttributeID();
 //        attributeName = p_SMARTattrDef->GetName();
 
-  struct attr_helper libatasmartAttrHelper;
-  libatasmartAttrHelper.pSMARTacc = this;
-  libatasmartAttrHelper.p_sMARTuniqueIDandValues = (SMARTuniqueIDandValues *) &
-    (*(insert.first));
-  libatasmartAttrHelper.device = device;
-
   i = readSMARTAttrs((SkDisk *) p_skDisk, libatasmartAttrHelper);
-        LOGN_INFO( "SMART raw value for SMART ID " << SMARTattrID << ":"
-          << rawSMARTattrValue)
       /** Assign the pointer before the branch instruction because it is also
        * used in the "else" part.*/
-      p_sMARTuniqueIDandValues = & (SMARTuniqueIDandValues &) (* insert.first);
       if( i == 0) /** Successfully got SMART attribute value */
       {
 //        std::cout << attributName << ":" << rawSMARTattrValue << std::endl;
@@ -242,10 +219,7 @@ void SMARTaccess::copySMARTvalues(
         }
         else
         {
-        LOGN( "reading SMART value for SMART attribute "
-            //\"" << attributeName << "\""
-          " (id=" << SMARTattrID << ") failed:"
-            << (fastestSignedDataType) i )
+    LOGN( "reading SMART values failed:" << i << " error code:" << errno)
         }
 //            else
 //              std::cerr << "Failed to get attribute value for \"" << attributName << "\":"
@@ -256,7 +230,11 @@ void SMARTaccess::copySMARTvalues(
 
 enum SMARTaccessBase::retCodes SMARTaccess::readSMARTforDevice(
   const char device [],
-  SMARTuniqueID & sMARTuniqueID)
+  SMARTuniqueID & sMARTuniqueID,
+  dataCarrierID2devicePath_type & dataCarrierID2devicePath
+  ///For reading different IDs (either all or a subset of supported IDs) 
+  , const fastestUnsignedDataType IDsOfSMARTattrsToRd []
+  )
 {
     LOGN("begin--device:" << device)
     enum SMARTaccessBase::retCodes retVal = SMARTaccessBase::unset;
@@ -292,7 +270,29 @@ enum SMARTaccessBase::retCodes SMARTaccess::readSMARTforDevice(
               LOGN_DEBUG("sk_disk_identify_parse for \"" << device << 
                 "\" succeeded.")
       //    const SkSmartAttributeInfo * p = lookup_attribute(& skDisk, id);
-              copySMARTvalues(p_skDisk, sMARTuniqueID, device);
+          std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert =
+            //TODO enable emplace(...) if C++ 11
+            m_SMARTuniqueIDsandVals.insert/*emplace*/(SMARTuniqueIDandValues(
+              sMARTuniqueID));
+          LOGN_DEBUG( (insert.second == true ? "inserted" : "changed")
+            << " SMARTuniqueIDandValues object")
+          SMARTuniqueIDandValues & sMARTuniqueIDsandVals = 
+            (SMARTuniqueIDandValues &) (* insert.first);
+#ifdef _DEBUG
+          std::pair<dataCarrierID2devicePath_type::iterator, bool> 
+            dataCarrierID2devicePathInsert =
+#endif
+          dataCarrierID2devicePath.insert(std::make_pair(
+            sMARTuniqueIDsandVals.getSMARTuniqueID(), device));
+
+          struct attr_helper libatasmartAttrHelper;
+          libatasmartAttrHelper.pSMARTacc = this;
+          libatasmartAttrHelper.p_sMARTuniqueIDandValues =
+            & sMARTuniqueIDsandVals;
+          libatasmartAttrHelper.device = device;
+          libatasmartAttrHelper.IDsOfSMARTattrsToRd = IDsOfSMARTattrsToRd;
+
+              copySMARTvalues(p_skDisk, libatasmartAttrHelper);
               retVal = SMARTaccessBase::success;
             }
           }
@@ -365,7 +365,8 @@ enum SMARTaccessBase::retCodes SMARTaccess::readSMARTforDevice(
 
   //TODO store paths where access was denied in order to show it later
 enum SMARTaccessBase::retCodes SMARTaccess::ReadSMARTValuesForAllDrives(
-  const fastestUnsignedDataType sMARTattrIDsToRead[])
+  const fastestUnsignedDataType sMARTattrIDsToRead[],
+  dataCarrierID2devicePath_type & dataCarrierID2devicePath)
 {
     enum SMARTaccessBase::retCodes overallRetCode = SMARTaccessBase::
       noSingleSMARTdevice;
@@ -391,14 +392,19 @@ enum SMARTaccessBase::retCodes SMARTaccess::ReadSMARTValuesForAllDrives(
         SMARTuniqueID sMARTuniqueID;
         fill(absDvcFilePath, sMARTuniqueID);
 
-        //Only needs to be done for the 1st time to create the intersection
-        // of supported and.
-        if(GetSupportedSMART_IDs(absDvcFilePath, suppSMARTattrNamesAndIDs) == 0)
-          sMARTuniqueID.SetSMART_IDsToRead(suppSMARTattrNamesAndIDs, 
-            sMARTattrIDsToRead);
-
-        enum SMARTaccessBase::retCodes retCode = readSMARTforDevice(//"/dev/sda"
-          absDvcFilePath, sMARTuniqueID);
+        if(sMARTuniqueID.getSupportedSMART_IDs()[0] == 0)
+          //Only needs to be done for the 1st time to create the intersection
+          // of supported and.
+          if(GetSupportedSMART_IDs(absDvcFilePath,suppSMARTattrNamesAndIDs) ==0)
+          {
+            sMARTuniqueID.setSupportedSMART_IDs(suppSMARTattrNamesAndIDs);
+            sMARTuniqueID.SetSMART_IDsToRead(suppSMARTattrNamesAndIDs, 
+              sMARTattrIDsToRead);
+          }
+        enum SMARTaccessBase::retCodes retCode = readSMARTforDevice(
+          absDvcFilePath, sMARTuniqueID, dataCarrierID2devicePath,
+          ///Intersection of SMART IDs to read and supported SMART IDs.
+          sMARTuniqueID.m_SMART_IDsToRd);
         switch( retCode)
         {
             case SMARTaccessBase::success :

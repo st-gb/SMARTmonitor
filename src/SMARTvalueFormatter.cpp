@@ -49,6 +49,16 @@ char calcUnitPrefixFactorAndRemainder(
   return unitPrefixes[One_kExp];
 }
 
+std::string SMARTvalueFormatter::GetDegCfromCurrMinMax(
+  const uint64_t & SMARTrawValue)
+{
+  std::ostringstream stdoss;
+  stdoss << (SMARTrawValue & 0xFFFF) << "°C["
+    << ((SMARTrawValue >> 32) & 0xFFFF) << "..." 
+    << ((SMARTrawValue >> 16) & 0xFFFF) << "]";
+  return stdoss.str();
+}
+
 std::string SMARTvalueFormatter::GetDegCfrom_mK(
   const uint64_t & SMARTrawValue)
 {
@@ -118,7 +128,7 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
      *   Celsius degrees)."*/
     case SMARTattributeNames::DevTemp :
      if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
-      return GetDegCfrom_mK(SMARTrawVal);
+      return GetDegCfromCurrMinMax(SMARTrawVal);
     default:
     {
       uint64_t remainder = SMARTrawVal;

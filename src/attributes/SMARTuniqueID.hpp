@@ -25,6 +25,8 @@ struct SMARTuniqueID {
   char m_serialNumber[numSMART_SNbytes+1];
   char m_firmWareName[numSMART_FWbytes+1];
   char m_modelName[numSMARTmodelBytes+1];
+  //TODO # supported SMART IDs may only be 30->less space needed
+  fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs] = {0};
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
   SMARTuniqueID() { }
 #ifdef __linux__
@@ -34,6 +36,23 @@ struct SMARTuniqueID {
   /** SMART IDs are fetched in an interval->make access fast. Must be sorted
   * ascending for the algorithms to work.*/
   fastestUnsignedDataType m_SMART_IDsToRd[numDifferentSMART_IDs];
+  
+  const fastestUnsignedDataType * getSupportedSMART_IDs() const{
+    return supportedSMART_IDs;
+  }
+  void copyArr(const fastestUnsignedDataType orig [],
+    fastestUnsignedDataType cpy []);
+  void setSupportedSMART_IDs(suppSMART_IDsType & suppSMARTattrNamesAndIDs)
+  {
+    //TODO replace by copyArr();
+    int idx = 0;
+    for(suppSMART_IDsType::const_iterator iter=suppSMARTattrNamesAndIDs.begin();
+      iter != suppSMARTattrNamesAndIDs.end() && idx < numDifferentSMART_IDs;
+      iter++)
+      supportedSMART_IDs[idx++] = iter->GetID();
+    if(idx < numDifferentSMART_IDs)
+      supportedSMART_IDs[idx] = 0;
+  }
   
   /** \brief Intersection of both SMART IDs supported by data carrier and SMART
    * IDs to read. */
@@ -169,6 +188,7 @@ struct SMARTuniqueID {
   typedef std::set<fastestSignedDataType> supportedSMARTattributeIDs_type;
   typedef std::map<SMARTuniqueID,supportedSMARTattributeIDs_type >
     dataCarrierID2supportedSMARTattrMap_type;
+typedef std::map<SMARTuniqueID,std::string> dataCarrierID2devicePath_type;
 
   bool operator < (const SMARTuniqueID & left,
                    const SMARTuniqueID & right);

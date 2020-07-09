@@ -404,18 +404,24 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 }
 
 void wxSMARTmonitorApp::SetAttribute(
-  const SMARTuniqueID & sMARTuniqueID, 
   fastestUnsignedDataType SMARTattributeID,
   const enum ColumnIndices::columnIndices & columnIndex,
   const std::string & std_strValue,
-  const enum SMARTvalueRating sMARTvalueRating
+  const enum SMARTvalueRating sMARTvalueRating,
+  void * data///which list control to use
   )
 {
   wxString wxstrValue = wxWidgets::GetwxString_Inline(std_strValue );
   //TODO: Maybe implement this in class wxWidgets::SMARTtableListCtrl as this 
   //should avoid 2 times a pointer dereference -> performs better or in 
   //SMARTmonitorDialog as param. "sMARTuniqueID" needs to be taken into account
-  gs_dialog->m_pwxlistctrl->SetSMARTattribValue(
+  
+  wxWidgets::SMARTtableListCtrl * wxSMARTtableListCtrl;
+  if(data == NULL)
+    wxSMARTtableListCtrl = gs_dialog->m_pwxlistctrl;
+  else
+    wxSMARTtableListCtrl = (wxWidgets::SMARTtableListCtrl *) data;
+  wxSMARTtableListCtrl->SetSMARTattribValue(
     /*lineNumber*/ SMARTattributeID, //long index
     columnIndex /** column #/ index */,
     wxstrValue,

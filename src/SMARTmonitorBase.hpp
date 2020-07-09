@@ -170,7 +170,6 @@ public:
   std::wstring GetCommandOptionName(std::wstring & cmdLineArg);
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
   
-  typedef std::map<SMARTuniqueID,std::string> dataCarrierID2devicePath_type;
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;

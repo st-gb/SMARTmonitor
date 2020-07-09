@@ -36,7 +36,7 @@ int main(int argCount, char * argVec [])
   double upTimeInS, upTimeInS2;
   OperatingSystem::GetUptimeInS(upTimeInS);
   SMARTaccessBase::retCodes retCode = sMARTaccess.readSMARTforDevice(
-    dvcPath.c_str(), sMARTuniqueID);
+    dvcPath.c_str(), sMARTuniqueID, sMARTattrIDsToRead);
   OperatingSystem::GetUptimeInS(upTimeInS2);
   
   std::cout.precision(3);///# digits after decimal point

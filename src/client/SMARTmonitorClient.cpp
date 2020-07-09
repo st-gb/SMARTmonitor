@@ -48,12 +48,12 @@ SMARTmonitorClient::~SMARTmonitorClient() {
 #ifdef multithread
 void SMARTmonitorClient::EndUpdateUIthread()
 {
-  if( s_updateSMARTparameterValuesThread.IsRunning() )
+  if(m_updateSMARTparameterValuesThread.IsRunning() )
   {
     /** Inform the SMART values update thread about we're going to exit,*/
     //m_wxCloseMutex.TryLock();
     LOGN("disabling update UI (ends update UI thread)");
-    AtomicExchange( (long *) & s_updateUI, 0);
+    AtomicExchange( (long *) & s_updateSMARTvalues, 0);
     
     LOGN("waiting for close event");
     /** http://docs.wxwidgets.org/trunk/classwx_condition.html : 
@@ -267,82 +267,67 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
   * interface (and not at/for every SMART values update -> saves resources) */
 void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
 {
-  LOGN("begin")
-//  LOGN("begin " << & SMARTattributesFromConfigFile)
+  LOGN_DEBUG("begin")
   unsigned lineNumber = 0;
-//  wxString wxSMARTattribName;
-
   fastestUnsignedDataType SMARTattributeID;
   
   std::set<int>::const_iterator IDofAttributeToObserverIter = 
     m_IDsOfSMARTattrsToObserve.begin();
-  SMARTattrDef sMARTentry;
-  //TODO only dummy object!
-  SMARTuniqueID sMARTuniqueID;
   /** Traverse all SMART attribute IDs either got from server or read via config 
    *  file.*/
   for( ; IDofAttributeToObserverIter != m_IDsOfSMARTattrsToObserve.
       end() ; IDofAttributeToObserverIter ++, lineNumber++)
   {
     SMARTattributeID = * IDofAttributeToObserverIter;
-    
-    std::ostringstream std_oss;
-    std_oss << SMARTattributeID;
-    SetAttribute(
-      //TODO only dummy object!
-      sMARTuniqueID,
-      SMARTattributeID,
-      ColumnIndices::SMART_ID,
-      std_oss.str(),
-      noCriticalValue
-      );
-    
-    /** Now get the attribute name belonging to SMART ID */
-    SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
-      SMARTattributeID);
-    if( p_sMARTattrDef != NULL)
-    {
-      const SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
-      //SMARTattributeToObserve.name
-      SetAttribute(
-        //TODO only dummy object!
-        sMARTuniqueID,
-        SMARTattributeID,
-        ColumnIndices::SMARTparameterName,
-        sMARTattrDef.GetName(),
-        noCriticalValue
-        );
-//      wxSMARTattribName = wxWidgets::GetwxString_Inline(
-//        SMARTattributeFromConfig.GetName() );
-//      m_pwxlistctrl->SetItem(
-//        lineNumber, 
-//        COL_IDX_SMARTparameterName, /*wxString::Format( wxT("%s"),
-//        wxSMARTattribName.c_str() )*/ wxSMARTattribName
-//        );
-    }
-//            m_pwxlistctrl->SetItem( item );
+    setIDandLabel(SMARTattributeID, NULL);
   }
-  LOGN("end")
+  LOGN_DEBUG("end")
+}
+
+void SMARTmonitorClient::setIDandLabel(const fastestUnsignedDataType
+  SMARTattrID, void * data)
+{
+  std::ostringstream std_oss;
+  std_oss << SMARTattrID;
+  SetAttribute(
+    SMARTattrID,
+    ColumnIndices::SMART_ID,
+    std_oss.str(),
+    noCriticalValue,
+    data
+    );
+
+  /** Now get the attribute name belonging to SMART ID */
+  SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
+    SMARTattrID);
+  if( p_sMARTattrDef != NULL)
+  {
+    const SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
+    //SMARTattributeToObserve.name
+    SetAttribute(
+      SMARTattrID,
+      ColumnIndices::SMARTparameterName,
+      sMARTattrDef.GetName(),
+      noCriticalValue
+      ,data
+      );
+  }
 }
 
 void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
-  const SMARTuniqueID & sMARTuniqueID,
   const fastestUnsignedDataType SMARTattributeID,
-  const long int timeStampOfRetrievalIn1ks)
+  const long int timeStampOfRetrievalIn1ks, void * data)
 {  
   std::string timeFormatString;
   UserInterface::FormatTimeOfLastUpdate(
     timeStampOfRetrievalIn1ks, 
     timeFormatString);
-//  wxString timeOfSMARTvalueRetrievel = wxWidgets::GetwxString_Inline(
-//    timeFormatString);
   SetAttribute(
-    sMARTuniqueID,
     SMARTattributeID,
     ColumnIndices::lastUpdate /** column #/ index */,
-    //wxString::Format(wxT("%u ms ago"), numberOfMilliSecondsPassedSinceLastSMARTquery )
     timeFormatString,
-    noCriticalValue
+    noCriticalValue,
+    data
     );
 }
 
@@ -350,7 +335,6 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
 /// of the S.M.A.R.T. values table.
 void SMARTmonitorClient::UpdateSMARTvaluesUI()
 {
-  unsigned lineNumber = 0;
   bool atLeast1CriticalNonNullValue = false;
 
   const fastestUnsignedDataType numberOfDifferentDrives = 
@@ -360,25 +344,20 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
   LOGN("SMART unique ID and values container:" << & SMARTuniqueIDsAndValues )
   std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
     SMARTuniqueIDsAndValues.begin();
-  fastestUnsignedDataType SMARTattributeID;
-  enum SMARTvalueRating sMARTvalueRating;
+  fastestUnsignedDataType SMARTattrID;
 //  const numSMARTattributeIDbits = sizeof(SMARTattributeID) * 8;
-  uint64_t SMARTrawValue;
   const std::set<int> & IDsOfSMARTattributesToObserve =
     m_IDsOfSMARTattrsToObserve;
 #ifdef DEBUG
-//  int itemCount = m_pwxlistctrl->GetItemCount();
 #endif
   //memory_barrier(); //TODO: not really necessary??
   
-  std::string stdstrHumanReadableRawValue;
-//  wxString wxstrRawValueString;
   /** Loop over data carriers. */
   for(fastestUnsignedDataType currentDriveIndex = 0;
     SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
     SMARTuniqueIDandValuesIter ++)
   {
-    const SMARTuniqueID sMARTuniqueID = SMARTuniqueIDandValuesIter->
+    const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandValuesIter->
       getSMARTuniqueID();
     LOGN("SMART unique ID and values object " << &(*SMARTuniqueIDandValuesIter) )
     std::set<int>::const_iterator
@@ -388,68 +367,84 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
     for( ; IDsOfSMARTattributesToObserveIter != IDsOfSMARTattributesToObserve.end();
         IDsOfSMARTattributesToObserveIter ++)
     {
-      SMARTattributeID = *IDsOfSMARTattributesToObserveIter;
-      //TODO attribute IDs of SMART values to observe may not be a subset of
-      // SMART attributes in config file!
-      SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
-        SMARTattributeID);
-      if(p_sMARTattrDef){
+      SMARTattrID = *IDsOfSMARTattributesToObserveIter;
       const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[
-        SMARTattributeID];
-#ifdef _DEBUG
-      const SMARTuniqueIDandValues & sMARTuniqueIDandValues = 
+        SMARTattrID];
+#ifdef _DEBUG///For debugging
+      const SMARTuniqueIDandValues & sMARTuniqueIDandVals = 
         *SMARTuniqueIDandValuesIter;
 #endif
-      bool isConsistent = sMARTvalue.IsConsistent(SMARTrawValue);
+      upd8rawAndH_andTime(SMARTattrID, sMARTvalue, NULL);
+    }
+  }
+  /** ^= state changed. */
+  if( s_atLeast1CriticalNonNullValue != atLeast1CriticalNonNullValue )
+  {
+    ShowStateAccordingToSMARTvalues(atLeast1CriticalNonNullValue);
+  }
+  s_atLeast1CriticalNonNullValue = atLeast1CriticalNonNullValue;
+}
+
+void SMARTmonitorClient::upd8rawAndH_andTime(
+  const fastestUnsignedDataType SMARTattrID,
+  const SMARTvalue & sMARTvalue,
+  void * data)
+{
+  enum SMARTvalueRating sMARTvalueRating;
+  uint64_t SMARTrawValue;
+  //TODO attribute IDs of SMART values to observe may not be a subset of
+  // SMART attributes in config file!
+  SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
+    SMARTattrID);
+  if(p_sMARTattrDef){
+  bool isConsistent = sMARTvalue.IsConsistent(SMARTrawValue);
 //      memory_barrier(); //TODO: not really necessary??
-      int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
-      
-      //memory_barrier(); //TODO: not really necessary??
-      if( /*successfullyUpdatedSMART*/ isConsistent )
-      {
-        SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
-        stdstrHumanReadableRawValue = SMARTvalueFormatter::FormatHumanReadable(
-          SMARTattributeID, SMARTrawValue);
-//        wxstrRawValueString = wxWidgets::GetwxString_Inline(
-//          stdstrHumanReadableRawValue);
-        std::ostringstream std_oss;
-         std_oss << SMARTrawValue;
-        if(/*SMARTattrDefFound*/sMARTattrDef.GetAttributeID() != 0)
-        {
-        bool critical = sMARTattrDef.IsCritical();
-        LOGN_DEBUG("attribute ID " << sMARTattrDef.GetAttributeID() << 
-          " is critical?:" << critical
-          //(critical==true ? "yes" : "no") 
-          )
-        //TODO pass warning or OK fpr critical SMART IDs to function
-        //e.g. use highmost bits of SMARTattributeID for that purpose
-        if(critical)
-        {
-          //std::numeric_limits<>::min();
+  int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
+
+  //memory_barrier(); //TODO: not really necessary??
+  if( /*successfullyUpdatedSMART*/ isConsistent )
+  {
+    SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
+    std::string stdstrHumanReadableRawValue = SMARTvalueFormatter::
+      FormatHumanReadable(SMARTattrID, SMARTrawValue);
+    std::ostringstream std_oss;
+     std_oss << SMARTrawValue;
+    if(/*SMARTattrDefFound*/sMARTattrDef.GetAttributeID() != 0)
+    {
+    bool critical = sMARTattrDef.IsCritical();
+    LOGN_DEBUG("attribute ID " << sMARTattrDef.GetAttributeID() << 
+      " is critical?:" << critical
+      //(critical==true ? "yes" : "no") 
+      )
+    //TODO pass warning or OK fpr critical SMART IDs to function
+    //e.g. use highmost bits of SMARTattributeID for that purpose
+    if(critical)
+    {
+      //std::numeric_limits<>::min();
 //          SMARTattributeID &= 2 << (numSMARTattributeIDbits - 1)
-          if( SMARTrawValue == 0)
-            sMARTvalueRating = SMARTvalueOK;
-          else
-            sMARTvalueRating = SMARTvalueWarning;
-        }
-        else
-          sMARTvalueRating = noCriticalValue;
-        }
-        else
-          sMARTvalueRating = unknown;
-        SetAttribute(
-          sMARTuniqueID,
-          SMARTattributeID,
-          ColumnIndices::rawValue /** column #/ index */,
-          std_oss.str(),
-          sMARTvalueRating);
-        SetAttribute(
-          sMARTuniqueID,
-          SMARTattributeID,
-          ColumnIndices::humanReadableRawValue, 
-          stdstrHumanReadableRawValue,
-          sMARTvalueRating);
-                
+      if( SMARTrawValue == 0)
+        sMARTvalueRating = SMARTvalueOK;
+      else
+        sMARTvalueRating = SMARTvalueWarning;
+    }
+    else
+      sMARTvalueRating = noCriticalValue;
+    }
+    else
+      sMARTvalueRating = unknown;
+    SetAttribute(
+      SMARTattrID,
+      ColumnIndices::rawValue /** column #/ index */,
+      std_oss.str(),
+      sMARTvalueRating,
+      data);
+    SetAttribute(
+      SMARTattrID,
+      ColumnIndices::humanReadableRawValue, 
+      stdstrHumanReadableRawValue,
+      sMARTvalueRating,
+      data);
+
         /** https://cboard.cprogramming.com/c-programming/115586-64-bit-integers-printf.html
         *   : "%llu": Linux %llu, "%I64u": Windows */
           //TODO wxString::Format(...) causes "smallbin double linked list corrupted"
@@ -467,26 +462,13 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
 //        }
 //        else
 //          m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxGREEN);
-        UpdateTimeOfSMARTvalueRetrieval(
-          sMARTuniqueID,
-          SMARTattributeID,
-          sMARTvalue.m_timeStampOfRetrieval);
-      }
-      }
-      else
-      {
-//        m_pwxlistctrl->SetItem(lineNumber,
-//          SMARTtableListCtrl::COL_IDX_rawValue /** column #/ index */,
-//          wxT("N/A") );
-      }
-//            m_pwxlistctrl->SetItem( item );
-      ++ lineNumber;
-    }
+    UpdateTimeOfSMARTvalueRetrieval(
+      SMARTattrID,
+      sMARTvalue.m_timeStampOfRetrieval,
+      data);
   }
-  /** ^= state changed. */
-  if( s_atLeast1CriticalNonNullValue != atLeast1CriticalNonNullValue )
+  }
+  else
   {
-    ShowStateAccordingToSMARTvalues(atLeast1CriticalNonNullValue);
   }
-  s_atLeast1CriticalNonNullValue = atLeast1CriticalNonNullValue;
 }

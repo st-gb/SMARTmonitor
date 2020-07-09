@@ -63,6 +63,17 @@ bool operator < (const SMARTuniqueID & left,
     return ostr;
   }*/
 
+//TODO add parameter for max items?
+void SMARTuniqueID::copyArr(const fastestUnsignedDataType orig [],
+  fastestUnsignedDataType cpy [])
+{
+  for(fastestUnsignedDataType idx = 0; idx < numDifferentSMART_IDs ; idx++ ){
+    cpy[idx] = orig[idx];
+    if(orig[idx] == 0)
+      break;
+  }
+}
+
 //see https://en.wikipedia.org/wiki/Assignment_operator_(C%2B%2B)
 SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & orig)
 {
@@ -71,10 +82,7 @@ SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & orig)
   strncpy(m_modelName, orig.m_modelName, numSMARTmodelBytes+1);
   strncpy(m_serialNumber, orig.m_serialNumber, numSMART_SNbytes+1);
   
-  fastestUnsignedDataType idx = 0;
-  for(; idx < numDifferentSMART_IDs && orig.m_SMART_IDsToRd[idx] != 0; idx++ )
-    m_SMART_IDsToRd[idx] = orig.m_SMART_IDsToRd[idx];
-  if(idx < numDifferentSMART_IDs)
-    m_SMART_IDsToRd[idx] = 0;
+  copyArr(orig.m_SMART_IDsToRd, m_SMART_IDsToRd);
+  copyArr(orig.supportedSMART_IDs, supportedSMART_IDs );
   return *this;
 }

@@ -23,10 +23,11 @@ namespace libatasmart
 {
 
 struct attr_helper {
-  SMARTuniqueIDandValues * p_sMARTuniqueIDandValues;
+  const SMARTuniqueIDandValues * p_sMARTuniqueIDandValues;
   fastestUnsignedDataType currSMART_IDtoReadIdx = 0;
   const char * device;
   SMARTaccessBase * pSMARTacc;
+  const fastestUnsignedDataType * IDsOfSMARTattrsToRd;
 };
 
   int getSupportedSMART_IDs(const char * const,
@@ -93,16 +94,19 @@ class SMARTaccess
 //    LOGN("SMART unique ID:" << str() )
   }
 
-  enum SMARTaccessBase::retCodes readSMARTforDevice(const char device [],
-    SMARTuniqueID &);
+enum SMARTaccessBase::retCodes readSMARTforDevice(const char device [],
+  SMARTuniqueID &, dataCarrierID2devicePath_type &
+   , const fastestUnsignedDataType IDsOfSMARTattrsToRd []
+);
   int GetSupportedSMART_IDs(
     const char * const device,
     suppSMART_IDsType & SMARTattributeNamesAndIDs);
   enum SMARTaccessBase::retCodes ReadSMARTValuesForAllDrives(
-    const fastestUnsignedDataType sMARTattrIDsToRead[]);
-  void copySMARTvalues(const  SkDisk *, //const SkIdentifyParsedData *
-    SMARTuniqueID & sMARTuniqueID, const char device []);
-  };
+    const fastestUnsignedDataType sMARTattrIDsToRead[],
+    dataCarrierID2devicePath_type &);
+void copySMARTvalues(const  SkDisk *,
+  struct attr_helper &);
+};
 
 } /* namespace libatasmart */
 

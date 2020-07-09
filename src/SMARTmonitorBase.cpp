@@ -16,7 +16,7 @@
 #include <FileSystem/PathSeperatorChar.hpp> //FileSystem::dirSeperatorChar
 
 /** Static/Class members must be defined once in a source file. Do this here */
-SMARTmonitorBase::dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
+dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 fastestSignedDataType SMARTmonitorBase::s_updateSMARTvalues = 1;
 extern const char FileSystem::dirSeperatorChar;
@@ -375,7 +375,7 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 {
   LOGN_DEBUG("begin")
   DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives(
-    m_SMARTattrIDsToObs);
+    m_SMARTattrIDsToObs, s_dataCarrierID2devicePath);
   SMARTaccess_type & SMARTaccess = *mp_SMARTaccess;
   if (dwRetVal == SMARTaccessBase::success)
   {
@@ -641,7 +641,7 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
     //if( smartReader.m_oSMARTDetails.size())
 #ifdef directSMARTaccess
     DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives(
-      m_SMARTattrIDsToObs);
+      m_SMARTattrIDsToObs, s_dataCarrierID2devicePath);
     switch (dwRetVal) {
      case SMARTaccessBase::accessDenied:
        ShowMessage("direct access denied to S.M.A.R.T.\n->restart this program"

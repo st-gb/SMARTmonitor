@@ -44,6 +44,7 @@ public:
     );
   virtual ~SMARTdialog();
   
+  wxSizer * CreatePerDiskUIctrls();
   void SetStatus(const wxString &);
   void StartAsyncDrctUpd8Thread();
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();
