@@ -102,7 +102,7 @@ public:
   }
   void setIDandLabel(const fastestUnsignedDataType SMARTattrID, void * data);
   void upd8rawAndH_andTime(const fastestUnsignedDataType SMARTattrID,
-    const SMARTvalue &, void * data);
+    const SMARTuniqueIDandValues &, void * data);
   inline void UpdateTimeOfSMARTvalueRetrieval(
     const fastestUnsignedDataType SMARTattributeID,
     const long int timeStampOfRetrieval, void * data);

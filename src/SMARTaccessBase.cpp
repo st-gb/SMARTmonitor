@@ -5,6 +5,9 @@
 #include <SMARTaccessBase.hpp>
 ///dataCarrier::getNumBwrittenSinceOSstart(...)
 #include <hardware/dataCarrier/getNumBwrittenSinceOSstart.hpp>
+///dataCarrier::getNumB_readSinceOSstart(...)
+#include <hardware/dataCarrier/getNumB_readSinceOSstart.hpp>
+#include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
 
 /** E.g. 32 bit Linux: size of long int is 4 bytes*/
 fastestUnsignedDataType SMARTaccessBase::s_sizeOfLongIntInBytes = sizeof(long int);
@@ -28,11 +31,31 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
   SMARTuniqueID & sMARTuniqueID,
   const std::string & stdstrDataCarrierPath)
 {
-  if(SMARTattrID == SMARTattributeNames::TotalDataWritten){
+  switch(SMARTattrID){
+   case SMARTattributeNames::PowerOnTime:{
+    double uptimeInS;
+    OperatingSystem::GetUptimeInS(uptimeInS);
+    sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, uptimeInS);
+    }
+    break;
+    /** The unit for "Total Data/LBAs Written/Read" differs among models. For
+     * HFS256G39TND-N210A, firmware:30001P10 (serial:EJ7CN55981080CH09)
+     * Solid State Device (SSD) it seems to be GiB rather than LBAs.*/
+   case SMARTattributeNames::TotalDataWritten:{
     //get device path belonging to sMARTuniqueID.
   //  const char * dataCarrierPath = //getDevicePath(sMARTuniqueID);
+    ///For SSDs may be more than written by OS due to.wear levelling.
     const uint64_t numBwrittenSinceOSstart = /*OperatingSystem::*/dataCarrier::
       getNumBwrittenSinceOSstart(stdstrDataCarrierPath);
     sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, numBwrittenSinceOSstart);
+    }
+    break;
+   case SMARTattributeNames::TotalDataRead:{
+    ///Use 64 bit value because it can get very high (>409257094144)
+    const uint64_t numBreadSinceOSstart = /*OperatingSystem::*/dataCarrier::
+      getNumB_readSinceOSstart(stdstrDataCarrierPath);
+    sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, numBreadSinceOSstart);
+    }
+    break;
   }
 }

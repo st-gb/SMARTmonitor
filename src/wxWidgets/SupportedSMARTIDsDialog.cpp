@@ -69,7 +69,7 @@ wxSizer * SupportedSMART_IDsDialog::CreateGUI(
   wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
   std::string std_strDataCarrierID = dataCarrierID.str();
   wxTextCtrl * p_wxTextCtrl = new wxTextCtrl(this, wxID_ANY, 
-    wxT("S.M.A.R.T. attribute IDs supported by\n") + 
+    wxT("ALL S.M.A.R.T. attribute IDs supported by\n") + 
       wxWidgets::GetwxString_Inline(std_strDataCarrierID),
     wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
   p_wxTextCtrl->SetEditable(false);
@@ -128,7 +128,7 @@ void SupportedSMART_IDsDialog::FillGUI(
     wxGetApp().setIDandLabel(SMART_ID, m_pwxlistctrl);
 #ifdef directSMARTaccess
     sMARTmonClient.upd8rawAndH_andTime(SMART_ID, 
-      sMARTuniqueIDandValues.m_SMARTvalues[SMART_ID], //sMARTuniqueID, 
+      sMARTuniqueIDandValues,
       m_pwxlistctrl);
 #endif
   }

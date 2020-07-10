@@ -50,6 +50,11 @@ namespace wxWidgets
     column.SetWidth(50);
     InsertColumn(ColumnIndices::humanReadableRawValue, column);
 
+    column.SetId(ColumnIndices::unit);
+    column.SetText( wxT("unit") );
+    column.SetWidth(50);
+    InsertColumn(ColumnIndices::unit, column);
+    
     column.SetId(ColumnIndices::lastUpdate);
     column.SetText( wxT("last update [uptime]") );
     //TODO calculate width needed for the last update time string

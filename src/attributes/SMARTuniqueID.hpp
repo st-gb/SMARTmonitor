@@ -10,14 +10,19 @@
 #include <limits>///std::numeric_limits<>::max()
 #include <map> //class std::map
 #include <set> //class std::set
+#include <string.h>///memset(...)
 
 ///common_sourcecode repo of Stefan Gebauer
 #include <hardware/CPU/fastest_data_type.h>///fastestUnsignedDataType
+#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 ///numSMART_SNbytes, numSMART_FWbytes, numSMARTmodelBytes, numDifferentSMART_IDs
 #include <hardware/dataCarrier/ATA3Std.h>
 
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
 #include "SMARTattributeNameAndID.hpp"///class SMARTattributeNameAndID
+
+///So the last SMART attrubute ID (254) can be used to index (255 items array)
+#define numItems (numDifferentSMART_IDs+1)
 
 /** Same structure as SkIdentifyParsedData in Linux' "atasmart.h" */
 struct SMARTuniqueID {
@@ -28,7 +33,12 @@ struct SMARTuniqueID {
   //TODO # supported SMART IDs may only be 30->less space needed
   fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs] = {0};
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
-  SMARTuniqueID() { }
+  SMARTuniqueID(){
+    memset(units, 0, sizeof(units[0])*numItems);
+    memset(m_prevSMARTrawVals, 0xFF,sizeof(uint64_t)*numItems);
+    memset(m_otherMetricVal, 0xFF,sizeof(uint64_t)*numItems);
+    memset(m_SMARTrawValDiffs, 0, sizeof(uint64_t)*numItems);
+  }
 #ifdef __linux__
 //  SMARTuniqueID(const SkIdentifyParsedData & l);
 #endif
@@ -36,6 +46,7 @@ struct SMARTuniqueID {
   /** SMART IDs are fetched in an interval->make access fast. Must be sorted
   * ascending for the algorithms to work.*/
   fastestUnsignedDataType m_SMART_IDsToRd[numDifferentSMART_IDs];
+  long int units[numItems];///Does not need so many items?
   
   const fastestUnsignedDataType * getSupportedSMART_IDs() const{
     return supportedSMART_IDs;
@@ -113,9 +124,9 @@ struct SMARTuniqueID {
   
   //TODO exchange the following by sth. like uint64_t prvVals[numSMART_IDs];
   // to cover making differences of all SMART attributes
-  uint64_t m_totDatWrSMARTrawVal = std::numeric_limits<uint64_t>::max();
-  uint64_t m_numBwrittenSinceOSstart = std::numeric_limits<
-    uint64_t>::max();
+  uint64_t m_prevSMARTrawVals[numItems];
+  uint64_t m_otherMetricVal[numItems];
+  uint64_t m_SMARTrawValDiffs[numItems];
   
   /**\param otherVal : Can be called with value directly from device or
   * delivered to client/SMARTvalueProcessorBase(-derived).*/
@@ -125,39 +136,37 @@ struct SMARTuniqueID {
     const uint64_t otherVal///E.g. # B written to data carrier since OS start
     )
   {
-    /** The unit for "Total Data/LBAs Written/Read" differs among models. For 
-     * HFS256G39TND-N210A, firmware:30001P10 (serial:EJ7CN55981080CH09) 
-     * Solid State Device (SSD) it seems to be GiB rather than LBAs.*/
-    ///For SSDs may be more than written by OS due to.wear levelling.
-    if(SMARTattrID == SMARTattributeNames::TotalDataWritten){
-    /** Increase was 34 for an HFS256G39TND-N210A firmware 30001P10 SSD using
-     * libatasmart's "pretty_value" 
-     * Should make a difference of number of bytes written to the data carrier
-     * since OS start from the 2nd time the "Total Data/LBAs Written" value
+    /** Should make a difference of m_otherMetricVal minus otherVal from the 2nd
+     * time the S.M.A.R.T. attribute value
      * increases. Else if doing it the 1st time it increases then the difference
      * may be wrong:
      *       x <- 1st time getting # data written since OS start
      * x     | x <-S.M.A.R.T.'s Total Data/LBAs Written value increases
      * t1   t2 t3 -> time (t1,t2,t3: point in time) */
-    if(SMARTrawVal > //TODO may change to prvVals[SMARTattrID]
-      m_totDatWrSMARTrawVal)///<=>value set at least once.
+    
+    ///<=>value set at least once.
+    if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID])
     {
 //      m_numBwrittenSinceOSstart = numBwrittenSinceOSstart;
-      if( otherVal < m_numBwrittenSinceOSstart)
+      if( otherVal < m_otherMetricVal[SMARTattrID])
       {
-        m_numBwrittenSinceOSstart = otherVal;
-        m_totDatWrSMARTrawVal = SMARTrawVal;
+        m_otherMetricVal[SMARTattrID] = otherVal;
+        m_prevSMARTrawVals[SMARTattrID] = SMARTrawVal;
       }//http://www.t13.org/Documents/UploadedDocuments/docs2005/e05148r0-ACS-SMARTAttributesAnnex.pdf
       else{/** SMART raw value increased for at least the 2nd time
        * Bytes diff was 118273527808−117363425280=910102528 for an SSD:
        * HFS256G39TND-N210A firmware 30001P10 when S.M.A.R.T. value diff was 34
        * using pretty_value from libATAsmart */
         
-      /// /proc/diskstats col. 10: 231002984 - 229225440= 1777544
-       uint64_t numBdiff = otherVal - m_numBwrittenSinceOSstart;
-       uint64_t SMARTrawValDiff = SMARTrawVal - m_totDatWrSMARTrawVal;
-       uint64_t unit = numBdiff / SMARTrawValDiff;
-       
+        uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
+        ///It gets inaccurate if not both values are increasing.
+        if( SMARTrawValDiff > m_SMARTrawValDiffs[SMARTattrID]){
+          m_SMARTrawValDiffs[SMARTattrID] = SMARTrawValDiff;
+          uint64_t diff = otherVal - m_otherMetricVal[SMARTattrID];
+          //TODO long int may not be sufficient
+          long int unit = diff / SMARTrawValDiff;
+          AtomicExchange(&units[SMARTattrID], unit);
+        }
       ///The higher the difference  the more accurate?
        /// E.g. 
 //      m_numBwrittenSinceOSstart = numBwrittenSinceOSstart;
@@ -166,8 +175,7 @@ struct SMARTuniqueID {
       }
     }
     else// if(SMARTrawVal < m_totDatWrSMARTrawVal){///<=>value not set yet
-      m_totDatWrSMARTrawVal = SMARTrawVal;
-    }
+      m_prevSMARTrawVals[SMARTattrID] = SMARTrawVal;
   }
 
   /** For necessary function signature see

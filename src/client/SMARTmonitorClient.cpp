@@ -368,13 +368,11 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
         IDsOfSMARTattributesToObserveIter ++)
     {
       SMARTattrID = *IDsOfSMARTattributesToObserveIter;
-      const SMARTvalue & sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[
-        SMARTattrID];
 #ifdef _DEBUG///For debugging
       const SMARTuniqueIDandValues & sMARTuniqueIDandVals = 
         *SMARTuniqueIDandValuesIter;
 #endif
-      upd8rawAndH_andTime(SMARTattrID, sMARTvalue, NULL);
+      upd8rawAndH_andTime(SMARTattrID, *SMARTuniqueIDandValuesIter, NULL);
     }
   }
   /** ^= state changed. */
@@ -387,7 +385,7 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
 
 void SMARTmonitorClient::upd8rawAndH_andTime(
   const fastestUnsignedDataType SMARTattrID,
-  const SMARTvalue & sMARTvalue,
+  const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
   void * data)
 {
   enum SMARTvalueRating sMARTvalueRating;
@@ -397,6 +395,8 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
   SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
     SMARTattrID);
   if(p_sMARTattrDef){
+    const SMARTvalue & sMARTvalue = SMARTuniqueIDandVals.m_SMARTvalues[
+      SMARTattrID];
   bool isConsistent = sMARTvalue.IsConsistent(SMARTrawValue);
 //      memory_barrier(); //TODO: not really necessary??
   int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
@@ -407,8 +407,37 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
     SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
     std::string stdstrHumanReadableRawValue = SMARTvalueFormatter::
       FormatHumanReadable(SMARTattrID, SMARTrawValue);
+    
+    std::ostringstream std_ossUnit;
+    const long unit = SMARTuniqueIDandVals.getSMARTuniqueID().units[SMARTattrID];
+    if(unit)
+      std_ossUnit << SMARTuniqueIDandVals.getSMARTuniqueID().units[SMARTattrID];
+    else
+      std_ossUnit << "?";
     std::ostringstream std_oss;
-     std_oss << SMARTrawValue;
+    switch(SMARTattrID)
+    {
+     case SMARTattributeNames::GiB_Erased:
+    /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
+     * 9 Jul 2020: "Lowest byte of the raw value contains the exact temperature
+     * value (Celsius degrees)"*/
+     case SMARTattributeNames::DevTemp:
+     case SMARTattributeNames::HW_ECC_Recovered:
+    /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
+     * 9 Jul 2020: "Decoded as: byte 0-1-2 = average erase count (big endian)
+     * and byte 3-4-5 = max erase count (big endian).*/
+     case SMARTattributeNames::AvgEraseCntAndMaxEraseCnt:
+       std_oss << std::hex << /**To better differentiate between number and
+       * base*/std::uppercase << SMARTrawValue << "h";
+       break;
+     case SMARTattributeNames::TotalDataWritten:
+     case SMARTattributeNames::TotalDataRead:
+       if(unit != 0)
+         std_ossUnit << "B";
+     default:
+       std_oss << SMARTrawValue;
+     }
+    std::string stdstrUnit = std_ossUnit.str();
     if(/*SMARTattrDefFound*/sMARTattrDef.GetAttributeID() != 0)
     {
     bool critical = sMARTattrDef.IsCritical();
@@ -440,8 +469,14 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
       data);
     SetAttribute(
       SMARTattrID,
-      ColumnIndices::humanReadableRawValue, 
+      ColumnIndices::humanReadableRawValue,
       stdstrHumanReadableRawValue,
+      sMARTvalueRating,
+      data);
+    SetAttribute(
+      SMARTattrID,
+      ColumnIndices::unit,
+      stdstrUnit,
       sMARTvalueRating,
       data);
 
