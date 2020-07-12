@@ -22,7 +22,8 @@ std::string UserInterface::GetTimeAsString(const struct tm & timeOfLastSMARTvalu
 #define sPerH 3600
 #define sPerMin 60
 
-inline void FmtViaOSS(const unsigned long timeInMs, std::string & str)
+inline void UserInterface::FmtViaOSS(const unsigned long timeInMs,
+  std::string & str)
 {
   fastestUnsignedDataType timeInS = timeInMs / 1000;
   std::ostringstream oss;
@@ -46,7 +47,10 @@ inline void FmtViaOSS(const unsigned long timeInMs, std::string & str)
   {
     oss << min << "min";
   }
-  oss << (timeInS % 60) << "s" << (timeInMs % 1000) << "ms";
+  if(timeInS % 60)
+    oss << (timeInS % 60) << "s";
+  if(timeInMs % 1000)
+    oss << (timeInMs % 1000) << "ms";
   str = oss.str();
 }
 

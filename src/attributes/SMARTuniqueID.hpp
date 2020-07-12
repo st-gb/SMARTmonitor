@@ -23,6 +23,8 @@
 
 ///So the last SMART attrubute ID (254) can be used to index (255 items array)
 #define numItems (numDifferentSMART_IDs+1)
+#define highestBit(value) 1L << (sizeof(value)*8-1)
+#define setGreaterBit(value) (value |= highestBit(value) );/// ">" in UI
 
 /** Same structure as SkIdentifyParsedData in Linux' "atasmart.h" */
 struct SMARTuniqueID {
@@ -32,12 +34,15 @@ struct SMARTuniqueID {
   char m_modelName[numSMARTmodelBytes+1];
   //TODO # supported SMART IDs may only be 30->less space needed
   fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs] = {0};
+  enum states {/**real unit >= this value*/getMinUnit,getUnitTillValInc,
+    /**get unit more accurately*/getUnit};
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
   SMARTuniqueID(){
     memset(units, 0, sizeof(units[0])*numItems);
     memset(m_prevSMARTrawVals, 0xFF,sizeof(uint64_t)*numItems);
     memset(m_otherMetricVal, 0xFF,sizeof(uint64_t)*numItems);
     memset(m_SMARTrawValDiffs, 0, sizeof(uint64_t)*numItems);
+    memset(state, getMinUnit, sizeof(state[0])*numItems);
   }
 #ifdef __linux__
 //  SMARTuniqueID(const SkIdentifyParsedData & l);
@@ -127,6 +132,7 @@ struct SMARTuniqueID {
   uint64_t m_prevSMARTrawVals[numItems];
   uint64_t m_otherMetricVal[numItems];
   uint64_t m_SMARTrawValDiffs[numItems];
+  fastestUnsignedDataType state[numItems];
   
   /**\param otherVal : Can be called with value directly from device or
   * delivered to client/SMARTvalueProcessorBase(-derived).*/
@@ -144,22 +150,53 @@ struct SMARTuniqueID {
      * x     | x <-S.M.A.R.T.'s Total Data/LBAs Written value increases
      * t1   t2 t3 -> time (t1,t2,t3: point in time) */
     
-    ///<=>value set at least once.
-    if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID])
+    switch(state[SMARTattrID])//TODO take value overflow into account
     {
-//      m_numBwrittenSinceOSstart = numBwrittenSinceOSstart;
-      if( otherVal < m_otherMetricVal[SMARTattrID])
+      case getMinUnit:
+      if(otherVal < m_otherMetricVal[SMARTattrID])
       {
         m_otherMetricVal[SMARTattrID] = otherVal;
         m_prevSMARTrawVals[SMARTattrID] = SMARTrawVal;
-      }//http://www.t13.org/Documents/UploadedDocuments/docs2005/e05148r0-ACS-SMARTAttributesAnnex.pdf
-      else{/** SMART raw value increased for at least the 2nd time
-       * Bytes diff was 118273527808−117363425280=910102528 for an SSD:
-       * HFS256G39TND-N210A firmware 30001P10 when S.M.A.R.T. value diff was 34
-       * using pretty_value from libATAsmart */
-        
+      }
+      else if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID]){
+        state[SMARTattrID] = getUnitTillValInc;
+        long int unit = otherVal - m_otherMetricVal[SMARTattrID];
+        AtomicExchange(&units[SMARTattrID], unit);
+        ///Increased for the 1st time->now memorize the values
+        m_otherMetricVal[SMARTattrID] = otherVal;
+        m_prevSMARTrawVals[SMARTattrID] = SMARTrawVal;
+      }
+      else{
+        long int unit = otherVal - m_otherMetricVal[SMARTattrID];
+        /**Value is likely not the ~unit because we didn't regard the S.M.A.R.T.
+        * value increase ("t1" from "diagram" above). So set the greater bit.*/
+        setGreaterBit(unit);
+        AtomicExchange(&units[SMARTattrID], unit);
+      }
+      break;
+      case getUnitTillValInc:
+      ///SMART raw value increased for the 2nd time.
+      if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID])
+      {
         uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
-        ///It gets inaccurate if not both values are increasing.
+        state[SMARTattrID] = getUnit;
+        m_SMARTrawValDiffs[SMARTattrID] = SMARTrawValDiff;
+        uint64_t diff = otherVal - m_otherMetricVal[SMARTattrID];
+        //TODO long int may not be sufficient
+        long int unit = diff / SMARTrawValDiff;
+        AtomicExchange(&units[SMARTattrID], unit);
+      }
+      else{
+        long int unit = otherVal - m_otherMetricVal[SMARTattrID];
+        /** As long as we did't regard a 2nd S.M.A.R.T. value increase we only
+         * now the unit is >. So set the greater bit.*/
+        setGreaterBit(unit) //if(unit > units[SMARTattrID])
+        AtomicExchange(&units[SMARTattrID], unit);
+      }
+      break;
+      /**SMART raw value increased for at least the 3rd time*/
+      case getUnit:{///The higher the difference  the more accurate?
+        uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
         if( SMARTrawValDiff > m_SMARTrawValDiffs[SMARTattrID]){
           m_SMARTrawValDiffs[SMARTattrID] = SMARTrawValDiff;
           uint64_t diff = otherVal - m_otherMetricVal[SMARTattrID];
@@ -167,15 +204,8 @@ struct SMARTuniqueID {
           long int unit = diff / SMARTrawValDiff;
           AtomicExchange(&units[SMARTattrID], unit);
         }
-      ///The higher the difference  the more accurate?
-       /// E.g. 
-//      m_numBwrittenSinceOSstart = numBwrittenSinceOSstart;
-//      m_totDatWrSMARTrawVal = SMARTrawVal;
-//      SMARTrawVal *= unit;///Make value to # bytes 
       }
     }
-    else// if(SMARTrawVal < m_totDatWrSMARTrawVal){///<=>value not set yet
-      m_prevSMARTrawVals[SMARTattrID] = SMARTrawVal;
   }
 
   /** For necessary function signature see

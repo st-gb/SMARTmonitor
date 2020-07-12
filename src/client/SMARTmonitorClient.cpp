@@ -10,6 +10,7 @@
 #include "hardware/CPU/atomic/AtomicExchange.h"
 #include <SMARTvalueFormatter.hpp> //SMARTvalueFormatter::FormatHumanReadable())
 #include <compiler/GCC/enable_disable_warning.h> //GCC_DIAG_OFF(...)
+#include <UserInterface/UserInterface.hpp>///class UserInterface
 
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
@@ -409,9 +410,32 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
       FormatHumanReadable(SMARTattrID, SMARTrawValue);
     
     std::ostringstream std_ossUnit;
-    const long unit = SMARTuniqueIDandVals.getSMARTuniqueID().units[SMARTattrID];
-    if(unit)
-      std_ossUnit << SMARTuniqueIDandVals.getSMARTuniqueID().units[SMARTattrID];
+    long unit = SMARTuniqueIDandVals.getSMARTuniqueID().units[SMARTattrID];
+    const long int highestBit = highestBit(unit);
+    if(unit & ~highestBit)///If unit > 0 after bit removed
+    {
+      if(unit & highestBit ){///If highmost bit set
+        std_ossUnit << ">";
+        unit &= ~highestBit;///Without highmost bit
+       }
+      else
+        std_ossUnit << "~";
+      switch(SMARTattrID)
+      {
+       case SMARTattributeNames::PowerOnTime:{
+        std::string stdstr;
+         FmtViaOSS(unit*1000, stdstr);
+         std_ossUnit << stdstr;
+         }
+         break;
+        case SMARTattributeNames::TotalDataWritten:
+        case SMARTattributeNames::TotalDataRead:
+          std_ossUnit << SMARTvalueFormatter::GetNumberWithSIprefix(unit) <<"B";
+          break;
+       default:
+         std_ossUnit << unit;
+      }
+    }
     else
       std_ossUnit << "?";
     std::ostringstream std_oss;
@@ -430,10 +454,6 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
        std_oss << std::hex << /**To better differentiate between number and
        * base*/std::uppercase << SMARTrawValue << "h";
        break;
-     case SMARTattributeNames::TotalDataWritten:
-     case SMARTattributeNames::TotalDataRead:
-       if(unit != 0)
-         std_ossUnit << "B";
      default:
        std_oss << SMARTrawValue;
      }

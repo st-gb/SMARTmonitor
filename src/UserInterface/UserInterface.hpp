@@ -27,6 +27,7 @@ public:
   virtual void ShowConnectionState(const char * const pch, int timeOut) {}
   
   static std::string GetTimeAsString(const struct tm & timeOfLastSMARTvaluesUpdate);
+  inline static void FmtViaOSS(const unsigned long timeInMs, std::string &);
   static void FormatTimeOfLastUpdate(
     long int timeStampOfRetrievalIn1ks, 
     std::string & timeFormatString);

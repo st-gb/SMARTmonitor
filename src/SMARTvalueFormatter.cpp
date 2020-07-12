@@ -94,6 +94,22 @@ std::string SMARTvalueFormatter::GetTimeFrom_ms(
   return stdoss.str();
 }
 
+std::string SMARTvalueFormatter::GetNumberWithSIprefix(const uint64_t & SMARTrawVal)
+{
+  uint64_t remainder = SMARTrawVal;
+  uint64_t unitPrefixFactor = SMARTrawVal;
+  char unitPrefixChar;
+  std::ostringstream stdoss;
+  do {
+    unitPrefixChar = calcUnitPrefixFactorAndRemainder(remainder, unitPrefixFactor);
+    if( unitPrefixChar == ' ' )
+      stdoss << unitPrefixFactor;
+    else
+      stdoss << unitPrefixFactor << unitPrefixChar;
+  } while (unitPrefixChar != ' ');
+  return stdoss.str();
+}
+
 /** Make this method into a distinct class So it can be used by tests with
  *  only a little payload (code bloat) */
 std::string SMARTvalueFormatter::FormatHumanReadable(
@@ -131,18 +147,7 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
       return GetDegCfromCurrMinMax(SMARTrawVal);
     default:
     {
-      uint64_t remainder = SMARTrawVal;
-      uint64_t unitPrefixFactor = SMARTrawVal;
-      char unitPrefixChar;
-      std::ostringstream stdoss;
-      do {
-        unitPrefixChar = calcUnitPrefixFactorAndRemainder(remainder, unitPrefixFactor);
-        if( unitPrefixChar == ' ' )
-          stdoss << unitPrefixFactor;
-        else
-          stdoss << unitPrefixFactor << unitPrefixChar;
-      } while (unitPrefixChar != ' ');
-      return stdoss.str();
+      return GetNumberWithSIprefix(SMARTrawVal);
     }
 //      break;
   }

@@ -27,6 +27,7 @@ public:
   static std::string GetDegCfrom_mK(const uint64_t & SMARTrawValue);
   static std::string GetTimeFrom_h(const uint64_t & SMARTrawVal);
   static std::string GetTimeFrom_ms(const uint64_t & SMARTrawValue);
+  static std::string GetNumberWithSIprefix(const uint64_t & SMARTrawVal);
 private:
 
 };
