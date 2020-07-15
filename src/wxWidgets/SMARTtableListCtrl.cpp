@@ -62,28 +62,40 @@ namespace wxWidgets
     InsertColumn(ColumnIndices::lastUpdate, column);
   }
 
-  void SMARTtableListCtrl::SetSMARTattribValue(
-    fastestUnsignedDataType SMARTattributeID,
-    fastestUnsignedDataType columnIndex,
-    const wxString & wxstrValue,
-    const enum SMARTmonitorClient::SMARTvalueRating sMARTvalueRating)
-  {
-    fastestUnsignedDataType lineNumber = m_SMARTattribIDtoLineNumber[
-      SMARTattributeID];
-    SetItem(
-      lineNumber, //long index
-      columnIndex /** column #/ index */,
-      wxstrValue);
-//    if( sMARTvalueRating == SMARTmonitorClient::SMARTvalueOK )
-//    {
-    //TODO colour based on SMART (raw) value
-//      wxListItem wxListItem;
-//      wxListItem.SetId(lineNumber);
-//      GetItem(wxListItem);
-////    //http://docs.wxwidgets.org/3.1.0/classwx_list_item.html
-//      wxListItem.SetTextColour(*wxGREEN);
-//    }
-  }
+void SMARTtableListCtrl::SetSMARTattribValue(
+  fastestUnsignedDataType SMARTattributeID,
+  fastestUnsignedDataType columnIndex,
+  const wxString & wxstrValue,
+  const enum SMARTvalueRating sMARTvalueRating)
+{
+  fastestUnsignedDataType lineNumber = m_SMARTattribIDtoLineNumber[
+    SMARTattributeID];
+  SetItem(
+    lineNumber, //long index
+    columnIndex /** column #/ index */,
+    wxstrValue);
+  ///Only do it once/for 1 attribute/column
+  if(columnIndex == ColumnIndices::rawValue)
+    switch(sMARTvalueRating)
+      case SMARTvalueOK:
+      case SMARTvalueWarning:
+    {
+      wxListItem wxListItem;
+      wxListItem.SetId(lineNumber);
+      GetItem(wxListItem);
+      switch(sMARTvalueRating){
+       case SMARTvalueOK:
+        //http://docs.wxwidgets.org/3.1.0/classwx_list_item.html
+        //wxListItem.SetTextColour(*wxGREEN);
+        ///https://forums.wxwidgets.org/viewtopic.php?t=26576
+        SetItemBackgroundColour(lineNumber, *wxGREEN);
+        break;
+       case SMARTvalueWarning:
+        SetItemBackgroundColour(lineNumber, *wxYELLOW);
+        break;
+      }
+    }
+}
   
 void SMARTtableListCtrl::CreateLines(const SMARTmonitorBase::SMARTattrToObsType
   & IDsOfSMARTattrs)

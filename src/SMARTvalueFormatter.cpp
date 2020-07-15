@@ -143,7 +143,7 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
      * "Lowest byte of the raw value contains the exact temperature value (
      *   Celsius degrees)."*/
     case SMARTattributeNames::DevTemp :
-     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
+//     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
       return GetDegCfromCurrMinMax(SMARTrawVal);
     default:
     {

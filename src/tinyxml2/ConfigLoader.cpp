@@ -161,6 +161,7 @@ bool ConfigLoader::LoadSMARTparametersConfiguration(
           criticalSMARTattribute = false;
           if( p_ch )
           {
+            std_strCritical = p_ch;
             LOGN_DEBUG("found \"Critical\" attribute.Value is:" << 
               std_strCritical )
             if( std_strCritical == "yes" )

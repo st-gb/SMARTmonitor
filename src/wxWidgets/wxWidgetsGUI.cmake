@@ -47,7 +47,7 @@ set(INCLUDE_DIRS
 
 #include_directories( ${INCLUDE_DIRS} )
 
-#if(SetwxVarsManually)
+if(SetwxVarsManually)
 #Setting manually makes wxWidgets version changes difficult as the version is
 #part of the file name: "wx_baseu-3.0" 
 set( LIBRARIES
@@ -75,21 +75,23 @@ if(UNIX)
     #wx_gtk2ud_adv-2.8
   )
 endif(UNIX)
-#else()
+else(SetwxVarsManually)
 
-#if(SetFindwxWidgetsVars)
+#If not set, wxWidgets_LIBRARIES includes all/too many wxWidgets libraries after
+# "find_package(wxWidgets [...]"
+SET(wxWidgets_USE_LIBS core base adv)
+if(SetFindwxVarsManually)#=set wx vars and call "find_package(wxWidgets..."
 #https://wiki.wxwidgets.org/CMake
 set(wxWidgets_CONFIGURATION mswud)
 #set(wxWidgets_CONFIGURATION mswu)
-SET(wxWidgets_USE_LIBS core base adv)
+#TODO already covered by "SET(wxWidgets_USE_LIBS..."?
 find_package(wxWidgets COMPONENTS core base adv REQUIRED)
 include(${wxWidgets_USE_FILE})
 
 message("wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
 message (STATUS "wxWidgets type: ${wxWidgets_CONFIGURATION}")
-#else()
-#TODO use callFindWxWidgets.cmake from common_sourcecode here?
+else(SetFindwxVarsManually)
 set(debugCallFindwxWidgets TRUE)
 include(${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/callFindwxWidgets.cmake)
-#endif()
-#endif()
+endif(SetFindwxVarsManually)
+endif(SetwxVarsManually)

@@ -26,6 +26,7 @@ GCC_DIAG_OFF(write-strings)
 char * SMARTmonitorClient::s_columnAttriuteNames [] =
  { "ID", "name", "raw", "human readable", "last update"};
 GCC_DIAG_ON(write-strings)
+SMARTvalueRater SMARTmonitorClient::s_SMARTvalueRater;
 
 SMARTmonitorClient::SMARTmonitorClient() 
   : m_serviceConnectionCountDownInSeconds(60)
@@ -390,7 +391,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
   void * data)
 {
   enum SMARTvalueRating sMARTvalueRating;
-  uint64_t SMARTrawValue;
+  uint64_t SMARTrawVal;
   //TODO attribute IDs of SMART values to observe may not be a subset of
   // SMART attributes in config file!
   SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
@@ -398,7 +399,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
   if(p_sMARTattrDef){
     const SMARTvalue & sMARTvalue = SMARTuniqueIDandVals.m_SMARTvalues[
       SMARTattrID];
-  bool isConsistent = sMARTvalue.IsConsistent(SMARTrawValue);
+  bool isConsistent = sMARTvalue.IsConsistent(SMARTrawVal);
 //      memory_barrier(); //TODO: not really necessary??
   int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
 
@@ -406,39 +407,61 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
   if( /*successfullyUpdatedSMART*/ isConsistent )
   {
     SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
-    std::string stdstrHumanReadableRawValue = SMARTvalueFormatter::
-      FormatHumanReadable(SMARTattrID, SMARTrawValue);
+    std::string stdstrHumanReadableRawVal;
     
     std::ostringstream std_ossUnit;
     long unit = SMARTuniqueIDandVals.getSMARTuniqueID().units[SMARTattrID];
     const long int highestBit = highestBit(unit);
+    uint64_t realCircaValue;
     if(unit & ~highestBit)///If unit > 0 after bit removed
     {
       if(unit & highestBit ){///If highmost bit set
         std_ossUnit << ">";
         unit &= ~highestBit;///Without highmost bit
-       }
-      else
+        stdstrHumanReadableRawVal = ">";
+      }
+      else{
         std_ossUnit << "~";
+        stdstrHumanReadableRawVal = "~";
+      }
+      ///Value can get high: 16230×3618000 = 58720140000
+      realCircaValue = SMARTrawVal * (uint64_t) unit;
       switch(SMARTattrID)
       {
        case SMARTattributeNames::PowerOnTime:{
         std::string stdstr;
-         FmtViaOSS(unit*1000, stdstr);
+         FmtViaOSS(unit, stdstr);///unit in ms
          std_ossUnit << stdstr;
+         std::string timeFormat;
+         UserInterface::FormatTimeOfLastUpdate(realCircaValue,
+           timeFormat);
+         stdstrHumanReadableRawVal += timeFormat;
          }
          break;
         case SMARTattributeNames::TotalDataWritten:
         case SMARTattributeNames::TotalDataRead:
           std_ossUnit << SMARTvalueFormatter::GetNumberWithSIprefix(unit) <<"B";
+          stdstrHumanReadableRawVal += SMARTvalueFormatter::
+            FormatHumanReadable(SMARTattrID, realCircaValue) + "B";
           break;
        default:
          std_ossUnit << unit;
       }
     }
-    else
+    else{
       std_ossUnit << "?";
-    std::ostringstream std_oss;
+      stdstrHumanReadableRawVal = SMARTvalueFormatter::
+        FormatHumanReadable(SMARTattrID, SMARTrawVal);
+      switch(SMARTattrID)
+      {
+       case SMARTattributeNames::DevTemp:
+        realCircaValue = CurrTemp(SMARTrawVal);
+        break;
+       default:
+        realCircaValue = SMARTrawVal;
+      }
+    }
+    std::ostringstream std_ossRawSMARTval;
     switch(SMARTattrID)
     {
      case SMARTattributeNames::GiB_Erased:
@@ -451,46 +474,29 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
      * 9 Jul 2020: "Decoded as: byte 0-1-2 = average erase count (big endian)
      * and byte 3-4-5 = max erase count (big endian).*/
      case SMARTattributeNames::AvgEraseCntAndMaxEraseCnt:
-       std_oss << std::hex << /**To better differentiate between number and
-       * base*/std::uppercase << SMARTrawValue << "h";
+       std_ossRawSMARTval << std::hex << /**To better differentiate between number and
+       * base*/std::uppercase << SMARTrawVal << "h";
        break;
      default:
-       std_oss << SMARTrawValue;
+       std_ossRawSMARTval << SMARTrawVal;
      }
     std::string stdstrUnit = std_ossUnit.str();
-    if(/*SMARTattrDefFound*/sMARTattrDef.GetAttributeID() != 0)
-    {
-    bool critical = sMARTattrDef.IsCritical();
-    LOGN_DEBUG("attribute ID " << sMARTattrDef.GetAttributeID() << 
-      " is critical?:" << critical
-      //(critical==true ? "yes" : "no") 
-      )
     //TODO pass warning or OK fpr critical SMART IDs to function
     //e.g. use highmost bits of SMARTattributeID for that purpose
-    if(critical)
-    {
       //std::numeric_limits<>::min();
 //          SMARTattributeID &= 2 << (numSMARTattributeIDbits - 1)
-      if( SMARTrawValue == 0)
-        sMARTvalueRating = SMARTvalueOK;
-      else
-        sMARTvalueRating = SMARTvalueWarning;
-    }
-    else
-      sMARTvalueRating = noCriticalValue;
-    }
-    else
-      sMARTvalueRating = unknown;
+    sMARTvalueRating = s_SMARTvalueRater.GetSMARTvalueRating(SMARTattrID,
+      SMARTuniqueIDandVals, realCircaValue);
     SetAttribute(
       SMARTattrID,
       ColumnIndices::rawValue /** column #/ index */,
-      std_oss.str(),
+      std_ossRawSMARTval.str(),
       sMARTvalueRating,
       data);
     SetAttribute(
       SMARTattrID,
       ColumnIndices::humanReadableRawValue,
-      stdstrHumanReadableRawValue,
+      stdstrHumanReadableRawVal,
       sMARTvalueRating,
       data);
     SetAttribute(

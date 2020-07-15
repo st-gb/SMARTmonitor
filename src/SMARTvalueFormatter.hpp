@@ -1,11 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /** File:   SMARTvalueFormatter.hpp
- * Author: sg
+ * Author: Stefan Gebauer,M.Sc.Comp.Sc.
  * Created on 2. Januar 2017, 23:13 */
 
 #ifndef SMARTVALUEFORMATTER_HPP
@@ -14,6 +8,11 @@
 #include <string> //class std::string
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 #include <stdint.h> //uint64_t
+
+/**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes: 
+ * Current temperature of SMART ID 194 (Device Temperature) is in the lowmost 2
+ * bytes.*/
+#define CurrTemp(SMARTrawValue) (SMARTrawValue & 0xFFFF)
 
 class SMARTvalueFormatter {
 public:
@@ -33,4 +32,3 @@ private:
 };
 
 #endif /* SMARTVALUEFORMATTER_HPP */
-

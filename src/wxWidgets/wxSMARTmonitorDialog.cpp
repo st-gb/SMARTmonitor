@@ -246,7 +246,7 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
   static const wxChar * const title = wxT("About wxS.M.A.R.T.monitor");
   static const wxChar * const message
-    = _T("a tool to monitor CRITICAL S.M.A.R.T. parameters\n"
+    = _T("a tool to monitor (CRITICAL) S.M.A.R.T. parameters\n"
     "\nsee http://en.wikipedia.org/wiki/S.M.A.R.T."
     "\n(C) 2013-" __DATE__ 
     "\nby Stefan Gebauer, M.Sc. Comp. Science, Berlin, Germany");

@@ -1,22 +1,14 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   SMARTmonitorClient.h
- * Author: root
- *
- * Created on 20. November 2016, 17:43
- */
+/** File:   SMARTmonitorClient.h
+ * Author: Stefan Gebauer,M.Sc.Comp.Sc.
+ * Created on 20. November 2016, 17:43 */
 
 #ifndef SMARTMONITORCLIENT_H
 #define SMARTMONITORCLIENT_H
 
 #include "../SMARTmonitorBase.hpp"
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
-#include <UserInterface/columnIndices.hpp> 
+#include <UserInterface/columnIndices.hpp>
+#include <SMARTvalueRater.hpp>///class SMARTvalueRater
 
 class SMARTmonitorClient 
   : public SMARTmonitorBase
@@ -37,11 +29,11 @@ public:
   static fastestUnsignedDataType s_updateUI;
   dataCarrierID2supportedSMARTattrMap_type
     dataCarrierIDandSMARTidsContainer;
+  static SMARTvalueRater s_SMARTvalueRater;
   
   enum serverConnectionState {connectedToService, unconnectedFromService};
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
-  enum SMARTvalueRating{noCriticalValue,SMARTvalueOK,SMARTvalueWarning,unknown};
   
   int m_socketFileDesc;
   fastestUnsignedDataType m_serviceConnectionCountDownInSeconds;

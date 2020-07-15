@@ -178,8 +178,8 @@ struct SMARTuniqueID {
       ///SMART raw value increased for the 2nd time.
       if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID])
       {
-        uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
         state[SMARTattrID] = getUnit;
+        uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
         m_SMARTrawValDiffs[SMARTattrID] = SMARTrawValDiff;
         uint64_t diff = otherVal - m_otherMetricVal[SMARTattrID];
         //TODO long int may not be sufficient
@@ -189,7 +189,8 @@ struct SMARTuniqueID {
       else{
         long int unit = otherVal - m_otherMetricVal[SMARTattrID];
         /** As long as we did't regard a 2nd S.M.A.R.T. value increase we only
-         * now the unit is >. So set the greater bit.*/
+         * know the unit is > ("t1" from "diagram" above). So set the greater
+         * bit.*/
         setGreaterBit(unit) //if(unit > units[SMARTattrID])
         AtomicExchange(&units[SMARTattrID], unit);
       }

@@ -33,9 +33,10 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
 {
   switch(SMARTattrID){
    case SMARTattributeNames::PowerOnTime:{
-    double uptimeInS;
-    OperatingSystem::GetUptimeInS(uptimeInS);
-    sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, uptimeInS);
+    long int uptimeInNs;
+    OperatingSystem::GetUptimeInNs(uptimeInNs);
+    sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, uptimeInNs
+      /**to ms*//1000000);
     }
     break;
     /** The unit for "Total Data/LBAs Written/Read" differs among models. For
@@ -52,6 +53,8 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
     break;
    case SMARTattributeNames::TotalDataRead:{
     ///Use 64 bit value because it can get very high (>409257094144)
+    /**Caching may take effect on data carrier side so that less bytes are read
+    * than assumed.->Caching must be disabled before?*/
     const uint64_t numBreadSinceOSstart = /*OperatingSystem::*/dataCarrier::
       getNumB_readSinceOSstart(stdstrDataCarrierPath);
     sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, numBreadSinceOSstart);
