@@ -321,7 +321,7 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
   const long int timeStampOfRetrievalIn1ks, void * data)
 {  
   std::string timeFormatString;
-  UserInterface::FormatTimeOfLastUpdate(
+  UserInterface::FormatTime(
     timeStampOfRetrievalIn1ks, 
     timeFormatString);
   SetAttribute(
@@ -409,43 +409,45 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
     SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
     std::string stdstrHumanReadableRawVal;
     
-    std::ostringstream std_ossUnit;
-    long unit = SMARTuniqueIDandVals.getSMARTuniqueID().units[SMARTattrID];
+    std::ostringstream std_ossUnit, std_ossUnitAccuracy;
+    const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandVals.
+      getSMARTuniqueID();
+    long unit = sMARTuniqueID.units[SMARTattrID];
     const long int highestBit = highestBit(unit);
     uint64_t realCircaValue;
+    double accuracy = 0.0;
+    double lowerLimit, upperLimit;
     if(unit & ~highestBit)///If unit > 0 after bit removed
     {
       if(unit & highestBit ){///If highmost bit set
-        std_ossUnit << ">";
+        std_ossUnit << "~>=";
         unit &= ~highestBit;///Without highmost bit
-        stdstrHumanReadableRawVal = ">";
+        stdstrHumanReadableRawVal = "~>=";
+        ///Value can get high: 16230×3618000 = 58720140000
+        realCircaValue = SMARTrawVal * (uint64_t) unit;
       }
       else{
         std_ossUnit << "~";
         stdstrHumanReadableRawVal = "~";
+        ///Value can get high: 16230×3618000 = 58720140000
+        realCircaValue = SMARTrawVal * (uint64_t) unit;
+        lowerLimit = (double) sMARTuniqueID.lowerBound[SMARTattrID];
+        upperLimit = (double) sMARTuniqueID.upperBound[SMARTattrID];
+        if(upperLimit != 0.0)///Prevent division by 0.
+          accuracy = lowerLimit / upperLimit;
       }
-      ///Value can get high: 16230×3618000 = 58720140000
-      realCircaValue = SMARTrawVal * (uint64_t) unit;
-      switch(SMARTattrID)
-      {
-       case SMARTattributeNames::PowerOnTime:{
-        std::string stdstr;
-         FmtViaOSS(unit, stdstr);///unit in ms
-         std_ossUnit << stdstr;
-         std::string timeFormat;
-         UserInterface::FormatTimeOfLastUpdate(realCircaValue,
-           timeFormat);
-         stdstrHumanReadableRawVal += timeFormat;
-         }
-         break;
-        case SMARTattributeNames::TotalDataWritten:
-        case SMARTattributeNames::TotalDataRead:
-          std_ossUnit << SMARTvalueFormatter::GetNumberWithSIprefix(unit) <<"B";
-          stdstrHumanReadableRawVal += SMARTvalueFormatter::
-            FormatHumanReadable(SMARTattrID, realCircaValue) + "B";
-          break;
-       default:
-         std_ossUnit << unit;
+      std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID, 
+        unit);
+      stdstrHumanReadableRawVal += SMARTvalueFormatter::
+        FormatHumanReadable(SMARTattrID, realCircaValue);
+      if(accuracy != 0.0){
+        std::string humanReadableAccuracy = SMARTvalueFormatter::
+          FormatHumanReadable(SMARTattrID, lowerLimit);
+        std_ossUnitAccuracy << " " << std::fixed << humanReadableAccuracy <<
+          "-";/** "..." */
+        humanReadableAccuracy = SMARTvalueFormatter::FormatHumanReadable(
+          SMARTattrID, upperLimit);
+        std_ossUnitAccuracy << std::fixed << /* "]" */ humanReadableAccuracy;
       }
     }
     else{
@@ -503,6 +505,12 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
       SMARTattrID,
       ColumnIndices::unit,
       stdstrUnit,
+      sMARTvalueRating,
+      data);
+    SetAttribute(
+      SMARTattrID,
+      ColumnIndices::unitRange,
+      std_ossUnitAccuracy.str(),
       sMARTvalueRating,
       data);
 

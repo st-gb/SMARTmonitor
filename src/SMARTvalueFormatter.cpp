@@ -5,6 +5,7 @@
 #include "SMARTvalueFormatter.hpp"
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <hardware/dataCarrier/SMARTattributeNames.h>
+#include <UserInterface/UserInterface.hpp>///UserInterface::FormatTime(...)
 
 SMARTvalueFormatter::SMARTvalueFormatter() {
 }
@@ -121,8 +122,12 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
     * "The raw value of this attribute shows total count of hours (or minutes,
     * or seconds, depending on manufacturer) in power-on state."*/
-    case SMARTattributeNames::PowerOnTime :
-      return GetTimeFrom_h(SMARTrawVal);
+    case SMARTattributeNames::PowerOnTime :{
+      std::string timeFmt;
+      //return GetTimeFrom_h(SMARTrawVal);
+      UserInterface::FormatTime(SMARTrawVal, timeFmt);
+      return timeFmt;
+    }
     case SMARTattributeNames::HeadFlyingHours :
      //TODO could do a diff of OS uptime (GetTickCount(...) under MS Windows)
      // and values to determine the time unit.
@@ -145,6 +150,9 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
     case SMARTattributeNames::DevTemp :
 //     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
       return GetDegCfromCurrMinMax(SMARTrawVal);
+    case SMARTattributeNames::TotalDataWritten:
+    case SMARTattributeNames::TotalDataRead:
+      return GetNumberWithSIprefix(SMARTrawVal) + "B";
     default:
     {
       return GetNumberWithSIprefix(SMARTrawVal);

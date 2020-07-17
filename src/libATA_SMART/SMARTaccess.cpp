@@ -54,7 +54,7 @@ inline void cpySMARTattrThreadSafe(SMARTvalue & sMARTvalue, const uint64_t &
   OperatingSystem::GetUptimeInS(uptimeInSeconds);
 #ifdef DEBUG_
   std::string str;
-  UserInterface::FormatTimeOfLastUpdate(uptimeInSeconds,str);
+  UserInterface::FormatTime(uptimeInSeconds,str);
 #endif
   AtomicExchange( (long int *) & sMARTvalue.m_timeStampOfRetrieval, 
     (long int) (uptimeInSeconds * 1000.0) );

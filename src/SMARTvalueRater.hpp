@@ -42,6 +42,8 @@ public:
       /** https://de.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#%C3%9Cbliche_Parameter
        * :Only applies to HDDs?: "Über alle Alter gemittelt, sind Temperaturen
        * unter 25 °C weit gefährlicher als solche über 40 °C."*/
+      ///https://harddrivegeek.com/ssd-temperature/
+      ///https://en.wikipedia.org/wiki/Solid-state_drive
       if(realCircaValue >= 25 && realCircaValue < 45)///Values for HDD
         return SMARTvalueOK;
       else

@@ -17,11 +17,13 @@
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 ///numSMART_SNbytes, numSMART_FWbytes, numSMARTmodelBytes, numDifferentSMART_IDs
 #include <hardware/dataCarrier/ATA3Std.h>
+#include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
 
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
 #include "SMARTattributeNameAndID.hpp"///class SMARTattributeNameAndID
 
 ///So the last SMART attrubute ID (254) can be used to index (255 items array)
+///Does not need so many items? # supported SMART attributes = 30?
 #define numItems (numDifferentSMART_IDs+1)
 #define highestBit(value) 1L << (sizeof(value)*8-1)
 #define setGreaterBit(value) (value |= highestBit(value) );/// ">" in UI
@@ -32,10 +34,26 @@ struct SMARTuniqueID {
   char m_serialNumber[numSMART_SNbytes+1];
   char m_firmWareName[numSMART_FWbytes+1];
   char m_modelName[numSMARTmodelBytes+1];
+
   //TODO # supported SMART IDs may only be 30->less space needed
   fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs] = {0};
+  
+  ///Source code for unit detection follows.
+  /** SMART IDs are fetched in an interval->make access fast. Must be sorted
+  * ascending for the algorithms to work.*/
+  fastestUnsignedDataType m_SMART_IDsToRd[numDifferentSMART_IDs];
+  //TODO not needed anoymore because calculated from upper - lower bound?
+  long int units[numItems];
   enum states {/**real unit >= this value*/getMinUnit,getUnitTillValInc,
     /**get unit more accurately*/getUnit};
+  uint64_t m_prevSMARTrawVals[numItems];
+  uint64_t m_otherMetricVal[numItems];
+  uint64_t m_SMARTrawValDiffs[numItems];
+  fastestUnsignedDataType state[numItems];
+//  fastestUnsignedDataType numSamples[numItems];//Not needed?
+  fastestUnsignedDataType unitSinceLastSWMARTrawValInc[numItems];//TODO Show in UI?
+  uint64_t lowerBound[numItems];
+  uint64_t upperBound[numItems];
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
   SMARTuniqueID(){
     memset(units, 0, sizeof(units[0])*numItems);
@@ -43,15 +61,16 @@ struct SMARTuniqueID {
     memset(m_otherMetricVal, 0xFF,sizeof(uint64_t)*numItems);
     memset(m_SMARTrawValDiffs, 0, sizeof(uint64_t)*numItems);
     memset(state, getMinUnit, sizeof(state[0])*numItems);
+//    memset(numSamples, 0, sizeof(numSamples[0])*numItems);
+    memset(unitSinceLastSWMARTrawValInc, 0, sizeof(
+      unitSinceLastSWMARTrawValInc[0])*numItems);
+    memset(lowerBound, 0, sizeof(lowerBound[0])*numItems);
+    memset(upperBound, 0, sizeof(upperBound[0])*numItems);
   }
 #ifdef __linux__
 //  SMARTuniqueID(const SkIdentifyParsedData & l);
 #endif
   ~SMARTuniqueID();
-  /** SMART IDs are fetched in an interval->make access fast. Must be sorted
-  * ascending for the algorithms to work.*/
-  fastestUnsignedDataType m_SMART_IDsToRd[numDifferentSMART_IDs];
-  long int units[numItems];///Does not need so many items?
   
   const fastestUnsignedDataType * getSupportedSMART_IDs() const{
     return supportedSMART_IDs;
@@ -127,13 +146,6 @@ struct SMARTuniqueID {
     }
   }
   
-  //TODO exchange the following by sth. like uint64_t prvVals[numSMART_IDs];
-  // to cover making differences of all SMART attributes
-  uint64_t m_prevSMARTrawVals[numItems];
-  uint64_t m_otherMetricVal[numItems];
-  uint64_t m_SMARTrawValDiffs[numItems];
-  fastestUnsignedDataType state[numItems];
-  
   /**\param otherVal : Can be called with value directly from device or
   * delivered to client/SMARTvalueProcessorBase(-derived).*/
   void guessUnit(
@@ -179,11 +191,14 @@ struct SMARTuniqueID {
       if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID])
       {
         state[SMARTattrID] = getUnit;
+//        numSamples[SMARTattrID]++;
         uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
         m_SMARTrawValDiffs[SMARTattrID] = SMARTrawValDiff;
         uint64_t diff = otherVal - m_otherMetricVal[SMARTattrID];
         //TODO long int may not be sufficient
         long int unit = diff / SMARTrawValDiff;
+        lowerBound[SMARTattrID] = unit;
+        upperBound[SMARTattrID] = unit;
         AtomicExchange(&units[SMARTattrID], unit);
       }
       else{
@@ -192,7 +207,9 @@ struct SMARTuniqueID {
          * know the unit is > ("t1" from "diagram" above). So set the greater
          * bit.*/
         setGreaterBit(unit) //if(unit > units[SMARTattrID])
-        AtomicExchange(&units[SMARTattrID], unit);
+        ///Only if value > value from state "getMinUnit"
+        //if(unit > units[SMARTattrID])
+          AtomicExchange(&units[SMARTattrID], unit);
       }
       break;
       /**SMART raw value increased for at least the 3rd time*/
@@ -200,9 +217,20 @@ struct SMARTuniqueID {
         uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
         if( SMARTrawValDiff > m_SMARTrawValDiffs[SMARTattrID]){
           m_SMARTrawValDiffs[SMARTattrID] = SMARTrawValDiff;
-          uint64_t diff = otherVal - m_otherMetricVal[SMARTattrID];
+//          numSamples[SMARTattrID]++;
+          uint64_t otherMetricDiff = otherVal - m_otherMetricVal[SMARTattrID];
           //TODO long int may not be sufficient
-          long int unit = diff / SMARTrawValDiff;
+          long int unit = otherMetricDiff / SMARTrawValDiff;
+          const long int unitDiff = units[SMARTattrID]-unit;
+          if(unitDiff > 0)///New value  lower than stored value.
+            lowerBound[SMARTattrID] = unit;
+          else
+            upperBound[SMARTattrID] -= unitDiff;///Minus a negative value is plus.
+          unitSinceLastSWMARTrawValInc[SMARTattrID] = unit;
+          /** This prevents a value overflow in contrast to "(lowerBound[
+           *  SMARTattrID] + (upperBound[SMARTattrID])/2 but is slower.*/
+          unit = lowerBound[SMARTattrID] + (upperBound[SMARTattrID] - 
+            lowerBound[SMARTattrID]) / 2;
           AtomicExchange(&units[SMARTattrID], unit);
         }
       }

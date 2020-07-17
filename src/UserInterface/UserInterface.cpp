@@ -127,9 +127,10 @@ void FmtVia_snprintf(const unsigned long timeInMs, std::string & stdstrTimeForma
   stdstrTimeFormat = formattedString;
 }
 
-/** This function is intended to be used by subclasses (e.g. TUI via (n)curses, 
- * wxWidgets GUI, ...) of this class.*/
-void UserInterface::FormatTimeOfLastUpdate(
+/** This function is intended to be used by subclasses (e.g. TUI via (n)curses,
+ * wxWidgets GUI, ...) of this class.
+ * Used to format the uptime of last update und time unit range*/
+void UserInterface::FormatTime(
   long int timeStampOfRetrievalInMs, 
   std::string & timeFormatString)
 {

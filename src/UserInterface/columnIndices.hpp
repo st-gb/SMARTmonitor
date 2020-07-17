@@ -13,7 +13,7 @@ namespace ColumnIndices
   //declaration of "SMARTmonitorClient" is not needed by 
   //wxWidgets::SMARTtableListCtrl
 enum columnIndices{SMART_ID = 0, SMARTparameterName,
-  rawValue, humanReadableRawValue, unit, lastUpdate, beyondLast};
+  rawValue, humanReadableRawValue, unit, unitRange, lastUpdate, beyondLast};
 }
 
 #endif /* COLUMNINDICES_HPP */

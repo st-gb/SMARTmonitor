@@ -55,6 +55,13 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
     ///Use 64 bit value because it can get very high (>409257094144)
     /**Caching may take effect on data carrier side so that less bytes are read
     * than assumed.->Caching must be disabled before?*/
+    /** Under Linux for "Total Data Read" this can be tested via 
+     * "sudo dd if=device skip=numBlockToSkip of=/dev/zero count=numBlockToRead"
+     * where
+     * -device:the whole data carrier or a partion, safest is using 
+     *   a free partition or a disabled swap partion.
+     * -numBlockToSkip: num blocks to skip to overcome caching
+     * -numBlockToRead: use ca. 1000000 for 512 B block size and unit GiB*/
     const uint64_t numBreadSinceOSstart = /*OperatingSystem::*/dataCarrier::
       getNumB_readSinceOSstart(stdstrDataCarrierPath);
     sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, numBreadSinceOSstart);
