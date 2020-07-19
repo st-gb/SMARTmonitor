@@ -163,9 +163,7 @@ void HandleXMLresult(const tinyxml2::XMLError XMLparsingResult)
   }
 }
 
-void ConvertStringToInt(
-  const char * const p_BeginOfNumber, 
-  supportedSMARTattributeIDs_type & supportedSMARTattributeIDs )
+int ConvertStringToInt(const char * const p_BeginOfNumber)
 {
   fastestUnsignedDataType number;
   //std::string std_strConvertToNumber(p_BeginOfNumber);
@@ -175,13 +173,14 @@ void ConvertStringToInt(
     if( CheckSMARTidRange(number) == 0 )
     {
       LOGN_DEBUG( "string:" << p_BeginOfNumber << " as int:" << number )
-      supportedSMARTattributeIDs.insert( number );
+      return number;
     }
     else
       LOGN_ERROR("SMART ID is not in range 0..255->not processing this SMART entry")
   }
   else
     LOGN_ERROR("error converting " << p_BeginOfNumber << " to a number")
+  return 0;
 }
 
 void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
@@ -189,7 +188,7 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
   fastestUnsignedDataType numBytesToRead,
   //std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainter
   dataCarrierID2supportedSMARTattrMap_type & 
-    dataCarrierID2supportedSMARTattributess)
+    dataCarrierID2supportedSMARTattrs)
 {
   std::string std_strXMLdata( (const char *) xmlDataByteArray);
   LOGN("XML data:" << std_strXMLdata)
@@ -230,25 +229,34 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
     }
     LOGN_DEBUG( "text inside \"supportedSMART_IDs\":" << 
       supportedSMARTattributeIDsString )
-    supportedSMARTattributeIDs_type supportedSMARTattributeIDs;
+    supportedSMARTattributeIDs_type supportedSMARTattrIDs;
     
     const char * p_lastComma = (char * ) supportedSMARTattributeIDsString;
-    char * p_currentChar=(char * )supportedSMARTattributeIDsString;
-    for( ; *p_currentChar != '\0' ; ++ p_currentChar)
+    char * p_currChar=(char *)supportedSMARTattributeIDsString;
+    fastestUnsignedDataType arrIdx = 0;
+    for(;*p_currChar != '\0'; ++ p_currChar, arrIdx++)
     {
-      if( * p_currentChar == ',')
+      if(* p_currChar == ',')
       {
-        * p_currentChar = '\0';
-        ConvertStringToInt(p_lastComma, supportedSMARTattributeIDs);
-        p_lastComma = p_currentChar + 1;
+        * p_currChar = '\0';
+        const int number = ConvertStringToInt(p_lastComma);
+//      supportedSMARTattrIDs.insert(number);
+        sMARTuniqueID.supportedSMART_IDs[arrIdx] = number;
+        p_lastComma = p_currChar + 1;
       }
       //TODO
 //      GetSupportedSMARTattributes(p_tinyxml2XMLelement, supportedSMARTattributes);
     }
-    if( p_lastComma < p_currentChar ) /** Process last attribute ID */
-      ConvertStringToInt(p_lastComma, supportedSMARTattributeIDs);
-      
-    dataCarrierID2supportedSMARTattributess.insert( std::make_pair(sMARTuniqueID, 
-      supportedSMARTattributeIDs) );
+    if(p_lastComma < p_currChar){/**Process last attribute ID*/
+      const int number = ConvertStringToInt(p_lastComma);
+      //supportedSMARTattrIDs.insert(number);
+      sMARTuniqueID.supportedSMART_IDs[arrIdx] = number;
+    }
+    //TODO Uncomment. Causes not to display the current SMART data at least if
+    // data from service.
+//    SMARTuniqueIDsAndValues.insert/*emplace*/(SMARTuniqueIDandValues(
+//      sMARTuniqueID) );
+    dataCarrierID2supportedSMARTattrs.insert( std::make_pair(sMARTuniqueID, 
+      supportedSMARTattrIDs) );
   }
 }

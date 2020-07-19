@@ -275,6 +275,7 @@ void SMARTdialog::OnConnectToServer(wxCommandEvent& WXUNUSED(event))
   //TODO or more general: disable all service interacting buttons
 //  DisableServiceInteractingButtons();
   m_p_ConnectAndDisconnectButton->Enable(false);
+  //TODO Cancel connection countdown if attempt before failed.
   wxGetApp().ConnectToServer();
 }
 
@@ -354,7 +355,7 @@ void SMARTdialog::ReBuildUserInterface()
 //TODO enable showing supported SMART IDs for multiple disks
 void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent & event)
 {
-  ///Get SMART IDentifier from event ID:
+  ///Get SMART IDentifier from event ID because there may be > 1 data carrier.
   const int evtID = event.GetId();
 //  wxString dvcPath = event.GetString();
   const SMARTuniqueID * p_SMARTuniqueID = wxGetApp().m_evtID2SMARTuniqueID[
@@ -471,7 +472,11 @@ void SMARTdialog::StartAsyncDrctUpd8Thread()
 //TODO make for more than 1 data carrier
 void SMARTdialog::SetSMARTdriveID()
 {
-  LOGN("begin")
+  LOGN_DEBUG("begin--evtID2SMARTuniqueID size:" << wxGetApp().
+    m_evtID2SMARTuniqueID.size() )
+  /** The map may contain invalid SMART unique IDs e.g. if direct SMART access
+   * at first and from server later. So empty it.*/
+  wxGetApp().m_evtID2SMARTuniqueID.clear();
   std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = wxGetApp().
     GetSMARTuniqueIDsAndVals();
   std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
@@ -496,6 +501,9 @@ void SMARTdialog::SetSMARTdriveID()
     // https://wiki.wxwidgets.org/Events#Using_Connect.28.29
     Connect(/*wxID_HIGHEST+1*/showSupportedSMART_IDs, wxEVT_BUTTON,
       wxCommandEventHandler(SMARTdialog::OnShowSupportedSMART_IDs) );
+    LOGN_DEBUG("adding SMART unique ID pointer " << & sMARTuniqueID << " to "
+      "m_evtID2SMARTuniqueID")
+    //TODO Disconnect(...) the event afterwards?
     wxGetApp().m_evtID2SMARTuniqueID.insert(std::make_pair(
       showSupportedSMART_IDs, & sMARTuniqueID) );
   }

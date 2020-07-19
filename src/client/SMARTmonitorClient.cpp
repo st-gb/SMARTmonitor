@@ -413,36 +413,43 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
     const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandVals.
       getSMARTuniqueID();
     long unit = sMARTuniqueID.units[SMARTattrID];
-    const long int highestBit = highestBit(unit);
+    const long int highestBit = mostSignificantBit(unit);
     uint64_t realCircaValue;
     double accuracy = 0.0;
-    double lowerLimit, upperLimit;
+    double lowerUnitLimit = 0.0, upperLimit;
     if(unit & ~highestBit)///If unit > 0 after bit removed
     {
-      if(unit & highestBit ){///If highmost bit set
-        std_ossUnit << "~>=";
+      lowerUnitLimit = (double) sMARTuniqueID.lowerUnitBound[SMARTattrID];
+      if(unit & highestBit ){///If highmost bit set/>=
+        std_ossUnit << ">=~";
         unit &= ~highestBit;///Without highmost bit
-        stdstrHumanReadableRawVal = "~>=";
-        ///Value can get high: 16230×3618000 = 58720140000
-        realCircaValue = SMARTrawVal * (uint64_t) unit;
+        stdstrHumanReadableRawVal = ">=~";
+        if(lowerUnitLimit != 0.0)/** Lower unit bound set*/{
+          std::string humanReadableAccuracy = SMARTvalueFormatter::
+            FormatHumanReadable(SMARTattrID, lowerUnitLimit);
+          std_ossUnitAccuracy << ">=~" << humanReadableAccuracy;
+          ///Value can get high: 16230×3618000 = 58720140000
+          realCircaValue = SMARTrawVal * (uint64_t) lowerUnitLimit;
+        }
+        else
+          ///Value can get high: 16230×3618000 = 58720140000
+          realCircaValue = SMARTrawVal * (uint64_t) unit;
       }
       else{
         std_ossUnit << "~";
         stdstrHumanReadableRawVal = "~";
         ///Value can get high: 16230×3618000 = 58720140000
         realCircaValue = SMARTrawVal * (uint64_t) unit;
-        lowerLimit = (double) sMARTuniqueID.lowerBound[SMARTattrID];
-        upperLimit = (double) sMARTuniqueID.upperBound[SMARTattrID];
+        upperLimit = (double) sMARTuniqueID.upperUnitBound[SMARTattrID];
         if(upperLimit != 0.0)///Prevent division by 0.
-          accuracy = lowerLimit / upperLimit;
+          accuracy = lowerUnitLimit / upperLimit;
       }
-      std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID, 
-        unit);
+      std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID,unit);
       stdstrHumanReadableRawVal += SMARTvalueFormatter::
         FormatHumanReadable(SMARTattrID, realCircaValue);
       if(accuracy != 0.0){
         std::string humanReadableAccuracy = SMARTvalueFormatter::
-          FormatHumanReadable(SMARTattrID, lowerLimit);
+          FormatHumanReadable(SMARTattrID, lowerUnitLimit);
         std_ossUnitAccuracy << " " << std::fixed << humanReadableAccuracy <<
           "-";/** "..." */
         humanReadableAccuracy = SMARTvalueFormatter::FormatHumanReadable(
@@ -450,18 +457,26 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         std_ossUnitAccuracy << std::fixed << /* "]" */ humanReadableAccuracy;
       }
     }
-    else{
-      std_ossUnit << "?";
-      stdstrHumanReadableRawVal = SMARTvalueFormatter::
-        FormatHumanReadable(SMARTattrID, SMARTrawVal);
+    else{///Unknown unit/use deafault unit
+      uint64_t numForHumanReadableFormat;
       switch(SMARTattrID)
       {
        case SMARTattributeNames::DevTemp:
+        numForHumanReadableFormat = SMARTrawVal;
+         std_ossUnit << "°C?";
         realCircaValue = CurrTemp(SMARTrawVal);
         break;
+       case SMARTattributeNames::PowerOnTime:
+         numForHumanReadableFormat = SMARTrawVal * /**ms to h*/3600000;
+         std_ossUnit << "~h?";
+         break;
        default:
+        numForHumanReadableFormat = SMARTrawVal;
+        std_ossUnit << "?";
         realCircaValue = SMARTrawVal;
       }
+      stdstrHumanReadableRawVal = SMARTvalueFormatter::
+        FormatHumanReadable(SMARTattrID, numForHumanReadableFormat);
     }
     std::ostringstream std_ossRawSMARTval;
     switch(SMARTattrID)
@@ -507,6 +522,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
       stdstrUnit,
       sMARTvalueRating,
       data);
+    if(! std_ossUnitAccuracy.str().empty() )
     SetAttribute(
       SMARTattrID,
       ColumnIndices::unitRange,

@@ -25,8 +25,10 @@
 ///So the last SMART attrubute ID (254) can be used to index (255 items array)
 ///Does not need so many items? # supported SMART attributes = 30?
 #define numItems (numDifferentSMART_IDs+1)
-#define highestBit(value) 1L << (sizeof(value)*8-1)
-#define setGreaterBit(value) (value |= highestBit(value) );/// ">" in UI
+///Could also make it inline functions for type safety?
+#define mostSignificantBit(value) (1L << (sizeof(value)*8-1) )
+#define removeBits(value, bits) (value & ~bits)
+#define setGreaterBit(value) (value |= mostSignificantBit(value) );/// ">" in UI
 
 /** Same structure as SkIdentifyParsedData in Linux' "atasmart.h" */
 struct SMARTuniqueID {
@@ -42,8 +44,10 @@ struct SMARTuniqueID {
   /** SMART IDs are fetched in an interval->make access fast. Must be sorted
   * ascending for the algorithms to work.*/
   fastestUnsignedDataType m_SMART_IDsToRd[numDifferentSMART_IDs];
+  
+  typedef long int unitDataType;
   //TODO not needed anoymore because calculated from upper - lower bound?
-  long int units[numItems];
+  unitDataType units[numItems];
   enum states {/**real unit >= this value*/getMinUnit,getUnitTillValInc,
     /**get unit more accurately*/getUnit};
   uint64_t m_prevSMARTrawVals[numItems];
@@ -51,9 +55,9 @@ struct SMARTuniqueID {
   uint64_t m_SMARTrawValDiffs[numItems];
   fastestUnsignedDataType state[numItems];
 //  fastestUnsignedDataType numSamples[numItems];//Not needed?
-  fastestUnsignedDataType unitSinceLastSWMARTrawValInc[numItems];//TODO Show in UI?
-  uint64_t lowerBound[numItems];
-  uint64_t upperBound[numItems];
+  unitDataType otherMtrcValAtLastSMARTrawValInc[numItems];//TODO Show in UI?
+  unitDataType lowerUnitBound[numItems];
+  unitDataType upperUnitBound[numItems];
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
   SMARTuniqueID(){
     memset(units, 0, sizeof(units[0])*numItems);
@@ -62,10 +66,10 @@ struct SMARTuniqueID {
     memset(m_SMARTrawValDiffs, 0, sizeof(uint64_t)*numItems);
     memset(state, getMinUnit, sizeof(state[0])*numItems);
 //    memset(numSamples, 0, sizeof(numSamples[0])*numItems);
-    memset(unitSinceLastSWMARTrawValInc, 0, sizeof(
-      unitSinceLastSWMARTrawValInc[0])*numItems);
-    memset(lowerBound, 0, sizeof(lowerBound[0])*numItems);
-    memset(upperBound, 0, sizeof(upperBound[0])*numItems);
+    memset(otherMtrcValAtLastSMARTrawValInc, 0, sizeof(
+      otherMtrcValAtLastSMARTrawValInc[0])*numItems);
+    memset(lowerUnitBound, 0, sizeof(lowerUnitBound[0])*numItems);
+    memset(upperUnitBound, 0, sizeof(upperUnitBound[0])*numItems);
   }
 #ifdef __linux__
 //  SMARTuniqueID(const SkIdentifyParsedData & l);
@@ -173,6 +177,9 @@ struct SMARTuniqueID {
       else if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID]){
         state[SMARTattrID] = getUnitTillValInc;
         long int unit = otherVal - m_otherMetricVal[SMARTattrID];
+        /**Show in column "~unit range" as "> lowerUnitBound[SMARTattrID]" if
+         *  no upper unit bound.*/
+        lowerUnitBound[SMARTattrID] = unit;
         AtomicExchange(&units[SMARTattrID], unit);
         ///Increased for the 1st time->now memorize the values
         m_otherMetricVal[SMARTattrID] = otherVal;
@@ -197,19 +204,29 @@ struct SMARTuniqueID {
         uint64_t diff = otherVal - m_otherMetricVal[SMARTattrID];
         //TODO long int may not be sufficient
         long int unit = diff / SMARTrawValDiff;
-        lowerBound[SMARTattrID] = unit;
-        upperBound[SMARTattrID] = unit;
+        ///For the Power-On Time a calculation like this could be more accurate:
+//        if(SMARTattrID == SMARTattributeNames::PowerOnTime){
+//          lowerBound[SMARTattrID] = unit-/**measurement interval in ms*/10000;
+//          upperBound[SMARTattrID] = unit+/**measurement interval in ms*/10000;
+//        }
+//        else{
+        //TODO can use lowerUnitBound[SMARTattrID] from state "getMinUnit" as
+        // value for lowerUnitBound[SMARTattrID] if it is > unit?
+        lowerUnitBound[SMARTattrID] = unit;
+        upperUnitBound[SMARTattrID] = unit;
+//        }
         AtomicExchange(&units[SMARTattrID], unit);
       }
       else{
         long int unit = otherVal - m_otherMetricVal[SMARTattrID];
+        ///Only if value > value from state "getMinUnit"
+        if(unit > lowerUnitBound[SMARTattrID])
+          lowerUnitBound[SMARTattrID] = unit;
         /** As long as we did't regard a 2nd S.M.A.R.T. value increase we only
          * know the unit is > ("t1" from "diagram" above). So set the greater
          * bit.*/
         setGreaterBit(unit) //if(unit > units[SMARTattrID])
-        ///Only if value > value from state "getMinUnit"
-        //if(unit > units[SMARTattrID])
-          AtomicExchange(&units[SMARTattrID], unit);
+        AtomicExchange(&units[SMARTattrID], unit);
       }
       break;
       /**SMART raw value increased for at least the 3rd time*/
@@ -221,16 +238,26 @@ struct SMARTuniqueID {
           uint64_t otherMetricDiff = otherVal - m_otherMetricVal[SMARTattrID];
           //TODO long int may not be sufficient
           long int unit = otherMetricDiff / SMARTrawValDiff;
-          const long int unitDiff = units[SMARTattrID]-unit;
-          if(unitDiff > 0)///New value  lower than stored value.
-            lowerBound[SMARTattrID] = unit;
+          const long int unitDiff = units[SMARTattrID] - unit;
+        ///For the Power-On Time a calculation like this could be more accurate:
+          /*if(SMARTattrID == SMARTattributeNames::PowerOnTime){
+            if(unitDiff < 0)
+              lowerBound[SMARTattrID] += unitDiff;
+            else
+              upperBound[SMARTattrID] -= unitDiff;
+          }else*/
+          if(unitDiff > 0)///New value lower than stored value.
+            lowerUnitBound[SMARTattrID] = unit;
           else
-            upperBound[SMARTattrID] -= unitDiff;///Minus a negative value is plus.
-          unitSinceLastSWMARTrawValInc[SMARTattrID] = unit;
+            upperUnitBound[SMARTattrID] = unit;
+          /** Can be shown in user interface to give an info when the SMART raw
+           *  value increments next time. For this calculate:
+           * otherVal - otherMtrcValAtLastSMARTrawValInc[SMARTattrID] */
+          otherMtrcValAtLastSMARTrawValInc[SMARTattrID] = unit;
           /** This prevents a value overflow in contrast to "(lowerBound[
            *  SMARTattrID] + (upperBound[SMARTattrID])/2 but is slower.*/
-          unit = lowerBound[SMARTattrID] + (upperBound[SMARTattrID] - 
-            lowerBound[SMARTattrID]) / 2;
+          unit = lowerUnitBound[SMARTattrID] + (upperUnitBound[SMARTattrID] - 
+            lowerUnitBound[SMARTattrID]) / 2;
           AtomicExchange(&units[SMARTattrID], unit);
         }
       }

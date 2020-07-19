@@ -293,7 +293,10 @@ bool wxSMARTmonitorApp::OnInit()
 
   LogLevel::CreateLogLevelStringToNumberMapping();
   ProcessCommandLineArgs(); /** May display messages. */
-  InitializeLogger();
+  const bool succInitedLogger = InitializeLogger();
+  if(! succInitedLogger)
+    return false;
+  LOGN_DEBUG("Logger initialized")///For testing if logging is running.
   //m_wxSMARTvalueProcessor.Init();
   //InitializeSMART();
   try

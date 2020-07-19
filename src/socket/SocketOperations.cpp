@@ -43,7 +43,11 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
   std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValsCont = 
     SMARTuniqueIDsAndValues;
   enum transmission transmissionResult = unsetTransmResult;
-  sMARTuniqueIDandValsCont.clear();
+  //TODO this destroys the SMART unique ID object and so the pointer of the to 
+  // the event becomes invaled.
+//  sMARTuniqueIDandValsCont.clear();
+  //TODO if a data carrier is detached it does not disappear in 
+  // SMARTuniqueIDsAndValues?
   int numBytesRead;
   ///Value is 0 if connect to server for the 2nd call of this function.
   ///Value is garbage if connect to server in another thread for the 2nd call 
@@ -72,7 +76,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
     LOGN("SMART unique ID and values object " << & sMARTuniqueIDandValues )
     //sMARTuniqueIDandValuesContainer.f
     std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert = 
-      sMARTuniqueIDandValsCont.insert(sMARTuniqueIDandValues);
+      sMARTuniqueIDandValsCont.insert/*emplace*/(sMARTuniqueIDandValues);
     LOGN("insered object into container?:" << insert.second);
     if(insert.second)
     {

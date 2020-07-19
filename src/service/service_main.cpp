@@ -86,7 +86,8 @@ void TrapSignals2()//TODO Unix-specific
  * 
  */
 int main(int argc, char** argv) {
-  
+  ///Neded for SetLogLevel() in ProcessCommandLineArgs()
+  LogLevel::CreateLogLevelStringToNumberMapping();
   //std::string lockFilePath = "/var/lock/" + argv[0];
   //TODO use daemonize(...)
   //daemonize("/var/lock/smartmonitor.lock");
@@ -98,9 +99,10 @@ int main(int argc, char** argv) {
   SMARTmonitor.SetCommandLineArgs(argc, argv);
   if( SMARTmonitor.GetCommandLineArgs().GetArgumentCount() < 2 )
     SMARTmonitor.OutputUsage();
-  SMARTmonitor.InitializeLogger();
+  ///Has to be called before InitializeLogger() as it gets the log folder path.
   SMARTmonitor.ProcessCommandLineArgs();
-  
+  if( ! SMARTmonitor.InitializeLogger() )
+    return 2;
   //std::wstring stdwstrConfigPathWithoutExtension;
   //SMARTmonitor.ConstructConfigFilePath(stdwstrConfigPathWithoutExtension);
   const fastestUnsignedDataType SMARTinitResult = SMARTmonitor.InitializeSMART();
@@ -110,7 +112,8 @@ int main(int argc, char** argv) {
   {
     
     //TODO needs only to be done if at least 1 client connected?
-    SMARTmonitor.StartAsyncUpdateThread(& SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
+    SMARTmonitor.StartAsyncUpdateThread(& SMARTmonitorBase::
+      Upd8SMARTvalsDrctlyThreadSafe);
     
     /** Client connection handling can be done in the main thread because the
      *  service can be exiting via signals (that are software interrupts

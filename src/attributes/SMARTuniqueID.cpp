@@ -40,13 +40,13 @@ bool operator < (const SMARTuniqueID & left,
   }
 
   void SMARTuniqueID::SetModelName(const char * modelName) {
-    strncpy(m_modelName, modelName, 41);
+    strncpy(m_modelName, modelName, numSMARTmodelBytes+1);
   }
   void SMARTuniqueID::SetFirmwareName(const char * firmwareName) {
-    strncpy(m_firmWareName, firmwareName, 9);
+    strncpy(m_firmWareName, firmwareName, numSMART_FWbytes+1);
   }
   void SMARTuniqueID::SetSerialNumber(const char * serialNumber) {
-    strncpy(m_serialNumber, serialNumber, 21);
+    strncpy(m_serialNumber, serialNumber, numSMART_SNbytes);
   }
 
   std::string SMARTuniqueID::str() const

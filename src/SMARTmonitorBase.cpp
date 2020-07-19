@@ -302,10 +302,16 @@ bool SMARTmonitorBase::InitializeLogger() {
   }
   else///May be specified on command line/in configuration file
     m_stdstrLogFilePath += "_log.txt";
+#ifdef _DEBUG
+  g_logger.SetLogLevel(LogLevel::debug);
+#else
+  g_logger.SetLogLevel(LogLevel::warning);
+#endif
   try {
     success = g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel:://debug
       info);
-  }  catch (const LogFileAccessException & lfae) {
+  }catch (const LogFileAccessException & lfae){
+    ShowMessage(lfae.GetErrorMessageA().c_str() );
     std::cout << lfae.GetErrorMessageA() << std::endl;
   }
   return success;
@@ -442,16 +448,17 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   void * p_v)
 {
+  struct GetSMARTvaluesFunctionParams * p_getSMARTvalsFnParams =
+    (struct GetSMARTvaluesFunctionParams *) p_v;
+  try{
 #ifdef multithread
   I_Thread::SetCurrentThreadName("upd8 SMART");
 #endif
 //  SMARTmonitorBase * p_SMARTmonitorBase = (SMARTmonitorBase *) p_v;
-  struct GetSMARTvaluesFunctionParams * getSMARTvaluesFunctionParams =
-    (struct GetSMARTvaluesFunctionParams *) p_v;
-  if( ! /*p_SMARTmonitorBase*/ getSMARTvaluesFunctionParams)
+  if( ! /*p_SMARTmonitorBase*/ p_getSMARTvalsFnParams)
     return 1;//TODO return enum
   {
-    SMARTmonitorBase * p_SMARTmonitorBase = getSMARTvaluesFunctionParams->
+    SMARTmonitorBase * p_SMARTmonitorBase = p_getSMARTvalsFnParams->
       p_SMARTmonitorBase;
     if( ! p_SMARTmonitorBase )
       return 2;//TODO return enum
@@ -462,7 +469,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
       
     GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType 
       p_getSMARTvaluesFunction = 
-      getSMARTvaluesFunctionParams->p_getSMARTvaluesFunction;
+      p_getSMARTvalsFnParams->p_getSMARTvaluesFunction;
             
 //    std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesSet = 
 //      p_SMARTmonitorBase->mp_SMARTaccess->GetSMARTuniqueIDandValues();
@@ -495,6 +502,11 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
     } while (SMARTmonitorBase::s_updateSMARTvalues);
 
     p_SMARTmonitorBase->AfterGetSMARTvaluesLoop(res);
+  }
+  }///E.g. if rolling file appender and permission denied for the new file.
+  catch(LogFileAccessException & lfae){
+    p_getSMARTvalsFnParams->p_SMARTmonitorBase->ShowMessage(lfae.
+      GetErrorMessageA().c_str(), UserInterface::MessageType::error);
   }
   return 0;
 }
