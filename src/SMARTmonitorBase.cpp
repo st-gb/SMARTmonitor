@@ -656,8 +656,10 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
       m_SMARTattrIDsToObs, s_dataCarrierID2devicePath);
     switch (dwRetVal) {
      case SMARTaccessBase::accessDenied:
-       ShowMessage("direct access denied to S.M.A.R.T.\n->restart this program"
-        " as an administrator\nin order to get the S.M.A.R.T. values directly");
+       ShowMessage("direct access denied to S.M.A.R.T.->get values via server "
+         "or restart this program  as an administrator in order to get the "
+         "S.M.A.R.T. values directly",
+        UserInterface::MessageType::error);
         initSMARTretCode = accessToSMARTdenied;
         break;
       case SMARTaccessBase::noSingleSMARTdevice:

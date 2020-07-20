@@ -56,12 +56,12 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
   if( numBytesToRead < 1 )
     return readLessBytesThanIntended;
   const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
-  uint8_t SMARTvalues[numBytesToAllocate];
-  if( SMARTvalues)
+  uint8_t SMARTdataXML[numBytesToAllocate];
+  if(SMARTdataXML)
   {
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
-    numBytesRead = read(m_socketFileDesc, SMARTvalues, numBytesToRead);
+    numBytesRead = read(m_socketFileDesc, SMARTdataXML, numBytesToRead);
     //TODO often numBytesRead < numBytesToRead if this function is called from 
     //  "UpdateSMARTparameterValuesThreadFunc"
     if (numBytesRead < numBytesToRead) {
@@ -70,18 +70,35 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
         << numBytesToRead << ")");
       return readLessBytesThanIntended; //TODO provide error handling (show message to user etc.)
     }
-    SMARTvalues[numBytesToRead] = '\0';
+    SMARTdataXML[numBytesToRead] = '\0';
     SMARTuniqueIDandValues sMARTuniqueIDandValues;
-    GetSMARTdataViaXML(SMARTvalues, numBytesToRead, sMARTuniqueIDandValues);
+    
+    /**To let the values be updated in UI (same pointer to SMARTuniqueID object)
+    *:Create SMARTuniqueIDandValues object only via unique ID (no SMART values).
+    * Then search in the container via "sMARTuniqueIDandValsCont.find(
+    * sMARTuniqueIDandValues);" and  use the iterator.
+    * Alterantive:(slower?) also fill the SMART attribute values from the server
+    * data and copy to the SMARTuniqueIDandValues object if already contained in
+    * sMARTuniqueIDandValsCont after "sMARTuniqueIDandValsCont.insert(...)".*/
+    const bool succBeganSrvDataProc = srvDataProcessor.Begin(SMARTdataXML,
+      numBytesToRead);
+    if(succBeganSrvDataProc)
+      srvDataProcessor.GetSMARTuniqueID(sMARTuniqueIDandValues);
+    
     LOGN("SMART unique ID and values object " << & sMARTuniqueIDandValues )
     //sMARTuniqueIDandValuesContainer.f
     std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert = 
       sMARTuniqueIDandValsCont.insert/*emplace*/(sMARTuniqueIDandValues);
     LOGN("insered object into container?:" << insert.second);
-    if(insert.second)
+    if(insert.second)///<=>not already contained/inserted
     {
       LOGN("SMART unique ID and values object in container:" << &(*insert.first) )
     }
+    if(succBeganSrvDataProc)
+      srvDataProcessor.GetSMARTrawValues(
+        /**Use the version from the container so it is ensured to use the same
+         * pointer to the SMARTuniqueID object.*/
+        (SMARTuniqueIDandValues &) *insert.first);
     //RebuildGUI();
     OperatingSystem::GetCurrentTime(m_timeOfLastSMARTvaluesUpdate);
 //    delete [] SMARTvalues;
@@ -239,7 +256,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   ///TCP: client sends "SYN"; server sends "ACK", client "SYNACK"
   double cnnctTimeoutInS;
   GetSocketTimeoutInS(m_socketFileDesc, & cnnctTimeoutInS);
-  if(cnnctTimeoutInS == 0)
+  if(cnnctTimeoutInS == 0)///0 means ca. 90s under Linux.
     cnnctTimeoutInS = 30;
 //  MessageBox msgBox();
   

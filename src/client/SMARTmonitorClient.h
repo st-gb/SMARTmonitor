@@ -9,6 +9,7 @@
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <UserInterface/columnIndices.hpp>
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater
+#include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
 
 class SMARTmonitorClient 
   : public SMARTmonitorBase
@@ -51,8 +52,8 @@ public:
   virtual void AfterConnectToServer(int connectResult) { };
   void HandleConnectionError(const char * hostName);
   //TODO could use ByteArray datatype here
-  void GetSMARTdataViaXML(uint8_t * SMARTvalues, unsigned numBytesToRead,
-    /*std::set<SMARTuniqueIDandValues> & */ SMARTuniqueIDandValues &);
+  void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
+    fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
   virtual void ChangeState(enum serverConnectionState newState) { };
   void ConnectToServerAndGetSMARTvalues();
   void ConnectToServer();
@@ -108,6 +109,7 @@ public:
   virtual void ShowStateAccordingToSMARTvalues(bool ) { }
   std::string m_stdstrServerAddress;
 protected:
+  tinyxml2::SrvDataProcessor srvDataProcessor;
 private:
 };
 

@@ -86,7 +86,7 @@ void HandleSingleSMARTentry(
 }
 
 void GetSMARTrawValues(
-  tinyxml2::XMLElement * p_tinyxml2XMLelement, 
+  tinyxml2::XMLElement * p_tinyxml2XMLelement,
   SMARTuniqueIDandValues & sMARTuniqueIDandValues)
 {
   tinyxml2::XMLElement * p_SMARTelement = p_tinyxml2XMLelement->
@@ -110,15 +110,15 @@ void GetSMARTrawValues(
   LOGN("end")
 }
 
-void SMARTmonitorClient::GetSMARTdataViaXML(
-  uint8_t * SMARTvalues, unsigned numBytesToRead,
-  //std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainter
-  SMARTuniqueIDandValues & sMARTuniqueIDandValues)
+tinyxml2::XMLElement * getXMLdoc(
+  const uint8_t SMARTdataXML[],
+  const fastestSignedDataType numBytesToRead,
+  tinyxml2::XMLDocument & tinyXML2Doc)
 {
-  std::string xmlData( (const char *) SMARTvalues);
-  LOGN("XML data:" << xmlData)
-  tinyxml2::XMLDocument tinyXML2Doc;
-  const tinyxml2::XMLError xmlErr = tinyXML2Doc.Parse(xmlData.c_str(), numBytesToRead);
+  std::string xmlData( (const char *) SMARTdataXML);
+  LOGN_DEBUG("XML data:" << xmlData)
+  const tinyxml2::XMLError xmlErr = tinyXML2Doc.Parse(xmlData.c_str(),
+    numBytesToRead);
   LOGN("result of parsing XML data:" << xmlErr)
   if( xmlErr != tinyxml2::XML_SUCCESS)
   {
@@ -128,23 +128,62 @@ void SMARTmonitorClient::GetSMARTdataViaXML(
         LOGN_ERROR("XML parsing error")
         break;
     }
-    return;
+    return (tinyxml2::XMLElement *)xmlErr;
   }
   tinyxml2::XMLElement * p_tinyxml2XMLelement = tinyXML2Doc.RootElement();
   if( ! p_tinyxml2XMLelement )
   {
     LOGN_ERROR("Failed to get XML root element")
-    return;
   }
-  LOGN("got XML root element")
+  LOGN_DEBUG("got XML root element")
+  return p_tinyxml2XMLelement;
+}
+
+void GetSMARTuniqueID(
+  tinyxml2::XMLElement * p_tinyxml2XMLelement,
+  SMARTuniqueIDandValues & sMARTuniqueIDandValues){
   SMARTuniqueID sMARTuniqueID;
   GetSMARTuniqueID(p_tinyxml2XMLelement,sMARTuniqueID);
   //SMARTuniqueIDandValues sMARTuniqueIDandValues(sMARTuniqueID);
   sMARTuniqueIDandValues.SetDataCarrierID(sMARTuniqueID);
-  //TODO
-  GetSMARTrawValues(p_tinyxml2XMLelement, sMARTuniqueIDandValues);
-//  SMARTuniqueIDandValues.m_SMARTrawValues;
-  //sMARTuniqueIDandValuesContainter.insert(sMARTuniqueIDandValues);
+}
+
+namespace tinyxml2{
+bool SrvDataProcessor::Begin(
+  const uint8_t SMARTdataXML[],
+  fastestSignedDataType numBytesToRead){
+  p_tinyxml2XMLele = getXMLdoc(
+    SMARTdataXML,
+    numBytesToRead,
+    tinyXML2Doc);
+  if(p_tinyxml2XMLele > (tinyxml2::XMLElement *)tinyxml2::XML_ERROR_COUNT)
+    return true;
+  return false;
+}
+void SrvDataProcessor::GetSMARTuniqueID(
+  SMARTuniqueIDandValues & sMARTuniqueIDandValues){
+  ::GetSMARTuniqueID(p_tinyxml2XMLele, sMARTuniqueIDandValues);
+}
+void SrvDataProcessor::GetSMARTrawValues(
+  SMARTuniqueIDandValues & sMARTuniqueIDandValues){
+  ::GetSMARTrawValues(p_tinyxml2XMLele, sMARTuniqueIDandValues);
+}
+}///End namespace tinyxml2
+
+void SMARTmonitorClient::GetSMARTdataViaXML(
+  const uint8_t * SMARTdataXML, const unsigned numBytesToRead,
+  SMARTuniqueIDandValues & sMARTuniqueIDandValues
+  )
+{
+  tinyxml2::XMLDocument tinyXML2Doc;
+  tinyxml2::XMLElement * p_tinyxml2XMLele = ::getXMLdoc(
+    SMARTdataXML,
+    numBytesToRead,
+    tinyXML2Doc);
+  if(p_tinyxml2XMLele > (tinyxml2::XMLElement *) tinyxml2::XML_ERROR_COUNT){
+    GetSMARTuniqueID(p_tinyxml2XMLele, sMARTuniqueIDandValues);
+    GetSMARTrawValues(p_tinyxml2XMLele, sMARTuniqueIDandValues);
+  }
 }
 
 void HandleXMLresult(const tinyxml2::XMLError XMLparsingResult)

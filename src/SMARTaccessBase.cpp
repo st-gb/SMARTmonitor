@@ -39,6 +39,9 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
       /**to ms*//1000000);
     }
     break;
+   ///see OS Design TU Berlin slides winter term 2014/2015, see blktrace
+   case SMARTattributeNames::GiB_Erased:
+    break;
     /** The unit for "Total Data/LBAs Written/Read" differs among models. For
      * HFS256G39TND-N210A, firmware:30001P10 (serial:EJ7CN55981080CH09)
      * Solid State Device (SSD) it seems to be GiB rather than LBAs.*/
