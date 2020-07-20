@@ -92,6 +92,9 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
       LOGN_DEBUG("device file path belonging to (SMART) data carrier ID:"
          << device )
       std::vector<SMARTattributeNameAndID> SMARTattributeNamesAndIDs;
+      //TODO Getting supported SMART attrs only needs to be done once for a drive
+      // should be the same for all same model or same model, firmware
+      // Can store this in a dataCarrierID2supportedSMARTattributesMap_type
       SMARTaccess.GetSupportedSMART_IDs(device, SMARTattributeNamesAndIDs);
       std::vector<SMARTattributeNameAndID>::const_iterator
         supportedSMARTattributeIDsIter = SMARTattributeNamesAndIDs.begin();
@@ -123,6 +126,7 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
 fastestUnsignedDataType SMARTmonitorService::BindAndListenToSocket()
 {
   fastestUnsignedDataType retCode = SMARTmonitorService::unset;
+  //TODO replace the following by "common_sourcecode/socket/bindAndListen.cpp"
     //Code adapted from http://www.linuxhowtos.org/data/6/server.c
   unsigned portNumber = m_socketPortNumber;
   struct sockaddr_in server_address;
@@ -194,13 +198,18 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
         & sizeOfClientAddrInB);
       if (clientSocketFileDesc < 0)
       {
-        LOGN_ERROR("Failed to accept client")
+        ///was EINVAL when called by "shutdown".
+        if(errno != EINVAL)///Error INVALid
+          LOGN_ERROR("Failed to accept client:" << errno)
         //return 2;
       }
       else
       {
         LOGN("new client at port " << client_address.sin_port 
           << " file desc.:" << clientSocketFileDesc)
+        //TODO does it make problems when sending from 2 different threads?
+          // (here and in SMART values thread)
+        //https://stackoverflow.com/questions/7418093/use-one-socket-in-two-threads
         p_SMARTmonitor->SendSupportedSMART_IDsToClient(clientSocketFileDesc);
         p_SMARTmonitor->AddClient(clientSocketFileDesc);
       }
@@ -299,6 +308,8 @@ int SMARTmonitorService::SendBytesTo1Client(
   fastestUnsignedDataType returnValue = successfullyWroteAllBytes;
   uint16_t numOverallBytes;
   uint8_t * array = ByteArrayFromString(xmlString, numOverallBytes);
+  LOGN_DEBUG("Sending to client: " <<std::string((char*) array, numOverallBytes)
+    )
   int n = write(clientSocketFileDesc, array, numOverallBytes);
   delete [] array;
   if (n < 0)
@@ -326,6 +337,7 @@ int SMARTmonitorService::SendBytesTo1Client(
 
 void SMARTmonitorService::SendBytesToAllClients(std::string & xmlString)
 {
+  LOGN_DEBUG("begin")
   uint16_t numOverallBytes;
   uint8_t * array = ByteArrayFromString(xmlString, numOverallBytes);
   

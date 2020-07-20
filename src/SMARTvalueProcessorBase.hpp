@@ -16,6 +16,7 @@
   typedef libatasmart::SMARTaccess SMARTaccess_type;
 #endif
 
+///Base class for processing SMART value (changes)
 class SMARTvalueProcessorBase
 {
 protected:
