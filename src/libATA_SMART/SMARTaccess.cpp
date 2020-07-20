@@ -18,6 +18,7 @@
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 #include <hardware/dataCarrier/ATA3Std.h>///numSMARTrawValB
 #include <OperatingSystem/POSIX/GetBlockDeviceFiles.h>//GetBlockDeviceFiles(...)
+#include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN(...)
 //#include <attributes/SMARTattributeNameAndID.hpp>
 

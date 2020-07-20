@@ -75,7 +75,7 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
     SMARTuniqueIDsAndValues.begin();
 
   std::ostringstream std_ostringstream;
-  unsigned SMARTattributeID;
+  fastestUnsignedDataType SMARTattrID;
   for(fastestUnsignedDataType currentDriveIndex = 0;
     currentDriveIndex < numberOfDifferentDrives;
     ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
@@ -91,23 +91,23 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
       const char * device = dataCarrierID2dvcPathIter->second.c_str();
       LOGN_DEBUG("device file path belonging to (SMART) data carrier ID:"
          << device )
-      std::vector<SMARTattributeNameAndID> SMARTattributeNamesAndIDs;
-      SMARTaccess.GetSupportedSMART_IDs(device, SMARTattributeNamesAndIDs);
-      std::vector<SMARTattributeNameAndID>::const_iterator
-        supportedSMARTattributeIDsIter = SMARTattributeNamesAndIDs.begin();
-      if( supportedSMARTattributeIDsIter != SMARTattributeNamesAndIDs.end() )
+      suppSMART_IDsType SMARTattrNamesAndIDs;
+      SMARTaccess.GetSupportedSMART_IDs(device, SMARTattrNamesAndIDs);
+      suppSMART_IDsType::const_iterator supportedSMARTattrIDsIter =
+        SMARTattrNamesAndIDs.begin();
+      if( supportedSMARTattrIDsIter != SMARTattrNamesAndIDs.end() )
       {
-        SMARTattributeID = supportedSMARTattributeIDsIter->GetID();
+        SMARTattrID = supportedSMARTattrIDsIter->GetID();
         std_ostringstream << "<data_carrier model=\"" << SMARTuniqueID.m_modelName << "\""
           << " firmware=\"" << SMARTuniqueID.m_firmWareName << "\""
           << " serial_number=\"" << SMARTuniqueID.m_serialNumber << "\">"
-          << "<supportedSMART_IDs>" << SMARTattributeID;
-        for( supportedSMARTattributeIDsIter ++; 
-            supportedSMARTattributeIDsIter != SMARTattributeNamesAndIDs.end();
-            supportedSMARTattributeIDsIter ++ )
+          << "<supportedSMART_IDs>" << SMARTattrID;
+        for(supportedSMARTattrIDsIter ++;//TODO why incr. here?
+            supportedSMARTattrIDsIter != SMARTattrNamesAndIDs.end();
+            supportedSMARTattrIDsIter ++ )
         {
-          SMARTattributeID = supportedSMARTattributeIDsIter->GetID();
-          std_ostringstream << "," << SMARTattributeID;
+          SMARTattrID = supportedSMARTattrIDsIter->GetID();
+          std_ostringstream << "," << SMARTattrID;
         }
         std_ostringstream << "</supportedSMART_IDs>";
         std_ostringstream << "</data_carrier>";
