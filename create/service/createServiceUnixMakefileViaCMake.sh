@@ -21,4 +21,5 @@ cmake \
 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -DEXE_TYPE:STRING=UNIX_service \
 -DdirectSMARTaccess:BOOL=ON \
+-Dmultithread:BOOL=ON \
 src

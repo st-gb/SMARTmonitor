@@ -10,6 +10,7 @@
 #include <limits>///std::numeric_limits<>::max()
 #include <map> //class std::map
 #include <set> //class std::set
+#include <stdint.h>///uint64_t
 #include <string.h>///memset(...)
 
 ///common_sourcecode repo of Stefan Gebauer
