@@ -17,7 +17,6 @@
 //#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase
 #include <client/SMARTmonitorClient.h> //base class SMARTmonitorClient
 //#include <libATA_SMART/SMARTaccess.hpp>
-#include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxWidgets::wxSMARTvalueProcessor
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
 
 /** Forward declarations: */
@@ -27,7 +26,6 @@ class ConnectToServerDialog;
 class wxSMARTmonitorApp
   : public wxApp, public /*SMARTmonitorBase*/ SMARTmonitorClient
 {
-  wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
   ConnectToServerDialog * m_pConnectToServerDialog/*(pch, timeOut )*/;
   wxTimer m_wxtimer;
 public:

@@ -5,7 +5,7 @@
 
  <networkConnection portNumber="1000" serviceHostName="localhost" retryWaitTimeInS="300"/>
  <!-- IDs that are interesting for ALL drives -->
- <SMART_parameters_to_observe>1,5,9,12,100,187,194,195,196,198,199,204,241,242,250,254</SMART_parameters_to_observe>
+ <SMART_parameters_to_observe>1,3,4,5,7,8,9,10.11.12,100,187,194,195,196,198,199,200,201,204,241,242,250,254</SMART_parameters_to_observe>
 
 <!-- see/details from
  -GSMARTControl 1.1.3 with a HFS256G39TND-N210A SSD [GSMARTCtl1.1.3]

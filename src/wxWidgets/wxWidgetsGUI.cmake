@@ -14,7 +14,6 @@ set(SOURCE_FILE_PATHS
   ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorApp.cpp
   ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorDialog.cpp
   ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorTaskBarIcon.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/wxSMARTvalueProcessor.cpp
 )
 
 set(CMakeScriptFilePaths
