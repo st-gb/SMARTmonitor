@@ -6,7 +6,7 @@
 # "man systemd.service"
 [Unit]
 Description=S.M.A.R.T. monitor
-#network is mandatory
+#network is mandatory, drives may also needed to be mounted before 
 After=network.target
 
 [Service]
@@ -15,9 +15,13 @@ After=network.target
 Type=simple
 #Type=notify
 
-#WorkingDirectory=/usr/local/SMARTmon
-#The command to start
-ExecStart=SMARTmonitor_service logfilefolder=/run/ &
+#"SMARTmonWorkDir" is replaced via the installation script
+WorkingDirectory=SMARTmonWorkDir
+#"ExecStart":The command to start
+#If relative path then error "Failed to start SMARTmon.service: Unit
+# SMARTmon.service is not loaded properly: Exec format error." and
+# "Executable path is not absolute" running "systemctl status SMARTmon.service"
+ExecStart=SMARTmonWorkDir/SMARTmonitor_service logfilefolder=/run/
 #Restart=on-failure
 #LimitNOFILE=10000
 
