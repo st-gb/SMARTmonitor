@@ -1,3 +1,4 @@
+#include <sys/ioctl.h>///FIONREAD
 #include <sys/socket.h> //socket(...))
 #include <netinet/in.h> //sockaddr_in
 #include <fcntl.h> //fcntl(...)
@@ -25,7 +26,17 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   //TODO connection to service error here when expecting data for the 2nd time 
   // running the wx GUI. errno: 11 from GetSMARTattrValsFromSrv
   // Maybe because the 2nd time is from another thread.
-  int numBytesRead = read(m_socketFileDesc, & numDataBytesToRead, numBytesToRead);
+  int numBytesRead =
+#ifdef use_recv
+    recv
+#else
+    read
+#endif
+      (m_socketFileDesc, & numDataBytesToRead, numBytesToRead
+#idef use_recv
+      ,0/**flags*/
+#endif
+      );
   if( numBytesRead < numBytesToRead ) {
     HandleTransmissionError(numBytesToReceive);
     return -1;
@@ -52,22 +63,43 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
   ///Value is 0 if connect to server for the 2nd call of this function.
   ///Value is garbage if connect to server in another thread for the 2nd call 
   /// of this function.
+  /**Sometimes used the 1st 2 bytes from XML data ("<d" from "<data carrier ..."
+   * as num bytes (15460dec=3C64hex. due to multiple threads read from socket.*/
   fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
-  if( numBytesToRead < 1 )
+  if(numBytesToRead < 1){
+    LOGN_ERROR("read 0 B->return")
     return readLessBytesThanIntended;
+  }
   const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
   uint8_t SMARTdataXML[numBytesToAllocate];
   if(SMARTdataXML)
   {
+    LOGN_DEBUG("read " << numBytesToRead << "B from socket file desc " <<
+      m_socketFileDesc)
+    //https://stackoverflow.com/questions/3053757/read-from-socket:
+    int numBinRead = 0;
+    ioctl(m_socketFileDesc, FIONREAD, &numBinRead);
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
-    numBytesRead = read(m_socketFileDesc, SMARTdataXML, numBytesToRead);
+    numBytesRead =
+#ifdef use_recv
+      recv
+#else
+      read
+#endif
+        (m_socketFileDesc, SMARTdataXML, numBytesToRead
+#ifdef use_recv
+        ,0/**flags*/
+#endif
+        );
     //TODO often numBytesRead < numBytesToRead if this function is called from 
     //  "UpdateSMARTparameterValuesThreadFunc"
     if (numBytesRead < numBytesToRead) {
       HandleTransmissionError(SMARTparameterValues);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
+      std::string stdstrXML((char*)SMARTdataXML, numBytesRead);
+      LOGN_ERROR("content:" << stdstrXML)
       return readLessBytesThanIntended; //TODO provide error handling (show message to user etc.)
     }
     SMARTdataXML[numBytesToRead] = '\0';
@@ -156,7 +188,9 @@ int ConnectToSocketNonBlocking(
       /** https://linux.die.net/man/2/select : 
         * "waiting until one or more of the file descriptors become
           "ready" for some class of I/O operation (e.g., input possible)."  */
-      result = select(socketFileDescriptor + 1, & readFileDescriptorSet, NULL, NULL, &socketConnectTimeout);
+      //TODO may take some (socketConnectTimeout) seconds->show timeout in UI
+      result = select(socketFileDescriptor + 1, & readFileDescriptorSet,
+        /**writefds*/NULL, /**exceptfds*/NULL, &socketConnectTimeout);
 //      int errorNumber = errno;
       if (result > 0) /** connected */
       {
