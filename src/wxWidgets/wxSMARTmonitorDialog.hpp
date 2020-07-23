@@ -10,7 +10,6 @@
 //#ifdef _WINDOWS
 //  #include "SmartReader.h" //class CSmartReader
 //#endif
-#include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
 #include "wxSMARTmonitorTaskBarIcon.hpp"
 #include "client/SMARTmonitorClient.h" //enum SMARTmonitorClient::state
 #include <wx/thread.h> //class wxCondition
