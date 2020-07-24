@@ -30,7 +30,7 @@ public:
       );
   /** @brief Before a list item can be changed via "SetItem" it needs to be 
    * inserted.*/
-  void CreateLines(const SMARTmonitorBase::SMARTattrToObsType &IDsOfSMARTattrs);
+  void CreateLines(const SMARTuniqueID &);
     void SetSMARTattribValue(
       fastestUnsignedDataType SMARTattributeID,
       fastestUnsignedDataType columnIndex,

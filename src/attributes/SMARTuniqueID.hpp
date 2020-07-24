@@ -42,9 +42,15 @@ struct SMARTuniqueID {
   fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs] = {0};
   
   ///Source code for unit detection follows.
+  typedef fastestUnsignedDataType SMART_IDsToReadType;
   /** SMART IDs are fetched in an interval->make access fast. Must be sorted
   * ascending for the algorithms to work.*/
   fastestUnsignedDataType m_SMART_IDsToRd[numDifferentSMART_IDs];
+  bool SMART_IDsToReadNotEnd(const fastestUnsignedDataType SMART_IDsToReadIdx)
+    const{
+    return m_SMART_IDsToRd[SMART_IDsToReadIdx] !=0
+      && SMART_IDsToReadIdx < numDifferentSMART_IDs;
+  }
   
   typedef long int unitDataType;
   //TODO not needed anoymore because calculated from upper - lower bound?
@@ -121,6 +127,8 @@ struct SMARTuniqueID {
     else{
       fastestUnsignedDataType sMART_IDtoRead, suppSMART_ID;
       fastestUnsignedDataType SMART_IDsToReadIdx = 0;
+      ///Intersection of supported SMART IDs and SMART IDs to read array index.
+      fastestUnsignedDataType SMART_IDsToObsIdx = 0;
       for(suppSMART_IDsType::const_iterator iter =
         suppSMARTattrNamesAndIDs.begin();
         iter !=suppSMARTattrNamesAndIDs.end(); iter++
@@ -138,7 +146,8 @@ struct SMARTuniqueID {
         }
         if(sMART_IDtoRead == suppSMART_ID)
         {
-          m_SMART_IDsToRd[SMART_IDsToReadIdx++] = sMART_IDtoRead;
+          SMART_IDsToReadIdx++;
+          m_SMART_IDsToRd[SMART_IDsToObsIdx++] = sMART_IDtoRead;
           break;///Get next supported SMART ID
         }
         else if(sMART_IDtoRead < suppSMART_ID)

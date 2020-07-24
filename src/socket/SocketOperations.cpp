@@ -33,7 +33,7 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
     read
 #endif
       (m_socketFileDesc, & numDataBytesToRead, numBytesToRead
-#idef use_recv
+#ifdef use_recv
       ,0/**flags*/
 #endif
       );

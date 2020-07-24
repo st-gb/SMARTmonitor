@@ -348,7 +348,21 @@ void SMARTdialog::ReBuildUserInterface()
   const bool allItemsDeleted = m_pwxlistctrl->DeleteAllItems();
   LOGN_DEBUG("all list control items deleted:" << (allItemsDeleted ? "yes" : "no" ))
   
-  m_pwxlistctrl->CreateLines(wxGetApp().m_IDsOfSMARTattrsToObserve);
+  SMARTmonitorBase::SMARTuniqueIDandValsContType & SMARTuniqueIDsAndValues =
+    wxGetApp().GetSMARTuniqueIDsAndVals();
+  for(SMARTmonitorBase::SMARTuniqueIDandValsContType::const_iterator
+    sMARTuniqueIDandValsIter = SMARTuniqueIDsAndValues.begin();
+    sMARTuniqueIDandValsIter != SMARTuniqueIDsAndValues.end();
+    sMARTuniqueIDandValsIter++)
+  {
+    const SMARTuniqueID & sMARTuniqueID = sMARTuniqueIDandValsIter->
+      getSMARTuniqueID();
+    //TODO to support multiple data carriers:
+    // p_wxlistctrl = SMARTuniqueID2listCtl[&sMARTuniqueID];
+    // p_wxlistctrl->CreateLines();
+    m_pwxlistctrl->CreateLines(sMARTuniqueID);
+    break;///Add only SMART attributes for 1 data carrier
+  }
   wxGetApp().SetSMARTattribIDandNameLabel();
 }
 

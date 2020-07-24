@@ -102,32 +102,27 @@ void SMARTtableListCtrl::SetSMARTattribValue(
     }
 }
   
-void SMARTtableListCtrl::CreateLines(const SMARTmonitorBase::SMARTattrToObsType
-  & IDsOfSMARTattrs)
+void SMARTtableListCtrl::CreateLines(const SMARTuniqueID & sMARTuniqueID)
 {
-    fastestUnsignedDataType SMARTattributeID, lineNumber = 0;
+  fastestUnsignedDataType SMARTattributeID, lineNumber = 0;
 
-  SMARTmonitorBase::SMARTattrToObsType::const_iterator IDofAttrToObsIter =
-    IDsOfSMARTattrs.begin();
-
-    wxListItem wxListItem;
-    /** List items Need to be added via InsertItem(), else error: 
-     *  "assert index>=0 && < GetItemCount()" not fulfilled */
-    /** Traverse all SMART attribute IDs either got from server or read via  
-     *  config file.*/
-  for( ; IDofAttrToObsIter != IDsOfSMARTattrs.end() ; IDofAttrToObsIter ++,
-    lineNumber ++)
+  wxListItem wxListItem;
+  /** List items Need to be added via InsertItem(), else error: 
+   *  "assert index>=0 && < GetItemCount()" not fulfilled */
+  /** Traverse all SMART attribute IDs either got from server or read via  
+   *  config file.*/
+  for(;sMARTuniqueID.SMART_IDsToReadNotEnd(lineNumber); lineNumber++)
   {
-      SMARTattributeID = * IDofAttrToObsIter;
+    SMARTattributeID = sMARTuniqueID.m_SMART_IDsToRd[lineNumber];
 
   //    wxListItem.SetText( wxString::Format(wxT("%u"), SMARTattributeID) );
-      wxListItem.SetId(/*lineNumber*/SMARTattributeID);
-      m_SMARTattribIDtoLineNumber[SMARTattributeID] = lineNumber;
-      InsertItem(wxListItem);
-    }
+    wxListItem.SetId(SMARTattributeID);
+    m_SMARTattribIDtoLineNumber[SMARTattributeID] = lineNumber;
+    InsertItem(wxListItem);
+  }
 #ifdef DEBUG
-    int itemCount = GetItemCount();
-    itemCount = itemCount;
+  int itemCount = GetItemCount();
+  itemCount = itemCount;
 #endif
   }
 

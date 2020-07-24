@@ -108,7 +108,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
    *  only once because the attribute IDs received usually do not change).*/
   const int getSMARTvaluesResult = GetSMARTattrValsFromSrv(
     /*sMARTuniqueIDandValues*/);
-  if (getSMARTvaluesResult == 0)
+  if(getSMARTvaluesResult == 0)
   {
     SetSMARTattributesToObserve(sMARTuniqueIDandValues);
 //      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
@@ -270,18 +270,27 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
 void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
 {
   LOGN_DEBUG("begin")
-  unsigned lineNumber = 0;
   fastestUnsignedDataType SMARTattributeID;
   
-  std::set<int>::const_iterator IDofAttributeToObserverIter = 
-    m_IDsOfSMARTattrsToObserve.begin();
-  /** Traverse all SMART attribute IDs either got from server or read via config 
-   *  file.*/
-  for( ; IDofAttributeToObserverIter != m_IDsOfSMARTattrsToObserve.
-      end() ; IDofAttributeToObserverIter ++, lineNumber++)
+  SMARTuniqueIDandValsContType & SMARTuniqueIDsAndValues =
+    GetSMARTuniqueIDsAndVals();
+  for(SMARTuniqueIDandValsContType::const_iterator sMARTuniqueIDandValsIter =
+    SMARTuniqueIDsAndValues.begin(); sMARTuniqueIDandValsIter !=
+    SMARTuniqueIDsAndValues.end(); sMARTuniqueIDandValsIter ++)
   {
-    SMARTattributeID = * IDofAttributeToObserverIter;
-    setIDandLabel(SMARTattributeID, NULL);
+    const SMARTuniqueID & sMARTuniqueID = sMARTuniqueIDandValsIter->
+      getSMARTuniqueID();
+    /** Traverse intersection of all SMART attribute IDs to read and supported
+     *  SMART IDs either got from server or read from config file.*/
+    for(fastestUnsignedDataType SMART_IDsToReadIdx = 0;
+      sMARTuniqueID.SMART_IDsToReadNotEnd(SMART_IDsToReadIdx);
+      SMART_IDsToReadIdx++)
+    {
+      SMARTattributeID = sMARTuniqueID.m_SMART_IDsToRd[SMART_IDsToReadIdx];
+      setIDandLabel(SMARTattributeID, NULL);
+    }
+    //TODO regard multiple data carriers
+    break;///Only set ID and label for 1 data carrier
   }
   LOGN_DEBUG("end")
 }
@@ -348,8 +357,6 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
     SMARTuniqueIDsAndValues.begin();
   fastestUnsignedDataType SMARTattrID;
 //  const numSMARTattributeIDbits = sizeof(SMARTattributeID) * 8;
-  const std::set<int> & IDsOfSMARTattributesToObserve =
-    m_IDsOfSMARTattrsToObserve;
 #ifdef DEBUG
 #endif
   //memory_barrier(); //TODO: not really necessary??
@@ -362,14 +369,15 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
     const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandValuesIter->
       getSMARTuniqueID();
     LOGN("SMART unique ID and values object " << &(*SMARTuniqueIDandValuesIter) )
-    std::set<int>::const_iterator
-      IDsOfSMARTattributesToObserveIter = IDsOfSMARTattributesToObserve.begin();
     
+    const fastestUnsignedDataType * SMART_IDsToRd = sMARTuniqueID.
+      m_SMART_IDsToRd;
     /** Loop over attribute IDs to observe */ //TODO if list is empty nothing is updated
-    for( ; IDsOfSMARTattributesToObserveIter != IDsOfSMARTattributesToObserve.end();
-        IDsOfSMARTattributesToObserveIter ++)
+    for(fastestUnsignedDataType SMARTattrIDtoReadIdx = 0;
+      sMARTuniqueID.SMART_IDsToReadNotEnd(SMARTattrIDtoReadIdx);
+      SMARTattrIDtoReadIdx++)
     {
-      SMARTattrID = *IDsOfSMARTattributesToObserveIter;
+      SMARTattrID = SMART_IDsToRd[SMARTattrIDtoReadIdx];
 #ifdef _DEBUG///For debugging
       const SMARTuniqueIDandValues & sMARTuniqueIDandVals = 
         *SMARTuniqueIDandValuesIter;

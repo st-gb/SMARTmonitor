@@ -64,6 +64,7 @@ public:
    *  ::UpdateSMARTparameterValuesThreadFunc(...) is not possible because
    *  the stack content is popped and changed afterwards.) */
   struct GetSMARTvaluesFunctionParams m_getSMARTvaluesFunctionParams;
+  typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
   std::set<SMARTuniqueIDandValues> & GetSMARTuniqueIDsAndVals() { return 
     SMARTuniqueIDsAndValues; }
   
