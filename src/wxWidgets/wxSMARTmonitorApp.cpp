@@ -42,6 +42,7 @@ GCC_DIAG_ON(write-strings)
 #include <OperatingSystem/Windows/HideMinGWconsoleWindow.h>
 #endif
 #include <FileSystem/File/FileException.hpp>
+#include <FileSystem/PathSeperatorChar.hpp>///dirSeperatorCharW
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(..)
 #include "ConnectToServerDialog.hpp"
@@ -376,15 +377,39 @@ bool wxSMARTmonitorApp::GetIcon(
     iconFileName += wxT("xpm");
   #endif
 
-  bool bIconFileSuccessfullyLoaded = icon.LoadFile(
-    iconFileName,
+  ///https://forums.wxwidgets.org/viewtopic.php?t=1696
+  wxLogNull noDbgMsgs;///Disable wxWigets (debug) messages when loading file.
+
+  bool bIconFileSuccessfullyLoaded = false;
+  wxString iconFilePath;
+#ifdef __linux__
+  ///Path after installing via deb package manager.
+  //TODO maybe pass this path from cmake to also use in createDebPkg.cmake
+  iconFilePath = wxT("/usr/local/SMARTmonitor");
+#else
+  iconFilePath = wxGetCwd();
+#endif
+  iconFilePath += wxFILE_SEP_PATH + iconFileName;
+  bIconFileSuccessfullyLoaded = icon.LoadFile(
+    iconFilePath,
     wxbitmapType);
-  if( ! bIconFileSuccessfullyLoaded)
+  if(! bIconFileSuccessfullyLoaded)
   {
-    wxMessageBox( wxT("Loading icon file \n\"") + wxGetCwd() +
-      wxFILE_SEP_PATH + iconFileName + wxT( "\" failed") );
-    /** Loading a (custom) icon from file failed, so provide a pre-defined one.*/
-    icon = wxIcon(inMemoryIcon);
+    /**The 1st program argument Is not always the _full_ path of the executable
+     * ?, e.g. no directory when in "PATH" environment variable?
+     * Alternative: OperatingSystem::Process::GetCurrExePath(); */
+    std::wstring exeFilePath = m_commandLineArgs.GetProgramPath();
+    std::wstring exeFileDir = exeFilePath.substr(0,
+      exeFilePath.rfind(FileSystem::dirSeperatorCharW) +1);
+    wxString iconFilePath2 = getwxString_inline(exeFileDir) + iconFileName;
+
+    bIconFileSuccessfullyLoaded = icon.LoadFile(iconFilePath2, wxbitmapType);
+    if(! bIconFileSuccessfullyLoaded){
+      wxMessageBox( wxT("Loading icon file(s)\n-\"") +
+        iconFilePath + wxT("\"\n-\"") + iconFilePath2 + wxT("\"\n failed") );
+      ///Loading a (custom) icon from file failed, so provide a pre-defined one.
+      icon = wxIcon(inMemoryIcon);
+    }
   }
   return bIconFileSuccessfullyLoaded;
 }

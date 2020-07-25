@@ -155,6 +155,13 @@ if(cre8SrcArchive)
   include(${CmnSrc}/CMake/cr8srcArchive.cmake)
 endif()
 
+if(UNIX)#only Unix binaries into .deb file
+  message("cr8DebPkg: ${cr8DebPkg}")
+  if(DEFINED cr8DebPkg)#"-Dcr8DebPkg" as cmake command line parameter
+    include(createDebPkg.cmake)
+  endif()
+endif()
+
 include(${cmnSrcDir}/CMake/writeItemsToFile.cmake)
 Set(srcFilePathsFileName ${EXE_TYPE}_source_file_paths.txt)
 #For debugging purposes
