@@ -40,6 +40,8 @@ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug \
 else
   echo "ERROR:at least" $MINIMAL_NUM_ARGS_NEEDED " args needed:"
   echo "specifiy options for this script:<WXWIDGETS_INCLUDE_DIR> <WXWIDGETS_SETUP_H_PATH> <TINYXML2_ROOT_PATH> <COMMON_SOURCECODE_ROOT_PATH>"
-  echo "e.g.:"$0 /usr/include/wx-3.0 /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-3.0 /home/sg/SourceCodeManagement/common_sourcecode /usr/src/tinyxml2-master
+  echo "e.g. for 32 bit Ubuntu:"$0 /usr/include/wx-3.0 /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-3.0 /home/sg/SourceCodeManagement/common_sourcecode /usr/src/tinyxml2-master
+  echo "e.g. for 64 bit Linux Mint:"$0 /usr/include/wx-3.0 /usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-debug-3.0 /home/sg/SourceCodeManagement/common_sourcecode /usr/src/tinyxml2-master
+                 
 fi
 

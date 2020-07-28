@@ -93,7 +93,8 @@ int main(int argc, char** argv) {
   SMARTmonitor.SetCommandLineArgs(argc, argv);
   if( SMARTmonitor.GetCommandLineArgs().GetArgumentCount() < 2 )
     SMARTmonitor.OutputUsage();
-  SMARTmonitor.ProcessCommandLineArgs();
+  if(SMARTmonitor.ProcessCommandLineArgs() != 0)
+    return 1;
   SMARTmonitor.InitializeLogger();
   
   //std::wstring stdwstrConfigPathWithoutExtension;

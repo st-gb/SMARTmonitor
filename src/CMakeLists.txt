@@ -261,6 +261,10 @@ endif (DEFINED WXWIDGETS)
 
 message ("EXE_NAME_: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")
 
+message("CXX flags: ${CMAKE_CXX_FLAGS}")
+message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
+message("CMAKE_EXE_LINKER_FLAGS: \"${CMAKE_EXE_LINKER_FLAGS}\"")
+
 target_link_libraries(${EXE_NAME} ${LIBRARIES})
 
 set(ARCHIVE_FILE_PATHS

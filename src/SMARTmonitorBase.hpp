@@ -84,7 +84,7 @@ public:
    *  is virtual it passes execution to the implementation in 
    *  SMARTmonitorClient.) */
   virtual fastestUnsignedDataType GetSMARTattributeValuesFromServer() {}
-  void ProcessCommandLineArgs();
+  fastestUnsignedDataType ProcessCommandLineArgs();
   void HandleLogFileFolderProgramOption(std::wstring & cmdLineOptionValue);
   fastestUnsignedDataType InitializeSMART();
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
@@ -92,7 +92,7 @@ public:
   virtual void ShowMessage(const char * const msg) const;
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
-  virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const = 0;
+  virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const;
   SMARTaccess_type * mp_SMARTaccess;
   SMARTvalueProcessorBase m_SMARTvalueProcessor;
   void SetCommandLineArgs(int argc, char ** argv);

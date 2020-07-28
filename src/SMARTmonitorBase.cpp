@@ -233,7 +233,7 @@ void SMARTmonitorBase::HandleLogFileFolderProgramOption(
   m_stdstrLogFilePath += GetStdString_Inline(m_stdwstrProgramePath);
 }
 
-void SMARTmonitorBase::ProcessCommandLineArgs()
+fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
 {
   unsigned programArgumentCount = m_commandLineArgs.GetArgumentCount();
   bool showUsage = false;
@@ -276,8 +276,11 @@ void SMARTmonitorBase::ProcessCommandLineArgs()
   }
   else
     showUsage = true;
-  if(showUsage)
+  if(showUsage){
     OutputUsage();
+    return 1;
+  }
+  return 0;
 }
 
 void SMARTmonitorBase::InitializeLogger() {
