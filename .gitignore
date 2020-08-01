@@ -1,4 +1,5 @@
 #from https://github.com/github/gitignore/blob/master/CMake.gitignore
+**/nbproject/**
 CMakeCache.txt
 CMakeFiles
 CMakeScripts

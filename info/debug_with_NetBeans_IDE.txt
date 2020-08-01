@@ -1,0 +1,16 @@
+To debug the service (Linux/UNIX)
+
+Set all signals to process to "Ignored".
+
+Project Properties
+"Categories:" (left window) "Debug"
+
+right window:
+ line "Signals":
+
+"Signals" window:
+SIGTERM: "Ignored"
+
+when debugging:
+"Signal Caught" window:
+ press "Forward and Continue" button for the signal to be processed.

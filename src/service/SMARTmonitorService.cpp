@@ -11,6 +11,7 @@
 
 /** Definitions of class (static) variables. */
 int SMARTmonitorService::s_socketFileDesc = 0;
+SMARTmonitorService * SMARTmonitorService::p_SMARTmonSvc;
 
 SMARTmonitorService::SMARTmonitorService() 
   //: 
@@ -21,6 +22,7 @@ SMARTmonitorService::SMARTmonitorService()
   /** from https://computing.llnl.gov/tutorials/pthreads/#ConditionVariables */
    pthread_mutex_init(& mutex, NULL);
    pthread_cond_init (&cond, NULL);
+  p_SMARTmonSvc = this;
 }
 
 SMARTmonitorService::SMARTmonitorService(const SMARTmonitorService& orig) {
@@ -73,7 +75,7 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
     SMARTuniqueIDsAndValues.begin();
 
   std::ostringstream std_ostringstream;
-  unsigned SMARTattributeID;
+  fastestUnsignedDataType SMARTattrID;
   for(fastestUnsignedDataType currentDriveIndex = 0;
     currentDriveIndex < numberOfDifferentDrives;
     ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
@@ -82,30 +84,30 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
       getSMARTuniqueID();
     
     //TODO mapping from data carrier ID to device name
-    dataCarrierID2devicePath_type::const_iterator iter = 
+    dataCarrierID2devicePath_type::const_iterator dataCarrierID2dvcPathIter =
       s_dataCarrierID2devicePath.find(SMARTuniqueID);
-    if( iter != s_dataCarrierID2devicePath.end() )
+    if( dataCarrierID2dvcPathIter != s_dataCarrierID2devicePath.end() )
     {
-      const char * device = iter->second.c_str();
+      const char * device = dataCarrierID2dvcPathIter->second.c_str();
       LOGN_DEBUG("device file path belonging to (SMART) data carrier ID:"
          << device )
-      std::vector<SMARTattributeNameAndID> SMARTattributeNamesAndIDs;
-      SMARTaccess.GetSupportedSMART_IDs(device, SMARTattributeNamesAndIDs);
-      std::vector<SMARTattributeNameAndID>::const_iterator
-        supportedSMARTattributeIDsIter = SMARTattributeNamesAndIDs.begin();
-      if( supportedSMARTattributeIDsIter != SMARTattributeNamesAndIDs.end() )
+      suppSMART_IDsType SMARTattrNamesAndIDs;
+      SMARTaccess.GetSupportedSMART_IDs(device, SMARTattrNamesAndIDs);
+      suppSMART_IDsType::const_iterator supportedSMARTattrIDsIter =
+        SMARTattrNamesAndIDs.begin();
+      if( supportedSMARTattrIDsIter != SMARTattrNamesAndIDs.end() )
       {
-        SMARTattributeID = supportedSMARTattributeIDsIter->GetID();
+        SMARTattrID = supportedSMARTattrIDsIter->GetID();
         std_ostringstream << "<data_carrier model=\"" << SMARTuniqueID.m_modelName << "\""
           << " firmware=\"" << SMARTuniqueID.m_firmWareName << "\""
           << " serial_number=\"" << SMARTuniqueID.m_serialNumber << "\">"
-          << "<supportedSMART_IDs>" << SMARTattributeID;
-        for( supportedSMARTattributeIDsIter ++; 
-            supportedSMARTattributeIDsIter != SMARTattributeNamesAndIDs.end();
-            supportedSMARTattributeIDsIter ++ )
+          << "<supportedSMART_IDs>" << SMARTattrID;
+        for(supportedSMARTattrIDsIter ++;//TODO why incr. here?
+            supportedSMARTattrIDsIter != SMARTattrNamesAndIDs.end();
+            supportedSMARTattrIDsIter ++ )
         {
-          SMARTattributeID = supportedSMARTattributeIDsIter->GetID();
-          std_ostringstream << "," << SMARTattributeID;
+          SMARTattrID = supportedSMARTattrIDsIter->GetID();
+          std_ostringstream << "," << SMARTattrID;
         }
         std_ostringstream << "</supportedSMART_IDs>";
         std_ostringstream << "</data_carrier>";
@@ -121,6 +123,7 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
 fastestUnsignedDataType SMARTmonitorService::BindAndListenToSocket()
 {
   fastestUnsignedDataType retCode = SMARTmonitorService::unset;
+  //TODO replace the following by "common_sourcecode/socket/bindAndListen.cpp"
     //Code adapted from http://www.linuxhowtos.org/data/6/server.c
   unsigned portNumber = m_socketPortNumber;
   struct sockaddr_in server_address;
@@ -174,7 +177,7 @@ fastestUnsignedDataType SMARTmonitorService::BindAndListenToSocket()
 
 DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
 {
-  LOGN("begin")
+  LOGN_DEBUG("begin")
   SMARTmonitorService * p_SMARTmonitor = (SMARTmonitorService * ) p_v;
   if( p_SMARTmonitor )
   {
@@ -184,19 +187,26 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
       socklen_t sizeOfClientAddrInB = sizeof(client_address);
       LOGN("Waiting for a socket client to accept on file descr." << 
         s_socketFileDesc << ",port " << p_SMARTmonitor->m_socketPortNumber)
+      /** accept(...) is blocking, can be cancelled with "shutdown(...)" (from
+       * another thread)*/
       const int clientSocketFileDesc = accept(
         s_socketFileDesc, 
         (struct sockaddr *) & client_address, 
         & sizeOfClientAddrInB);
       if (clientSocketFileDesc < 0)
       {
-        LOGN_ERROR("Failed to accept client")
+        ///was EINVAL when called by "shutdown".
+        if(errno != EINVAL)///Error INVALid
+          LOGN_ERROR("Failed to accept client:" << errno)
         //return 2;
       }
       else
       {
         LOGN("new client at port " << client_address.sin_port 
           << " file desc.:" << clientSocketFileDesc)
+        //TODO does it make problems when sending from 2 different threads?
+          // (here and in SMART values thread)
+        //https://stackoverflow.com/questions/7418093/use-one-socket-in-two-threads
         p_SMARTmonitor->SendSupportedSMART_IDsToClient(clientSocketFileDesc);
         p_SMARTmonitor->AddClient(clientSocketFileDesc);
       }
@@ -205,7 +215,7 @@ DWORD SMARTmonitorService::ClientConnThreadFunc( void * p_v)
     /**Prevent the bind(...) failure after restarting this program (not tested)*/
     p_SMARTmonitor->CloseAllClientSockets();
   }
-  LOGN("end")
+  LOGN_DEBUG("end")
   return 0;
 }
 
@@ -295,6 +305,8 @@ int SMARTmonitorService::SendBytesTo1Client(
   fastestUnsignedDataType returnValue = successfullyWroteAllBytes;
   uint16_t numOverallBytes;
   uint8_t * array = ByteArrayFromString(xmlString, numOverallBytes);
+  LOGN_DEBUG("Sending to client: " <<std::string((char*) array, numOverallBytes)
+    )
   int n = write(clientSocketFileDesc, array, numOverallBytes);
   delete [] array;
   if (n < 0)
@@ -322,6 +334,7 @@ int SMARTmonitorService::SendBytesTo1Client(
 
 void SMARTmonitorService::SendBytesToAllClients(std::string & xmlString)
 {
+  LOGN_DEBUG("begin")
   uint16_t numOverallBytes;
   uint8_t * array = ByteArrayFromString(xmlString, numOverallBytes);
   
@@ -352,16 +365,14 @@ void SMARTmonitorService::BeforeWait()
   /** Send to all clients non-blocking */
   const fastestUnsignedDataType numberOfDifferentDrives = SMARTaccess.
     GetNumberOfDifferentDrives();
-  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = SMARTaccess.
-    GetSMARTuniqueIDandValues();
+  SMARTaccessBase::SMARTuniqueIDandValsContType & SMARTuniqueIDsAndValues =
+    SMARTaccess.GetSMARTuniqueIDandValues();
   LOGN("address:" << & SMARTuniqueIDsAndValues )
   std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
     SMARTuniqueIDsAndValues.begin();
-  fastestUnsignedDataType SMARTattributeID;
+  fastestUnsignedDataType SMARTattrID;
   uint64_t SMARTrawValue;
-  const std::set<SMARTentry> & SMARTattributesToObserve =
-    SMARTaccess.getSMARTattributes();
-  LOGN( "# SMART attributes to observe:" << SMARTattributesToObserve.size() )
+  LOGN( "# SMART attributes to observe:" << m_IDsOfSMARTattrsToObserve.size() )
 
   std::ostringstream oss;
   oss.precision(3); //Allow 3 digits right of decimal point
@@ -370,6 +381,8 @@ void SMARTmonitorService::BeforeWait()
     currentDriveIndex < numberOfDifferentDrives;
     ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
   {
+    const SMARTuniqueIDandValues & sMARTuniqueIDandVals =
+      *SMARTuniqueIDandValuesIter;
     const SMARTuniqueID & SMARTuniqueID = SMARTuniqueIDandValuesIter->
       getSMARTuniqueID();
     oss << "<data_carrier model=\"" << SMARTuniqueID.m_modelName << "\""
@@ -377,20 +390,20 @@ void SMARTmonitorService::BeforeWait()
       << " serial_number=\"" << SMARTuniqueID.m_serialNumber << "\">";
     
 //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
-    std::set<SMARTentry>::const_iterator
-      SMARTattributesToObserveIter = SMARTattributesToObserve.begin();
+    SMARTattrToObsType::const_iterator
+      SMARTattrToObsIter = m_IDsOfSMARTattrsToObserve.begin();
 //    long int currentSMARTrawValue;
     //TimeCountInNanosec_type timeCountInNanoSeconds;
 //    long double timeCountInSeconds;
     SMARTvalue sMARTvalue;
     //TODO crashes here (iterator-related?!-> thread access problem??)
-    for( ; SMARTattributesToObserveIter != SMARTattributesToObserve.end();
-        SMARTattributesToObserveIter ++, ++lineNumber )
+    for( ; SMARTattrToObsIter != m_IDsOfSMARTattrsToObserve.end();
+        SMARTattrToObsIter ++, ++lineNumber )
     {
-      SMARTattributeID = SMARTattributesToObserveIter->GetAttributeID();
+      SMARTattrID = *SMARTattrToObsIter;
       //OperatingSystem::GetTimeCountInNanoSeconds(timeCountInNanoSeconds);
       //OperatingSystem::GetTimeCountInSeconds(timeCountInSeconds);
-      sMARTvalue = SMARTuniqueIDandValuesIter->m_SMARTvalues[SMARTattributeID];
+      sMARTvalue = sMARTuniqueIDandVals.m_SMARTvalues[SMARTattrID];
       
       float fTimeInS = sMARTvalue.m_timeStampOfRetrieval;
       fTimeInS /= 1000.0f;
@@ -400,12 +413,22 @@ void SMARTmonitorService::BeforeWait()
           //m_timeStampOfRetrieval > 0 && 
           sMARTvalue.IsConsistent(SMARTrawValue) )
       {
-        oss << "<SMART ID=\"" << SMARTattributeID 
+        oss << "<SMART ID=\"" << SMARTattrID 
           << "\" raw_value=\"" << SMARTrawValue 
-          << "\" time_in_s=\"" << 
-          /** Ensure not using scientific output (exponent representation/notation) */
-          std::fixed 
-          << fTimeInS << "\"/>";
+          << "\" time_in_s=\"" <</**Ensure not using scientific output (exponent
+           * representation/notation) */ std::fixed 
+          << fTimeInS;
+        SMARTuniqueID::unitDataType unit = SMARTuniqueID.units[SMARTattrID];
+        if(unit != 0){
+          SMARTuniqueID::unitDataType MSB = mostSignificantBit(unit);
+          if(unit & MSB){
+            unit = removeBits(unit, MSB);
+            oss << "\" unit=\">" << unit;
+          }
+          else
+            oss << "\" unit=\"" << unit;
+        }
+        oss << "\"/>";
       }
       //m_arSMARTrawValue[lineNumber];  
     }

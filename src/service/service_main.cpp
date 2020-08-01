@@ -24,7 +24,7 @@ using namespace std;
 //static SMARTmonitorService/*<char>*/ SMARTmonitor;//(argc, argv);
 static SMARTmonitorService/*<char>*/ * gp_SMARTmonitor;//(argc, argv);
 
-static void End(const char * const signalName)
+void SMARTmonitorService::End(const char signalName [])
 {
   LOGN("received " << signalName << " signal")
   //TODO fails to shutdown service:
@@ -42,9 +42,12 @@ static void End(const char * const signalName)
 //2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService ClientConnThreadFunc end
 //2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService WaitForSignal locking signal mutex
 //2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService WaitForSignal Waiting for signal  gp_SMARTmonitor->EndUpdateSMARTvaluesThread();
+  
+  pthread_cond_signal(& p_SMARTmonSvc->cond);
+  EndUpdateSMARTvaluesThread();
 }
 
-static void signal_handler(int signum)
+static void signal_handler(int signum)//Unix-/Linux-specific 
 {
   LOGN("received signal")
   switch(signum)
@@ -56,15 +59,15 @@ static void signal_handler(int signum)
   //case SIGUSR1: exit(EXIT_SUCCESS); break;
   case SIGCHLD: exit(EXIT_FAILURE); break;
     case SIGTERM:
-      End("term"); break;
+      SMARTmonitorService::End("term"); break;
     case SIGKILL:
-      End("kill"); break;
+      SMARTmonitorService::End("kill"); break;
     case SIGINT:
-      End("interrupt"); break;
+      SMARTmonitorService::End("interrupt"); break;
   }
 }
 
-void TrapSignals2()
+void TrapSignals2()//TODO Unix-specific 
 {
   /* Trap signals that we expect to receive */
   signal(SIGCHLD, signal_handler);
@@ -82,8 +85,10 @@ void TrapSignals2()
  * 
  */
 int main(int argc, char** argv) {
-  
+  ///Neded for SetLogLevel() in ProcessCommandLineArgs()
+  LogLevel::CreateLogLevelStringToNumberMapping();
   //std::string lockFilePath = "/var/lock/" + argv[0];
+  //TODO use daemonize(...) from common_sourcecode git repo
   //daemonize("/var/lock/smartmonitor.lock");
   TrapSignals2();
   SMARTmonitorService/*<char>*/ SMARTmonitor;//(argc, argv);
@@ -93,10 +98,11 @@ int main(int argc, char** argv) {
   SMARTmonitor.SetCommandLineArgs(argc, argv);
   if( SMARTmonitor.GetCommandLineArgs().GetArgumentCount() < 2 )
     SMARTmonitor.OutputUsage();
+  ///Has to be called before InitializeLogger() as it gets the log folder path.
   if(SMARTmonitor.ProcessCommandLineArgs() != 0)
     return 1;
-  SMARTmonitor.InitializeLogger();
-  
+  if(! SMARTmonitor.InitializeLogger() )
+    return 2;
   //std::wstring stdwstrConfigPathWithoutExtension;
   //SMARTmonitor.ConstructConfigFilePath(stdwstrConfigPathWithoutExtension);
   const fastestUnsignedDataType SMARTinitResult = SMARTmonitor.InitializeSMART();
@@ -104,18 +110,22 @@ int main(int argc, char** argv) {
       SMARTmonitor.BindAndListenToSocket() == 
       SMARTmonitorService::listeningToSocket )
   {
-//    nativeThread_type clientConnThread;
-//    clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor );
-
-    SMARTmonitor.StartAsyncUpdateThread(& SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
+    
+    //TODO needs only to be done if at least 1 client connected?
+    SMARTmonitor.StartAsyncUpdateThread(& SMARTmonitorBase::
+      Upd8SMARTvalsDrctlyThreadSafe);
+    
     /** Client connection handling can be done in the main thread because the
      *  service can be exiting via signals (that are software interrupts
      * and are handled within the [main] thread.). */
     SMARTmonitor.ClientConnThreadFunc(& SMARTmonitor);
+    
+    ///accept() is blocking, so start in a different thread?
+    //nativeThread_type clientConnThread;
+    //clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor);
 
     /** Wait for the update thread to be finished */
-    SMARTmonitor.WaitForSignal();
-    
+    //SMARTmonitor.WaitForSignal();
   }
   LOGN("ending service")
   return 0;

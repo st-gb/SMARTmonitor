@@ -1,9 +1,6 @@
-/*
- * SMARTentry.hpp
- *
+/** SMARTentry.hpp
  *  Created on: 06.08.2016
- *      Author: sg
- */
+ *  Author: Stefan Gebauer,M.Sc.Comp.Sc.(TU Berlin)*/
 
 #ifndef ATTRIBUTES_SMARTENTRY_HPP_
 #define ATTRIBUTES_SMARTENTRY_HPP_
@@ -15,16 +12,16 @@
 
 //typedef struct SkSmartAttributeParsedData SMARTentry;
 
-class SMARTentry
+class SMARTattrDef///def=definition: https://en.wiktionary.org/wiki/def
 {
   bool m_criticalAttribute;
   fastestUnsignedDataType m_attributeID;
   std::string attributeName;
 public:
-  SMARTentry() : m_criticalAttribute(false) { }
+  SMARTattrDef() : m_criticalAttribute(false), m_attributeID(0) { }
   /** For easy searching purposes within an STL container.: 
       "[...].find( SMARTentry(197) );" */
-  SMARTentry(const fastestUnsignedDataType attributeID) {
+  SMARTattrDef(const fastestUnsignedDataType attributeID) {
     m_attributeID = attributeID;
   }
   
@@ -39,6 +36,6 @@ public:
   const char * const GetName() const { return attributeName.c_str(); }
 };
 
-bool operator < (const SMARTentry & left, const SMARTentry & right);
+bool operator < (const SMARTattrDef & left, const SMARTattrDef & right);
 
 #endif /* ATTRIBUTES_SMARTENTRY_HPP_ */

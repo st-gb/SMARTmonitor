@@ -29,12 +29,14 @@ public:
   
   //calculation of array size adapted from 
   // http://stackoverflow.com/questions/4079243/how-can-i-use-sizeof-in-a-preprocessor-macro
-  // Dats types must be long int for atomic operations
-  long int m_rawValue [sizeof(long int) < 8 ? 8 / sizeof(long int) : 8];
+  // Data types must be long int for atomic operations
+  long int m_rawValue [sizeof(long int) < 8 ? 8 / sizeof(long int) : 1];
   long int m_rawValueCheckSum;
   long int m_timeStampOfRetrieval;
   long int m_successfullyReadSMARTrawValue;
   
+  ///Declared here to have no dependancy to SMARTaccessBase or SMARTmonitorBase
+  static fastestUnsignedDataType s_sizeOfLongIntInBytes;
   void SetRawValue(/*long int * ,*/ const uint64_t & rawSMARTattrValue);
   bool IsConsistent(uint64_t &) const;
 };

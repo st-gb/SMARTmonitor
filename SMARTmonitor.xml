@@ -4,8 +4,14 @@
 #"Details" description from "https://en.wikipedia.org/wiki/S.M.A.R.T.", last change: 24 November 2016, at 08:03. -->
 
  <networkConnection portNumber="1000" serviceHostName="localhost" retryWaitTimeInS="300"/>
+ <!-- IDs that are interesting for ALL drives -->
+ <SMART_parameters_to_observe>1,3,4,5,7,8,9,10.11.12,100,187,194,195,196,198,199,200,201,204,241,242,250,254</SMART_parameters_to_observe>
 
-<!-- see/details from https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes -->
+<!-- see/details from
+ -GSMARTControl 1.1.3 with a HFS256G39TND-N210A SSD [GSMARTCtl1.1.3]
+ -libatasmart homepage
+ -http://www.t13.org/Documents/UploadedDocuments/docs2005/e05148r0-ACS-SMARTAttributesAnnex.pdf [T13_2005]
+ -https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes [enWikip] -->
  <SMART_parameters> 
   <SMART_parameter Id="1" Name="Read Error Rate"
 	Details="Quantity of uncorrectable errors. The raw value of this attribute indicates the total number of uncorrectable errors when reading/writing a sector. A rise in the value of this attribute indicates that there are evident defects of the disk surface and/or there are problems in the hard disk drive mechanical subsystem." />
@@ -22,7 +28,21 @@
   <SMART_parameter Id="10" Name="Spin Retry Count" Details="Count of retry of spin start attempts. This attribute stores a total count of the spin start attempts to reach the fully operational speed (under the condition that the first attempt was unsuccessful). An increase of this attribute value is a sign of problems in the hard disk mechanical subsystem." />
   <SMART_parameter Id="11" Name="Recalibration Retries or Calibration Retry Count" Details="This attribute indicates the count that recalibration was requested (under the condition that the first attempt was unsuccessful). An increase of this attribute value is a sign of problems in the hard disk mechanical subsystem." />
   <SMART_parameter Id="12" Name="Power Cycle Count" Details="This attribute indicates the count of full hard disk power on/off cycles." />
+  <SMART_parameter Id="100" Name="GiB Erased"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_parameter Id="168" Name="SATA Physical Error Count"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_parameter Id="169" Name="Bad Block Count"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_parameter Id="171" Name="Program Fail Count"/><!--[enWikip]-->
+  <SMART_parameter Id="172" Name="SSD Erase Fail Count"/><!--[enWikip]-->
+  <SMART_parameter Id="174" Name="Unexpected Power Loss Count"/><!--[enWikip]-->
+  <SMART_parameter Id="175" Name="Power Loss Protection Failure"/><!--[enWikip]-->
+  <SMART_parameter Id="176" Name="Erase Fail Count"/><!--[enWikip]-->
+  <SMART_parameter Id="177" Name="Wear Range Delta"/><!--[enWikip]-->
+  <SMART_parameter Id="178" Name="Used Reserved Block Count (Chip)"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_parameter Id="179" Name="Used Reserved Block Count Total"/><!--[enWikip]-->
+  <SMART_parameter Id="180" Name="Unused Reserved Block Count Total"/><!--[enWikip]-->
+  <SMART_parameter Id="184" Name="End to End Error"/><!--[enWikip]-->
   <SMART_parameter Id="187" Name="Reported Uncorrectable Errors" Critical="yes" Details="The count of errors that could not be recovered using hardware ECC (see attribute 195)" />
+  <SMART_parameter Id="188" Name="Command Timeout" Details="The count of aborted operations due to HDD timeout." /><!--[enWikip]-->
   <SMART_parameter Id="190" Name="Temperature Difference or Airflow Temperature" Details="" />
   <SMART_parameter Id="191" Name="G-sense Error Rate" Details="The count of errors resulting from externally induced shock and vibration." />
   <SMART_parameter Id="192" Name="Power-off/Emergency Retract Count" Details="Number of power-off or emergency retract cycles." />
@@ -37,12 +57,21 @@ The raw value of this attribute shows the total number of attempts to transfer d
   <SMART_parameter Id="200" Name="Multi-Zone Error Rate or Write Error Rate" Details="The total count of errors when writing a sector." />
   <SMART_parameter Id="201" Name="Soft Read Error Rate or TA Counter Detected" Details="Count indicates the number of uncorrectable software read errors." />
   <SMART_parameter Id="204" Name="Soft ECC Correction" Details="Count of errors corrected by the internal error correction software." />
+  <SMART_parameter Id="212" Name="Shock During Write"/><!--[enWikip]-->
   <SMART_parameter Id="220" Name="Disk Shift" Details="Shift of disks towards spindle. The raw value of this attribute indicates how much the disk has shifted. Unit measure is unknown. For more info see G-Force Protection technology description (click to learn more on Seagate website ).
 NOTE: Shift of disks is possible as a result of a strong shock or a fall, or for other reasons." />
   <SMART_parameter Id="223" Name="Load/Unload Retry Count" Details="Count of times head changes position." />
+  <SMART_parameter Id="234" Name="Average erase count AND Maximum Erase Count"/><!--[enWikip]-->
   <SMART_parameter Id="240" Name="Head FLying Hours/Transfer Error Rate" Details="Time spent during the positioning of the drive heads./Count of times the link is reset during a data transfer." />
-  <SMART_parameter Id="241" Name="Total LBAs Written" Details="Total count of Logical Block Addresses (LBAs) written." />
-  <SMART_parameter Id="242" Name="Total LBAs Read" Details="Total count of Logical Block Addresses (LBAs) read." />
+  <!-- Value seems to be gigabytes for the SSD model FS256G39TND-N210A
+   firmware:30001P10 (serial:EJ7CN55981080CH09) because the value is 440k337
+   after 627 days 17 h Power-On Hours and 87380824 kB ~=87 GB written to disk
+   (via "iostat/dev/sda" Unix command) after 9 days and 20 h uptime.
+   So name it "total _data_ written"-->
+  <SMART_parameter Id="241" Name="Total Data Written" 
+   Details="Total count of data (different units:often LBAs/sectors) written to data carrier."/>
+  <SMART_parameter Id="242" Name="Total Data Read" Details="Total count of Logical Block Addresses (LBAs) read." />
+  <SMART_parameter Id="250" Name="Read Error Retry Rate"/><!--[T13_2005]-->
   <SMART_parameter Id="254" Name="Free Fall Protection" Details="Count of 'Free Fall Events' detected." />
  </SMART_parameters>
 </options>

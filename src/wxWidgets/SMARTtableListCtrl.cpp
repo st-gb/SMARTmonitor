@@ -50,66 +50,82 @@ namespace wxWidgets
     column.SetWidth(50);
     InsertColumn(ColumnIndices::humanReadableRawValue, column);
 
+    column.SetId(ColumnIndices::unit);
+    column.SetText( wxT("unit") );
+    column.SetWidth(50);
+    InsertColumn(ColumnIndices::unit, column);
+    
+    column.SetId(ColumnIndices::unitRange);
+    column.SetText( wxT("~unit range") );
+    column.SetWidth(50);
+    InsertColumn(ColumnIndices::unitRange, column);
+    
     column.SetId(ColumnIndices::lastUpdate);
-    column.SetText( wxT("last update") );
+    column.SetText( wxT("last update [uptime]") );
     //TODO calculate width needed for the last update time string
-    column.SetWidth(300);
+    column.SetWidth(150);
     InsertColumn(ColumnIndices::lastUpdate, column);
   }
 
-  void SMARTtableListCtrl::SetSMARTattribValue(
-    fastestUnsignedDataType SMARTattributeID,
-    fastestUnsignedDataType columnIndex,
-    const wxString & wxstrValue,
-    const enum SMARTmonitorClient::SMARTvalueRating sMARTvalueRating)
-  {
-    fastestUnsignedDataType lineNumber = m_SMARTattribIDtoLineNumber[
-      SMARTattributeID];
-    SetItem(
-      lineNumber, //long index
-      columnIndex /** column #/ index */,
-      wxstrValue);
-//    if( sMARTvalueRating == SMARTmonitorClient::SMARTvalueOK )
-//    {
-    //TODO colour based on SMART (raw) value
-//      wxListItem wxListItem;
-//      wxListItem.SetId(lineNumber);
-//      GetItem(wxListItem);
-////    //http://docs.wxwidgets.org/3.1.0/classwx_list_item.html
-//      wxListItem.SetTextColour(*wxGREEN);
-//    }
-  }
-  
-  void SMARTtableListCtrl::CreateLines()
-  {
-    fastestUnsignedDataType SMARTattributeID, lineNumber = 0;
-
-    std::set<int> & IDsOfSMARTattributesToObserve = wxGetApp().
-      m_IDsOfSMARTattributesToObserve;
-    std::set<int>::const_iterator IDofAttributeToObserverIter = 
-      IDsOfSMARTattributesToObserve.begin();
-
-    wxListItem wxListItem;
-    /** List items Need to be added via InsertItem(), else error: 
-     *  "assert index>=0 && < GetItemCount()" not fulfilled */
-    /** Traverse all SMART attribute IDs either got from server or read via  
-     *  config file.*/
-    for( ; IDofAttributeToObserverIter != IDsOfSMARTattributesToObserve.
-        end() ; IDofAttributeToObserverIter ++, lineNumber ++)
+void SMARTtableListCtrl::SetSMARTattribValue(
+  fastestUnsignedDataType SMARTattributeID,
+  fastestUnsignedDataType columnIndex,
+  const wxString & wxstrValue,
+  const enum SMARTvalueRating sMARTvalueRating)
+{
+  fastestUnsignedDataType lineNumber = m_SMARTattribIDtoLineNumber[
+    SMARTattributeID];
+  SetItem(
+    lineNumber, //long index
+    columnIndex /** column #/ index */,
+    wxstrValue);
+  ///Only do it once/for 1 attribute/column
+  if(columnIndex == ColumnIndices::rawValue)
+    switch(sMARTvalueRating)
+      case SMARTvalueOK:
+      case SMARTvalueWarning:
     {
-      SMARTattributeID = * IDofAttributeToObserverIter;
+      wxListItem wxListItem;
+      wxListItem.SetId(lineNumber);
+      GetItem(wxListItem);
+      switch(sMARTvalueRating){
+       case SMARTvalueOK:
+        //http://docs.wxwidgets.org/3.1.0/classwx_list_item.html
+        //wxListItem.SetTextColour(*wxGREEN);
+        ///https://forums.wxwidgets.org/viewtopic.php?t=26576
+        SetItemBackgroundColour(lineNumber, *wxGREEN);
+        break;
+       case SMARTvalueWarning:
+        SetItemBackgroundColour(lineNumber, *wxYELLOW);
+        break;
+      }
+    }
+}
+  
+void SMARTtableListCtrl::CreateLines(const SMARTuniqueID & sMARTuniqueID)
+{
+  fastestUnsignedDataType SMARTattributeID, lineNumber = 0;
+
+  wxListItem wxListItem;
+  /** List items Need to be added via InsertItem(), else error: 
+   *  "assert index>=0 && < GetItemCount()" not fulfilled */
+  /** Traverse all SMART attribute IDs either got from server or read via  
+   *  config file.*/
+  for(;sMARTuniqueID.SMART_IDsToReadNotEnd(lineNumber); lineNumber++)
+  {
+    SMARTattributeID = sMARTuniqueID.m_SMART_IDsToRd[lineNumber];
 
   //    wxListItem.SetText( wxString::Format(wxT("%u"), SMARTattributeID) );
-      wxListItem.SetId(/*lineNumber*/SMARTattributeID);
-      m_SMARTattribIDtoLineNumber[SMARTattributeID] = lineNumber;
-      InsertItem(wxListItem);
-    }
+    wxListItem.SetId(SMARTattributeID);
+    m_SMARTattribIDtoLineNumber[SMARTattributeID] = lineNumber;
+    InsertItem(wxListItem);
+  }
 #ifdef DEBUG
-    int itemCount = GetItemCount();
-    itemCount = itemCount;
+  int itemCount = GetItemCount();
+  itemCount = itemCount;
 #endif
   }
-      
+
   SMARTtableListCtrl::~SMARTtableListCtrl()
   {
     // TODO Auto-generated destructor stub

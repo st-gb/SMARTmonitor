@@ -10,7 +10,6 @@
 //#ifdef _WINDOWS
 //  #include "SmartReader.h" //class CSmartReader
 //#endif
-#include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxSMARTreader
 #include "wxSMARTmonitorTaskBarIcon.hpp"
 #include "client/SMARTmonitorClient.h" //enum SMARTmonitorClient::state
 #include <wx/thread.h> //class wxCondition
@@ -24,7 +23,7 @@ using namespace wxWidgets;
 class SMARTdialog: public wxDialog
 {
   //enum IDs { CONNECT = wxID_HIGHEST + 1};
-  wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
+//  wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
   enum IDs {TIMER_ID = 0, showSupportedSMART_IDs, CONNECT};
   /** Called "data carrier" and not "drive" because SMART info affect data 
    *  carriers / media and not "drives" (where they are inserted) */
@@ -34,17 +33,19 @@ class SMARTdialog: public wxDialog
 //  wxTimer m_timer;
 public:
   SMARTtableListCtrl * m_pwxlistctrl;
-  SMARTaccess_type & m_SMARTaccess;
+//  SMARTaccess_type & m_SMARTaccess;
   wxCondition * m_p_wxCloseCondition;
   wxMutex m_wxCloseMutex;
   wxButton * m_p_ConnectAndDisconnectButton;
-  SMARTdialog(const wxString & title,
+  SMARTdialog(const wxString & title//,
     //const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor
-    const SMARTvalueProcessorBase & SMARTvalueProcessor);
+    //const SMARTvalueProcessorBase & SMARTvalueProcessor
+    );
   virtual ~SMARTdialog();
   
+  wxSizer * CreatePerDiskUIctrls();
   void SetStatus(const wxString &);
-  void StartAsyncUpdateThread();
+  void StartAsyncDrctUpd8Thread();
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();
   void UpdateSMARTvaluesUI();
   void UpdateUIregarding1DataCarrierOnly();

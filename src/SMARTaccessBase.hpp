@@ -1,61 +1,69 @@
 /** SMARTreaderBase.hpp
  *  Created on: 31.07.2016
- *      Author: sg */
+ *  Author:Stefan Gebauer,M.Sc. Comp.Sc./Informatik (TU Berlin)*/
 #ifndef SMARTACCESSBASE_HPP_
 #define SMARTACCESSBASE_HPP_
 
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
-#include <stddef.h> //size_t for <atasmart.h>
-#include <atasmart.h> //struct SkSmartAttributeParsedData
-#include <set> //class std::set
-#include <vector> //class std::vector
+
 #include <attributes/SMARTuniqueIDandValues.hpp> //class SMARTuniqueIDandValues
 #include <attributes/SMARTattributeNameAndID.hpp> //class SMARTattributeNameAndID
-#include <attributes/SMARTentry.hpp> //class SMARTentry
+#include <attributes/SMARTattrDefAccss.hpp>///base class SMARTattrDefAccss
 
-class SMARTaccessBase
+//http://www.samsung.com/global/business/semiconductor/products/SSD/downloads/ds_SS805_NSSD_100_SLC_SATA_II_rev11.pdf
+
+//TODO Is the base class of direct SMART access? Then rename to 
+// "DrctSMARTaccBase?
+class SMARTaccessBase///Base class for (direct) access to S.M.A.R.T.
+  : public SMARTattrDefAccss
 {
 private:
 //  std::set<SkIdentifyParsedData> m_SMARTuniqueIDs;
 public:
-  typedef std::set<SMARTentry> SMARTattributesContainerType;
-  typedef const SMARTattributesContainerType constSMARTattributesContainerType;
-  typedef SMARTattributesContainerType::const_iterator 
-    SMARTattributesContainerConstIterType;
   static fastestUnsignedDataType s_sizeOfLongIntInBytes;
+  typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
 protected:
-  SMARTattributesContainerType SMARTattributesToObserve;
-  std::set<SMARTuniqueIDandValues> m_SMARTuniqueIDandValues;
+  SMARTuniqueIDandValsContType & m_SMARTuniqueIDsandVals;
 public:
   enum retCodes { success = 0, accessDenied, noSingleSMARTdevice, 
     gotSMARTattributeValue, unset};
-  SMARTaccessBase ();
+  SMARTaccessBase(SMARTuniqueIDandValsContType &);
   virtual
   ~SMARTaccessBase ();
 
+  ///\brief fill @sMARTuniqueID with firmware, model and serial number
+  virtual void fill(const char device[], SMARTuniqueID & sMARTuniqueID) = 0;
+  /**It makes sense to do the unit detection/calculation in this class because
+  * it belongs to the server and the logic only needs to be done once at 
+  * server side. Could also do it to in the client/dyn lib but then it has to be
+  * delivered some more info to the client/dyn lib (e.g. # B written since OS 
+  * start) */
+  /** For drive quirks and real units see also SMARTctrl database:
+  * https://www.thomas-krenn.com/de/wiki/Smartmontools_Drive_Database_aktualisieren
+  * value meanings specific to drive: /var/lib/smartmontools/drivedb/drivedb.h
+  *  https://www.smartmontools.org/browser/trunk/smartmontools/drivedb.h */
+  void possiblyAutoDetectUnit(
+    const fastestUnsignedDataType SMARTattrID,
+    const uint64_t & SMARTrawVal,
+    SMARTuniqueID & sMARTuniqueID,
+    const std::string & dataCarrierDevPath);
   /** Implement functionality in subclasses because the SMART access part is
    *  specific to Linux, Windows or used SMART library and so on.*/
-  virtual enum retCodes ReadSMARTValuesForAllDrives() = 0;
-  constSMARTattributesContainerType & getSMARTattributes() const
-  {
-    return SMARTattributesToObserve;
-  }
-  fastestUnsignedDataType GetNumberOfSMARTparametersToRead() const {
-    return SMARTattributesToObserve.size();
-  }
+  virtual enum retCodes ReadSMARTValuesForAllDrives(
+    ///May be a subset of supported SMART IDs.
+    const fastestUnsignedDataType SMARTattrIDsToRead[],
+    dataCarrierID2devicePath_type &) = 0;
 
   fastestUnsignedDataType GetNumberOfDifferentDrives() const {
-    return m_SMARTuniqueIDandValues.size();
+    return m_SMARTuniqueIDsandVals.size();
   }
-  std::set<SMARTuniqueIDandValues> & GetSMARTuniqueIDandValues() {
-    return m_SMARTuniqueIDandValues;
+  SMARTuniqueIDandValsContType & GetSMARTuniqueIDandValues() {
+    return m_SMARTuniqueIDsandVals;
   }
-  fastestUnsignedDataType GetNumSMARTattributesToObserve() const {
-    return SMARTattributesToObserve.size(); }
   
   virtual int GetSupportedSMART_IDs(
     const char * const device,
-    std::vector<SMARTattributeNameAndID> & SMARTattributeNamesAndIDs) {};
+    suppSMART_IDsType & SMARTattributeNamesAndIDs) {};
 };
 
 #endif /* SMARTACCESSBASE_HPP_ */

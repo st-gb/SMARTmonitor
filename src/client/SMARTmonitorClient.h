@@ -1,22 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   SMARTmonitorClient.h
- * Author: root
- *
- * Created on 20. November 2016, 17:43
- */
+/** File:   SMARTmonitorClient.h
+ * Author: Stefan Gebauer,M.Sc.Comp.Sc.
+ * Created on 20. November 2016, 17:43 */
 
 #ifndef SMARTMONITORCLIENT_H
 #define SMARTMONITORCLIENT_H
 
 #include "../SMARTmonitorBase.hpp"
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
-#include <UserInterface/columnIndices.hpp> 
+#include <UserInterface/columnIndices.hpp>
+#include <SMARTvalueRater.hpp>///class SMARTvalueRater
+#include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
 
 class SMARTmonitorClient 
   : public SMARTmonitorBase
@@ -25,6 +18,9 @@ public:
   SMARTmonitorClient();
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
+#ifdef _DEBUG
+  DWORD GetSMARTvalsAndUpd8UIthreadID = 0;
+#endif
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
   static fastestUnsignedDataType s_charPosOAttrNameBegin[ColumnIndices::beyondLast];
   static char * s_columnAttriuteNames [];
@@ -32,15 +28,13 @@ public:
   static bool s_atLeast1CriticalNonNullValue;
   static nativeThread_type s_updateSMARTparameterValuesThread;
   static fastestUnsignedDataType s_updateUI;
-  dataCarrierID2supportedSMARTattributesMap_type
+  dataCarrierID2supportedSMARTattrMap_type
     dataCarrierIDandSMARTidsContainer;
+  static SMARTvalueRater s_SMARTvalueRater;
   
   enum serverConnectionState {connectedToService, unconnectedFromService};
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
-  enum ConnectToServerResult{ connectionToServiceSucceeded = 0, 
-    errorOpeningSocket, getHostByNameFailed, errorConnectingToService };
-  enum SMARTvalueRating {noCriticalValue, SMARTvalueOK, SMARTvalueWarning };
   
   int m_socketFileDesc;
   fastestUnsignedDataType m_serviceConnectionCountDownInSeconds;
@@ -48,13 +42,18 @@ public:
   
   void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult);
   /** E.g. show a dialog that enables cancelling of connection in implementation. */
-  virtual void BeforeConnectToServer() = 0;
+  virtual void BeforeConnectToServer()/**Implement for not to override by a 
+    small test program*/{};
   virtual void GetTextFromUser(const char * label, std::string & ) { };
+  ///Called after connection attempt to the server.(either from the thread that
+  ///prepared the server connection or from another). So UI operations should 
+  /// be ensured to run in UI thread via events etc..)
+  ///Can be used to hide a "connect to server" window.
   virtual void AfterConnectToServer(int connectResult) { };
   void HandleConnectionError(const char * hostName);
   //TODO could use ByteArray datatype here
-  void GetSMARTdataViaXML(uint8_t * SMARTvalues, unsigned numBytesToRead,
-    /*std::set<SMARTuniqueIDandValues> & */ SMARTuniqueIDandValues &);
+  void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
+    fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
   virtual void ChangeState(enum serverConnectionState newState) { };
   void ConnectToServerAndGetSMARTvalues();
   void ConnectToServer();
@@ -62,13 +61,15 @@ public:
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
     uint8_t * xmlDataByteArray,
     fastestUnsignedDataType numBytesToRead,
-    dataCarrierID2supportedSMARTattributesMap_type & supportedSMARTattributess
+    dataCarrierID2supportedSMARTattrMap_type & supportedSMARTattributess
     );
   void EndUpdateUIthread();
   fastestUnsignedDataType GetSupportedSMARTidsFromServer();
   fastestSignedDataType ReadNumFollowingBytes();
-  fastestUnsignedDataType GetSMARTattributeValuesFromServer(//std::set<SMARTuniqueIDandValues> & 
+  fastestUnsignedDataType GetSMARTattrValsFromSrv(//std::set<SMARTuniqueIDandValues> & 
     );
+  ///Should be called in user interface thread? (because it calls functions to 
+  /// create the user interface)
   void GetSMARTvaluesAndUpdateUI();
   void HandleTransmissionError(enum TransmissionError transmissionError);
   
@@ -92,21 +93,23 @@ public:
     //SetSMARTdriveID();
     SetSMARTattribIDandNameLabel();
   }
+  void setIDandLabel(const fastestUnsignedDataType SMARTattrID, void * data);
+  void upd8rawAndH_andTime(const fastestUnsignedDataType SMARTattrID,
+    const SMARTuniqueIDandValues &, void * data);
   inline void UpdateTimeOfSMARTvalueRetrieval(
-    const SMARTuniqueID & sMARTuniqueID,
     const fastestUnsignedDataType SMARTattributeID,
-    const long int timeStampOfRetrieval);
+    const long int timeStampOfRetrieval, void * data);
   /*virtual*/ void UpdateSMARTvaluesUI();
   virtual void SetAttribute(
-    const SMARTuniqueID &, 
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
-    const enum SMARTvalueRating) {}
+    const enum SMARTvalueRating, /**e.g. pointer to list ctrl */void * data){}
   virtual void ShowStateAccordingToSMARTvalues(bool ) { }
   std::string m_stdstrServerAddress;
 protected:
+  tinyxml2::SrvDataProcessor srvDataProcessor;
 private:
 };
 

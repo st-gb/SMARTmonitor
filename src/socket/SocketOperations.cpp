@@ -1,21 +1,42 @@
+#include <sys/ioctl.h>///FIONREAD
 #include <sys/socket.h> //socket(...))
 #include <netinet/in.h> //sockaddr_in
-#include <netdb.h> //gethostbyname(...)
 #include <fcntl.h> //fcntl(...)
 
-#include "SocketOperations.h"
+//#include "SocketOperations.h"
 #include <client/SMARTmonitorClient.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 #include "OperatingSystem/GetLastErrorCode.hpp" //OperatingSystem::GetLastErrorCode()
 #include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
+#include <OperatingSystem/BSD/socket/prepCnnctToSrv.h>///prepCnnctToSrv(...)
+#include <OperatingSystem/BSD/socket/socketTimeout.h>///getSocketTimeout(...)
+
+using namespace OperatingSystem::BSD::sockets;
 
 fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
 {
   LOGN("reading 2 bytes from socket #" << m_socketFileDesc)
   uint16_t numDataBytesToRead;
   const size_t numBytesToRead = 2;
-  int numBytesRead = read(m_socketFileDesc, & numDataBytesToRead, numBytesToRead);
+  //https://stackoverflow.com/questions/3053757/read-from-socket:
+  int numBinRead = 0;
+  ioctl(m_socketFileDesc, FIONREAD, &numBinRead);
+  LOGN_DEBUG("# bytes in read buffer for socket:" << numBinRead)
+  //TODO connection to service error here when expecting data for the 2nd time 
+  // running the wx GUI. errno: 11 from GetSMARTattrValsFromSrv
+  // Maybe because the 2nd time is from another thread.
+  int numBytesRead =
+#ifdef use_recv
+    recv
+#else
+    read
+#endif
+      (m_socketFileDesc, & numDataBytesToRead, numBytesToRead
+#ifdef use_recv
+      ,0/**flags*/
+#endif
+      );
   if( numBytesRead < numBytesToRead ) {
     HandleTransmissionError(numBytesToReceive);
     return -1;
@@ -25,46 +46,91 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   return numDataBytesToRead;
 }
 
-fastestUnsignedDataType SMARTmonitorClient::GetSMARTattributeValuesFromServer(
+fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
 //  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer
   )
 {
-  LOGN("begin")
-  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValuesContainer = 
-    mp_SMARTaccess->GetSMARTuniqueIDandValues();
+  LOGN_DEBUG("begin")
+  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValsCont = 
+    SMARTuniqueIDsAndValues;
   enum transmission transmissionResult = unsetTransmResult;
-  sMARTuniqueIDandValuesContainer.clear();
+  //TODO this destroys the SMART unique ID object and so the pointer of the to 
+  // the event becomes invaled.
+//  sMARTuniqueIDandValsCont.clear();
+  //TODO if a data carrier is detached it does not disappear in 
+  // SMARTuniqueIDsAndValues?
   int numBytesRead;
+  ///Value is 0 if connect to server for the 2nd call of this function.
+  ///Value is garbage if connect to server in another thread for the 2nd call 
+  /// of this function.
+  /**Sometimes used the 1st 2 bytes from XML data ("<d" from "<data carrier ..."
+   * as num bytes (15460dec=3C64hex. due to multiple threads read from socket.*/
   fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
-  if( numBytesToRead < 1 )
+  if(numBytesToRead < 1){
+    LOGN_ERROR("read 0 B->return")
     return readLessBytesThanIntended;
+  }
   const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
-  uint8_t SMARTvalues[numBytesToAllocate];
-  if( SMARTvalues)
+  uint8_t SMARTdataXML[numBytesToAllocate];
+  if(SMARTdataXML)
   {
+    LOGN_DEBUG("read " << numBytesToRead << "B from socket file desc " <<
+      m_socketFileDesc)
+    //https://stackoverflow.com/questions/3053757/read-from-socket:
+    int numBinRead = 0;
+    ioctl(m_socketFileDesc, FIONREAD, &numBinRead);
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
-    numBytesRead = read(m_socketFileDesc, SMARTvalues, numBytesToRead);
+    numBytesRead =
+#ifdef use_recv
+      recv
+#else
+      read
+#endif
+        (m_socketFileDesc, SMARTdataXML, numBytesToRead
+#ifdef use_recv
+        ,0/**flags*/
+#endif
+        );
     //TODO often numBytesRead < numBytesToRead if this function is called from 
     //  "UpdateSMARTparameterValuesThreadFunc"
     if (numBytesRead < numBytesToRead) {
       HandleTransmissionError(SMARTparameterValues);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
+      std::string stdstrXML((char*)SMARTdataXML, numBytesRead);
+      LOGN_ERROR("content:" << stdstrXML)
       return readLessBytesThanIntended; //TODO provide error handling (show message to user etc.)
     }
-    SMARTvalues[numBytesToRead] = '\0';
+    SMARTdataXML[numBytesToRead] = '\0';
     SMARTuniqueIDandValues sMARTuniqueIDandValues;
-    GetSMARTdataViaXML(SMARTvalues, numBytesToRead, sMARTuniqueIDandValues);
+    
+    /**To let the values be updated in UI (same pointer to SMARTuniqueID object)
+    *:Create SMARTuniqueIDandValues object only via unique ID (no SMART values).
+    * Then search in the container via "sMARTuniqueIDandValsCont.find(
+    * sMARTuniqueIDandValues);" and  use the iterator.
+    * Alterantive:(slower?) also fill the SMART attribute values from the server
+    * data and copy to the SMARTuniqueIDandValues object if already contained in
+    * sMARTuniqueIDandValsCont after "sMARTuniqueIDandValsCont.insert(...)".*/
+    const bool succBeganSrvDataProc = srvDataProcessor.Begin(SMARTdataXML,
+      numBytesToRead);
+    if(succBeganSrvDataProc)
+      srvDataProcessor.GetSMARTuniqueID(sMARTuniqueIDandValues);
+    
     LOGN("SMART unique ID and values object " << & sMARTuniqueIDandValues )
     //sMARTuniqueIDandValuesContainer.f
     std::pair<std::set<SMARTuniqueIDandValues>::iterator, bool> insert = 
-      sMARTuniqueIDandValuesContainer.insert(sMARTuniqueIDandValues);
+      sMARTuniqueIDandValsCont.insert/*emplace*/(sMARTuniqueIDandValues);
     LOGN("insered object into container?:" << insert.second);
-    if(insert.second)
+    if(insert.second)///<=>not already contained/inserted
     {
       LOGN("SMART unique ID and values object in container:" << &(*insert.first) )
     }
+    if(succBeganSrvDataProc)
+      srvDataProcessor.GetSMARTrawValues(
+        /**Use the version from the container so it is ensured to use the same
+         * pointer to the SMARTuniqueID object.*/
+        (SMARTuniqueIDandValues &) *insert.first);
     //RebuildGUI();
     OperatingSystem::GetCurrentTime(m_timeOfLastSMARTvaluesUpdate);
 //    delete [] SMARTvalues;
@@ -75,23 +141,6 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattributeValuesFromServer(
   }
   LOGN("end")
   return successfull;
-}
-
-struct hostent * GetServerHostDataBaseEntry(const char * hostName)
-{
-  /** http://pubs.opengroup.org/onlinepubs/009695399/functions/gethostbyaddr.html :
-   * "Upon successful completion, these functions shall return a pointer to a 
-   * hostent structure if the requested entry was found, and a null pointer if 
-   * the end of the database was reached or the requested entry was not found.
-   * 
-   * Upon unsuccessful completion, gethostbyaddr() and gethostbyname() shall 
-   * set h_errno to indicate the error." */
-  struct hostent * p_serverHostDataBaseEntry = gethostbyname(hostName);
-  if (p_serverHostDataBaseEntry == NULL) {
-    //TODO check h_errno
-    LOGN_ERROR("host " << hostName << " not in database;error code:" << h_errno)
-  }
-  return p_serverHostDataBaseEntry;
 }
 
 struct SocketConnectThreadFuncParams
@@ -106,68 +155,7 @@ struct SocketConnectThreadFuncParams
   }
 };
 
-int GetConnectTimeOut(const int m_socketFileDesc)
-{
-//  std::string strMsg("connecting to ");
-//  strMsg += hostName;
-//  ShowMessage(strMsg.c_str()
-  //from http://stackoverflow.com/questions/4181784/how-to-set-socket-timeout-in-c-when-making-multiple-connections
-  struct timeval timevalSocketTimeout = { 10, 0};
-  socklen_t __optlen = sizeof(timevalSocketTimeout);
- 
-   int returnValue = setsockopt(m_socketFileDesc, SOL_SOCKET, SO_RCVTIMEO, 
-    /** https://linux.die.net/man/7/socket
-    * SO_RCVTIMEO and SO_SNDTIMEO
-    * "Specify the receiving or sending timeouts until reporting an error. 
-    * The argument is a struct timeval." */
-    (char *)& timevalSocketTimeout,
-    /** https://linux.die.net/man/2/getsockopt : 
-     * "For getsockopt(), optlen is a value-result argument, initially 
-     * containing the size of the buffer pointed to by optval, and modified on 
-     * return to indicate the actual size of the value returned." */
-    __optlen );
- 
-  returnValue = getsockopt(m_socketFileDesc, SOL_SOCKET, SO_RCVTIMEO, 
-    /** https://linux.die.net/man/7/socket
-    * SO_RCVTIMEO and SO_SNDTIMEO
-    * "Specify the receiving or sending timeouts until reporting an error. 
-    * The argument is a struct timeval." */
-    (char *)& timevalSocketTimeout,
-    /** https://linux.die.net/man/2/getsockopt : 
-     * "For getsockopt(), optlen is a value-result argument, initially 
-     * containing the size of the buffer pointed to by optval, and modified on 
-     * return to indicate the actual size of the value returned." */
-    & __optlen );
-  
-  returnValue = getsockopt(m_socketFileDesc, SOL_SOCKET, SO_SNDTIMEO, 
-    /** https://linux.die.net/man/7/socket
-    * SO_RCVTIMEO and SO_SNDTIMEO
-    * "Specify the receiving or sending timeouts until reporting an error. 
-    * The argument is a struct timeval." */
-    (char *)& timevalSocketTimeout,
-    /** https://linux.die.net/man/2/getsockopt : 
-     * "For getsockopt(), optlen is a value-result argument, initially 
-     * containing the size of the buffer pointed to by optval, and modified on 
-     * return to indicate the actual size of the value returned." */
-    & __optlen );
-  if(returnValue < 0)
-  {
-    const int lastOSerrorCode = OperatingSystem::GetLastErrorCode();
-    std::string st = OperatingSystem::EnglishMessageFromErrorCode(lastOSerrorCode);
-  }
-  socklen_t ntsnd = sizeof(ntsnd);
-  int SndTimeO;
-  //http://stackoverflow.com/questions/4181784/how-to-set-socket-timeout-in-c-when-making-multiple-connections
-  returnValue = getsockopt(m_socketFileDesc, SOL_SOCKET, SO_SNDTIMEO, 
-    (char *) & SndTimeO,
-                & ntsnd);
-  int timeout = 10000;
-  //https://linux.die.net/man/7/socket
-  returnValue = getsockopt(m_socketFileDesc, 6, 18, (char*) &timeout, & __optlen);
-  int socketTimeoutInS = 30;
-  return socketTimeoutInS;
-}
-
+///Non-Blocking is an alternative option to set a self-defined connect timeout.
 int ConnectToSocketNonBlocking(
   int socketFileDescriptor, 
   struct sockaddr_in & serv_addr, 
@@ -200,7 +188,9 @@ int ConnectToSocketNonBlocking(
       /** https://linux.die.net/man/2/select : 
         * "waiting until one or more of the file descriptors become
           "ready" for some class of I/O operation (e.g., input possible)."  */
-      result = select(socketFileDescriptor + 1, & readFileDescriptorSet, NULL, NULL, &socketConnectTimeout);
+      //TODO may take some (socketConnectTimeout) seconds->show timeout in UI
+      result = select(socketFileDescriptor + 1, & readFileDescriptorSet,
+        /**writefds*/NULL, /**exceptfds*/NULL, &socketConnectTimeout);
 //      int errorNumber = errno;
       if (result > 0) /** connected */
       {
@@ -289,50 +279,19 @@ DWORD SocketConnectThreadFunc(void * p_v)
   return -1;
 }
 
-inline int GetSocketFileDescriptor()
-{
-  /** http://pubs.opengroup.org/onlinepubs/009695399/functions/socket.html :
-   * "Upon successful completion, socket() shall return a non-negative integer, 
-   * the socket file descriptor. Otherwise, a value of -1 shall be returned 
-   * and errno set to indicate the error." */
-  const int socketFileDesc = socket(AF_INET, SOCK_STREAM,
-    /** socket.h : "If PROTOCOL is zero, one is chosen automatically." */
-    0 );
-  if (socketFileDesc < 0)
-  {
-    const unsigned long int lastOSerrorCode = OperatingSystem::GetLastErrorCode();
-    LOGN_ERROR("ERROR opening socket: OS error code " << lastOSerrorCode 
-      << " error message:" << OperatingSystem::EnglishMessageFromErrorCode(lastOSerrorCode) )
-  }
-  return socketFileDesc;
-}
-
 fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   const char * hostName, bool asyncConnect)
 {
-  //from http://www.linuxhowtos.org/data/6/client.c
-  int portNumber = m_socketPortNumber, n;
-  struct sockaddr_in serv_addr;
-  struct hostent * p_serverHostDataBaseEntry;
-  
-  m_socketFileDesc = GetSocketFileDescriptor();
-  if(m_socketFileDesc < 0)
-    return errorOpeningSocket;
-  LOGN("successfully opened socket");
-  
-  p_serverHostDataBaseEntry = GetServerHostDataBaseEntry(hostName);
-  if( ! p_serverHostDataBaseEntry )
-    return getHostByNameFailed;  
-  LOGN("got host name for \"" << hostName << "\":" << p_serverHostDataBaseEntry->h_name)
-
-  bzero( (char *) & serv_addr, sizeof(serv_addr) );
-  serv_addr.sin_family = AF_INET;
-  bcopy( (char *) p_serverHostDataBaseEntry->h_addr,
-    (char *) & serv_addr.sin_addr.s_addr,
-    p_serverHostDataBaseEntry->h_length);
-  serv_addr.sin_port = htons(portNumber);
-  
-  int connectTimeoutInSeconds = GetConnectTimeOut(m_socketFileDesc);
+  struct sockaddr_in srvAddr;
+  fastestUnsignedDataType prepCnnctToSrvRslt = prepCnnctToSrv(hostName,
+    m_socketPortNumber, & srvAddr, AF_INET, & m_socketFileDesc);
+  if(prepCnnctToSrvRslt != prepCnnctToSrvSucceeded)
+    return prepCnnctToSrvRslt;
+  ///TCP: client sends "SYN"; server sends "ACK", client "SYNACK"
+  double cnnctTimeoutInS;
+  GetSocketTimeoutInS(m_socketFileDesc, & cnnctTimeoutInS);
+  if(cnnctTimeoutInS == 0)///0 means ca. 90s under Linux.
+    cnnctTimeoutInS = 30;
 //  MessageBox msgBox();
   
   DWORD currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
@@ -341,22 +300,28 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
 //  if( currentThreadNumber == s_UserInterfaceThreadID)
 //  {
 //  }
+#ifdef multithread
   if( asyncConnect )
   {
-    ShowConnectionState(hostName, connectTimeoutInSeconds);
+    ShowConnectionState(hostName, cnnctTimeoutInS);
     //TODO make as member variable (else is deleted if this block ends).
     nativeThread_type connectThread;
     SocketConnectThreadFuncParams * p_socketConnectThreadFuncParams = new 
-      SocketConnectThreadFuncParams {m_socketFileDesc, serv_addr, this, connectTimeoutInSeconds };
+      SocketConnectThreadFuncParams {m_socketFileDesc, srvAddr, this,
+        (fastestUnsignedDataType)cnnctTimeoutInS };
     /** call in another thread in order to enable breaking connection */
     connectThread.start(SocketConnectThreadFunc, p_socketConnectThreadFuncParams);
     BeforeConnectToServer();
   }
   else
-    return ConnectToSocketNonBlocking(
-      m_socketFileDesc, 
-      serv_addr, 
-      connectTimeoutInSeconds);
+#endif
+  /** http://man7.org/linux/man-pages/man2/connect.2.html :
+      "If the connection or binding succeeds, zero is returned." */
+//    return ConnectToSocketNonBlocking(
+//      m_socketFileDesc, 
+//      serv_addr, 
+//      connectTimeoutInSeconds);
+    return connect(m_socketFileDesc, (struct sockaddr *) & srvAddr, sizeof(srvAddr) );
 //  ShowConnectToServerStatus("cancel connection");
 //  close(m_socketFileDesc);
 //  connectThread.WaitForTermination();
@@ -382,7 +347,10 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName)
     m_stdstrServiceHostName << ",port:" << m_socketPortNumber << "\n";
   //TODO the following is Linux-specific and should be OS-independent
   //see http://man7.org/linux/man-pages/man2/connect.2.html
-  switch(errno )
+  //TODO errno must come from connect(...), no other function call inbetween
+  //TODO use error description from common_sourcecode/.../BSD/socket
+  //BlockingCnnct::getoPossibleCause
+  switch(errno)
   {
     //see http://man7.org/linux/man-pages/man2/connect.2.html
     case ECONNREFUSED :

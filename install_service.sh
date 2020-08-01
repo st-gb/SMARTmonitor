@@ -1,10 +1,16 @@
+#!/bin/bash
+# "[[" needs bash
+
 #from https://www.digitalocean.com/community/tutorials/how-to-configure-a-linux-service-to-start-automatically-after-a-crash-or-reboot-part-1-practical-examples
 
 # https://en.wikipedia.org/wiki/Linux_startup_process#Init_process
 # Google: "detect init type Linux"
 # https://linuxconfig.org/detecting-which-system-manager-is-running-on-linux-system
+#https://unix.stackexchange.com/questions/106656/how-do-services-in-debian-work-and-how-can-i-manage-them
+# answered Dec 26 '13 at 14:32:  SysVinit, Systemd, Upstart
 
-#from https://unix.stackexchange.com/questions/18209/detect-init-system-using-the-shell
+#from Ben McCann Mar 13 '16 at 4:43
+#https://unix.stackexchange.com/questions/18209/detect-init-system-using-the-shell
 detect_distro()
 {
   # init process is pid 1
@@ -42,16 +48,16 @@ detect_distro
 
 SMART_MONITOR_SERVICE_PATH=SMARTmonitor_service
 
-#System V:
-sudo cp SMARTmonitor_service /usr/sbin
-sudo cp SMARmonitor_daemon_init.d_script /etc/init.d/SMARTmonitor_deamon
-sudo chmod a+x /etc/init.d/SMARTmonitor_deamon
-sudo update-rc.d SMARTmonitor_deamon enable
+#TODO change to "case"?: case "$SYSTEMINITDAEMON" in SystemV)
+if [ $SYSTEMINITDAEMON = "SystemV" ]; then
+  install_service_sysV.sh
+fi;
 
 #Upstart
 #if [ $SYSTEMINITDAEMON == upstart ]; then
 # /etc/init/>>service<<.conf
 
-# systemd:
-#  sudo systemctl enable service.service
+if [ $SYSTEMINITDAEMON = "systemd" ]; then
+  ../Linux/install_service_systemd.sh
+fi;
 

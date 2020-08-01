@@ -1,12 +1,14 @@
-/*
- * SMARTuniqueID.cpp
- *
- *  Created on: 05.08.2016
- *      Author: sg
- */
+/** SMARTuniqueID.cpp
+ * Created on: 05.08.2016
+ * Author:Stefan Gebauer, M.Sc.Comp.Sc.*/
 
+///standard C/C++ libs
+#include <sstream>///class std::ostringstream
 #include <string.h> //strcmp
+
 #include "SMARTuniqueID.hpp" //struct SMARTuniqueID
+///numSMART_FWbytes, numSMARTmodelBytes, numSMART_FWbytes
+#include <hardware/dataCarrier/ATA3Std.h>
 
 #define STRING_ARE_IDENTICAL 0
 
@@ -30,31 +32,21 @@ bool operator < (const SMARTuniqueID & left,
   return false;
 }
 
-#ifdef __linux__
-  SMARTuniqueID::SMARTuniqueID(const SkIdentifyParsedData & l)
-  {
-    strncpy(m_firmWareName, l.firmware, 9);
-    strncpy(m_modelName, l.model, 41);
-    strncpy(m_serialNumber, l.serial, 21);
-//    LOGN("SMART unique ID:" << str() )
-  }
-
   SMARTuniqueID::~SMARTuniqueID()
   {
 //    delete [] firmware; firmware = NULL;
 //    delete [] model; model = NULL;
 //    delete [] serial; serial = NULL;
   }
-#endif
 
   void SMARTuniqueID::SetModelName(const char * modelName) {
-    strncpy(m_modelName, modelName, 41);
+    strncpy(m_modelName, modelName, numSMARTmodelBytes+1);
   }
   void SMARTuniqueID::SetFirmwareName(const char * firmwareName) {
-    strncpy(m_firmWareName, firmwareName, 9);
+    strncpy(m_firmWareName, firmwareName, numSMART_FWbytes+1);
   }
   void SMARTuniqueID::SetSerialNumber(const char * serialNumber) {
-    strncpy(m_serialNumber, serialNumber, 21);
+    strncpy(m_serialNumber, serialNumber, numSMART_SNbytes);
   }
 
   std::string SMARTuniqueID::str() const
@@ -71,12 +63,26 @@ bool operator < (const SMARTuniqueID & left,
     return ostr;
   }*/
 
+//TODO add parameter for max items?
+void SMARTuniqueID::copyArr(const fastestUnsignedDataType orig [],
+  fastestUnsignedDataType cpy [])
+{
+  for(fastestUnsignedDataType idx = 0; idx < numDifferentSMART_IDs ; idx++ ){
+    cpy[idx] = orig[idx];
+    if(orig[idx] == 0)
+      break;
+  }
+}
+
 //see https://en.wikipedia.org/wiki/Assignment_operator_(C%2B%2B)
-SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & l)
+SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & orig)
 {
 //  SMARTuniqueID copy;
-  strncpy(m_firmWareName, l.m_firmWareName, 9);
-  strncpy(m_modelName, l.m_modelName, 41);
-  strncpy(m_serialNumber, l.m_serialNumber, 21);
+  strncpy(m_firmWareName, orig.m_firmWareName, numSMART_FWbytes+1);
+  strncpy(m_modelName, orig.m_modelName, numSMARTmodelBytes+1);
+  strncpy(m_serialNumber, orig.m_serialNumber, numSMART_SNbytes+1);
+  
+  copyArr(orig.m_SMART_IDsToRd, m_SMART_IDsToRd);
+  copyArr(orig.supportedSMART_IDs, supportedSMART_IDs );
   return *this;
 }

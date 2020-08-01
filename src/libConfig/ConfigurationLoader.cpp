@@ -21,10 +21,10 @@ namespace libConfig
 {
 
   ConfigurationLoader::ConfigurationLoader(
-    std::set<SMARTentry> & smartAttributesToObserve,
+    SMARTmonitorBase::SMARTattrDefType & sMARTattrDefs,
     SMARTmonitorBase & r_userInterface
     )
-    : ConfigurationLoaderBase(smartAttributesToObserve, r_userInterface)
+    : ConfigurationLoaderBase(sMARTattrDefs, r_userInterface)
       //, m_r_SMARTmonitorBase(r_userInterface)
   {
   }
@@ -105,7 +105,7 @@ namespace libConfig
         SMARTattributeID = (int) SMARTattributeIDSetting;
         LOGN("adding SMART attribute with ID " << (int) SMARTattributeIDSetting << 
           " as SMART parameter to observe/monitor")
-          m_r_SMARTmonitorBase.m_IDsOfSMARTattributesToObserve.insert(SMARTattributeID);
+          m_r_SMARTmonitorBase.m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
       }
     }
   }
@@ -125,14 +125,14 @@ namespace libConfig
 //    m_smartAttributesToObserve.clear();
     mp_smartAttributes->clear();
     try {
-      SMARTentry sMARTentry;
+      SMARTattrDef sMARTattrDef;
         //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
 
       ReadNetworkConfig(* p_root);
       GetSMARTattributesToObserve(* p_root);
 
       const libconfig::Setting & SMART_parameters =
-        r_root["SMART_parameters"];        
+        r_root["SMART_parameters"];
       const int numCritical_SMART_parameters = SMART_parameters.getLength();
       std::tstring std_tstr;
       bool criticalSMARTattribute = false;
@@ -164,7 +164,7 @@ namespace libConfig
           }
           else
             criticalSMARTattribute = false;
-          sMARTentry.SetCritical(criticalSMARTattribute);
+          sMARTattrDef.SetCritical(criticalSMARTattribute);
           LOGN_DEBUG("Critical value for " << 
             smartAttributeID << ":" << criticalSMARTattribute )
           if( //successfullyLookedUpID &&
@@ -172,19 +172,19 @@ namespace libConfig
               //&& successfullyLookedUpDetails
             )
           {
-            sMARTentry.SetAttributeID(smartAttributeID);
+            sMARTattrDef.SetAttributeID(smartAttributeID);
             attributeNamesFromConfigFile.insert(std_strAttribName);
             std::set<std::string>::const_iterator citer =
               attributeNamesFromConfigFile.find(std_strAttribName);
             if( citer != attributeNamesFromConfigFile.end() )
               //use pointer from member var instead of from stack.
-              sMARTentry.SetName(std_strAttribName.c_str() );
+              sMARTattrDef.SetName(std_strAttribName.c_str() );
 
             /*m_smartAttributesToObserve.*/ mp_smartAttributes->insert(
-              /*std::make_pair(smartAttributeID,*/ sMARTentry//)
+              /*std::make_pair(smartAttributeID,*/ sMARTattrDef//)
               );
           LOGN_DEBUG( "using SMART entry at address " << 
-            &  (* mp_smartAttributes->find(sMARTentry) ) )
+            &  (* mp_smartAttributes->find(sMARTattrDef) ) )
             LOGN("adding SMART ID" << smartAttributeID << "to " 
                 << mp_smartAttributes)
           }

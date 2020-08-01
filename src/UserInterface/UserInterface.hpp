@@ -22,11 +22,13 @@ public:
   };
   ~UserInterface() { }
   virtual void ShowMessage(const char * const ) const = 0;
+  ///messageType e.g. for filtering/highlighting errors coloured (red etc.).
   virtual void ShowMessage(const char * const, enum MessageType::messageTypes msg) const = 0;
   virtual void ShowConnectionState(const char * const pch, int timeOut) {}
   
   static std::string GetTimeAsString(const struct tm & timeOfLastSMARTvaluesUpdate);
-  static void FormatTimeOfLastUpdate(
+  inline static void FmtViaOSS(const unsigned long timeInMs, std::string &);
+  static void FormatTime(
     long int timeStampOfRetrievalIn1ks, 
     std::string & timeFormatString);
 };

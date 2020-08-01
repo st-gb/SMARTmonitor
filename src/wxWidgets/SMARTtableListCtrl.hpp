@@ -13,12 +13,12 @@
 namespace wxWidgets
 {
 
-  class SMARTtableListCtrl
-    : public wxListCtrl
-  {
-  private:
-    fastestUnsignedDataType m_SMARTattribIDtoLineNumber[255];
-  public:
+class SMARTtableListCtrl
+  : public wxListCtrl
+{
+private:
+public:
+  fastestUnsignedDataType m_SMARTattribIDtoLineNumber[numDifferentSMART_IDs+1];
     SMARTtableListCtrl(
       wxWindow * parent,
       wxWindowID id = wxID_ANY,
@@ -28,14 +28,14 @@ namespace wxWidgets
 //      this, wxID_ANY, wxDefaultPosition,
 //      wxDefaultSize, wxLC_REPORT
       );
-    /** @brief Before a list item can be changed via "SetItem" it needs to be 
-     * inserted.*/
-    void CreateLines();
+  /** @brief Before a list item can be changed via "SetItem" it needs to be 
+   * inserted.*/
+  void CreateLines(const SMARTuniqueID &);
     void SetSMARTattribValue(
       fastestUnsignedDataType SMARTattributeID,
       fastestUnsignedDataType columnIndex,
       const wxString & wxstrValue,
-      const enum SMARTmonitorClient::SMARTvalueRating);
+      const enum SMARTvalueRating);
     virtual
     ~SMARTtableListCtrl();
   };

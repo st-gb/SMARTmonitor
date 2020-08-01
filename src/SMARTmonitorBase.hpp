@@ -6,13 +6,16 @@
 #define SMARTMONITORBASE_HPP
 
 #include <string> //std::wstring
-#include <Process/CommandLineArgs.hpp> //class CommandLineArgs
+#include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
+///struct CommandLineOption
+#include <OperatingSystem/Process/CommandLineOption.hpp>
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <SMARTvalueProcessorBase.hpp> //
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <set> //class std::set
-#include <Process/CommandLineOption.hpp>
+#include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
+#include <SMARTaccType.hpp>///typedef SMARTaccess_type
 
 /** Forward declarations: */
 class ConfigurationLoaderBase;
@@ -23,15 +26,30 @@ class SMARTmonitorBase;
 struct GetSMARTvaluesFunctionParams
 {
   SMARTmonitorBase * p_SMARTmonitorBase;
-  //pointer to member functio of SMARTmonitorBase
+  //pointer to member function of SMARTmonitorBase
   typedef fastestUnsignedDataType (SMARTmonitorBase::*GetSMARTvaluesFunctionType)();
   GetSMARTvaluesFunctionType p_getSMARTvaluesFunction = NULL;
 };
 
 /** Use character type in order to pass to to CommandLineArgs member variable*/
-/*template<typename charType>*/ class SMARTmonitorBase
+/*template<typename charType>*/
+///Base class for all clients/services. Operations and attributes that can be 
+// used by all are located here.
+class SMARTmonitorBase
   : public UserInterface
 {
+public:
+  ///attr=attribute Def=definition Cont=container
+  typedef std::/*set<SMARTattrDef>*/ map<unsigned,SMARTattrDef> 
+    SMARTattrDefContType;
+  typedef SMARTattrDef * SMARTattrDefsType;
+  typedef const SMARTattrDefContType constSMARTattrDefContType;
+  typedef SMARTattrDefContType::const_iterator 
+    SMARTattrContConstIterType;
+//  SMARTattrDefContType SMARTattrDefs;
+  typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
+protected:
+  SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
 public:
   SMARTmonitorBase();
   //template<typename charType>
@@ -47,7 +65,9 @@ public:
    *  ::UpdateSMARTparameterValuesThreadFunc(...) is not possible because
    *  the stack content is popped and changed afterwards.) */
   struct GetSMARTvaluesFunctionParams m_getSMARTvaluesFunctionParams;
-
+  SMARTuniqueIDandValsContType & GetSMARTuniqueIDsAndVals() { return 
+    SMARTuniqueIDsAndValues; }
+  
   enum programOptionNames { logFileFolder = 0, 
     /** This is used for service clients (i.e. TUIs/GUIs) to specify the 
      *  service address etc.*/
@@ -83,7 +103,7 @@ public:
    *  (Only methods of this class can be used there, but becase the method
    *  is virtual it passes execution to the implementation in 
    *  SMARTmonitorClient.) */
-  virtual fastestUnsignedDataType GetSMARTattributeValuesFromServer() {}
+  virtual fastestUnsignedDataType GetSMARTattrValsFromSrv() {}
   fastestUnsignedDataType ProcessCommandLineArgs();
   void HandleLogFileFolderProgramOption(std::wstring & cmdLineOptionValue);
   fastestUnsignedDataType InitializeSMART();
@@ -93,9 +113,15 @@ public:
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
   virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const;
+#ifdef directSMARTaccess
   SMARTaccess_type * mp_SMARTaccess;
+  SMARTaccess_type m_SMARTaccess;
   SMARTvalueProcessorBase m_SMARTvalueProcessor;
+#endif
   void SetCommandLineArgs(int argc, char ** argv);
+#ifdef multithread
+  ///Should be usable by different targets, e.g. service, wxWidgets or curses
+  /// client. Therefore the parameters.
   void StartAsyncUpdateThread(
     //GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
     struct GetSMARTvaluesFunctionParams & getSMARTvaluesFunctionParams);
@@ -103,7 +129,8 @@ public:
     GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
       getSMARTvaluesFunctionType
     );
-  fastestUnsignedDataType UpdateSMARTvaluesThreadSafe();
+#endif
+  fastestUnsignedDataType Upd8SMARTvalsDrctlyThreadSafe();
   virtual void BeforeWait() { }
   virtual void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult) { }
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
@@ -119,14 +146,24 @@ public:
   //TODO this member isn't needed for the service
   std::string m_stdstrServiceHostName;
   fastestUnsignedDataType m_retryWaitTimeInS;
-  void InitializeLogger();
-  std::set<int> m_IDsOfSMARTattributesToObserve;
+  bool InitializeLogger();
+  void EnsureSMARTattrToObsExist();
+  ///A std::set ensures no double entries exist.
+  /// Only SMART attr IDs in this container are read and updated in UI.
+  typedef std::set<int> SMARTattrToObsType;
+  //TODO this should be per data carrier? Because if nothing is specified it 
+  // could get the S.M.A.R.T. IDs to observe from the supported S.M.A.R.T. 
+  // attributes list (via direct S.M.A.R.T. access). And the supported 
+  // S.M.A.R.T. IDs differ between drives.
+  SMARTattrToObsType m_IDsOfSMARTattrsToObserve;
+  fastestUnsignedDataType m_SMARTattrIDsToObs[numDifferentSMART_IDs];
+  fastestUnsignedDataType GetNumSMARTattrToObs(){return m_IDsOfSMARTattrsToObserve.size(); }
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
   void OutputUsage();
   CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}
   
   std::wstring GetCommandLineOptionValue(const wchar_t * const cmdLineOptionName);
-  void GetCommandOptionNameAndValue(
+  void GetCmdLineOptionNameAndValue(
     fastestUnsignedDataType & programArgumentIndex,
     std::wstring & cmdLineOptionName,
     std::wstring & cmdLineOptionValue
@@ -134,7 +171,6 @@ public:
   std::wstring GetCommandOptionName(std::wstring & cmdLineArg);
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
   
-  typedef std::map<SMARTuniqueID,std::string> dataCarrierID2devicePath_type;
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
@@ -145,8 +181,9 @@ protected:
 //  libConfig::ConfigurationLoader configurationLoader;
   ConfigurationLoaderBase * mp_configurationLoader;
   CommandLineArgs</*charType*/ wchar_t> m_commandLineArgs;
+#ifdef multithread
   nativeThread_type m_updateSMARTparameterValuesThread;
-
+#endif
   //std::wstring m_cmdLineArgVector;
 private:
   void ConstructConfigFilePathFromExeDirPath(
@@ -156,6 +193,8 @@ private:
     const std::wstring & stdwstrAbsoluteFilePath,
     const std::wstring & stdwstrThisExecutable_sFilePath);
 };
+DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
+  void * p_v);
 
 #endif /* SMARTMONITORBASE_HPP */
 

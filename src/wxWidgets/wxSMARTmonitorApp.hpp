@@ -17,7 +17,6 @@
 //#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase
 #include <client/SMARTmonitorClient.h> //base class SMARTmonitorClient
 //#include <libATA_SMART/SMARTaccess.hpp>
-#include <wxWidgets/wxSMARTvalueProcessor.hpp> //class wxWidgets::wxSMARTvalueProcessor
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
 
 /** Forward declarations: */
@@ -27,7 +26,6 @@ class ConnectToServerDialog;
 class wxSMARTmonitorApp
   : public wxApp, public /*SMARTmonitorBase*/ SMARTmonitorClient
 {
-  wxWidgets::wxSMARTvalueProcessor m_wxSMARTvalueProcessor;
   ConnectToServerDialog * m_pConnectToServerDialog/*(pch, timeOut )*/;
   wxTimer m_wxtimer;
 public:
@@ -39,6 +37,7 @@ public:
   //static const wxString appName;
   TaskBarIcon * m_taskBarIcon;
   static fastestUnsignedDataType s_GUIthreadID;
+  std::map<fastestUnsignedDataType,const SMARTuniqueID *> m_evtID2SMARTuniqueID;
   wxSMARTmonitorApp();
   virtual
   ~wxSMARTmonitorApp();
@@ -59,12 +58,11 @@ public:
   bool GetSMARTstatusUnknownIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
   void SetAttribute(
-    const SMARTuniqueID &, 
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
-    const enum SMARTvalueRating);
+    const enum SMARTvalueRating, void * data);
   void ShowConnectionState(const char * const pch, int timeOut);
   void ShowMessage(const char * const ) const;
   void ShowMessage(const char * const, enum MessageType::messageTypes msg) const;

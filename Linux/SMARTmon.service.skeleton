@@ -1,0 +1,31 @@
+#see http://tuxgraphics.org/npa/systemd-scripts/
+# "systemd-analyze verify /usr/lib/systemd/system/your_cmd.service"
+#https://www.freedesktop.org/software/systemd/man/systemd.syntax.html:
+# "General syntax of systemd configuration files"
+#https://www.freedesktop.org/software/systemd/man/systemd.service.html
+# "man systemd.service"
+[Unit]
+Description=S.M.A.R.T. monitor
+#network is mandatory, drives may also needed to be mounted before 
+After=network.target
+
+[Service]
+#https://www.freedesktop.org/software/systemd/man/systemd.service.html:
+#"generally recommended to use Type=simple for long-running services whenever possible"
+Type=simple
+#Type=notify
+
+#"SMARTmonWorkDir" is replaced via the installation script
+WorkingDirectory=SMARTmonWorkDir
+#"ExecStart":The command to start
+#If relative path then error "Failed to start SMARTmon.service: Unit
+# SMARTmon.service is not loaded properly: Exec format error." and
+# "Executable path is not absolute" running "systemctl status SMARTmon.service"
+ExecStart=SMARTmonWorkDir/SMARTmonitor_service logfilefolder=/run/
+#Restart=on-failure
+#LimitNOFILE=10000
+
+[Install]
+#https://unix.stackexchange.com/questions/404667/systemd-service-what-is-multi-user-target
+#When to start the service? multi-user.target = runlevel 2-4?
+WantedBy=multi-user.target

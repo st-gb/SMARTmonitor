@@ -25,6 +25,7 @@
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <wx/taskbar.h>
 #include <wx/filefn.h> //wxFILE_SEP_PATH
+///GCC_DIAG_ON(...), GCC_DIAG_OFF(...) preprocessor macros
 #include "compiler/GCC/enable_disable_warning.h"
 /** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
  *  to ‘char*’" when including the "xpm" file */
@@ -37,8 +38,11 @@ GCC_DIAG_ON(write-strings)
 #include <iostream> //class std::cerr
 #include <OperatingSystem/multithread/GetCurrentThreadNumber.hpp>
 #include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
-#include <Windows/HideMinGWconsoleWindow.h>
+#ifdef MinGW
+#include <OperatingSystem/Windows/HideMinGWconsoleWindow.h>
+#endif
 #include <FileSystem/File/FileException.hpp>
+#include <FileSystem/PathSeperatorChar.hpp>///dirSeperatorCharW
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(..)
 #include "ConnectToServerDialog.hpp"
@@ -79,6 +83,9 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
   , m_wxtimer(this, TIMER_ID)
 {
   s_GUIthreadID = GetCurrentThreadNumber();
+#ifdef multithread
+  I_Thread::SetCurrentThreadName("UI");
+#endif
   //InitializeLogger(); 
   //mp_SMARTaccess = & m_wxSMARTvalueProcessor.getSMARTaccess();
   //LOGN("SMART access pointer:" << mp_SMARTaccess)
@@ -93,8 +100,9 @@ IMPLEMENT_APP(wxSMARTmonitorApp)
 void wxSMARTmonitorApp::CreateTaskBarIcon()
 {
   /** wxTaskBarIcon::IsAvailable exists since wxWidgets 2.9.0 */
-#if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8
-  if ( wxTaskBarIcon::IsAvailable() )
+#if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8 || wxMAJOR_VERSION > 2
+  if (///https://docs.wxwidgets.org/trunk/classwx_task_bar_icon.html#a287bb3303f01651f50c8de17e314a147;
+     /** "Since 2.9.0*/ wxTaskBarIcon::IsAvailable() )
     wxGetApp().m_taskBarIcon = new TaskBarIcon();
   else
   {
@@ -146,7 +154,8 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNon
   else
     ShowSMARTokIcon();
 }
-/** Usually called via wxWidgets events.(from another thread) */
+/** Usually called via wxWidgets events (from another thread) to run in user 
+ * interface thread.*/
 void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 {
   if( m_pConnectToServerDialog )
@@ -229,8 +238,14 @@ void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
   m_ar_stdwstrCmdLineArgs = new std::wstring[argc];
   //TODO move to "common_sourcecode"
   for(fastestUnsignedDataType index = 0; index < argc; ++index)
-  {
-    m_ar_stdwstrCmdLineArgs[index] = wxWidgets::GetStdWstring_Inline(argv[index]);
+  { //TODO accessing "argv[]" and converting to std::wstring be too inefficient.
+    m_ar_stdwstrCmdLineArgs[index] = wxWidgets::GetStdWstring_Inline(
+      ///"wxAppConsoleBase.argv" has type "wxCmdLineArgsArray" if wxUSE_UNICODE
+      /// is defined (in wxWidgets 3.0?) wxCmdLineArgsArray::operator [] returns
+      /// a wxString from wxArrayString::operator []
+      argv[/**wxCmdLineArgsArray's operator []" has parameter type "size_t" or
+       * "int", so cast.*/ (size_t) index].c_str()
+      );
     LOGN( (index+1) << ". program argument:" << m_ar_stdwstrCmdLineArgs[index])
     m_cmdLineArgStrings[index] = m_ar_stdwstrCmdLineArgs[index].c_str();
   }
@@ -269,15 +284,20 @@ bool wxSMARTmonitorApp::OnInit()
   CreateTaskBarIcon();
   /** Show a dialog. Else when displaying messages no icon appears in the
    *  task bar and this not able to switch there with alt+Tab.*/
-  gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor"), //m_wxSMARTvalueProcessor
-    m_SMARTvalueProcessor);
+  gs_dialog = new SMARTdialog(wxT("wxS.M.A.R.T. monitor")//,
+    //m_wxSMARTvalueProcessor
+    /*m_SMARTvalueProcessor*/);
   gs_dialog->Show(true);
   GetSMARTokayIcon(s_SMARTokIcon);
   GetSMARTstatusUnknownIcon(s_SMARTstatusUnknownIcon);
   GetSMARTwarningIcon(s_SMARTwarningIcon);  
 
+  LogLevel::CreateLogLevelStringToNumberMapping();
   ProcessCommandLineArgs(); /** May display messages. */
-  InitializeLogger();
+  const bool succInitedLogger = InitializeLogger();
+  if(! succInitedLogger)
+    return false;
+  LOGN_DEBUG("Logger initialized")///For testing if logging is running.
   //m_wxSMARTvalueProcessor.Init();
   //InitializeSMART();
   try
@@ -310,8 +330,15 @@ bool wxSMARTmonitorApp::OnInit()
     else 
       if( initSMARTresult == SMARTaccessBase::success)
     {
+      EnsureSMARTattrToObsExist();
       //TODO exchange by wxGetApp().StartAsyncUpdateThread();
-      gs_dialog->StartAsyncUpdateThread();
+      //GetSMARTvaluesFunctionParams getSMARTvaluesFunctionParams;
+//      m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
+//        & SMARTmonitorBase::UpdateSMARTvaluesThreadSafe;
+//      StartAsyncUpdateThread(m_getSMARTvaluesFunctionParams);
+      //gs_dialog->m_pwxlistctrl->SetItemCount(NUM_DIFFERENT_SMART_ENTRIES);
+      gs_dialog->ReBuildUserInterface();
+      gs_dialog->StartAsyncDrctUpd8Thread();
     }
 //    else if( result == SMARTaccessBase::noSingleSMARTdevice )
 //      return false;
@@ -350,15 +377,39 @@ bool wxSMARTmonitorApp::GetIcon(
     iconFileName += wxT("xpm");
   #endif
 
-  bool bIconFileSuccessfullyLoaded = icon.LoadFile(
-    iconFileName,
+  ///https://forums.wxwidgets.org/viewtopic.php?t=1696
+  wxLogNull noDbgMsgs;///Disable wxWigets (debug) messages when loading file.
+
+  bool bIconFileSuccessfullyLoaded = false;
+  wxString iconFilePath;
+#ifdef __linux__
+  ///Path after installing via deb package manager.
+  //TODO maybe pass this path from cmake to also use in createDebPkg.cmake
+  iconFilePath = wxT("/usr/local/SMARTmonitor");
+#else
+  iconFilePath = wxGetCwd();
+#endif
+  iconFilePath += wxFILE_SEP_PATH + iconFileName;
+  bIconFileSuccessfullyLoaded = icon.LoadFile(
+    iconFilePath,
     wxbitmapType);
-  if( ! bIconFileSuccessfullyLoaded)
+  if(! bIconFileSuccessfullyLoaded)
   {
-    wxMessageBox( wxT("Loading icon file \n\"") + wxGetCwd() +
-      wxFILE_SEP_PATH + iconFileName + wxT( "\" failed") );
-    /** Loading a (custom) icon from file failed, so provide a pre-defined one.*/
-    icon = wxIcon(inMemoryIcon);
+    /**The 1st program argument Is not always the _full_ path of the executable
+     * ?, e.g. no directory when in "PATH" environment variable?
+     * Alternative: OperatingSystem::Process::GetCurrExePath(); */
+    std::wstring exeFilePath = m_commandLineArgs.GetProgramPath();
+    std::wstring exeFileDir = exeFilePath.substr(0,
+      exeFilePath.rfind(FileSystem::dirSeperatorCharW) +1);
+    wxString iconFilePath2 = getwxString_inline(exeFileDir) + iconFileName;
+
+    bIconFileSuccessfullyLoaded = icon.LoadFile(iconFilePath2, wxbitmapType);
+    if(! bIconFileSuccessfullyLoaded){
+      wxMessageBox( wxT("Loading icon file(s)\n-\"") +
+        iconFilePath + wxT("\"\n-\"") + iconFilePath2 + wxT("\"\n failed") );
+      ///Loading a (custom) icon from file failed, so provide a pre-defined one.
+      icon = wxIcon(inMemoryIcon);
+    }
   }
   return bIconFileSuccessfullyLoaded;
 }
@@ -381,18 +432,24 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 }
 
 void wxSMARTmonitorApp::SetAttribute(
-  const SMARTuniqueID & sMARTuniqueID, 
   fastestUnsignedDataType SMARTattributeID,
   const enum ColumnIndices::columnIndices & columnIndex,
   const std::string & std_strValue,
-  const enum SMARTvalueRating sMARTvalueRating
+  const enum SMARTvalueRating sMARTvalueRating,
+  void * data///which list control to use
   )
 {
   wxString wxstrValue = wxWidgets::GetwxString_Inline(std_strValue );
   //TODO: Maybe implement this in class wxWidgets::SMARTtableListCtrl as this 
   //should avoid 2 times a pointer dereference -> performs better or in 
   //SMARTmonitorDialog as param. "sMARTuniqueID" needs to be taken into account
-  gs_dialog->m_pwxlistctrl->SetSMARTattribValue(
+  
+  wxWidgets::SMARTtableListCtrl * wxSMARTtableListCtrl;
+  if(data == NULL)
+    wxSMARTtableListCtrl = gs_dialog->m_pwxlistctrl;
+  else
+    wxSMARTtableListCtrl = (wxWidgets::SMARTtableListCtrl *) data;
+  wxSMARTtableListCtrl->SetSMARTattribValue(
     /*lineNumber*/ SMARTattributeID, //long index
     columnIndex /** column #/ index */,
     wxstrValue,
