@@ -5,17 +5,25 @@
 #ifndef SMARTMONITORBASE_HPP
 #define SMARTMONITORBASE_HPP
 
-#include <string> //std::wstring
+///Standard C(++) header files:
+#include <set>///class std::set
+#include <string>///class std::wstring
+
+///common_sourcecode repository header files:
+#include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
 ///struct CommandLineOption
 #include <OperatingSystem/Process/CommandLineOption.hpp>
+
+#include <attributes/SMARTattrDefAccss.hpp>///base class SMARTattrDefAccss
+#include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <SMARTvalueProcessorBase.hpp> //
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
-#include <OperatingSystem/multithread/nativeThreadType.hpp>
-#include <set> //class std::set
-#include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
-#include <SMARTaccType.hpp>///typedef SMARTaccess_type
+
+#if directSMARTaccess
+  #include <SMARTaccType.hpp>///typedef SMARTaccess_type
+#endif
 
 /** Forward declarations: */
 class ConfigurationLoaderBase;
@@ -37,6 +45,9 @@ struct GetSMARTvaluesFunctionParams
 // used by all are located here.
 class SMARTmonitorBase
   : public UserInterface
+  /** Make subclass of SMARTattrDefAccss and do not inherit SMARTaccessBase from
+   * it so that no SMARTaccessBase-derived class is needed (for socket-only).*/ 
+  , public SMARTattrDefAccss
 {
 public:
   ///attr=attribute Def=definition Cont=container

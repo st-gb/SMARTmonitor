@@ -93,7 +93,7 @@ set( INCLUDE_DIRS
 message("include directories: ${INCLUDE_DIRS}")
 
 #https://www.johnlamp.net/cmake-tutorial-4-libraries-and-subdirectories.html
-include_directories( ${InclDirs} )
+include_directories(${INCLUDE_DIRS})
 
 
 if( ${EXE_TYPE} STREQUAL "UNIX_service")

@@ -3,27 +3,36 @@
 #Edit the following variables if needed!
 #If using a non-absolute path when setting the C Compiler causes this: http://public.kitware.com/Bug/view.php?id=13756
 #So use an absolute path, as http://public.kitware.com/Bug/view.php?id=14294 proposes
-C_COMPILER=/usr/bin/gcc
-CPP_COMPILER=/usr/bin/g++
+numCmdLineArgs=$#
 
 #change if necessary
 NUM_ARGS_NEEDED=4
 MINIMAL_NUM_ARGS_NEEDED=2
 
 #IDEA: pass as args: <NAME=VALUE>, e.g. COMMON_SOURCECODE_ROOT_PATH=../common_sourcecode
-if [ $# -ge $MINIMAL_NUM_ARGS_NEEDED ]; then
+if [ $numCmdLineArgs -ge $MINIMAL_NUM_ARGS_NEEDED ]; then
   WXWIDGETS_INCLUDE_DIR=$1
   WXWIDGETS_SETUP_H_PATH=$2
   echo WXWIDGETS_INCLUDE_DIR: $WXWIDGETS_INCLUDE_DIR
   echo WXWIDGETS_SETUP_H_PATH: $WXWIDGETS_SETUP_H_PATH
 
-if [ $# -ge $NUM_ARGS_NEEDED ]; then
+if [ $numCmdLineArgs -ge $NUM_ARGS_NEEDED ]; then
   TINYXML2_ROOT_PATH=$3
+  echo TINYXML2_ROOT_PATH: $TINYXML2_ROOT_PATH
   COMMON_SOURCECODE_ROOT_PATH=$4
 fi
+if [ $numCmdLineArgs -ge 6 ]; then
+  C_COMPILER=$5
+  CPP_COMPILER=$6
+else
+  C_COMPILER=/usr/bin/gcc #default path for Linux and cygwin
+  CPP_COMPILER=/usr/bin/g++ #default path for Linux and cygwin
+fi
+echo CPP_COMPILER: $CPP_COMPILER
 
 # "-pg" option for "gprof" profiling
-AdditionalCMakeArgs=$3
+AdditionalCMakeArgs=$7
+echo AdditionalCMakeArgs: $AdditionalCMakeArgs
 
 cmake \
 -G "Unix Makefiles" \
@@ -41,7 +50,7 @@ cmake \
 -DCOMMON_SOURCECODE_ROOT_PATH:STRING=$COMMON_SOURCECODE_ROOT_PATH \
 -DTINYXML2_ROOT_PATH:STRING=$TINYXML2_ROOT_PATH \
 $AdditionalCMakeArgs \
-./src
+.
 else
   echo "ERROR:at least" $MINIMAL_NUM_ARGS_NEEDED " args needed:"
   echo "specifiy options for this script:<WXWIDGETS_INCLUDE_DIR> <WXWIDGETS_SETUP_H_PATH> <TINYXML2_ROOT_PATH> <COMMON_SOURCECODE_ROOT_PATH>"

@@ -50,6 +50,8 @@ BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
       SMARTdialog::OnUpdateSMARTparameterValuesInGUI)
 END_EVENT_TABLE()
 
+//TODO delete this function? Because UpdateSMARTparameterValuesThreadFunc is 
+// more elaborated.
 DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(void * p_v)
 {
   LOGN_DEBUG("begin")
@@ -65,11 +67,13 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
       wxGetApp().GetSMARTuniqueIDsAndVals();
     do
     {
+#ifdef directSMARTaccess
       if( getSMARTvaluesDirectly )
       {
         /*p_myDialog->*/wxGetApp().Upd8SMARTvalsDrctlyThreadSafe();
       }
       else
+#endif
       {
         int res = wxGetApp().GetSMARTattrValsFromSrv(/*sMARTuniqueIDandValuesSet*/);
         if( res == 0 )
@@ -252,7 +256,8 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
     "\nby Stefan Gebauer, M.Sc. Comp. Science, Berlin, Germany");
 
 #if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
-    m_taskBarIcon->ShowBalloon(title, message, 15000, wxICON_INFORMATION);
+  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,
+    wxICON_INFORMATION);
 #else // !__WXMSW__
     wxMessageBox(message, title, wxICON_INFORMATION | wxOK, this);
 #endif // __WXMSW__/!__WXMSW__
@@ -473,7 +478,7 @@ void SMARTdialog::StartAsyncDrctUpd8Thread()
   if(wxGetApp().GetNumSMARTattrToObs() > 0)
   {// && wxGetApp().GetNumSMARTattrDefs() > 0
     //ReadSMARTvaluesAndUpdateUI();
-#ifdef multithread
+#if defined(multithread) && defined(directSMARTAccess)
 //    wxGetApp().s_updateSMARTparameterValuesThread.start(
 //      wxUpdateSMARTparameterValuesThreadFunc, this);
     wxGetApp().StartAsyncUpdateThread(& SMARTmonitorBase::

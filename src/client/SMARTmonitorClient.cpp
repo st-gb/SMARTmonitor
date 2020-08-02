@@ -1,16 +1,23 @@
 /** Author: sg
  * Created on 20. November 2016, 17:43 */
 
-#include "SMARTmonitorClient.h" //class SMARTmonitorClient
+///Standard C(++) header files:
 #include <stdint.h> //uint8_t
+///http://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/close?view=vs-2019
+#include <unistd.h>///close(...)
+
 //#include <tinyxml2/ProcessSMARTdata.hpp>
 //#include <socket/SocketOperations.h>
-#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...))
-#include "OperatingSystem/GetLastErrorCode.hpp" //OperatingSystem::GetLastErrorCode()
-#include "hardware/CPU/atomic/AtomicExchange.h"
-#include <SMARTvalueFormatter.hpp> //SMARTvalueFormatter::FormatHumanReadable())
-#include <compiler/GCC/enable_disable_warning.h> //GCC_DIAG_OFF(...)
+#include "SMARTmonitorClient.h"///class SMARTmonitorClient
+#include <SMARTvalueFormatter.hpp>///SMARTvalueFormatter::FormatHumanReadable()
 #include <UserInterface/UserInterface.hpp>///class UserInterface
+
+///Stefan Gebauer's common_sourcecode git repository:
+#include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
+#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
+///OperatingSystem::GetLastErrorCode()
+#include <OperatingSystem/GetLastErrorCode.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN(...)
 
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
@@ -309,7 +316,7 @@ void SMARTmonitorClient::setIDandLabel(const fastestUnsignedDataType
     );
 
   /** Now get the attribute name belonging to SMART ID */
-  SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
+  SMARTattrDef * p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
     SMARTattrID);
   if( p_sMARTattrDef != NULL)
   {
@@ -402,7 +409,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
   uint64_t SMARTrawVal;
   //TODO attribute IDs of SMART values to observe may not be a subset of
   // SMART attributes in config file!
-  SMARTattrDef * p_sMARTattrDef = SMARTaccessBase::getSMARTattrDef(
+  SMARTattrDef * p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
     SMARTattrID);
   if(p_sMARTattrDef){
     const SMARTvalue & sMARTvalue = SMARTuniqueIDandVals.m_SMARTvalues[

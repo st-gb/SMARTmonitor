@@ -4,7 +4,8 @@
 #include <stdlib.h>
 
 #include "ConfigLoader.hpp" //class tinyxml2::ConfigLoader
-#include "FileSystem/File/GetAbsoluteFilePath.hpp" 
+///FileSystem::GetAbsolutePathA(...)
+#include <FileSystem/File/GetAbsoluteFilePath.hpp>
 #include <Controller/character_string/ConvertStdStringToTypename.hpp>
 #include <tinyxml2.h>
 #include <SMARTmonitorBase.hpp>
@@ -113,7 +114,7 @@ bool ConfigLoader::LoadSMARTparametersConfiguration(
     
     //const char * arch = p_tinyxml2XMLelement->Value();
 //    m_smartAttributesToObserve.clear();
-  SMARTaccessBase::clearSMARTattrDefs();
+  SMARTattrDefAccss::clearSMARTattrDefs();
 
       SMARTattrDef sMARTattrDef;
         //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
@@ -181,9 +182,9 @@ bool ConfigLoader::LoadSMARTparametersConfiguration(
               //use pointer from member var instead of from stack.
               sMARTattrDef.SetName(std_strAttribName.c_str() );
 
-        SMARTaccessBase::Add(sMARTattrDef);
+        SMARTattrDefAccss::Add(sMARTattrDef);
           LOGN_DEBUG( "using SMART entry at address " << 
-        SMARTaccessBase::getSMARTattrDef(sMARTattrID) )
+        SMARTattrDefAccss::getSMARTattrDef(sMARTattrID) )
             LOGN("adding SMART ID" << sMARTattrID /*<< "to " 
               << mp_smartAttributes*/)
           }
