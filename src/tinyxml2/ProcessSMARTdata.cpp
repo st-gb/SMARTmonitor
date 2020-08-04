@@ -268,11 +268,17 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
     }
     LOGN_DEBUG( "text inside \"supportedSMART_IDs\":" << 
       supportedSMARTattributeIDsString )
-    supportedSMARTattributeIDs_type supportedSMARTattrIDs;
-    
+
+    /** It saves copy constructor operations if SMARTuniqueIDandValues is
+     * inserted here and the iterator used for changing. */
+//    pair<std::set<SMARTuniqueIDandValues>::iterator,bool> insert =
+//      SMARTuniqueIDsAndValues.insert(SMARTuniqueIDandValues());
+
     const char * p_lastComma = (char * ) supportedSMARTattributeIDsString;
     char * p_currChar=(char *)supportedSMARTattributeIDsString;
     fastestUnsignedDataType arrIdx = 0;
+    suppSMART_IDsType suppSMARTattrNamesAndIDs;
+    supportedSMARTattrIDsType supportedSMARTattrIDs;
     for(;*p_currChar != '\0'; ++ p_currChar, arrIdx++)
     {
       if(* p_currChar == ',')
@@ -281,6 +287,8 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
         const int number = ConvertStringToInt(p_lastComma);
 //      supportedSMARTattrIDs.insert(number);
         sMARTuniqueID.supportedSMART_IDs[arrIdx] = number;
+        supportedSMARTattrIDs.insert(number);
+        suppSMARTattrNamesAndIDs.insert(SMARTattributeNameAndID("", number) );
         p_lastComma = p_currChar + 1;
       }
       //TODO
@@ -288,9 +296,16 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
     }
     if(p_lastComma < p_currChar){/**Process last attribute ID*/
       const int number = ConvertStringToInt(p_lastComma);
-      //supportedSMARTattrIDs.insert(number);
+      supportedSMARTattrIDs.insert(number);
+      suppSMARTattrNamesAndIDs.insert(SMARTattributeNameAndID("", number) );
       sMARTuniqueID.supportedSMART_IDs[arrIdx] = number;
     }
+    if(arrIdx < numDifferentSMART_IDs)
+      sMARTuniqueID.supportedSMART_IDs[arrIdx] = 0;///Mark last item
+
+    //sMARTuniqueID.setSupportedSMART_IDs(suppSMARTattrNamesAndIDs);
+    sMARTuniqueID.SetSMART_IDsToRead(suppSMARTattrNamesAndIDs,
+      m_SMARTattrIDsToObs);
     //TODO Uncomment. Causes not to display the current SMART data at least if
     // data from service.
 //    SMARTuniqueIDsAndValues.insert/*emplace*/(SMARTuniqueIDandValues(
