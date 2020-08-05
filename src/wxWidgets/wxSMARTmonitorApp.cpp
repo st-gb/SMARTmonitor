@@ -141,7 +141,8 @@ void wxSMARTmonitorApp::StartServiceConnectionCountDown(
   }
 }
 
-void wxSMARTmonitorApp::ReBuildUserInterface() { 
+void wxSMARTmonitorApp::ReBuildUserInterface(){
+  LOGN_DEBUG("begin")
   //SetSMARTdriveID();
 //  SetSMARTattribIDandNameLabel();
   gs_dialog->ReBuildUserInterface();
@@ -167,7 +168,9 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
     m_pConnectToServerDialog = NULL;
   }
   int connectResult = commandEvent.GetInt();
-  if( connectResult == 0)
+  //TODO The following could go into a "AfterCnnctToSrvInUIthread" function
+  // usable by all subclasses of SMARTmonitorClient.
+  if( connectResult == connectedToService)
   {
 //    SuccessfullyConnectedToClient();
     /*if( !*/ GetSMARTvaluesAndUpdateUI(); //)
@@ -256,12 +259,12 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
 {
 //  if( m_serverConnectionState = connectedToService)
 //  else
+  wxString wxstrServiceHostName = m_stdstrServiceHostName;
   if( m_serviceConnectionCountDownInSeconds --)
   {
-    wxString wxstrServiceHostName = m_stdstrServiceHostName;
     /** Create title as local variable for easier debugging. */
     wxString status = wxString::Format(
-      wxT("connection attempt to %s, port %u in %u seconds"),
+      wxT("conn. attempt to %s,port %u in %u s"),
       wxstrServiceHostName.c_str(), 
       m_socketPortNumber, 
       m_serviceConnectionCountDownInSeconds);
@@ -269,7 +272,12 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
   }
   else
   {
-    gs_dialog->SetStatus(wxT("") );
+    //TODO move status line creation to base class SMARTmonitorClient
+    wxString status = wxString::Format(
+      wxT("connected to %s,port%u"),
+      wxstrServiceHostName.c_str(), 
+      m_socketPortNumber);
+    gs_dialog->SetStatus(status);
     m_wxtimer.Stop();
     ConnectToServerAndGetSMARTvalues();
   }
@@ -521,7 +529,7 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
     *   this message in the GUI thread */
     wxCommandEvent wxcommand_event(ShowMessageEventType);
     wxcommand_event.SetString(GetwxString_Inline(str));
-    wxcommand_event.SetInt(-1);
+    wxcommand_event.SetInt(-1);//TODO neccessary?
     wxPostEvent( (wxSMARTmonitorApp *) this, wxcommand_event);
   }
 }
