@@ -93,7 +93,7 @@ set( INCLUDE_DIRS
 message("include directories: ${INCLUDE_DIRS}")
 
 #https://www.johnlamp.net/cmake-tutorial-4-libraries-and-subdirectories.html
-include_directories( ${InclDirs} )
+include_directories(${INCLUDE_DIRS})
 
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
   #set(directSMARTaccess TRUE)
@@ -150,6 +150,10 @@ if(DEFINED WXWIDGETS)
 endif (DEFINED WXWIDGETS)
 
 message("EXE_NAME: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")
+
+message("CXX flags: ${CMAKE_CXX_FLAGS}")
+message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
+message("CMAKE_EXE_LINKER_FLAGS: \"${CMAKE_EXE_LINKER_FLAGS}\"")
 
 target_link_libraries(${EXE_NAME} ${LIBRARIES})
 

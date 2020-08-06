@@ -1,6 +1,14 @@
-#include <sys/ioctl.h>///FIONREAD
-#include <sys/socket.h> //socket(...))
-#include <netinet/in.h> //sockaddr_in
+#ifdef __linux__
+  #include <netinet/in.h> //sockaddr_in
+  #include <sys/ioctl.h>///FIONREAD
+  #include <sys/socket.h>///socket(...)
+#endif
+#ifdef _WIN32
+///http://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-socket
+  #include <winsock2.h>///socket(...)
+///http://docs.microsoft.com/en-us/windows/win32/api/winsock/ns-winsock-sockaddr_in
+  #include <Ws2ipdef.h>///struct sockaddr_in
+#endif
 #include <fcntl.h> //fcntl(...)
 
 //#include "SocketOperations.h"
@@ -8,7 +16,9 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 #include "OperatingSystem/GetLastErrorCode.hpp" //OperatingSystem::GetLastErrorCode()
+#ifdef __linux__
 #include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
+#endif
 #include <OperatingSystem/BSD/socket/prepCnnctToSrv.h>///prepCnnctToSrv(...)
 #include <OperatingSystem/BSD/socket/socketTimeout.h>///getSocketTimeout(...)
 
@@ -20,9 +30,11 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   uint16_t numDataBytesToRead;
   const size_t numBytesToRead = 2;
   //https://stackoverflow.com/questions/3053757/read-from-socket:
+#ifdef __linux__
   int numBinRead = 0;
   ioctl(m_socketFileDesc, FIONREAD, &numBinRead);
   LOGN_DEBUG("# bytes in read buffer for socket:" << numBinRead)
+#endif
   //TODO connection to service error here when expecting data for the 2nd time 
   // running the wx GUI. errno: 11 from GetSMARTattrValsFromSrv
   // Maybe because the 2nd time is from another thread.
@@ -76,9 +88,11 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
   {
     LOGN_DEBUG("read " << numBytesToRead << "B from socket file desc " <<
       m_socketFileDesc)
+#ifdef __linux__
     //https://stackoverflow.com/questions/3053757/read-from-socket:
     int numBinRead = 0;
     ioctl(m_socketFileDesc, FIONREAD, &numBinRead);
+#endif
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
     numBytesRead =
@@ -155,6 +169,7 @@ struct SocketConnectThreadFuncParams
   }
 };
 
+#ifdef __linux__
 ///Non-Blocking is an alternative option to set a self-defined connect timeout.
 int ConnectToSocketNonBlocking(
   int socketFileDescriptor, 
@@ -278,6 +293,7 @@ DWORD SocketConnectThreadFunc(void * p_v)
   }
   return -1;
 }
+#endif///#ifdef __linux__
 
 fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   const char * hostName, bool asyncConnect)
@@ -301,6 +317,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
 //  {
 //  }
 #ifdef multithread
+#ifdef __linux__
   if( asyncConnect )
   {
     ShowConnectionState(hostName, cnnctTimeoutInS);
@@ -314,6 +331,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
     BeforeConnectToServer();
   }
   else
+#endif
 #endif
   /** http://man7.org/linux/man-pages/man2/connect.2.html :
       "If the connection or binding succeeds, zero is returned." */
@@ -361,7 +379,9 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName)
     default :
     {
       int errorCode = OperatingSystem::GetLastErrorCode();
-      oss << OperatingSystem::EnglishMessageFromErrorCode( errorCode );
+#ifdef __linux__
+      oss << OperatingSystem::EnglishMessageFromErrorCode(errorCode);
+#endif
     }
     break;
   }

@@ -4,7 +4,9 @@
 
 include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
 
-set(TINYXML2_ROOT_PATH ${SMARTmonSrcDir}/../../../tinyxml2-master )
+if(TINYXML2_ROOT_PATH STREQUAL "")
+  set(TINYXML2_ROOT_PATH ${SMARTmonSrcDir}/../../../tinyxml2-master )
+endif()
 #include(${cmnSrcDir}/CMake/getAbsPath.cmake)
 #getAbsPath(${TINYXML2_ROOT_PATH} "${SMARTmonSrcDir}/../../../tinyxml2-master")
 message("TINYXML2_ROOT_PATH: ${TINYXML2_ROOT_PATH}")
@@ -41,6 +43,10 @@ set(ATTRIBUTE_DATA_SOURCE_FILES
 if(UNIX)
   message("UNIX defined")
   include(${SMARTmonSrcDir}/Unix.cmake)
+endif()
+if(WIN32)#https://cmake.org/cmake/help/v3.0/variable/WIN32.html
+  message("WIN32 defined")
+  include(${SMARTmonSrcDir}/Windows/Windows.cmake)
 endif()
 
 set(CmnSrcLogger ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
@@ -89,6 +95,6 @@ set(SOURCE_FILE_PATHS
 set(InclDirs
   ${SMARTmonSrcDir}
   ${cmnSrcDir} 
-  ${cmnSrcDir}/Controller/MSVC_adaption
+  #${cmnSrcDir}/Controller/MSVC_adaption
   ${TINYXML2_ROOT_PATH}
   )

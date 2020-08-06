@@ -5,17 +5,25 @@
 #ifndef SMARTMONITORBASE_HPP
 #define SMARTMONITORBASE_HPP
 
-#include <string> //std::wstring
+///Standard C(++) header files:
+#include <set>///class std::set
+#include <string>///class std::wstring
+
+///common_sourcecode repository header files:
+#include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
 ///struct CommandLineOption
 #include <OperatingSystem/Process/CommandLineOption.hpp>
+
+#include <attributes/SMARTattrDefAccss.hpp>///base class SMARTattrDefAccss
+#include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <SMARTvalueProcessorBase.hpp> //
 #include <UserInterface/UserInterface.hpp> //base class UserInterface
-#include <OperatingSystem/multithread/nativeThreadType.hpp>
-#include <set> //class std::set
-#include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
-#include <SMARTaccType.hpp>///typedef SMARTaccess_type
+
+#if directSMARTaccess
+  #include <SMARTaccType.hpp>///typedef SMARTaccess_type
+#endif
 
 /** Forward declarations: */
 class ConfigurationLoaderBase;
@@ -39,6 +47,9 @@ std::wstring GetExeFileName(const wchar_t * const ar_wchFullProgramPath);
 // used by all are located here.
 class SMARTmonitorBase
   : public UserInterface
+  /** Make subclass of SMARTattrDefAccss and do not inherit SMARTaccessBase from
+   * it so that no SMARTaccessBase-derived class is needed (for socket-only).*/ 
+  , public SMARTattrDefAccss
 {
 public:
   ///attr=attribute Def=definition Cont=container
@@ -49,8 +60,9 @@ public:
   typedef SMARTattrDefContType::const_iterator 
     SMARTattrContConstIterType;
 //  SMARTattrDefContType SMARTattrDefs;
+  typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
 protected:
-  std::set<SMARTuniqueIDandValues> SMARTuniqueIDsAndValues;
+  SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
 public:
   SMARTmonitorBase();
   //template<typename charType>
@@ -66,8 +78,7 @@ public:
    *  ::UpdateSMARTparameterValuesThreadFunc(...) is not possible because
    *  the stack content is popped and changed afterwards.) */
   struct GetSMARTvaluesFunctionParams m_getSMARTvaluesFunctionParams;
-  typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
-  std::set<SMARTuniqueIDandValues> & GetSMARTuniqueIDsAndVals() { return 
+  SMARTuniqueIDandValsContType & GetSMARTuniqueIDsAndVals() { return 
     SMARTuniqueIDsAndValues; }
   
   enum programOptionNames { logFileFolder = 0, 
@@ -106,7 +117,7 @@ public:
    *  is virtual it passes execution to the implementation in 
    *  SMARTmonitorClient.) */
   virtual fastestUnsignedDataType GetSMARTattrValsFromSrv() {}
-  void ProcessCommandLineArgs();
+  fastestUnsignedDataType ProcessCommandLineArgs();
   void HandleLogFileFolderProgramOption(std::wstring & cmdLineOptionValue);
   fastestUnsignedDataType InitializeSMART();
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
@@ -122,7 +133,7 @@ public:
 #endif
   void SetCommandLineArgs(int argc, char ** argv);
 #ifdef multithread
-  ///Should be usable by different targets, e.g. service, wxWidgets or curses.
+  ///Should be usable by different targets, e.g. service, wxWidgets or curses
   /// client. Therefore the parameters.
   void StartAsyncUpdateThread(
     //GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType

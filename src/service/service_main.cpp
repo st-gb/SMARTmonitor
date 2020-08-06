@@ -42,13 +42,12 @@ void SMARTmonitorService::End(const char signalName [])
 //2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService ClientConnThreadFunc end
 //2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService WaitForSignal locking signal mutex
 //2017-03-14 19:52:01,285 INFO [Thread-16645] SMARTmonitorService WaitForSignal Waiting for signal  gp_SMARTmonitor->EndUpdateSMARTvaluesThread();
-    
+  
   pthread_cond_signal(& p_SMARTmonSvc->cond);
   EndUpdateSMARTvaluesThread();
 }
 
-///Specific to UNIX/Linux.
-static void signal_handler(int signum)//TODO Unix-specific 
+static void signal_handler(int signum)//Unix-/Linux-specific 
 {
   LOGN("received signal")
   switch(signum)
@@ -89,7 +88,7 @@ int main(int argc, char** argv) {
   ///Neded for SetLogLevel() in ProcessCommandLineArgs()
   LogLevel::CreateLogLevelStringToNumberMapping();
   //std::string lockFilePath = "/var/lock/" + argv[0];
-  //TODO use daemonize(...)
+  //TODO use daemonize(...) from common_sourcecode git repo
   //daemonize("/var/lock/smartmonitor.lock");
   TrapSignals2();
   SMARTmonitorService/*<char>*/ SMARTmonitor;//(argc, argv);
@@ -100,8 +99,9 @@ int main(int argc, char** argv) {
   if( SMARTmonitor.GetCommandLineArgs().GetArgumentCount() < 2 )
     SMARTmonitor.OutputUsage();
   ///Has to be called before InitializeLogger() as it gets the log folder path.
-  SMARTmonitor.ProcessCommandLineArgs();
-  if( ! SMARTmonitor.InitializeLogger() )
+  if(SMARTmonitor.ProcessCommandLineArgs() != 0)
+    return 1;
+  if(! SMARTmonitor.InitializeLogger() )
     return 2;
   //std::wstring stdwstrConfigPathWithoutExtension;
   //SMARTmonitor.ConstructConfigFilePath(stdwstrConfigPathWithoutExtension);
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
     
     ///accept() is blocking, so start in a different thread?
     //nativeThread_type clientConnThread;
-    //clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor );
+    //clientConnThread.start(SMARTmonitor.ClientConnThreadFunc, & SMARTmonitor);
 
     /** Wait for the update thread to be finished */
     //SMARTmonitor.WaitForSignal();

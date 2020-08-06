@@ -3,6 +3,9 @@
 
 #from https://www.digitalocean.com/community/tutorials/how-to-configure-a-linux-service-to-start-automatically-after-a-crash-or-reboot-part-1-practical-examples
 
+# https://en.wikipedia.org/wiki/Linux_startup_process#Init_process
+# Google: "detect init type Linux"
+# https://linuxconfig.org/detecting-which-system-manager-is-running-on-linux-system
 #https://unix.stackexchange.com/questions/106656/how-do-services-in-debian-work-and-how-can-i-manage-them
 # answered Dec 26 '13 at 14:32:  SysVinit, Systemd, Upstart
 
@@ -41,7 +44,6 @@ else
     SMART_MONITOR_SERVICE_PATH=$2
   fi
 fi
-
 detect_distro
 
 SMART_MONITOR_SERVICE_PATH=SMARTmonitor_service

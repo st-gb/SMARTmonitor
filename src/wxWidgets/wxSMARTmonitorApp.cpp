@@ -25,6 +25,7 @@
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <wx/taskbar.h>
 #include <wx/filefn.h> //wxFILE_SEP_PATH
+#include <wx/log.h>///class wxLogNull
 ///GCC_DIAG_ON(...), GCC_DIAG_OFF(...) preprocessor macros
 #include "compiler/GCC/enable_disable_warning.h"
 /** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
@@ -38,7 +39,7 @@ GCC_DIAG_ON(write-strings)
 #include <iostream> //class std::cerr
 #include <OperatingSystem/multithread/GetCurrentThreadNumber.hpp>
 #include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
-#ifdef MinGW
+#ifdef __MINGW32__
 #include <OperatingSystem/Windows/HideMinGWconsoleWindow.h>
 #endif
 #include <FileSystem/File/FileException.hpp>
@@ -82,7 +83,7 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
   , m_pConnectToServerDialog(NULL)
   , m_wxtimer(this, TIMER_ID)
 {
-  s_GUIthreadID = GetCurrentThreadNumber();
+  s_GUIthreadID = OperatingSystem::GetCurrentThreadNumber();
 #ifdef multithread
   I_Thread::SetCurrentThreadName("UI");
 #endif
@@ -128,7 +129,7 @@ void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
 void wxSMARTmonitorApp::StartServiceConnectionCountDown(
   const fastestUnsignedDataType countDownInSeconds)
 {
-  if( GetCurrentThreadNumber() == s_GUIthreadID )
+  if(OperatingSystem::GetCurrentThreadNumber() == s_GUIthreadID )
   {
     m_serviceConnectionCountDownInSeconds = countDownInSeconds;
     m_wxtimer.Start(1000);
@@ -335,7 +336,8 @@ bool wxSMARTmonitorApp::OnInit()
 //      m_wxtimer.StartOnce(1000);
       ConnectToServerAndGetSMARTvalues();
     }
-    else 
+#ifdef directSMARTaccess
+    else
       if( initSMARTresult == SMARTaccessBase::success)
     {
       EnsureSMARTattrToObsExist();
@@ -348,6 +350,7 @@ bool wxSMARTmonitorApp::OnInit()
       gs_dialog->ReBuildUserInterface();
       gs_dialog->StartAsyncDrctUpd8Thread();
     }
+#endif
 //    else if( result == SMARTaccessBase::noSingleSMARTdevice )
 //      return false;
   }
@@ -379,14 +382,14 @@ bool wxSMARTmonitorApp::GetIcon(
   wxBitmapType wxbitmapType;
   #ifdef _WIN32
     wxbitmapType = wxBITMAP_TYPE_ICO;
-    iconFileName += wxT("ico")
+    iconFileName += wxT("ico");
   #else //#ifdef __WXGTK__ //wxGTK
     wxbitmapType = wxBITMAP_TYPE_XPM;
     iconFileName += wxT("xpm");
   #endif
 
   ///https://forums.wxwidgets.org/viewtopic.php?t=1696
-  wxLogNull noDbgMsgs;///Disable wxWigets (debug) messages when loading file.
+  wxLogNull noDbgMsgs;///Disable wxWidgets (debug) messages when loading file.
 
   bool bIconFileSuccessfullyLoaded = false;
   wxString iconFilePath;
@@ -493,7 +496,7 @@ void wxSMARTmonitorApp::ShowMessage(
   const char * const message, 
   enum MessageType::messageTypes msgType) const
 {
-  unsigned currentThreadNumber = GetCurrentThreadNumber();
+  unsigned currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
   /** Only call UI functions in UI thread, else gets SIGABORT error when calling
    *  "wxMessageBox(...)" . */
   if( currentThreadNumber == s_GUIthreadID )
@@ -514,7 +517,7 @@ void wxSMARTmonitorApp::ShowMessage(
 
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 {
-  unsigned currentThreadNumber = GetCurrentThreadNumber();
+  unsigned currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
   /** Only call UI functions in UI thread, else gets SIGABORT error when calling
    *  "wxMessageBox(...)" . */
   if( currentThreadNumber == s_GUIthreadID )

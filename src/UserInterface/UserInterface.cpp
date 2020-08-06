@@ -4,6 +4,7 @@
 #include <stdio.h> //snprintf(...)
 #include <string.h>///strcat(...)
 #include <sstream>///class std::ostringstream
+#include <time.h>///strftime(...)
 
 std::string UserInterface::GetTimeAsString(const struct tm & timeOfLastSMARTvaluesUpdate)
 {

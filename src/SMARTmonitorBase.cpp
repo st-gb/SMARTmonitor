@@ -1,19 +1,24 @@
 /** Author: sg
  * Created on 17. November 2016, 13:05 */
-#include "SMARTmonitorBase.hpp" //class SMARTmonitorBase
-#include "client/SMARTmonitorClient.h" //class SMARTmonitorClient
-#include <FileSystem/GetCurrentWorkingDir.hpp> //OperatingSystem::GetCurrentWorkingDirA_inl(...)
-#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
-#include <Controller/character_string/stdtstr.hpp> //GetStdWstring(...)
-#include <FileSystem/File/GetAbsoluteFilePath.hpp> // GetAbsoluteFilePath(...)
-#include <FileSystem/path_seperator.h> //PATH_SEPERATOR_CHAR_STRING
+
+///Standard C/C++ header files:
+#include <unistd.h>///sleep(unsigned)
+
+///Stefan Gebauer's common_sourcecode git repository:
+#include <Controller/character_string/stdtstr.hpp>///GetStdWstring(...)
 #include <Controller/Logger/LogFileAccessException.hpp>
+#include <Controller/time/GetTickCount.hpp>
+#include <FileSystem/GetCurrentWorkingDir.hpp> //OperatingSystem::GetCurrentWorkingDirA_inl(...)
+#include <FileSystem/PathSeperatorChar.hpp>///FileSystem::dirSeperatorChar
+#include <FileSystem/path_seperator.h>///PATH_SEPERATOR_CHAR_STRING
+#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+#include <FileSystem/File/GetAbsoluteFilePath.hpp> // GetAbsoluteFilePath(...)
+
+#include "SMARTmonitorBase.hpp"///class SMARTmonitorBase
 #include <SMARTaccessBase.hpp> //class SMARTaccessBase
 #include <tinyxml2/ConfigLoader.hpp> //class tinyxml2::ConfigLoader
 #include <ConfigLoader/ParseConfigFileException.hpp>
-#include <hardware/CPU/atomic/AtomicExchange.h>
-#include <Controller/time/GetTickCount.hpp>
-#include <FileSystem/PathSeperatorChar.hpp> //FileSystem::dirSeperatorChar
 
 /** Static/Class members must be defined once in a source file. Do this here */
 dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
@@ -241,7 +246,7 @@ void SMARTmonitorBase::HandleLogFileFolderProgramOption(
     GetExeFileName(m_commandLineArgs.GetProgramPath()) );
 }
 
-void SMARTmonitorBase::ProcessCommandLineArgs()
+fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
 {
   unsigned programArgumentCount = m_commandLineArgs.GetArgumentCount();
   bool showUsage = false;
@@ -287,8 +292,11 @@ void SMARTmonitorBase::ProcessCommandLineArgs()
   }
   else
     showUsage = true;
-  if(showUsage)
+  if(showUsage){
     OutputUsage();
+    return 1;
+  }
+  return 0;
 }
 
 bool SMARTmonitorBase::InitializeLogger() {
@@ -305,7 +313,7 @@ bool SMARTmonitorBase::InitializeLogger() {
   else///May be specified on command line/in configuration file
     m_stdstrLogFilePath += "_log.txt";
 #ifdef _DEBUG
-  g_logger.SetLogLevel(LogLevel::debug);
+  g_logger.SetLogLevel("debug"/*LogLevel::debug*/);
 #else
   g_logger.SetLogLevel(LogLevel::warning);
 #endif
@@ -330,7 +338,7 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
   const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(_T("."));
   //const char ps = PATH_SEPERATOR_CHAR;
   std::wstring stdwstrPathSeperatorChar = GetStdWstring(std::string(
-          PATH_SEPERATOR_CHAR_STRING));
+    PATH_SEPERATOR_CHAR_STRING));
   const int indexOfLastFileSepChar = stdwstrAbsoluteFilePath.rfind(
           //_T(xstringify(PATH_SEPERATOR_CHAR)  )
           stdwstrPathSeperatorChar);
@@ -501,7 +509,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
         * Alternatives (needn't wait the whole time):
         * -WaitForSingleObject(...) for MS Windows API
         * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
-        sleep(1);
+        sleep(1);///http://linux.die.net/man/3/sleep
       }
       //Sleep in microseconds (1/1000th of a millisecond))
       usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
@@ -563,7 +571,7 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeDirPath(
 {
   //const char ps = PATH_SEPERATOR_CHAR;
   std::wstring stdwstrPathSeperatorChar = GetStdWstring(std::string(
-          PATH_SEPERATOR_CHAR_STRING));
+    PATH_SEPERATOR_CHAR_STRING));
   const int indexOfLastPathSepChar = stdwstrAbsoluteFilePath.rfind(
           //_T(xstringify(PATH_SEPERATOR_CHAR)  )
           stdwstrPathSeperatorChar);

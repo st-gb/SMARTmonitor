@@ -3,8 +3,6 @@
 #Edit the following variables if needed!
 #If using a non-absolute path when setting the C Compiler causes this: http://public.kitware.com/Bug/view.php?id=13756
 #So use an absolute path, as http://public.kitware.com/Bug/view.php?id=14294 proposes
-C_COMPILER=/usr/bin/gcc
-CPP_COMPILER=/usr/bin/g++
 
 #change if necessary
 NUM_ARGS_NEEDED=4
@@ -15,18 +13,28 @@ numCmdLineArgs=$#
 if [ $numCmdLineArgs -ge $MINIMAL_NUM_ARGS_NEEDED ]; then
   WXWIDGETS_INCLUDE_DIR=$1
   WXWIDGETS_SETUP_H_PATH=$2
+  #Needs to be in brackets because it may consist of > 1 token
   CMakeBuildSysGenerator="$3"
   echo WXWIDGETS_INCLUDE_DIR: $WXWIDGETS_INCLUDE_DIR
   echo WXWIDGETS_SETUP_H_PATH: $WXWIDGETS_SETUP_H_PATH
 
-if [ $numCmdLineArgs -ge $NUM_ARGS_NEEDED ]; then
-  #TINYXML2_ROOT_PATH=$3
-  #COMMON_SOURCECODE_ROOT_PATH=$4
-  echo ""
+if [ $numCmdLineArgs -ge 5 ]; then
+  TINYXML2_ROOT_PATH=$4
+  echo TINYXML2_ROOT_PATH: $TINYXML2_ROOT_PATH
+  COMMON_SOURCECODE_ROOT_PATH=$5
 fi
+if [ $numCmdLineArgs -ge 7 ]; then
+  C_COMPILER=$6
+  CPP_COMPILER=$7
+else
+  C_COMPILER=/usr/bin/gcc #default path for Linux and cygwin
+  CPP_COMPILER=/usr/bin/g++ #default path for Linux and cygwin
+fi
+echo CPP_COMPILER: $CPP_COMPILER
 
 # "-pg" option for "gprof" profiling
-AdditionalCMakeArgs=$4
+AdditionalCMakeArgs=$8
+echo AdditionalCMakeArgs: $AdditionalCMakeArgs
 
 cmake \
 -G "$CMakeBuildSysGenerator" \
@@ -44,10 +52,11 @@ cmake \
 -DCOMMON_SOURCECODE_ROOT_PATH:STRING=$COMMON_SOURCECODE_ROOT_PATH \
 -DTINYXML2_ROOT_PATH:STRING=$TINYXML2_ROOT_PATH \
 $AdditionalCMakeArgs \
-./src
+.
 else
   echo "ERROR:at least" $MINIMAL_NUM_ARGS_NEEDED " args needed:"
   echo "specifiy options for this script:<WXWIDGETS_INCLUDE_DIR> <WXWIDGETS_SETUP_H_PATH> <TINYXML2_ROOT_PATH> <COMMON_SOURCECODE_ROOT_PATH>"
-  echo "e.g.:"$0 /usr/include/wx-3.0 /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-3.0 /home/sg/SourceCodeManagement/common_sourcecode /usr/src/tinyxml2-master
+  echo "e.g. for 32 bit Ubuntu:"$0 /usr/include/wx-3.0 /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-3.0 /home/sg/SourceCodeManagement/common_sourcecode /usr/src/tinyxml2-master
+  echo "e.g. for 64 bit Linux Mint:"$0 /usr/include/wx-3.0 /usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-debug-3.0 /home/sg/SourceCodeManagement/common_sourcecode /usr/src/tinyxml2-master
 fi
 
