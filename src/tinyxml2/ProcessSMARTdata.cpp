@@ -36,7 +36,7 @@ bool GetSMARTuniqueID(
   sMARTuniqueID.SetModelName(modelString);
   sMARTuniqueID.SetFirmwareName(firmwareString);
   sMARTuniqueID.SetSerialNumber(serialNumberString);
-  LOGN("data carrier ID:" << sMARTuniqueID)
+  LOGN_DEBUG("data carrier ID:" << sMARTuniqueID)
   return true;
 }
 

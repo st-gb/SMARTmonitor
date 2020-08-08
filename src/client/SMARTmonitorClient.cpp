@@ -18,6 +18,7 @@
 ///OperatingSystem::GetLastErrorCode()
 #include <OperatingSystem/GetLastErrorCode.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN(...)
+#include <OperatingSystem/BSD/socket/socket.h>///readFromSocket(...)
 
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
@@ -117,6 +118,19 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     /*sMARTuniqueIDandValues*/);
   if(getSMARTvaluesResult == 0)
   {
+    //TODO the following code could go into a function of a new
+    // "class SMARTuniqueIDsAndValues
+    // : public SMARTuniqueIDandValsContType"
+    ///Important if no S.M.A.R.T. attributes to read exist yet.
+    for(SMARTuniqueIDandValsContType::iterator iter = 
+      SMARTuniqueIDsAndValues.begin(); iter != SMARTuniqueIDsAndValues.end();
+      iter++)
+    {
+      SMARTuniqueID & sMARTuniqueID =(SMARTuniqueID &) iter->getSMARTuniqueID();
+      if(sMARTuniqueID.noSMARTattrsToRead() )
+        ( (SMARTuniqueIDandValues &) *iter).
+          setSMART_IDsToReadFromSuccSMARTrawValUpd8();
+    }
     SetSMARTattributesToObserve(sMARTuniqueIDandValues);
 //      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
     ReBuildUserInterface();
@@ -167,17 +181,6 @@ void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
   if ( ! asyncConnectToService )
   {
     AfterConnectToServer(connectToServerResult);
-    if( connectToServerResult == connectedToService)
-    {
-#ifndef multithread
-      GetSMARTvaluesAndUpdateUI();
-#endif
-    }
-    else
-    {
-      //wxGetApp().ShowMessage("");
-//      AfterConnectToServer(connectToServerResult);
-    }
   }
 }
 
@@ -199,8 +202,12 @@ void SMARTmonitorClient::HandleTransmissionError(
   enum SMARTmonitorClient::TransmissionError transmissionError)
 {
   std::ostringstream stdoss;
-  const int lastErrorNumber = OperatingSystem::GetLastErrorCode();
   char * errorMessageForErrno = NULL;
+#ifdef _WIN32
+  int lastWSAerror = WSAGetLastError();
+  //http://stackoverflow.com/questions/3400922/how-do-i-retrieve-an-error-string-from-wsagetlasterror
+#endif
+  const int lastErrorNumber = /*OperatingSystem::GetLastErrorCode();*/ errno;
   if( lastErrorNumber != 0)
   {
     switch(lastErrorNumber)
@@ -256,7 +263,8 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
   uint8_t * XMLdata = new uint8_t[numBytesToAllocate];
   if( XMLdata)
   {
-    int numBytesRead = read(m_socketFileDesc, XMLdata, numBytesToRead);
+    int numBytesRead = OperatingSystem::BSD::sockets::readFromSocket(
+      m_socketFileDesc, XMLdata, numBytesToRead);
     if (numBytesRead < numBytesToRead) {
       HandleTransmissionError(SMARTdata);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 

@@ -30,12 +30,18 @@ else
 fi
 echo CPP_COMPILER: $CPP_COMPILER
 
+if [ $numCmdLineArgs -ge 7 ]; then
+  BuildSysGenerator="$7"
+else
+  BuildSysGenerator="Unix Makefiles"
+fi
+
 # "-pg" option for "gprof" profiling
-AdditionalCMakeArgs=$7
+AdditionalCMakeArgs=$8
 echo AdditionalCMakeArgs: $AdditionalCMakeArgs
 
 cmake \
--G "Unix Makefiles" \
+-G "$BuildSysGenerator" \
 -DCMAKE_BUILD_TYPE=Debug \
 -DCOMMON_SOURCECODE_ROOT_PATH=$COMMON_SOURCECODE_ROOT_PATH \
 -DTINYXML2_ROOT_PATH=$TINYXML2_ROOT_PATH \

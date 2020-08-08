@@ -1,14 +1,8 @@
 #ifdef __linux__
-  #include <netinet/in.h> //sockaddr_in
   #include <sys/ioctl.h>///FIONREAD
-  #include <sys/socket.h>///socket(...)
 #endif
-#ifdef _WIN32
-///http://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-socket
-  #include <winsock2.h>///socket(...)
-///http://docs.microsoft.com/en-us/windows/win32/api/winsock/ns-winsock-sockaddr_in
-  #include <Ws2ipdef.h>///struct sockaddr_in
-#endif
+#include <OperatingSystem/BSD/socket/socket.h>///socket(...), InitSocket(...)
+#include <OperatingSystem/BSD/socket/sockaddr_in.h>///struct sockaddr_in
 #include <fcntl.h> //fcntl(...)
 
 //#include "SocketOperations.h"
@@ -38,18 +32,10 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   //TODO connection to service error here when expecting data for the 2nd time 
   // running the wx GUI. errno: 11 from GetSMARTattrValsFromSrv
   // Maybe because the 2nd time is from another thread.
-  int numBytesRead =
-#ifdef use_recv
-    recv
-#else
-    read
-#endif
-      (m_socketFileDesc, & numDataBytesToRead, numBytesToRead
-#ifdef use_recv
-      ,0/**flags*/
-#endif
-      );
-  if( numBytesRead < numBytesToRead ) {
+  int numBytesRead = readFromSocket(m_socketFileDesc,
+    & numDataBytesToRead,
+    numBytesToRead);
+  if(numBytesRead < (int) numBytesToRead){
     HandleTransmissionError(numBytesToReceive);
     return -1;
   }
@@ -95,17 +81,8 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
 #endif
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
-    numBytesRead =
-#ifdef use_recv
-      recv
-#else
-      read
-#endif
-        (m_socketFileDesc, SMARTdataXML, numBytesToRead
-#ifdef use_recv
-        ,0/**flags*/
-#endif
-        );
+    numBytesRead = readFromSocket(m_socketFileDesc,
+      SMARTdataXML, numBytesToRead);
     //TODO often numBytesRead < numBytesToRead if this function is called from 
     //  "UpdateSMARTparameterValuesThreadFunc"
     if (numBytesRead < numBytesToRead) {
@@ -123,7 +100,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
     *:Create SMARTuniqueIDandValues object only via unique ID (no SMART values).
     * Then search in the container via "sMARTuniqueIDandValsCont.find(
     * sMARTuniqueIDandValues);" and  use the iterator.
-    * Alterantive:(slower?) also fill the SMART attribute values from the server
+    * Alternative:(slower?) also fill the SMART attribute values from the server
     * data and copy to the SMARTuniqueIDandValues object if already contained in
     * sMARTuniqueIDandValsCont after "sMARTuniqueIDandValsCont.insert(...)".*/
     const bool succBeganSrvDataProc = srvDataProcessor.Begin(SMARTdataXML,
@@ -298,6 +275,7 @@ DWORD SocketConnectThreadFunc(void * p_v)
 fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   const char * hostName, bool asyncConnect)
 {
+  OperatingSystem::BSD::sockets::InitSocket();//TODO close the socket at end
   struct sockaddr_in srvAddr;
   fastestUnsignedDataType prepCnnctToSrvRslt = prepCnnctToSrv(hostName,
     m_socketPortNumber, & srvAddr, AF_INET, & m_socketFileDesc);

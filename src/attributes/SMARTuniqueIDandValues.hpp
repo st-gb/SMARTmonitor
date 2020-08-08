@@ -59,6 +59,17 @@ public:
   void SetDataCarrierID(const SMARTuniqueID & sMARTuniqueID) {
     m_SMARTuniqueID = sMARTuniqueID;
   }
+  /** Important if no S.M.A.R.T. attributes to read exist yet.
+   * Therefore get S.M.A.R.T. values at least once in order to set the 
+   * SMARTvalue::m_successfullyReadSMARTrawValue */
+  void setSMART_IDsToReadFromSuccSMARTrawValUpd8(){
+    fastestUnsignedDataType SMART_IDsToReadArrIdx = 0;
+    for(fastestUnsignedDataType sMARTvalsIdx = 1; sMARTvalsIdx <
+      numDifferentSMART_IDs; sMARTvalsIdx++)
+      if(m_SMARTvalues[sMARTvalsIdx].m_successfullyReadSMARTrawValue)
+        m_SMARTuniqueID.m_SMART_IDsToRd[SMART_IDsToReadArrIdx++] = sMARTvalsIdx;
+    m_SMARTuniqueID.m_SMART_IDsToRd[SMART_IDsToReadArrIdx] = 0;
+  }
   int GetSMARTentry(fastestUnsignedDataType SMART_ID, SMARTvalue & sMARTvalue);
 };
 

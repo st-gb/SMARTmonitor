@@ -51,6 +51,7 @@ struct SMARTuniqueID {
     return m_SMART_IDsToRd[SMART_IDsToReadIdx] !=0
       && SMART_IDsToReadIdx < numDifferentSMART_IDs;
   }
+  bool noSMARTattrsToRead() const{ return ! SMART_IDsToReadNotEnd(0); }
   
   typedef long int unitDataType;
   //TODO not needed anoymore because calculated from upper - lower bound?
