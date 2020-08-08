@@ -39,6 +39,8 @@ struct GetSMARTvaluesFunctionParams
   GetSMARTvaluesFunctionType p_getSMARTvaluesFunction = NULL;
 };
 
+std::wstring GetExeFileName(const wchar_t * const ar_wchFullProgramPath);
+
 /** Use character type in order to pass to to CommandLineArgs member variable*/
 /*template<typename charType>*/
 ///Base class for all clients/services. Operations and attributes that can be 

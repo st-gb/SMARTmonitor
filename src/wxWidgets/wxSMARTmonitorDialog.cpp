@@ -376,10 +376,11 @@ void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent & event)
 {
   ///Get SMART IDentifier from event ID because there may be > 1 data carrier.
   const int evtID = event.GetId();
+  LOGN_DEBUG("begin--" << evtID)
 //  wxString dvcPath = event.GetString();
   const SMARTuniqueID * p_SMARTuniqueID = wxGetApp().m_evtID2SMARTuniqueID[
     evtID];
-  
+  LOGN_DEBUG("SMART unique ID pointer " << p_SMARTuniqueID)
   if(p_SMARTuniqueID)
   {
     SupportedSMART_IDsDialog * p_SupportedSMART_IDsDialog = new

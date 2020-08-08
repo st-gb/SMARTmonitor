@@ -1,22 +1,24 @@
 /** Author: sg
  * Created on 20. November 2016, 17:43 */
 
+///This repository's header files:
+#include "SMARTmonitorClient.h"///this class' header file
+///SMARTvalueFormatter::FormatHumanReadable(...)
+#include <SMARTvalueFormatter.hpp>
+#include <UserInterface/UserInterface.hpp>///class UserInterface
+
+///Stefan Gebauer's common_sourcecode repository header files:
 ///Standard C(++) header files:
 #include <stdint.h> //uint8_t
 ///http://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/close?view=vs-2019
-#include <unistd.h>///close(...)
+#include <unistd.h>///close(...), read(...)
 
-//#include <tinyxml2/ProcessSMARTdata.hpp>
-//#include <socket/SocketOperations.h>
-#include "SMARTmonitorClient.h"///class SMARTmonitorClient
-#include <SMARTvalueFormatter.hpp>///SMARTvalueFormatter::FormatHumanReadable()
-#include <UserInterface/UserInterface.hpp>///class UserInterface
-
-///Stefan Gebauer's common_sourcecode git repository:
+///from Stefan Gebauer's common_sourcecode git repository:
 #include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 ///OperatingSystem::GetLastErrorCode()
 #include <OperatingSystem/GetLastErrorCode.hpp>
+//#include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN(...)
 #include <OperatingSystem/BSD/socket/socket.h>///readFromSocket(...)
 
@@ -77,6 +79,8 @@ void SMARTmonitorClient::EndUpdateUIthread()
 }
 #endif
 
+/** @brief Gets S.M.A.R.T. values and starts "get S.M.A.R.T. values" loop (in a
+ *  dedicated thread if multithreaded) */
 void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 {
 #ifdef _DEBUG
@@ -87,7 +91,8 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
   else
   {
 //  std::string fnName = compiler::GetCurrFnName();
-    ShowMessage("a thread already started GetSMARTvaluesAndUpdateUI");
+    ShowMessage("a thread already started GetSMARTvaluesAndUpdateUI",
+      UserInterface::MessageType::error);
     return;
   }
 #endif
@@ -170,8 +175,9 @@ void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
   if(m_SMARTaccess.GetNumSMARTattrDefs() == 0)
   {
     ShowMessage("no SMART attribute definition from config file. ->Don't know "
-      "whether a SMART attribute is critical");
-    return;
+      //"whether a SMART attribute is critical"
+      "the SMART attribute names", UserInterface::MessageType::warning);
+//    return;
   }
 #endif
   bool asyncConnectToService = /*true*/ false;
@@ -218,7 +224,9 @@ void SMARTmonitorClient::HandleTransmissionError(
         errorMessageForErrno = (char *) "The reading end of socket is closed.";
         break;
       default:
-        errorMessageForErrno = strerror(errno);
+        errorMessageForErrno = strerror(lastErrorNumber);
+//        errorMessageForErrno  = OperatingSystem::GetErrorMessageFromErrorCodeA(
+//          lastErrorNumber);
         break;
     }
   }
@@ -326,18 +334,20 @@ void SMARTmonitorClient::setIDandLabel(const fastestUnsignedDataType
   /** Now get the attribute name belonging to SMART ID */
   SMARTattrDef * p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
     SMARTattrID);
+  std::string stdstrSMARTattrName;
   if( p_sMARTattrDef != NULL)
   {
     const SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
-    //SMARTattributeToObserve.name
-    SetAttribute(
-      SMARTattrID,
-      ColumnIndices::SMARTparameterName,
-      sMARTattrDef.GetName(),
-      noCriticalValue
-      ,data
-      );
+    stdstrSMARTattrName = sMARTattrDef.GetName();
   }
+    //SMARTattributeToObserve.name
+  SetAttribute(
+    SMARTattrID,
+    ColumnIndices::SMARTparameterName,
+    stdstrSMARTattrName,
+    noCriticalValue
+    ,data
+    );
 }
 
 void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
@@ -377,6 +387,7 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
   //memory_barrier(); //TODO: not really necessary??
   
   /** Loop over data carriers. */
+  //TODO (only) 1 item here when wxGUI started as root?
   for(fastestUnsignedDataType currentDriveIndex = 0;
     SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
     SMARTuniqueIDandValuesIter ++)
@@ -417,9 +428,9 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
   uint64_t SMARTrawVal;
   //TODO attribute IDs of SMART values to observe may not be a subset of
   // SMART attributes in config file!
-  SMARTattrDef * p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
-    SMARTattrID);
-  if(p_sMARTattrDef){
+//  SMARTattrDef * p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
+//    SMARTattrID);
+//  if(p_sMARTattrDef){
     const SMARTvalue & sMARTvalue = SMARTuniqueIDandVals.m_SMARTvalues[
       SMARTattrID];
   bool isConsistent = sMARTvalue.IsConsistent(SMARTrawVal);
@@ -429,9 +440,11 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
   //memory_barrier(); //TODO: not really necessary??
   if( /*successfullyUpdatedSMART*/ isConsistent )
   {
-    SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
+//    SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
     std::string stdstrHumanReadableRawVal;
     
+  //TODO move following code so it can be used in another place when not
+  // SMARTmonitorClient-derived
     std::ostringstream std_ossUnit, std_ossUnitAccuracy;
     const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandVals.
       getSMARTuniqueID();
@@ -468,6 +481,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
           accuracy = lowerUnitLimit / upperLimit;
       }
       std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID,unit);
+      
       stdstrHumanReadableRawVal += SMARTvalueFormatter::
         FormatHumanReadable(SMARTattrID, realCircaValue);
       if(accuracy != 0.0){
@@ -495,7 +509,18 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
          break;
        default:
         numForHumanReadableFormat = SMARTrawVal;
-        std_ossUnit << "?";
+        switch(SMARTattrID)
+        {
+        case SMARTattributeNames::ReallocSectorsCnt:
+        case SMARTattributeNames::PwrCycleCnt:
+        case SMARTattributeNames::ReallocEvtCnt:
+        case SMARTattributeNames::UncorrSecCnt:
+        case SMARTattributeNames::UDMA_CRCerrorCnt:
+          std_ossUnit << "#?";
+          break;
+		default:
+          std_ossUnit << "?";
+        }
         realCircaValue = SMARTrawVal;
       }
       stdstrHumanReadableRawVal = SMARTvalueFormatter::
@@ -575,8 +600,8 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
       sMARTvalue.m_timeStampOfRetrieval,
       data);
   }
-  }
-  else
-  {
-  }
+//  }
+//  else
+//  {//TODO show message that no S.M.A.R.T. attribute definition found
+//  }
 }

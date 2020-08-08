@@ -1,0 +1,37 @@
+Project Properties:
+
+wxGUI:
+-Build:
+ -Pre-Build
+  -Working Directory: ..
+  -Command Line: ./create/wxGUI/create_wxGUI.sh /usr/include/wx-3.0 /usr/lib/linux-gnu/wx/include/gtk2-unicode-debug-3.0 "-DdirectSMARTaccess=ON -Dmultithread=ON -Dcr8DebPkg=ON"
+ -Make:
+  -Working Directory: .
+  -Build Result: ../wxSMARTmonitor_GUI
+  -Pre-Build First: yes
+-Run:
+ -"Run Command": "${OUTPUT_PATH}" logfilefolder=/run/
+
+service:
+-Build:
+ -Pre-Build:
+  -Working Directory: ..
+  -Command Line: ./create/service/createServiceUnixMakefileViaCMake.sh
+  -Pre-Build First: yes
+ -Make: Working Directory: .
+ -Build Result: ../SMARTmonitor_service
+-Run
+ -Run Command: "${OUTPUT_PATH}" logfilefolder=/run loglevel=debug
+ -Run Directory: ..
+
+cursesTUI:
+-Build:
+ -Pre-Build:
+  -Working Directory: ..
+  -Command Line: ./create_ncursesTUI.sh
+  -Pre-Build First: yes
+ -Make: Working Directory: .
+ -Build Result: ../SMARTmonitor_service
+-Run
+ -Run Command: "${OUTPUT_PATH}"
+ -Run Directory: ..

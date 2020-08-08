@@ -95,8 +95,8 @@ message("include directories: ${INCLUDE_DIRS}")
 #https://www.johnlamp.net/cmake-tutorial-4-libraries-and-subdirectories.html
 include_directories(${INCLUDE_DIRS})
 
-
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
+  #set(directSMARTaccess TRUE)
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
     ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/daemon/daemon.cpp
@@ -128,19 +128,21 @@ if( ${EXE_TYPE} STREQUAL "wxGUI")
     ${SOURCE_FILE_PATHS}
     #${TINYXML2_ROOT_PATH}/tinyxml2.cpp
     )
-  add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
   #set( LIBRARIES ${LIBRARIES} tinyxml2 )
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
 
 if( ${EXE_TYPE} STREQUAL "ncursesClient")
   set(EXE_NAME ${PROJECT_NAME}_client_ncurses)
-  add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
 endif( ${EXE_TYPE} STREQUAL "ncursesClient" )
 
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
   set(EXE_NAME ${PROJECT_NAME}_service)
-  add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
-endif( ${EXE_TYPE} STREQUAL "UNIX_service" )
+endif()
+
+include(${cmnSrcDir}/CMake/addExeFileExt.cmake)
+addExeFileExt(EXE_NAME)
+
+add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
 
 if(DEFINED WXWIDGETS)
   #https://wiki.wxwidgets.org/CMake

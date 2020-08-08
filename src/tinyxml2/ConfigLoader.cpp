@@ -263,7 +263,8 @@ bool ConfigLoader::LoadSMARTparametersConfiguration(
       std_oss << ":\n" /*<< tinyXML2Doc.GetErrorStr1()
         << "\n"*/ << tinyXML2Doc./*GetErrorStr2()*/ErrorStr();
       LOGN_ERROR(std_oss.str() )
-      m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
+      m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str(), UserInterface::
+        MessageType::warning);
       return NULL;
     }
     if( xmlResult > XML_ERROR_FILE_READ_ERROR && xmlResult < XML_ERROR_COUNT )

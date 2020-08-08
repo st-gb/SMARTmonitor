@@ -39,9 +39,14 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
       /**to ms*//1000000);
     }
     break;
-   ///see OS Design TU Berlin slides winter term 2014/2015, see blktrace
+   /** see TU Berlin OS Design slides winter term 2014/2015, SSDs lecture about
+    * how many data is erased by a write operation.*/
    case SMARTattributeNames::GiB_Erased:
-    break;
+	 /** The unit for "GiB/data erased" (attr. ID 100) could be approximated via
+	  * low level IO functions by OS that determine the written sector/offset
+	  * + length of write operations.*/
+     OperatingSystem::getNumDifferentBlocksWritten();
+     break;
     /** The unit for "Total Data/LBAs Written/Read" differs among models. For
      * HFS256G39TND-N210A, firmware:30001P10 (serial:EJ7CN55981080CH09)
      * Solid State Device (SSD) it seems to be GiB rather than LBAs.*/

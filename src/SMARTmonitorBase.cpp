@@ -96,15 +96,17 @@ void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
 std::wstring GetExeFileName(const wchar_t * const ar_wchFullProgramPath) {
   std::wstring stdwstrFullProgramPath(ar_wchFullProgramPath);
   int charIndexOfLastDirSepChar = stdwstrFullProgramPath.rfind(FileSystem::
-          dirSeperatorChar);
+    dirSeperatorChar);
   if (charIndexOfLastDirSepChar != std::wstring::npos) {
     return stdwstrFullProgramPath.substr(charIndexOfLastDirSepChar + 1);
   }
   return stdwstrFullProgramPath;
 }
 
+/** \brief adds S.M.A.R.T. attributes to observe from all successfully retrieved
+ *  S.M.A.R.T. values from all data carriers to get S.M.A.R.T. values from.*/
 void SMARTmonitorBase::SetSMARTattributesToObserve(
-        std::set<SMARTuniqueIDandValues> & SMARTuniqueIDandValuesContainer) {
+  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDandValuesContainer){
   //  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
   //    wxGetApp().mp_SMARTaccess->getSMARTattributesToObserve();
   //TODO add SMART attribute IDs to SMARTattributesToObserve
@@ -319,6 +321,7 @@ bool SMARTmonitorBase::InitializeLogger() {
     success = g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel:://debug
       info);
   }catch (const LogFileAccessException & lfae){
+    //TODO does not respond anymore after this exception.
     ShowMessage(lfae.GetErrorMessageA().c_str() );
     std::cout << lfae.GetErrorMessageA() << std::endl;
   }
@@ -414,10 +417,13 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
             currentDriveIndex < numberOfDifferentDrives;
             ++currentDriveIndex, SMARTuniqueIDandValuesIter++) {
       //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
+      //TODO only read intersection with supported S.M.A.R.T. attributes?
       SMARTattrToObsType::const_iterator
         SMARTattrsToObserveIter = m_IDsOfSMARTattrsToObserve.begin();
       uint64_t currentSMARTrawValue;
       //TODO crashes here (iterator-related?!-> thread access problem??)
+      //TODO why this loop?? multithread-safe (AtomicExchange(...) ) already in
+      // SMARTaccessBase::ReadSMARTValuesForAllDrives(...)
       for (; SMARTattrsToObserveIter != m_IDsOfSMARTattrsToObserve.end();
               SMARTattrsToObserveIter++) {
         SMARTattributeID = * SMARTattrsToObserveIter;
@@ -513,6 +519,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   }
   }///E.g. if rolling file appender and permission denied for the new file.
   catch(LogFileAccessException & lfae){
+    //TODO does not respond anymore after this exception.
     p_getSMARTvalsFnParams->p_SMARTmonitorBase->ShowMessage(lfae.
       GetErrorMessageA().c_str(), UserInterface::MessageType::error);
   }
@@ -581,31 +588,40 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeDirPath(
 }
 
 void SMARTmonitorBase::ConstructConfigFilePath(
-        std::wstring & stdwstrConfigPathWithoutExtension) {
-  // Not necessarily an absolute file path! e.g. also "./executable.elf" is possible
-  const wchar_t * wchThisExecutable_sFilePath = m_commandLineArgs.
-          GetProgramPath();
-  std::wstring stdwstrThisExecutable_sFilePath(wchThisExecutable_sFilePath);
-  LOGN("this exe's file path: \"" << std::wstring(wchThisExecutable_sFilePath) << "\"")
+  std::wstring & stdwstrCfgFilePathWoutExt)
+{
+  /** Not necessarily an absolute file path! e.g. also "./executable.elf" is
+   *possible */
+//  const wchar_t * wchThisExecutable_sFilePath = m_commandLineArgs.
+//    GetProgramPath();
+//  std::wstring stdwstrCurrExeFilePath(wchThisExecutable_sFilePath);
+  
+//  std::string currExePath;
+  std::string stdstrCfgPathBaseDir;
+  if(//OperatingSystem::Process::GetCurrExePath(currExePath) 
+     stdwstrCfgFilePathWoutExt.empty() )
+  {
+//    std::wstring stdwstrCurrExeFilePath = GetStdWstring(currExePath);
+//    LOGN("this exe's file path: \"" << stdwstrCurrExeFilePath << "\"")
 
-  std::string stdstrCurrWorkDir;
-  OperatingSystem::GetCurrentWorkingDirA_inl(stdstrCurrWorkDir);
-
+    OperatingSystem::GetCurrentWorkingDirA_inl(stdstrCfgPathBaseDir);
+    stdwstrCfgFilePathWoutExt = GetStdWstring(stdstrCfgPathBaseDir);
   //  std::wstring stdwstrAbsoluteFilePath = GetAbsoluteFilePath(
   //    GetStdWstring(currentWorkingDir), 
   //    GetStdWstring(wchThisExecutable_sFilePath) );
-  std::string stdstrAbsoluteFilePath;
-  FileSystem::GetAbsolutePathA(GetStdString(stdwstrThisExecutable_sFilePath).c_str(),
-          stdstrAbsoluteFilePath);
-  std::wstring stdwstrAbsoluteFilePath = GetStdWstring(stdstrAbsoluteFilePath);
-  LOGN("this exe's absolute file path: \"" << stdwstrAbsoluteFilePath << "\"")
-
-  LOGN("this exe's current working dir: \"" << GetStdWstring(
-    stdstrCurrWorkDir) << "\"")
-
+//  std::string stdstrAbsoluteFilePath;
+//  FileSystem::GetAbsolutePathA(GetStdString(stdwstrCurrExeFilePath).c_str(),
+//    stdstrAbsoluteFilePath);
+//  std::wstring stdwstrAbsoluteFilePath = GetStdWstring(
+      //stdstrAbsoluteFilePath
+//    stdstrCurrWorkDir);
+//    LOGN("this exe's absolute file path: \"" << //stdwstrAbsoluteFilePath
+//      stdwstrCurrExeFilePath << "\"")
+    LOGN("this exe's current working dir: \"" <<stdwstrCfgFilePathWoutExt <<
+      "\"")
+  }
     //TODO This code needs to be reworked. All cases [ (no) dot in file name, ]
     //have to be taken into account
-    std::wstring fullConfigFilePathWithoutExtension;
   std::wstring configFilePathCmdLineValue = GetCommandLineOptionValue(L"configfilepath");
   if (configFilePathCmdLineValue == L"") /** NO config file path passed. */ {
     //    ConstructConfigFilePathFromExeFilePath(
@@ -615,9 +631,8 @@ void SMARTmonitorBase::ConstructConfigFilePath(
 //      stdwstrAbsoluteFilePath,
 //      stdwstrConfigPathWithoutExtension);
     
-    std::string absCfgFilePathWoutExt = stdstrCurrWorkDir + 
-      PATH_SEPERATOR_CHAR + std::string("SMARTmonitor.");
-    stdwstrConfigPathWithoutExtension = GetStdWstring(absCfgFilePathWoutExt);
+    stdwstrCfgFilePathWoutExt += PATH_SEPERATOR_WCHAR +
+      std::wstring(L"SMARTmonitor.");
   }
   //  else /** At least 1 program argument passed. */
   //  {
@@ -639,20 +654,32 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   //  //  wxWidgets::wxSMARTreader smartReader;
   //  /*std::wstring*/ stdwstrConfigPathWithoutExtension =
   //    wxWidgets::GetStdWstring_Inline(fullConfigFilePathWithoutExtension);
-  LOGN("using config file path: \"" << stdwstrConfigPathWithoutExtension << "\"")
+  LOGN("using config file path: \"" << stdwstrCfgFilePathWoutExt << "\"")
 }
 
 fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
   enum InitSMARTretCode initSMARTretCode = success;
-  std::wstring stdwstrWorkingDirWithConfigFilePrefix;
-  ConstructConfigFilePath(stdwstrWorkingDirWithConfigFilePrefix);
+#ifdef __linux__ //TODO pass this folder via CMake argument so it is the same as
+  //Debian package (via CPack) installation path.
+  std::wstring stdwstrWorkDirWithCfgFilePrefix = L"/usr/local/SMARTmonitor";
+#else
+  std::wstring stdwstrWorkDirWithCfgFilePrefix;
+#endif
+  std::wstring origPath = stdwstrWorkDirWithCfgFilePrefix;
+  ConstructConfigFilePath(stdwstrWorkDirWithCfgFilePrefix);
 
   try {
     //TODO just for compilation
-    const bool successfullyLoadedConfigFile = mp_configurationLoader->
-      LoadSMARTparametersConfiguration(stdwstrWorkingDirWithConfigFilePrefix);
+    bool successfullyLoadedCfgFile = mp_configurationLoader->
+      LoadSMARTparametersConfiguration(stdwstrWorkDirWithCfgFilePrefix);
 
-    if (!successfullyLoadedConfigFile)
+    if(! successfullyLoadedCfgFile)
+      if(origPath != L""){
+        stdwstrWorkDirWithCfgFilePrefix = L"";
+        successfullyLoadedCfgFile = mp_configurationLoader->
+          LoadSMARTparametersConfiguration(stdwstrWorkDirWithCfgFilePrefix);
+      }
+    if(! successfullyLoadedCfgFile)
       initSMARTretCode = readingConfigFileFailed;
     //    {
     //      //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));
@@ -699,9 +726,10 @@ void SMARTmonitorBase::ShowMessage(const char * const msg) const {
 void SMARTmonitorBase::ShowMessage(const char * const msg,
   UserInterface::MessageType::messageTypes msgType) const
 {
-  switch(msgType){
-  case MessageType::error: LOGN_ERROR(msg) break;
-  case MessageType::warning: LOGN_WARNING(msg) break;
-  case MessageType::success: LOGN_SUCCESS(msg) break;
+  switch(msgType){/**Output to standard output and standard error because
+    * logging to a file may be unavailable/the messages can be seen easier.*/
+   case MessageType::error: /*LOGN_ERROR(msg)*/ std::cerr << msg; break;
+   case MessageType::warning: /*LOGN_WARNING(msg)*/ std::cout << msg; break;
+   case MessageType::success: /*LOGN_SUCCESS(msg)*/ std::cout << msg; break;
   }
 }
