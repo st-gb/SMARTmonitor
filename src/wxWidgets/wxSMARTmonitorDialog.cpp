@@ -292,7 +292,10 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState newSta
     {
       const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
         wxGetApp().m_stdstrServiceHostName);
-      SetTitle( wxT("wxSMARTmonitor--data from ") + wxstrServiceAddress );
+      SetTitle(wxString::Format("wxSMARTmonitor--data from %s:%u", 
+        wxstrServiceAddress,
+        wxGetApp().m_socketPortNumber)
+        );
     }
       break;
     case SMARTmonitorClient::unconnectedFromService :

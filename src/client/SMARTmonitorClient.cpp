@@ -453,7 +453,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
     uint64_t realCircaValue;
     double accuracy = 0.0;
     double lowerUnitLimit = 0.0, upperLimit;
-    if(unit & ~highestBit)///If unit > 0 after bit removed
+    if(unit & ~highestBit)///If unit is determined <=> > 0 after bit removed
     {
       lowerUnitLimit = (double) sMARTuniqueID.lowerUnitBound[SMARTattrID];
       if(unit & highestBit ){///If highmost bit set/>=
@@ -462,7 +462,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         stdstrHumanReadableRawVal = ">=~";
         if(lowerUnitLimit != 0.0)/** Lower unit bound set*/{
           std::string humanReadableAccuracy = SMARTvalueFormatter::
-            FormatHumanReadable(SMARTattrID, lowerUnitLimit);
+            FormatHumanReadable(SMARTattrID, lowerUnitLimit, true);
           std_ossUnitAccuracy << ">=~" << humanReadableAccuracy;
           ///Value can get high: 16230×3618000 = 58720140000
           realCircaValue = SMARTrawVal * (uint64_t) lowerUnitLimit;
@@ -480,21 +480,22 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         if(upperLimit != 0.0)///Prevent division by 0.
           accuracy = lowerUnitLimit / upperLimit;
       }
-      std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID,unit);
+      std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID,unit,
+        true);
       
       stdstrHumanReadableRawVal += SMARTvalueFormatter::
-        FormatHumanReadable(SMARTattrID, realCircaValue);
+        FormatHumanReadable(SMARTattrID, realCircaValue, true);
       if(accuracy != 0.0){
         std::string humanReadableAccuracy = SMARTvalueFormatter::
-          FormatHumanReadable(SMARTattrID, lowerUnitLimit);
+          FormatHumanReadable(SMARTattrID, lowerUnitLimit, true);
         std_ossUnitAccuracy << " " << std::fixed << humanReadableAccuracy <<
           "-";/** "..." */
         humanReadableAccuracy = SMARTvalueFormatter::FormatHumanReadable(
-          SMARTattrID, upperLimit);
+          SMARTattrID, upperLimit, true);
         std_ossUnitAccuracy << std::fixed << /* "]" */ humanReadableAccuracy;
       }
     }
-    else{///Unknown unit/use deafault unit
+    else{///Unknown unit/use default unit
       uint64_t numForHumanReadableFormat;
       switch(SMARTattrID)
       {
@@ -518,13 +519,17 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         case SMARTattributeNames::UDMA_CRCerrorCnt:
           std_ossUnit << "#?";
           break;
+        case SMARTattributeNames::TotalDataWritten:
+        case SMARTattributeNames::TotalDataRead:
+          std_ossUnit << ">=1sector?";
+          break;
 		default:
           std_ossUnit << "?";
         }
         realCircaValue = SMARTrawVal;
       }
       stdstrHumanReadableRawVal = SMARTvalueFormatter::
-        FormatHumanReadable(SMARTattrID, numForHumanReadableFormat);
+        FormatHumanReadable(SMARTattrID, numForHumanReadableFormat, false);
     }
     std::ostringstream std_ossRawSMARTval;
     switch(SMARTattrID)

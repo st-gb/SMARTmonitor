@@ -115,7 +115,8 @@ std::string SMARTvalueFormatter::GetNumberWithSIprefix(const uint64_t & SMARTraw
  *  only a little payload (code bloat) */
 std::string SMARTvalueFormatter::FormatHumanReadable(
   fastestUnsignedDataType SMARTattributeID,
-  const uint64_t & SMARTrawVal)
+  const uint64_t & SMARTrawVal,
+  const bool unitKnown)
 {
   switch (SMARTattributeID)
   {
@@ -151,8 +152,12 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
 //     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
       return GetDegCfromCurrMinMax(SMARTrawVal);
     case SMARTattributeNames::TotalDataWritten:
-    case SMARTattributeNames::TotalDataRead:
-      return GetNumberWithSIprefix(SMARTrawVal) + "B";
+    case SMARTattributeNames::TotalDataRead:{
+      std::string numWithSIprefix = GetNumberWithSIprefix(SMARTrawVal);
+      if(unitKnown)
+        numWithSIprefix += "B";///Only append "B" if unit is known!
+      return numWithSIprefix;
+    }
     default:
     {
       return GetNumberWithSIprefix(SMARTrawVal);

@@ -15,7 +15,8 @@
 
 //class SMARTaccessBase;
 
-#define NUM_DIFFERENT_SMART_ENTRIES 256
+///+1 to enable a 1-based array index
+#define numDifferentSMART_IDsPlus1 (numDifferentSMART_IDs + 1)
 
 class SMARTvalue
 {
@@ -49,7 +50,7 @@ public:
 //  /*uint64_t*/ long int m_SMARTrawValues[NUM_DIFFERENT_SMART_ENTRIES];
 //  long int m_successfullyReadSMARTrawValue[NUM_DIFFERENT_SMART_ENTRIES];
 //  long int m_timeStampOfRetrieval[NUM_DIFFERENT_SMART_ENTRIES];
-  SMARTvalue m_SMARTvalues[NUM_DIFFERENT_SMART_ENTRIES];
+  SMARTvalue m_SMARTvalues[numDifferentSMART_IDsPlus1];
   SMARTuniqueIDandValues (const SMARTuniqueID & _SMARTuniqueID);
   SMARTuniqueIDandValues () {}
   SMARTuniqueIDandValues( const SMARTuniqueIDandValues &);

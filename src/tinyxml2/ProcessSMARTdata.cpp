@@ -1,8 +1,12 @@
 #include <tinyxml2.h> //tinyxml2::XMLElement etc.
+
 #include <client/SMARTmonitorClient.h>
+
+///from Stefan Gebauer's common_sourcecode repository:
+#include <Controller/character_string/ConvertStdStringToTypename.hpp>
+#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
+#include <hardware/dataCarrier/ATA3Std.h>///numDifferentSMART_IDsPlus1
 #include <preprocessor_macros/logging_preprocessor_macros.h>
-#include "hardware/CPU/atomic/AtomicExchange.h"
-#include "Controller/character_string/ConvertStdStringToTypename.hpp"
 
 bool GetSMARTuniqueID(
   tinyxml2::XMLElement * p_tinyxml2XMLelement, 
@@ -42,7 +46,7 @@ bool GetSMARTuniqueID(
 
 int CheckSMARTidRange(const int SMARTattributeID)
 {
-  if( SMARTattributeID >= NUM_DIFFERENT_SMART_ENTRIES)
+  if(SMARTattributeID > numDifferentSMART_IDsPlus1)
   {
     LOGN_ERROR("SMART ID too high:" << SMARTattributeID)
     return 1;

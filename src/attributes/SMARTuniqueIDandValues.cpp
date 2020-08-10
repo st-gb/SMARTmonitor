@@ -150,7 +150,8 @@ SMARTuniqueIDandValues::SMARTuniqueIDandValues (const SMARTuniqueID & _SMARTuniq
 SMARTuniqueIDandValues::SMARTuniqueIDandValues( const SMARTuniqueIDandValues & obj)
 {
   m_SMARTuniqueID = obj.getSMARTuniqueID();
-  for(fastestUnsignedDataType arrayIndex = 0; arrayIndex < NUM_DIFFERENT_SMART_ENTRIES; arrayIndex ++)
+  for(fastestUnsignedDataType arrayIndex = 0; arrayIndex <
+    numDifferentSMART_IDsPlus1; arrayIndex ++)
   {
     m_SMARTvalues[arrayIndex] = obj.m_SMARTvalues[arrayIndex];
   }

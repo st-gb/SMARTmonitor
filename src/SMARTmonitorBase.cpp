@@ -117,7 +117,7 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
     const SMARTuniqueIDandValues & SMARTuniqueIDandValues = *iter;
     LOGN_DEBUG("address of SMARTuniqueIDandValues obj:" << &SMARTuniqueIDandValues)
     for (int SMARTattributeID = 0; SMARTattributeID <
-            NUM_DIFFERENT_SMART_ENTRIES; SMARTattributeID++) {
+      numDifferentSMART_IDsPlus1; SMARTattributeID++) {
       //    SMARTattributesToObserve.insert();
       if(SMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID].
            m_successfullyReadSMARTrawValue)
@@ -378,7 +378,7 @@ void  SMARTmonitorBase::EnsureSMARTattrToObsExist()
 //    mp_SMARTaccess->GetSupportedSMART_IDs(device, SMARTattributeNamesAndIDs);
 #else
     for(int SMARTattributeID = 0; SMARTattributeID <
-          NUM_DIFFERENT_SMART_ENTRIES; SMARTattributeID++) {
+      numDifferentSMART_IDsPlus1; SMARTattributeID++) {
       m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
       LOGN_DEBUG("adding SMART attribute ID " << SMARTattributeID)
     }
