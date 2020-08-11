@@ -32,14 +32,21 @@ public:
   // http://stackoverflow.com/questions/4079243/how-can-i-use-sizeof-in-a-preprocessor-macro
   // Data types must be long int for atomic operations
   long int m_rawValue [sizeof(long int) < 8 ? 8 / sizeof(long int) : 1];
-  long int m_rawValueCheckSum;
-  long int m_timeStampOfRetrieval;
+  long int m_rawValueCheckSum, m_timeCheckSum;
   long int m_successfullyReadSMARTrawValue;
   
   ///Declared here to have no dependancy to SMARTaccessBase or SMARTmonitorBase
   static fastestUnsignedDataType s_sizeOfLongIntInBytes;
+  static fastestUnsignedDataType s_numTimesLongIntFitsInto8Bytes;
   void SetRawValue(/*long int * ,*/ const uint64_t & rawSMARTattrValue);
+  bool GetRetrievalTime(uint64_t & uptimeInMs) const;
+  void SetRetrievalTime(const long double &);
   bool IsConsistent(uint64_t &) const;
+private:  
+  /** Has to be uint64_t in order to also work if built as 32 bit program and a
+   *  long uptime in ms. 100d each 24 h each 60 min each 60 s each 1000 ms=
+   *  100*24*60*60*1000=8640000000=8640M */
+  uint64_t m_timeStampOfRetrieval;///Only access via Set|Get(TimeOfRetrieval);
 };
 
 class SMARTuniqueIDandValues

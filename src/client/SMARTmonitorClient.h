@@ -98,7 +98,9 @@ public:
     const SMARTuniqueIDandValues &, void * data);
   inline void UpdateTimeOfSMARTvalueRetrieval(
     const fastestUnsignedDataType SMARTattributeID,
-    const long int timeStampOfRetrieval, void * data);
+    /** Needs to be uint64_t in order to also work if built as 32 bit program
+     *  and a long uptime in ms.*/
+    const uint64_t timeStampOfRetrieval, void * data);
   /*virtual*/ void UpdateSMARTvaluesUI();
   virtual void SetAttribute(
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */

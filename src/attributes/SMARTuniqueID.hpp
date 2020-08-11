@@ -68,6 +68,7 @@ struct SMARTuniqueID {
   unitDataType upperUnitBound[numItems];
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
   SMARTuniqueID(){
+    m_SMART_IDsToRd[0] = 0;///Means:array is empty 
     memset(units, 0, sizeof(units[0])*numItems);
     memset(m_prevSMARTrawVals, 0xFF,sizeof(uint64_t)*numItems);
     memset(m_otherMetricVal, 0xFF,sizeof(uint64_t)*numItems);

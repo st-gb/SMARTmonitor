@@ -9,6 +9,8 @@
 
 /** E.g. 32 bit Linux: size of long int is 4 bytes*/
 fastestUnsignedDataType SMARTvalue::s_sizeOfLongIntInBytes = sizeof(long int);
+fastestUnsignedDataType SMARTvalue::s_numTimesLongIntFitsInto8Bytes = 8/
+  s_sizeOfLongIntInBytes;
 
 SMARTvalue & SMARTvalue::operator = ( const SMARTvalue & copyFrom )
 {
@@ -86,6 +88,40 @@ void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
     //TODO atomic necessary?
     AtomicExchange( (long int *) m_rawValue, rawSMARTattrValue);
     m_rawValueCheckSum = rawSMARTattrValue;
+  }
+}
+
+///TODO AtomicExchange(...) necessary?
+bool SMARTvalue::GetRetrievalTime(uint64_t & uptimeInMs) const{
+  long int liTimePart, timeCheckSum = m_timeStampOfRetrieval;
+  AtomicExchange( (long int *) & uptimeInMs, m_timeStampOfRetrieval);
+  for(fastestUnsignedDataType idx = 1; idx < 
+    SMARTvalue::s_numTimesLongIntFitsInto8Bytes; ++idx)
+  {
+    liTimePart = * ( ((long int *) & m_timeStampOfRetrieval) + idx);
+    AtomicExchange( ((long int *) & uptimeInMs) + idx, liTimePart);
+    /** ServiceBasse::BeforeWait() may read this value while it is written in
+    .*  the SMARTaccesBase-derived class. Therefore the checksum.*/
+    timeCheckSum ^= liTimePart;
+  }
+  return timeCheckSum == m_timeCheckSum;
+}
+
+void SMARTvalue::SetRetrievalTime(const long double & uptimeInSeconds){
+  uint64_t uptimeInMs = (uint64_t) (uptimeInSeconds * 1000.0);
+  long int liTimePart;
+  //TODO make as generic algorithm also for SetRawValue(...)
+  liTimePart = uptimeInMs;
+  AtomicExchange( (long int *) & m_timeStampOfRetrieval, liTimePart);
+  m_timeCheckSum = liTimePart;
+  for(fastestUnsignedDataType idx = 1; idx < 
+    SMARTvalue::s_numTimesLongIntFitsInto8Bytes; ++idx)
+  {
+    liTimePart = * ( ((long int *) & uptimeInMs) + idx);
+    AtomicExchange( ((long int *) & m_timeStampOfRetrieval) +idx, liTimePart);
+    /** ServiceBasse::BeforeWait() may read this value while it is written in
+     *  the SMARTaccesBase-derived class. Therefore the checksum.*/
+    m_timeCheckSum ^= liTimePart;
   }
 }
 

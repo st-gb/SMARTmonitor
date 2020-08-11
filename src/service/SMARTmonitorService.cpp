@@ -405,8 +405,12 @@ void SMARTmonitorService::BeforeWait()
       //OperatingSystem::GetTimeCountInSeconds(timeCountInSeconds);
       sMARTvalue = sMARTuniqueIDandVals.m_SMARTvalues[SMARTattrID];
       
-      float fTimeInS = sMARTvalue.m_timeStampOfRetrieval;
-      fTimeInS /= 1000.0f;
+      uint64_t timInMs;
+      float fTimeInS; 
+      if(sMARTvalue.GetRetrievalTime(timInMs) )
+        fTimeInS = (float) timInMs / 1000.0f;
+      else
+        fTimeInS = 0.0f;
       LOGN("time in [s] as int * 1000: " << sMARTvalue.m_timeStampOfRetrieval 
           << "as float:" << fTimeInS)
       if( sMARTvalue.m_successfullyReadSMARTrawValue &&

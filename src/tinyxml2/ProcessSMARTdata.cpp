@@ -82,7 +82,7 @@ void HandleSingleSMARTentry(
   AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 1);
   const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
   
-  AtomicExchange(& sMARTvalue.m_timeStampOfRetrieval, timeInS * 1000.0f );
+  sMARTvalue.SetRetrievalTime(timeInS);
   
   LOGN("adding SMART raw value " << SMARTrawVal << " (time:" << timeInS 
     << ") to SMART ID " << SMARTattributeID)

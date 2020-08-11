@@ -352,11 +352,11 @@ void SMARTmonitorClient::setIDandLabel(const fastestUnsignedDataType
 
 void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
   const fastestUnsignedDataType SMARTattributeID,
-  const long int timeStampOfRetrievalIn1ks, void * data)
+  const uint64_t timeStampOfRetrievalInMs, void * data)
 {  
   std::string timeFormatString;
   UserInterface::FormatTime(
-    timeStampOfRetrievalIn1ks, 
+    timeStampOfRetrievalInMs, 
     timeFormatString);
   SetAttribute(
     SMARTattributeID,
@@ -505,7 +505,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         realCircaValue = CurrTemp(SMARTrawVal);
         break;
        case SMARTattributeNames::PowerOnTime:
-         numForHumanReadableFormat = SMARTrawVal * /**ms to h*/3600000;
+         numForHumanReadableFormat = SMARTrawVal * /**ms to h*/3600000ULL;
          std_ossUnit << "~h?";
          break;
        default:
@@ -600,9 +600,13 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
 //        }
 //        else
 //          m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxGREEN);
+    
+    uint64_t upTimeOfRetrievalInMs;
+    if(! sMARTvalue.GetRetrievalTime(upTimeOfRetrievalInMs) )
+      upTimeOfRetrievalInMs = 0;
     UpdateTimeOfSMARTvalueRetrieval(
       SMARTattrID,
-      sMARTvalue.m_timeStampOfRetrieval,
+      upTimeOfRetrievalInMs,
       data);
   }
 //  }

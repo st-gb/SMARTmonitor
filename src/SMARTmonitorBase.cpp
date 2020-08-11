@@ -514,8 +514,10 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
       //Sleep in microseconds (1/1000th of a millisecond))
       usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
     } while (SMARTmonitorBase::s_updateSMARTvalues);
-
-    p_SMARTmonitorBase->AfterGetSMARTvaluesLoop(res);
+    if(SMARTmonitorBase::s_updateSMARTvalues)
+      /** The SMARTmonitor object may have already been destroyed if 
+       *  SMARTmonitorBase::s_updateSMARTvalues is false->invalid pointer.*/
+      p_SMARTmonitorBase->AfterGetSMARTvaluesLoop(res);
   }
   }///E.g. if rolling file appender and permission denied for the new file.
   catch(LogFileAccessException & lfae){

@@ -57,8 +57,7 @@ inline void cpySMARTattrThreadSafe(SMARTvalue & sMARTvalue, const uint64_t &
   std::string str;
   UserInterface::FormatTime(uptimeInSeconds,str);
 #endif
-  AtomicExchange( (long int *) & sMARTvalue.m_timeStampOfRetrieval, 
-    (long int) (uptimeInSeconds * 1000.0) );
+  sMARTvalue.SetRetrievalTime(uptimeInSeconds);
 #ifdef _DEBUG
   uint64_t SMARTrawValueFromMem;
   bool bConsistent = sMARTvalue.IsConsistent(SMARTrawValueFromMem);
