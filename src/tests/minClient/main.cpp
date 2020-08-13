@@ -1,16 +1,22 @@
+///Standard C(++) header files:)
 #include <fcntl.h>///fcntl(...)
 #include <iostream>///std::cout, std::cerr
-#include <netinet/in.h>///struct sockaddr_in, ntohs(...)
-#include <unistd.h>///read(...)
 #include <string.h>///strerror(...)
 
+///Stefan Gebauer's common_sourcecode repository header files:
 ///OperatingSystem::GetLastErrorCode(...)
 #include <OperatingSystem/GetLastErrorCode.hpp>
-#include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
 ///OperatingSystem::BSD::sockets::BlockingCnnctError::GetPossibleCause_inl(...)
 #include <OperatingSystem/BSD/socket/blckngCnnctErrMsg.hpp>
 #include <OperatingSystem/BSD/socket/prepCnnctToSrv.h>///prepCnnctToSrv(...)
 #include <OperatingSystem/BSD/socket/socketTimeout.h>///getSocketTimeout(...)
+///struct sockaddr_in, ntohs(...)
+#include <OperatingSystem/BSD/socket/sockaddr_in.h>
+#include <OperatingSystem/BSD/socket/socket.h>///readFromSocket(...)
+typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
+///for GetTimeCountInNanoSeconds(...)
+typedef long double TimeCountInNanosec_type;
+#include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
 
 #include "cxxopts/handleCmdLineOpts.hpp"///cxxopts::HandleCmdLineOpts(...)
 //#include "handleCmdLineOpts.hpp"///handleCmdLineArgs(...))
@@ -25,9 +31,12 @@ int main(int argCount, char * argVec [])
   std::string srvHost = "localhost";
   ///12000 micros is a sensible minimal timeout to test for send timeout
   unsigned timeoutInUs = 5000000;///5 s for via Internet
-  cxxopts::HandleCmdLineOpts(argCount,argVec,srvHost,port,timeoutInUs);
+  cxxopts::HandleCmdLineOpts(argCount,/** Avoid GCC compiler "error: invalid
+    *conversion from 'char**' to 'const char**' [-fpermissive]"*/(const char **)
+    argVec, srvHost, port, timeoutInUs);
   struct sockaddr_in srvAddr;
   int socketFileDesc;
+  OperatingSystem::BSD::sockets::InitSocket();
   enum PrepCnnctToSrvRslt cnnctToSrvRslt = prepCnnctToSrv(srvHost.c_str (),
     port, & srvAddr, AF_INET, & socketFileDesc);
   if(cnnctToSrvRslt != prepCnnctToSrvSucceeded){
@@ -45,7 +54,7 @@ int main(int argCount, char * argVec [])
     setSocketTimeout(socketFileDesc, & tvSndTimeout, SO_SNDTIMEO);
   getSocketTimeout(socketFileDesc, & tvSndTimeout, SO_SNDTIMEO);
   getSocketTimeout(socketFileDesc, & tvRcvTimeout, SO_RCVTIMEO);
-  double upTimeInS;
+  TimeCountInSecType upTimeInS;
   OperatingSystem::GetUptimeInS(upTimeInS);
   std::cout.precision(3);///# digits after decimal point
   std::cout << std::fixed << "Current uptime:" << upTimeInS << "s connecting to"
@@ -55,13 +64,17 @@ int main(int argCount, char * argVec [])
     sizeof(srvAddr) );
   if(cnnctRslt == -1){///connect(...) failed
     unsigned long lastOSerrCode = OperatingSystem::GetLastErrorCode();
+#ifdef __linux__
     int flags = fcntl(socketFileDesc, F_GETFL, 0);
+#endif
     OperatingSystem::GetUptimeInS(upTimeInS);
     std::cout << "Current uptime:" << upTimeInS << "s connecting failed. OS "
       "error code:" << lastOSerrCode << " " << strerror(lastOSerrCode) <<
       std::endl;
+    const enum errorCodes errorCode = OperatingSystem::BSD::sockets::
+      GetLastError();
     const std::string possibleCause = BlockingCnnctError::GetPossibleCause_inl(
-      errno, port);
+      errorCode, port);
     std::cout << possibleCause << std::endl;
     return cnnctToSrvFailed;
   }
@@ -72,8 +85,8 @@ int main(int argCount, char * argVec [])
   int numSocketBytesRead;
   size_t numSocketBytesToRead = 2;
   while(1){///Loop for supported S.M.A.R.T. IDs and S.M.A.R.T. data values.
-    numSocketBytesRead = /*read*/recv(socketFileDesc, & numDataBytesToRead,
-      numSocketBytesToRead, 0);
+    numSocketBytesRead = OperatingSystem::BSD::sockets::readFromSocket(
+      socketFileDesc, & numDataBytesToRead, numSocketBytesToRead);
     if( numSocketBytesRead < numSocketBytesToRead){
       std::cerr << "Read " << numSocketBytesRead << " B instead of "<<
         numSocketBytesToRead <<" B->exiting."<< std::endl;
@@ -91,8 +104,8 @@ int main(int argCount, char * argVec [])
       return allocMemFailed;}
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
-    numSocketBytesRead = /*read*/recv(socketFileDesc, SMARTvalues,
-      numDataBytesToRead, 0);
+    numSocketBytesRead = OperatingSystem::BSD::sockets::readFromSocket(
+      socketFileDesc, SMARTvalues, numDataBytesToRead);
     SMARTvalues[numDataBytesToRead] = '\0';
     //printf("%s\n", (char*)SMARTvalues);
     std::cout << std::string((char*)SMARTvalues, numDataBytesToRead) << std::
