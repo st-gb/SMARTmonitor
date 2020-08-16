@@ -31,6 +31,11 @@ set( CXX_DEFINITIONS ${CXX_DEFINITIONS}
   -DUNICODE
 )
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g3 -gdwarf-2")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -gdwarf-2")
+endif()
+
 set(ATTRIBUTE_DATA_SOURCE_FILES
   #Make as CMake variable "SMARTattrSrcFiles" ?
   ${SMARTmonSrcDir}/attributes/SMARTattributeNameAndID.cpp
@@ -95,6 +100,14 @@ set(SOURCE_FILE_PATHS
 set(InclDirs
   ${SMARTmonSrcDir}
   ${cmnSrcDir} 
-  #${cmnSrcDir}/Controller/MSVC_adaption
   ${TINYXML2_ROOT_PATH}
   )
+
+if(NOT WIN32)
+  set(InclDirs ${InclDirs} ${cmnSrcDir}/Controller/MSVC_adaption)#tchar.h etc.
+endif()
+
+#Avoid GCC "warning: extended initializer lists only available with -std=c++11
+# or -std=gnu++11"
+include(${cmnSrcDir}/CMake/useCpp11.cmake)
+use_cxx11()

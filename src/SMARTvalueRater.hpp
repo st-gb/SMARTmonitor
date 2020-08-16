@@ -5,6 +5,8 @@
 #ifndef SMARTVALUERATER_HPP
 #define SMARTVALUERATER_HPP
 
+#include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
+
 enum SMARTvalueRating{noCriticalValue,SMARTvalueOK,SMARTvalueWarning,unknown};
 
 using namespace SMARTattributeNames;///enum SMARTattributeNames
@@ -21,18 +23,22 @@ public:
     {
     case ReadErrorRate:
     case ReallocSectorsCnt:
+    case SpinUpRetryCnt:
     case SSDprogFailCnt:
     case SSDeraseFailCnt:
     case PwrLossProtectionFailure:
     case EraseFailCnt:
     case CmdTimeout:
+    case HighFlyWrites:
     case EndToEndError:
     case ReportedUncorrError:
+    case G_senseErrorRate:
     case ReallocEvtCnt:
     case CurrPendSecCnt:
     case UncorrSecCnt:
     case UDMA_CRCerrorCnt:
     case ShockDuringWrite:
+    case FreeFallProt:
       if(realCircaValue == 0)
         return SMARTvalueOK;
       else

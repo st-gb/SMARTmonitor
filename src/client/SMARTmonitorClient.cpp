@@ -40,6 +40,9 @@ SMARTvalueRater SMARTmonitorClient::s_SMARTvalueRater;
 
 SMARTmonitorClient::SMARTmonitorClient() 
   : m_serviceConnectionCountDownInSeconds(60)
+#ifdef _DEBUG
+  , GetSMARTvalsAndUpd8UIthreadID(0)
+#endif
 {
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
   /** Setting seconds to an invalid number (100) indicates that the time
@@ -284,6 +287,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
 
     GetSupportedSMARTattributesViaXML(XMLdata, numBytesToRead, 
       dataCarrierIDandSMARTidsContainer);
+    delete [] XMLdata;
   }
   return 0;
 }
@@ -505,7 +509,10 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         realCircaValue = CurrTemp(SMARTrawVal);
         break;
        case SMARTattributeNames::PowerOnTime:
-         numForHumanReadableFormat = SMARTrawVal * /**ms to h*/3600000ULL;
+         numForHumanReadableFormat = SMARTrawVal * /**h to ms*/3600000ULL;
+       case SMARTattributeNames::HeadFlyingHours:
+         numForHumanReadableFormat = (SMARTrawVal & 0xFFFFFF) * /**h to ms*/
+           3600000ULL;
          std_ossUnit << "~h?";
          break;
        default:
@@ -535,6 +542,9 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
     switch(SMARTattrID)
     {
      case SMARTattributeNames::GiB_Erased:
+    /** https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
+     *  : "Value is equal to (100-temp. °C)"*/
+     case SMARTattributeNames::TempDiffOrAirflowTemp:
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      * 9 Jul 2020: "Lowest byte of the raw value contains the exact temperature
      * value (Celsius degrees)"*/
@@ -544,6 +554,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
      * 9 Jul 2020: "Decoded as: byte 0-1-2 = average erase count (big endian)
      * and byte 3-4-5 = max erase count (big endian).*/
      case SMARTattributeNames::AvgEraseCntAndMaxEraseCnt:
+     case SMARTattributeNames::HeadFlyingHours:
        std_ossRawSMARTval << std::hex << /**To better differentiate between number and
        * base*/std::uppercase << SMARTrawVal << "h";
        break;

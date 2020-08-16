@@ -12,6 +12,7 @@
 #include <FileSystem/PathSeperatorChar.hpp>///FileSystem::dirSeperatorChar
 #include <FileSystem/path_seperator.h>///PATH_SEPERATOR_CHAR_STRING
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
+#include <OperatingSystem/BSD/socket/socket.h>///CloseSocket()
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <FileSystem/File/GetAbsoluteFilePath.hpp> // GetAbsoluteFilePath(...)
 
@@ -315,7 +316,7 @@ bool SMARTmonitorBase::InitializeLogger() {
 #ifdef _DEBUG
   g_logger.SetLogLevel("debug"/*LogLevel::debug*/);
 #else
-  g_logger.SetLogLevel(LogLevel::warning);
+  g_logger.SetLogLevel("warning"/*LogLevel::warning*/);
 #endif
   try {
     success = g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel:://debug
@@ -514,10 +515,14 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
       //Sleep in microseconds (1/1000th of a millisecond))
       usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
     } while (SMARTmonitorBase::s_updateSMARTvalues);
-    if(SMARTmonitorBase::s_updateSMARTvalues)
+//    if(SMARTmonitorBase::s_updateSMARTvalues)
       /** The SMARTmonitor object may have already been destroyed if 
        *  SMARTmonitorBase::s_updateSMARTvalues is false->invalid pointer.*/
       p_SMARTmonitorBase->AfterGetSMARTvaluesLoop(res);
+    if(p_getSMARTvaluesFunction ==
+        //p_SMARTmonitorBase->GetSMARTattrValsFromSrv()
+        & SMARTmonitorBase::GetSMARTattrValsFromSrv )
+      OperatingSystem::BSD::sockets::CloseSocket();
   }
   }///E.g. if rolling file appender and permission denied for the new file.
   catch(LogFileAccessException & lfae){
@@ -661,8 +666,10 @@ void SMARTmonitorBase::ConstructConfigFilePath(
 
 fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
   enum InitSMARTretCode initSMARTretCode = success;
-#ifdef __linux__ //TODO pass this folder via CMake argument so it is the same as
-  //Debian package (via CPack) installation path.
+
+//TODO pass this folder via CMake argument so it is the same as Debian package
+// (via CPack) installation path
+#if defined( __linux__) && defined(buildService)
   std::wstring stdwstrWorkDirWithCfgFilePrefix = L"/usr/local/SMARTmonitor";
 #else
   std::wstring stdwstrWorkDirWithCfgFilePrefix;

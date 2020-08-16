@@ -45,7 +45,7 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
 	 /** The unit for "GiB/data erased" (attr. ID 100) could be approximated via
 	  * low level IO functions by OS that determine the written sector/offset
 	  * + length of write operations.*/
-     OperatingSystem::getNumDifferentBlocksWritten();
+//     OperatingSystem::getNumDifferentBlocksWritten();
      break;
     /** The unit for "Total Data/LBAs Written/Read" differs among models. For
      * HFS256G39TND-N210A, firmware:30001P10 (serial:EJ7CN55981080CH09)

@@ -482,7 +482,7 @@ void SMARTdialog::StartAsyncDrctUpd8Thread()
   if(wxGetApp().GetNumSMARTattrToObs() > 0)
   {// && wxGetApp().GetNumSMARTattrDefs() > 0
     //ReadSMARTvaluesAndUpdateUI();
-#if defined(multithread) && defined(directSMARTAccess)
+#if defined(multithread) && defined(directSMARTaccess)
 //    wxGetApp().s_updateSMARTparameterValuesThread.start(
 //      wxUpdateSMARTparameterValuesThreadFunc, this);
     wxGetApp().StartAsyncUpdateThread(& SMARTmonitorBase::

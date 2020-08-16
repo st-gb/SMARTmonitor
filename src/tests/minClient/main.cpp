@@ -41,7 +41,7 @@ int main(int argCount, char * argVec [])
     port, & srvAddr, AF_INET, & socketFileDesc);
   if(cnnctToSrvRslt != prepCnnctToSrvSucceeded){
     std::cerr << "Preparing connect to \"" << srvHost << "\",port " << port <<
-      " failed->exiting." << std::endl;
+      " failed:" << enErrorMsgs[cnnctToSrvRslt] << "->exiting." << std::endl;
     return cnnctToSrvRslt;
   }
   unsigned timeoutInS = 0;
