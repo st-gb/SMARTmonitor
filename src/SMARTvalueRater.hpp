@@ -38,7 +38,7 @@ public:
     case UncorrSecCnt:
     case UDMA_CRCerrorCnt:
     case ShockDuringWrite:
-    case FreeFallProt:
+    case FreeFallEvtCnt:
       if(realCircaValue == 0)
         return SMARTvalueOK;
       else

@@ -12,11 +12,13 @@ fastestUnsignedDataType SMARTvalue::s_sizeOfLongIntInBytes = sizeof(long int);
 fastestUnsignedDataType SMARTvalue::s_numTimesLongIntFitsInto8Bytes = 8/
   s_sizeOfLongIntInBytes;
 
+///https://en.wikibooks.org/wiki/C%2B%2B_Programming/Operators/Operator_Overloading#Assignment_operator
 SMARTvalue & SMARTvalue::operator = ( const SMARTvalue & copyFrom )
 {
   m_timeStampOfRetrieval = copyFrom.m_timeStampOfRetrieval;
   m_successfullyReadSMARTrawValue = copyFrom.m_successfullyReadSMARTrawValue;
   SetRawValue( * (uint64_t *) copyFrom.m_rawValue);
+  return *this;
 }
 
 /** copy c'tor */

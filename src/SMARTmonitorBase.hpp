@@ -113,10 +113,10 @@ public:
   void ConstructConfigFilePath(std::wstring & stdwstrConfigPathWithoutExtension);
   /** Exists to enable SMARTmonitorClient::GetSMARTvaluesFromServer to be 
    *  executed in ::UpdateSMARTparameterValuesThreadFunc(...) 
-   *  (Only methods of this class can be used there, but becase the method
+   *  (Only methods of this class can be used there, but because the method
    *  is virtual it passes execution to the implementation in 
    *  SMARTmonitorClient.) */
-  virtual fastestUnsignedDataType GetSMARTattrValsFromSrv() {}
+  virtual fastestUnsignedDataType GetSMARTattrValsFromSrv() {return 1;}
   fastestUnsignedDataType ProcessCommandLineArgs();
   void HandleLogFileFolderProgramOption(std::wstring & cmdLineOptionValue);
   fastestUnsignedDataType InitializeSMART();

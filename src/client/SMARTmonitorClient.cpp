@@ -1,5 +1,15 @@
-/** Author: sg
+/** Author: Stefan gebauer, M.Sc. Comp.Sc.
  * Created on 20. November 2016, 17:43 */
+
+///from Stefan Gebauer's common_sourcecode git repository:
+/** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
+ *  winsock2.h before windows.h [-Wcpp]" */
+#include <OperatingSystem/BSD/socket/socket.h>///readFromSocket(...)
+#include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
+#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
+///OperatingSystem::GetLastErrorCode()
+#include <OperatingSystem/GetLastErrorCode.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN(...)
 
 ///This repository's header files:
 #include "SMARTmonitorClient.h"///this class' header file
@@ -12,15 +22,6 @@
 #include <stdint.h> //uint8_t
 ///http://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/close?view=vs-2019
 #include <unistd.h>///close(...), read(...)
-
-///from Stefan Gebauer's common_sourcecode git repository:
-#include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
-#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
-///OperatingSystem::GetLastErrorCode()
-#include <OperatingSystem/GetLastErrorCode.hpp>
-//#include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
-#include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN(...)
-#include <OperatingSystem/BSD/socket/socket.h>///readFromSocket(...)
 
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
