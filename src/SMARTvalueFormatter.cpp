@@ -50,6 +50,14 @@ char calcUnitPrefixFactorAndRemainder(
   return unitPrefixes[One_kExp];
 }
 
+std::string SMARTvalueFormatter::GetDegCfromCurr(
+  const uint64_t & SMARTrawValue)
+{
+  std::ostringstream stdoss;
+  stdoss << (SMARTrawValue & 0xFFFF) << "°C";  
+  return stdoss.str();
+}
+
 std::string SMARTvalueFormatter::GetDegCfromCurrMinMax(
   const uint64_t & SMARTrawValue)
 {
@@ -133,21 +141,17 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
       UserInterface::FormatTime(SMARTrawVal, timeFmt);
       return timeFmt;
     }
-    /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes.
-    *"Value is equal to (100-temp. °C), allowing manufacturer to set a minimum
-    * threshold which corresponds to a maximum temperature. This also follows
-    * the convention of 100 being a best-case value and lower values being
-    * undesirable. However, some older drives may instead report raw Temperature
-    * (identical to 0xC2) or Temperature minus 50 here.*/
     case SMARTattributeNames::TempDiffOrAirflowTemp:
-     ///If temp. in Celsius: and 100-temp. °C: maximum is 100-(-273)=373
-     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
-      /**thtps://en.wikipedia.org/wiki/S.M.A.R.T.: "some older drives may 
-      * instead report raw Temperature (identical to 0xC2)"*/
-      return GetDegCfrom_mK(SMARTrawVal);
-    /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes:
-     * "Lowest byte of the raw value contains the exact temperature value (
+//     ///If temp. in Celsius: and 100-temp. °C: maximum is 100-(-273)=373
+//     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
+//      /** http://en.wikipedia.org/wiki/S.M.A.R.T.: "some older drives may 
+//      * instead report raw Temperature (identical to 0xC2)"*/
+//      return GetDegCfrom_mK(SMARTrawVal);
+    /** http://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
+     *  : "Lowest byte of the raw value contains the exact temperature value (
      *   Celsius degrees)."*/
+      return SMARTvalueFormatter::GetDegCfromCurr(SMARTrawVal);
+
     case SMARTattributeNames::DevTemp :
 //     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
       return GetDegCfromCurrMinMax(SMARTrawVal);

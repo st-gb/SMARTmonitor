@@ -524,6 +524,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         case SMARTattributeNames::ReallocEvtCnt:
         case SMARTattributeNames::UncorrSecCnt:
         case SMARTattributeNames::UDMA_CRCerrorCnt:
+        case SMARTattributeNames::FreeFallEvtCnt:
           std_ossUnit << "#?";
           break;
         case SMARTattributeNames::TotalDataWritten:

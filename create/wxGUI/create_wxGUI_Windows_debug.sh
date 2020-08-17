@@ -1,5 +1,7 @@
-dirPathOfThisScript=$(readlink -f $0)#Gets directory path
-dirPathOfThisScript=$(dirname "$dirPathOfThisScript")#->absolute directory path
+#Gets directory path
+dirPathOfThisScript=$(readlink -f $0)
+#->absolute directory path
+dirPathOfThisScript=$(dirname "$dirPathOfThisScript")
 
 bash $dirPathOfThisScript/create_wxGUI_Windows.sh \
 "Unix Makefiles" \

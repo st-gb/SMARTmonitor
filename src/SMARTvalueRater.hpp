@@ -32,13 +32,13 @@ public:
     case HighFlyWrites:
     case EndToEndError:
     case ReportedUncorrError:
-    case G_senseErrorRate:
+    case G_senseErrorCnt:
     case ReallocEvtCnt:
     case CurrPendSecCnt:
     case UncorrSecCnt:
     case UDMA_CRCerrorCnt:
     case ShockDuringWrite:
-    case FreeFallProt:
+    case FreeFallEvtCnt:
       if(realCircaValue == 0)
         return SMARTvalueOK;
       else

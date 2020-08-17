@@ -1,8 +1,11 @@
-dirPathOfThisScript=$(readlink -f $0)#Gets directory path
-dirPathOfThisScript=$(dirname "$dirPathOfThisScript")#->absolute directory path
+#Gets directory path
+dirPathOfThisScript=$(readlink -f $0)
+#->absolute directory path
+dirPathOfThisScript=$(dirname "$dirPathOfThisScript")
+echo "dirPathOfThisScript $dirPathOfThisScript"
 
-$CMakeBuildSysGenerator=$1
-$AdditionalCMakeOpts=$2
+CMakeBuildSysGenerator=$1
+AdditionalCMakeOpts=$2
 
 bash $dirPathOfThisScript/create_wxGUI.sh \
 E:/wxWidgets/3.1.0/include \
