@@ -23,6 +23,7 @@ GCC_DIAG_ON(write-strings)
 #include <wx/listctrl.h> //class wxListCtrl
 #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h>
+typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/SupportedSMARTIDsDialog.hpp>

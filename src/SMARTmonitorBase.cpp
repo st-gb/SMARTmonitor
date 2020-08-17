@@ -5,14 +5,17 @@
 #include <unistd.h>///sleep(unsigned)
 
 ///Stefan Gebauer's common_sourcecode git repository:
+/** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
+ *  winsock2.h before windows.h [-Wcpp]" */
+#include <OperatingSystem/BSD/socket/socket.h>///CloseSocket()
 #include <Controller/character_string/stdtstr.hpp>///GetStdWstring(...)
 #include <Controller/Logger/LogFileAccessException.hpp>
+typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
 #include <FileSystem/GetCurrentWorkingDir.hpp> //OperatingSystem::GetCurrentWorkingDirA_inl(...)
 #include <FileSystem/PathSeperatorChar.hpp>///FileSystem::dirSeperatorChar
 #include <FileSystem/path_seperator.h>///PATH_SEPERATOR_CHAR_STRING
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
-#include <OperatingSystem/BSD/socket/socket.h>///CloseSocket()
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <FileSystem/File/GetAbsoluteFilePath.hpp> // GetAbsoluteFilePath(...)
 
