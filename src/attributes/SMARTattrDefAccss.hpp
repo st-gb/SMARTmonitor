@@ -60,7 +60,8 @@ static bool getSMARTattrDef(const fastestUnsignedDataType SMARTattrID,
   return false;
 }
 
-static SMARTattrDef * getSMARTattrDef(const fastestUnsignedDataType SMARTattrID){
+static SMARTattrDef * getSMARTattrDef(const fastestUnsignedDataType SMARTattrID)
+{
 //  SMARTattrContConstIterType SMARTattrDefIter = SMARTattrDefs.begin();
 //  SMARTattrIter = r_SMARTattrCont.find( SMARTattrDef(SMART_ID) );
 //  if( SMARTattrIter != r_SMARTattrCont.end() )

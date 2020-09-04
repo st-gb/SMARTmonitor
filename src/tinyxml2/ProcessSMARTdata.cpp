@@ -3,6 +3,7 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include "hardware/CPU/atomic/AtomicExchange.h"
 #include "Controller/character_string/ConvertStdStringToTypename.hpp"
+//#include <data_structures/set.hpp>///std::set that uses emplace if >= C++11
 
 bool GetSMARTuniqueID(
   tinyxml2::XMLElement * p_tinyxml2XMLelement, 
@@ -76,8 +77,17 @@ void HandleSingleSMARTentry(
     return;
   }
   AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 1);
-  const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
   
+  const int64_t lowerUnitBound = p_SMARTelement->Int64Attribute(
+    "lower_unit_bound", 0);
+  const char * unit = p_SMARTelement->Attribute("unit", NULL);
+  if(lowerUnitBound && strlen(lowerUnitBound) > 0){
+    if(lowerUnitBound[0] == '>')
+      ;
+  }
+  
+  const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
+  //TODO inaccuracy because of floating point: 764717.375 * 1000.0f =764717376
   AtomicExchange(& sMARTvalue.m_timeStampOfRetrieval, timeInS * 1000.0f );
   
   LOGN("adding SMART raw value " << SMARTrawVal << " (time:" << timeInS 
@@ -308,8 +318,9 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
       m_SMARTattrIDsToObs);
     //TODO Uncomment. Causes not to display the current SMART data at least if
     // data from service.
-//    SMARTuniqueIDsAndValues.insert/*emplace*/(SMARTuniqueIDandValues(
-//      sMARTuniqueID) );
+    SMARTuniqueIDsAndValues.insert/*emplace insOrEmpl*/(SMARTuniqueIDandValues(
+      sMARTuniqueID) );
+
     dataCarrierID2supportedSMARTattrs.insert( std::make_pair(sMARTuniqueID, 
       supportedSMARTattrIDs) );
   }

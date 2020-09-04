@@ -1,9 +1,6 @@
-/*
- * SMARTuniqueIDandValues.hpp
- *
+/** SMARTuniqueIDandValues.hpp
  *  Created on: 05.08.2016
- *      Author: sg
- */
+ *  Author: Stefan Gebauer, M.Sc. Comp.Sc. */
 
 #ifndef ATTRIBUTES_SMARTUNIQUEIDANDVALUES_HPP_
 #define ATTRIBUTES_SMARTUNIQUEIDANDVALUES_HPP_
@@ -15,6 +12,9 @@
 
 //class SMARTaccessBase;
 
+/// https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
+/// max attr ID is 254
+//TODO exchange by numDifferentSMART_IDs from <hardware/dataCarrier/ATA3Std.h>
 #define NUM_DIFFERENT_SMART_ENTRIES 256
 
 class SMARTvalue

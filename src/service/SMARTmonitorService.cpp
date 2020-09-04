@@ -92,6 +92,9 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
       LOGN_DEBUG("device file path belonging to (SMART) data carrier ID:"
          << device )
       suppSMART_IDsType SMARTattrNamesAndIDs;
+      //TODO Getting supported SMART attrs only needs to be done once for a drive
+      // should be the same for all same model or same model, firmware
+      // Can store this in a dataCarrierID2supportedSMARTattributesMap_type
       SMARTaccess.GetSupportedSMART_IDs(device, SMARTattrNamesAndIDs);
       suppSMART_IDsType::const_iterator supportedSMARTattrIDsIter =
         SMARTattrNamesAndIDs.begin();

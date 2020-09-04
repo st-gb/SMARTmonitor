@@ -289,8 +289,8 @@ struct SMARTuniqueID {
   void SetFirmwareName(const char *);
 };
   
-  typedef std::set<fastestSignedDataType> supportedSMARTattributeIDs_type;
-  typedef std::map<SMARTuniqueID,supportedSMARTattributeIDs_type >
+  typedef std::set<fastestSignedDataType> supportedSMARTattrIDsType;
+  typedef std::map<SMARTuniqueID,supportedSMARTattrIDsType >
     dataCarrierID2supportedSMARTattrMap_type;
 typedef std::map<SMARTuniqueID,std::string> dataCarrierID2devicePath_type;
 

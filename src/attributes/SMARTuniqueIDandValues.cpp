@@ -12,6 +12,7 @@ fastestUnsignedDataType SMARTvalue::s_sizeOfLongIntInBytes = sizeof(long int);
 
 SMARTvalue & SMARTvalue::operator = ( const SMARTvalue & copyFrom )
 {
+  LOGN_DEBUG("begin")
   m_timeStampOfRetrieval = copyFrom.m_timeStampOfRetrieval;
   m_successfullyReadSMARTrawValue = copyFrom.m_successfullyReadSMARTrawValue;
   SetRawValue( * (uint64_t *) copyFrom.m_rawValue);
@@ -20,11 +21,13 @@ SMARTvalue & SMARTvalue::operator = ( const SMARTvalue & copyFrom )
 /** copy c'tor */
 SMARTvalue::SMARTvalue(SMARTvalue & copyFrom)
 {
+  LOGN_DEBUG("begin")
   m_timeStampOfRetrieval = copyFrom.m_timeStampOfRetrieval;
   m_successfullyReadSMARTrawValue = copyFrom.m_successfullyReadSMARTrawValue;
   SetRawValue( * (uint64_t *) copyFrom.m_rawValue);
 }
 
+//TODO is this sufficient? psrts of the raw value may have been changed
 void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
   an 8 byte type here */ uint64_t & rawSMARTattrValue)
 {
@@ -136,7 +139,8 @@ bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
   }
 #ifdef DEBUG
   if( rawValueCheckSum != m_rawValueCheckSum )
-    LOGN_WARNING("values differ")
+    LOGN_WARNING("values differ: " << rawValueCheckSum << " " <<
+      m_rawValueCheckSum)
 #endif
   return rawValueCheckSum == m_rawValueCheckSum;
 }

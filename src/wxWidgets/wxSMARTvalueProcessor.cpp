@@ -1,9 +1,6 @@
-/*
- * wxSMARTreader.cpp
- *
+/** wxSMARTreader.cpp
  *  Created on: 28.11.2013
- *      Author: mr.sys
- */
+ *  Author: Stefan Gebauer, M.Sc. Comp.Sc. */
 
 #include <wx/filefn.h>
 #include <wx/msgdlg.h>
@@ -12,16 +9,16 @@
 namespace wxWidgets
 {
 
-  wxSMARTvalueProcessor::wxSMARTvalueProcessor()
+  DynLibSMARTvalProc::DynLibSMARTvalProc()
   {
   }
 
-  wxSMARTvalueProcessor::~wxSMARTvalueProcessor()
+  DynLibSMARTvalProc::~DynLibSMARTvalProc()
   {
     // TODO Auto-generated destructor stub
   }
 
-  void wxSMARTvalueProcessor::Init() {
+  void DynLibSMARTvalProc::Init() {
     wxString wxstrDynLibFileName = wxString(
       wxT("OnChangedCriticalSMARTparameters") ) +
       wxDynamicLibrary::GetDllExt();
@@ -46,18 +43,18 @@ namespace wxWidgets
     }
   }
 
-  void wxSMARTvalueProcessor::ExecuteChangedCriticalParametersAction(
-    SMARTentry & sMARTentry,
+  void DynLibSMARTvalProc::ExecuteChangedCriticalParametersAction(
+    SMARTattrDef & sMARTentry,
     SMARTuniqueID & sMARTuniqueID
     )
   {
 //    m_wxdynlib.
-    OnChangedCriticalSMARTparameters(
+    OnChangedSMARTparams(
       sMARTentry, sMARTuniqueID);
   }
 
-  void wxSMARTvalueProcessor::OnChangedCriticalSMARTparameters(
-    SMARTentry & sMARTentry,
+  void DynLibSMARTvalProc::OnChangedSMARTparams(
+    SMARTattrDef & sMARTentry,
     SMARTuniqueID & sMARTuniqueID
     )
   {
@@ -67,7 +64,7 @@ namespace wxWidgets
         sMARTentry, sMARTuniqueID);
   }
 
-	template <typename func_type> void wxSMARTvalueProcessor::PossiblyAssign(
+	template <typename func_type> void DynLibSMARTvalProc::PossiblyAssign(
 	  const wxString & wxstrFuncName, func_type & p_function//, func_type functyp
 	  )
 	{

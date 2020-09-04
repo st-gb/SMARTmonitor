@@ -9,6 +9,7 @@ include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
 set(srcFilePaths
   main.cpp
   #TODO Make 3 source files as CMake variable "SMARTattrSrcFiles" and use here?
+  # Or all 4 source files into SMARTaccBaseSrcFiles?
   ${SMARTmonSrcDir}/attributes/SMARTattributeNameAndID.cpp#For SMARTaccessBase
   ${SMARTmonSrcDir}/attributes/SMARTuniqueID.cpp#For class SMARTaccessBase
   ${SMARTmonSrcDir}/attributes/SMARTuniqueIDandValues.cpp#For SMARTaccessBase

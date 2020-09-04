@@ -17,10 +17,11 @@ END_EVENT_TABLE()
 
 SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
   const SMARTuniqueID & sMARTuniqueID,
-  SMARTmonitorClient & sMARTmonClient
+  SMARTmonitorClient & sMARTmonClient//TODO param not needed. use wxGetApp()
   )
-  : wxDialog(NULL, wxID_ANY, wxT("supported SMART IDs"), wxDefaultPosition, //wxDefaultSize,
-     wxSize(400,400),
+  : wxDialog(NULL, wxID_ANY, wxT("supported SMART IDs"), wxDefaultPosition,
+     //wxDefaultSize,
+     wxSize(400,700),
      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
   SetTitleFromDataCarrierID(sMARTuniqueID);
