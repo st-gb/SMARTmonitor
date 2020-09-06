@@ -442,8 +442,13 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
 //      memory_barrier(); //TODO: not really necessary??
   int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
 
+  uint64_t upTimeOfRetrievalInMs;
+  /** Also fails if client wants attribute ID but service did not send raw
+   * S.M.A.R.T. values. */
+  if(! sMARTvalue.GetRetrievalTime(upTimeOfRetrievalInMs) )
+    upTimeOfRetrievalInMs = 0;
   //memory_barrier(); //TODO: not really necessary??
-  if( /*successfullyUpdatedSMART*/ isConsistent )
+  if( /*successfullyUpdatedSMART*/ isConsistent && upTimeOfRetrievalInMs)
   {
 //    SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
     std::string stdstrHumanReadableRawVal;
@@ -612,10 +617,6 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
 //        }
 //        else
 //          m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxGREEN);
-    
-    uint64_t upTimeOfRetrievalInMs;
-    if(! sMARTvalue.GetRetrievalTime(upTimeOfRetrievalInMs) )
-      upTimeOfRetrievalInMs = 0;
     UpdateTimeOfSMARTvalueRetrieval(
       SMARTattrID,
       upTimeOfRetrievalInMs,

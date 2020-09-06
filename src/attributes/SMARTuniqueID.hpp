@@ -159,7 +159,7 @@ struct SMARTuniqueID {
            sMART_IDtoRead < suppSMART_ID);
       }
       if(SMART_IDsToReadIdx < numDifferentSMART_IDs)
-        m_SMART_IDsToRd[SMART_IDsToReadIdx] = 0;
+        m_SMART_IDsToRd[SMART_IDsToObsIdx] = 0;
     }
   }
   

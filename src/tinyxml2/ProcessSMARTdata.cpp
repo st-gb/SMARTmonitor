@@ -85,8 +85,8 @@ void HandleSingleSMARTentry(
   const int64_t lowerUnitBound = p_SMARTelement->Int64Attribute(
     "lower_unit_bound", 0);
   const char * unit = p_SMARTelement->Attribute("unit", NULL);
-  if(lowerUnitBound && strlen(lowerUnitBound) > 0){
-    if(lowerUnitBound[0] == '>')
+  if(lowerUnitBound && strlen(unit) > 0){
+    if(unit[0] == '>')
       ;
   }
   
@@ -322,8 +322,8 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
       m_SMARTattrIDsToObs);
     //TODO Uncomment. Causes not to display the current SMART data at least if
     // data from service.
-    //SMARTuniqueIDsAndValues.insert/*emplace insOrEmpl*/(SMARTuniqueIDandValues(
-    //  sMARTuniqueID) );
+    SMARTuniqueIDsAndValues.insert/*emplace insOrEmpl*/(SMARTuniqueIDandValues(
+      sMARTuniqueID) );
 
     dataCarrierID2supportedSMARTattrs.insert( std::make_pair(sMARTuniqueID, 
       supportedSMARTattrIDs) );
