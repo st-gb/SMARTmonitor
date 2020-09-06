@@ -5,8 +5,12 @@
 #include <unistd.h>///sleep(unsigned)
 
 ///Stefan Gebauer's common_sourcecode git repository:
+/** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
+ *  winsock2.h before windows.h [-Wcpp]" */
+#include <OperatingSystem/BSD/socket/socket.h>///CloseSocket()
 #include <Controller/character_string/stdtstr.hpp>///GetStdWstring(...)
 #include <Controller/Logger/LogFileAccessException.hpp>
+typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
 #include <FileSystem/GetCurrentWorkingDir.hpp> //OperatingSystem::GetCurrentWorkingDirA_inl(...)
 #include <FileSystem/PathSeperatorChar.hpp>///FileSystem::dirSeperatorChar
@@ -117,7 +121,7 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
     const SMARTuniqueIDandValues & SMARTuniqueIDandValues = *iter;
     LOGN_DEBUG("address of SMARTuniqueIDandValues obj:" << &SMARTuniqueIDandValues)
     for (int SMARTattributeID = 0; SMARTattributeID <
-            NUM_DIFFERENT_SMART_ENTRIES; SMARTattributeID++) {
+      numDifferentSMART_IDsPlus1; SMARTattributeID++) {
       //    SMARTattributesToObserve.insert();
       if(SMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID].
            m_successfullyReadSMARTrawValue)
@@ -315,7 +319,7 @@ bool SMARTmonitorBase::InitializeLogger() {
 #ifdef _DEBUG
   g_logger.SetLogLevel("debug"/*LogLevel::debug*/);
 #else
-  g_logger.SetLogLevel(LogLevel::warning);
+  g_logger.SetLogLevel("warning"/*LogLevel::warning*/);
 #endif
   try {
     success = g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel:://debug
@@ -378,7 +382,7 @@ void  SMARTmonitorBase::EnsureSMARTattrToObsExist()
 //    mp_SMARTaccess->GetSupportedSMART_IDs(device, SMARTattributeNamesAndIDs);
 #else
     for(int SMARTattributeID = 0; SMARTattributeID <
-          NUM_DIFFERENT_SMART_ENTRIES; SMARTattributeID++) {
+      numDifferentSMART_IDsPlus1; SMARTattributeID++) {
       m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
       LOGN_DEBUG("adding SMART attribute ID " << SMARTattributeID)
     }
@@ -514,8 +518,14 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
       //Sleep in microseconds (1/1000th of a millisecond))
       usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
     } while (SMARTmonitorBase::s_updateSMARTvalues);
-
-    p_SMARTmonitorBase->AfterGetSMARTvaluesLoop(res);
+//    if(SMARTmonitorBase::s_updateSMARTvalues)
+      /** The SMARTmonitor object may have already been destroyed if 
+       *  SMARTmonitorBase::s_updateSMARTvalues is false->invalid pointer.*/
+      p_SMARTmonitorBase->AfterGetSMARTvaluesLoop(res);
+    if(p_getSMARTvaluesFunction ==
+        //p_SMARTmonitorBase->GetSMARTattrValsFromSrv()
+        & SMARTmonitorBase::GetSMARTattrValsFromSrv )
+      OperatingSystem::BSD::sockets::CloseSocket();
   }
   }///E.g. if rolling file appender and permission denied for the new file.
   catch(LogFileAccessException & lfae){
@@ -659,8 +669,10 @@ void SMARTmonitorBase::ConstructConfigFilePath(
 
 fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
   enum InitSMARTretCode initSMARTretCode = success;
-#ifdef __linux__ //TODO pass this folder via CMake argument so it is the same as
-  //Debian package (via CPack) installation path.
+
+//TODO pass this folder via CMake argument so it is the same as Debian package
+// (via CPack) installation path
+#if defined( __linux__) && defined(buildService)
   std::wstring stdwstrWorkDirWithCfgFilePrefix = L"/usr/local/SMARTmonitor";
 #else
   std::wstring stdwstrWorkDirWithCfgFilePrefix;

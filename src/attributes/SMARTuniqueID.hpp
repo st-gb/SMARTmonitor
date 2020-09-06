@@ -39,7 +39,7 @@ struct SMARTuniqueID {
   char m_modelName[numSMARTmodelBytes+1];
 
   //TODO # supported SMART IDs may only be 30->less space needed
-  fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs] = {0};
+  fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs];// = {0};
   
   ///Source code for unit detection follows.
   typedef fastestUnsignedDataType SMART_IDsToReadType;
@@ -51,6 +51,7 @@ struct SMARTuniqueID {
     return m_SMART_IDsToRd[SMART_IDsToReadIdx] !=0
       && SMART_IDsToReadIdx < numDifferentSMART_IDs;
   }
+  bool noSMARTattrsToRead() const{ return ! SMART_IDsToReadNotEnd(0); }
   
   typedef long int unitDataType;
   //TODO not needed anoymore because calculated from upper - lower bound?
@@ -67,6 +68,8 @@ struct SMARTuniqueID {
   unitDataType upperUnitBound[numItems];
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
   SMARTuniqueID(){
+    supportedSMART_IDs[0] = 0;///Means:array is empty
+    m_SMART_IDsToRd[0] = 0;///Means:array is empty
     memset(units, 0, sizeof(units[0])*numItems);
     memset(m_prevSMARTrawVals, 0xFF,sizeof(uint64_t)*numItems);
     memset(m_otherMetricVal, 0xFF,sizeof(uint64_t)*numItems);
@@ -167,7 +170,9 @@ struct SMARTuniqueID {
     const uint64_t & SMARTrawVal,
     const uint64_t otherVal///E.g. # B written to data carrier since OS start
     )
-  {
+  {//TODO sometimes wrong vales are here. Ausreißende Werte ignorieren
+    //So ignore values where the more recent value is higher than the old one
+    //(this already happened) and so the difference gets < 0.
     /** Should make a difference of m_otherMetricVal minus otherVal from the 2nd
      * time the S.M.A.R.T. attribute value
      * increases. Else if doing it the 1st time it increases then the difference
@@ -241,6 +246,8 @@ struct SMARTuniqueID {
       break;
       /**SMART raw value increased for at least the 3rd time*/
       case getUnit:{///The higher the difference  the more accurate?
+        ///Was not always the case.
+        if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID]){
         uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
         if( SMARTrawValDiff > m_SMARTrawValDiffs[SMARTattrID]){
           m_SMARTrawValDiffs[SMARTattrID] = SMARTrawValDiff;
@@ -271,6 +278,13 @@ struct SMARTuniqueID {
           AtomicExchange(&units[SMARTattrID], unit);
         }
       }
+#ifdef _DEBUG
+      else{
+        uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
+        SMARTrawValDiff += 0;
+      }
+#endif
+    }
     }
   }
 

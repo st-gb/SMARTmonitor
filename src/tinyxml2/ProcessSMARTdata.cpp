@@ -1,8 +1,12 @@
 #include <tinyxml2.h> //tinyxml2::XMLElement etc.
+
 #include <client/SMARTmonitorClient.h>
+
+///from Stefan Gebauer's common_sourcecode repository:
+#include <Controller/character_string/ConvertStdStringToTypename.hpp>
+#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
+#include <hardware/dataCarrier/ATA3Std.h>///numDifferentSMART_IDsPlus1
 #include <preprocessor_macros/logging_preprocessor_macros.h>
-#include "hardware/CPU/atomic/AtomicExchange.h"
-#include "Controller/character_string/ConvertStdStringToTypename.hpp"
 //#include <data_structures/set.hpp>///std::set that uses emplace if >= C++11
 
 bool GetSMARTuniqueID(
@@ -37,13 +41,13 @@ bool GetSMARTuniqueID(
   sMARTuniqueID.SetModelName(modelString);
   sMARTuniqueID.SetFirmwareName(firmwareString);
   sMARTuniqueID.SetSerialNumber(serialNumberString);
-  LOGN("data carrier ID:" << sMARTuniqueID)
+  LOGN_DEBUG("data carrier ID:" << sMARTuniqueID)
   return true;
 }
 
 int CheckSMARTidRange(const int SMARTattributeID)
 {
-  if( SMARTattributeID >= NUM_DIFFERENT_SMART_ENTRIES)
+  if(SMARTattributeID > numDifferentSMART_IDsPlus1)
   {
     LOGN_ERROR("SMART ID too high:" << SMARTattributeID)
     return 1;
@@ -88,7 +92,7 @@ void HandleSingleSMARTentry(
   
   const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
   //TODO inaccuracy because of floating point: 764717.375 * 1000.0f =764717376
-  AtomicExchange(& sMARTvalue.m_timeStampOfRetrieval, timeInS * 1000.0f );
+  sMARTvalue.SetRetrievalTime(timeInS);
   
   LOGN("adding SMART raw value " << SMARTrawVal << " (time:" << timeInS 
     << ") to SMART ID " << SMARTattributeID)
@@ -318,8 +322,8 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
       m_SMARTattrIDsToObs);
     //TODO Uncomment. Causes not to display the current SMART data at least if
     // data from service.
-    SMARTuniqueIDsAndValues.insert/*emplace insOrEmpl*/(SMARTuniqueIDandValues(
-      sMARTuniqueID) );
+    //SMARTuniqueIDsAndValues.insert/*emplace insOrEmpl*/(SMARTuniqueIDandValues(
+    //  sMARTuniqueID) );
 
     dataCarrierID2supportedSMARTattrs.insert( std::make_pair(sMARTuniqueID, 
       supportedSMARTattrIDs) );

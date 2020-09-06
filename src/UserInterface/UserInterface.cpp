@@ -23,9 +23,10 @@ std::string UserInterface::GetTimeAsString(const struct tm & timeOfLastSMARTvalu
 #define sPerH 3600
 #define sPerMin 60
 
-inline void UserInterface::FmtViaOSS(const unsigned long timeInMs,
+inline void UserInterface::FmtViaOSS(const uint64_t timeInMs,
   std::string & str)
 {
+  if(timeInMs){
   fastestUnsignedDataType timeInS = timeInMs / 1000;
   std::ostringstream oss;
   fastestUnsignedDataType days = timeInS/sPerDay;
@@ -53,6 +54,9 @@ inline void UserInterface::FmtViaOSS(const unsigned long timeInMs,
   if(timeInMs % 1000)
     oss << (timeInMs % 1000) << "ms";
   str = oss.str();
+  }
+  else
+    str = "unknown";
 }
 
 /**"seconds" in struct "timeval" has type "long int": 2^64=1,8447×10^19=
@@ -132,9 +136,9 @@ void FmtVia_snprintf(const unsigned long timeInMs, std::string & stdstrTimeForma
  * wxWidgets GUI, ...) of this class.
  * Used to format the uptime of last update und time unit range*/
 void UserInterface::FormatTime(
-  long int timeStampOfRetrievalInMs, 
+  const uint64_t timeInMs, 
   std::string & timeFormatString)
 {
-  FmtViaOSS(timeStampOfRetrievalInMs, timeFormatString);
+  FmtViaOSS(timeInMs, timeFormatString);
 //  timeFormatString += " uptime";///" pure runtime after bootup"
 }

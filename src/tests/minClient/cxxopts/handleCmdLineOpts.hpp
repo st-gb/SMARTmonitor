@@ -7,8 +7,8 @@
 #include <libraries/cxxopts/handleArg.hpp>///cxxopts::handleArg(...)
 
 namespace cxxopts{
-inline int HandleCmdLineOpts(int argCount, char * args[], std::string & srvHost,
-  int & port, unsigned & timeoutInUs){
+inline int HandleCmdLineOpts(int argCount, const char * args[],
+  std::string & srvHost, int & port, unsigned & timeoutInUs){
   cxxopts::Options cmdLineOpts(args[0]);
   cmdLineOpts.add_options()///Indirectly calls OptionAdder::operator()
     ///->calls m_options.add_option

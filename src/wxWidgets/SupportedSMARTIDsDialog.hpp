@@ -14,7 +14,8 @@
 #include <client/SMARTmonitorClient.h> //class SMARTmonitorClient
 #include "SMARTtableListCtrl.hpp"///class wxWidgets::SMARTtableListCtrl
 
-/** Forward declarations: */
+///Forward declarations (faster than #include):
+class wxButton;
 class wxListCtrl;
 class wxSizer;
 //class SMARTmonitorClient;
@@ -24,6 +25,10 @@ class SupportedSMART_IDsDialog
   : public wxDialog
 {
   /*wxListCtrl*/wxWidgets::SMARTtableListCtrl * m_pwxlistctrl;
+  wxButton * m_p_upd8SupportedSMART_IDs;
+  enum UIctrlIDs {upd8SupportedSMART_IDs};
+  SMARTmonitorClient & m_sMARTmonClient;
+  SMARTuniqueID & m_sMARTuniqueID;
 public:
   SupportedSMART_IDsDialog(const SMARTuniqueID &, SMARTmonitorClient &);
   virtual
@@ -33,9 +38,10 @@ public:
   void create2ColListCtrl();
   void cr8ListCtrl();
   wxSizer * CreateGUI(const SMARTuniqueID & dataCarrierID);
-  void FillGUI(SMARTuniqueID &, SMARTmonitorClient &);
+  void FillGUI(SMARTuniqueID &, SMARTmonitorClient &, const bool create);
   void SetTitleFromDataCarrierID(const SMARTuniqueID & dataCarrierID);
   void OnCloseWindow(wxCloseEvent& event);
+  void OnUpd8SupportedSMART_IDs(wxCommandEvent &);
   
   /** Necessary for receiving events. */
   DECLARE_EVENT_TABLE()

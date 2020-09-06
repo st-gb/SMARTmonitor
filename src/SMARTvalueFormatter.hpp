@@ -21,7 +21,8 @@ public:
   virtual ~SMARTvalueFormatter();
   static std::string FormatHumanReadable(
     fastestUnsignedDataType SMARTattributeID, 
-    const uint64_t & SMARTrawValue);
+    const uint64_t & SMARTrawValue,
+    const bool unitKnown);
   static std::string GetDegCfromCurrMinMax(const uint64_t & SMARTrawValue);
   static std::string GetDegCfrom_mK(const uint64_t & SMARTrawValue);
   static std::string GetTimeFrom_h(const uint64_t & SMARTrawVal);

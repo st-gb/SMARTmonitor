@@ -1,6 +1,6 @@
 /* SMARTtableListCtrl.hpp
  *  Created on: 10.03.2015
- *      Author: mr.sys  */
+ *      Author: Stefan Gebauer, M.Sc. Comp.Sc. */
 #ifndef WXWIDGETS_SMARTTABLELISTCTRL_HPP_
 #define WXWIDGETS_SMARTTABLELISTCTRL_HPP_
 

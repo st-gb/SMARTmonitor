@@ -21,10 +21,11 @@ set(CMakeScriptFilePaths
   ${CMAKE_CURRENT_LIST_FILE}#this CMake file
 )
 
-#see http://accountingplusplus.blogspot.de/2010/12/cmake-wxwidgets.html :
-#Set wxWidgets_USE_DEBUG to "ON" to link against WxWidgets debug libraries.
-set( wxWidgets_USE_DEBUG ON
-  )
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  #see http://accountingplusplus.blogspot.de/2010/12/cmake-wxwidgets.html :
+  #Set wxWidgets_USE_DEBUG to "ON" to link against WxWidgets debug libraries.
+  set( wxWidgets_USE_DEBUG ON)
+endif()
 message("wxWidgets_USE_DEBUG: ${wxWidgets_USE_DEBUG}")
 
 #Set to appropriate version--releae, debug, 32/64 bit

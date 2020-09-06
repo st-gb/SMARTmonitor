@@ -6,7 +6,10 @@
 #define SMARTMONITORCLIENT_H
 
 #include "../SMARTmonitorBase.hpp"
+
+///Stefan Gebauer's common_sourcecode repository header files:
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
+
 #include <UserInterface/columnIndices.hpp>
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater
 #include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
@@ -19,7 +22,7 @@ public:
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
 #ifdef _DEBUG
-  DWORD GetSMARTvalsAndUpd8UIthreadID = 0;
+  DWORD GetSMARTvalsAndUpd8UIthreadID /*= 0*/;
 #endif
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
   static fastestUnsignedDataType s_charPosOAttrNameBegin[ColumnIndices::beyondLast];
@@ -98,7 +101,9 @@ public:
     const SMARTuniqueIDandValues &, void * data);
   inline void UpdateTimeOfSMARTvalueRetrieval(
     const fastestUnsignedDataType SMARTattributeID,
-    const long int timeStampOfRetrieval, void * data);
+    /** Needs to be uint64_t in order to also work if built as 32 bit program
+     *  and a long uptime in ms.*/
+    const uint64_t timeStampOfRetrieval, void * data);
   /*virtual*/ void UpdateSMARTvaluesUI();
   virtual void SetAttribute(
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */

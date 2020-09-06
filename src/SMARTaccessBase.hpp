@@ -63,7 +63,7 @@ public:
   
   virtual int GetSupportedSMART_IDs(
     const char * const device,
-    suppSMART_IDsType & SMARTattributeNamesAndIDs) {};
+    suppSMART_IDsType & SMARTattributeNamesAndIDs){return unset;}
 };
 
 #endif /* SMARTACCESSBASE_HPP_ */

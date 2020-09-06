@@ -23,6 +23,7 @@ GCC_DIAG_ON(write-strings)
 #include <wx/listctrl.h> //class wxListCtrl
 #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h>
+typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/SupportedSMARTIDsDialog.hpp>
@@ -292,7 +293,10 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState newSta
     {
       const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
         wxGetApp().m_stdstrServiceHostName);
-      SetTitle( wxT("wxSMARTmonitor--data from ") + wxstrServiceAddress );
+      SetTitle(wxString::Format("wxSMARTmonitor--data from %s:%u", 
+        wxstrServiceAddress,
+        wxGetApp().m_socketPortNumber)
+        );
     }
       break;
     case SMARTmonitorClient::unconnectedFromService :
@@ -479,7 +483,7 @@ void SMARTdialog::StartAsyncDrctUpd8Thread()
   if(wxGetApp().GetNumSMARTattrToObs() > 0)
   {// && wxGetApp().GetNumSMARTattrDefs() > 0
     //ReadSMARTvaluesAndUpdateUI();
-#if defined(multithread) && defined(directSMARTAccess)
+#if defined(multithread) && defined(directSMARTaccess)
 //    wxGetApp().s_updateSMARTparameterValuesThread.start(
 //      wxUpdateSMARTparameterValuesThreadFunc, this);
     wxGetApp().StartAsyncUpdateThread(& SMARTmonitorBase::

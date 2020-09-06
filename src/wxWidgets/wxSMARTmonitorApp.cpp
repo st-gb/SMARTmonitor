@@ -305,6 +305,11 @@ bool wxSMARTmonitorApp::OnInit()
   ProcessCommandLineArgs(); /** May display messages. */
   const bool succInitedLogger = InitializeLogger();
   if(! succInitedLogger)
+//TODO Crashes at ntdll!RtlImageDirectoryEntryToData ()
+//    ntdll!RtlEnterCriticalSection ()
+//    OperatingSystem::Windows::CriticalSection::Enter 
+//  (this=<error reading variable: Cannot access memory at address 0x10>)
+//  after returning from here.
     return false;
   LOGN_DEBUG("Logger initialized")///For testing if logging is running.
   //m_wxSMARTvalueProcessor.Init();

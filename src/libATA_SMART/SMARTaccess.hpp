@@ -24,10 +24,11 @@ namespace libatasmart
 
 struct attr_helper {
   const SMARTuniqueIDandValues * p_sMARTuniqueIDandValues;
-  fastestUnsignedDataType currSMART_IDtoReadIdx = 0;
+  fastestUnsignedDataType currSMART_IDtoReadIdx;// = 0;
   const char * device;
   SMARTaccessBase * pSMARTacc;
   const fastestUnsignedDataType * IDsOfSMARTattrsToRd;
+  attr_helper() : currSMART_IDtoReadIdx(0) {}
 };
 
   int getSupportedSMART_IDs(const char * const,

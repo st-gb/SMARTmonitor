@@ -1,6 +1,7 @@
 /** SupportedSMARTIDsDialog.cpp
  *  Created on: 29.10.2016
  *  Author:Stefan Gebauer, M.Sc.Comp.Sc.*/
+#include <wx/button.h>///class wxButton
 #include <wx/listctrl.h> //class wxListCtrl
 #include <wx/sizer.h> // class wxBoxSizer
 #include <wx/defs.h> //wxID_ANY
@@ -13,6 +14,8 @@
 
 BEGIN_EVENT_TABLE(SupportedSMART_IDsDialog, wxDialog)
   EVT_CLOSE(SupportedSMART_IDsDialog::OnCloseWindow)
+  EVT_BUTTON(upd8SupportedSMART_IDs, SupportedSMART_IDsDialog::
+    OnUpd8SupportedSMART_IDs)
 END_EVENT_TABLE()
 
 SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
@@ -23,11 +26,13 @@ SupportedSMART_IDsDialog::SupportedSMART_IDsDialog(
      //wxDefaultSize,
      wxSize(400,700),
      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+    ,m_sMARTuniqueID( (SMARTuniqueID &) sMARTuniqueID)
+    ,m_sMARTmonClient(sMARTmonClient)
 {
   SetTitleFromDataCarrierID(sMARTuniqueID);
   wxSizer * sizerTop = CreateGUI(sMARTuniqueID);
 
-  FillGUI((SMARTuniqueID &) sMARTuniqueID, sMARTmonClient);
+  FillGUI((SMARTuniqueID &) sMARTuniqueID, sMARTmonClient, true);
   SetSizerAndFit(sizerTop);
   Centre();
 }
@@ -68,6 +73,7 @@ wxSizer * SupportedSMART_IDsDialog::CreateGUI(
   const SMARTuniqueID & dataCarrierID)
 {
   wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
+  wxSizer * const sizerTopLine = new wxBoxSizer(wxHORIZONTAL);
   std::string std_strDataCarrierID = dataCarrierID.str();
   wxTextCtrl * p_wxTextCtrl = new wxTextCtrl(this, wxID_ANY, 
     wxT("ALL S.M.A.R.T. attribute IDs supported by\n") + 
@@ -75,11 +81,21 @@ wxSizer * SupportedSMART_IDsDialog::CreateGUI(
     wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
   p_wxTextCtrl->SetEditable(false);
 
-  sizerTop->Add( p_wxTextCtrl,
+  sizerTopLine->Add(p_wxTextCtrl,
+    /** "in the main orientation of the wxBoxSizer - where 0 stands for not
+     * changeable" */
+    1,
+    wxEXPAND, 0);
+
+  m_p_upd8SupportedSMART_IDs = new wxButton(this, upd8SupportedSMART_IDs, 
+    wxT("update"));
+  sizerTopLine->Add(m_p_upd8SupportedSMART_IDs, 0, wxSTRETCH_NOT, 0);
+  
+  sizerTop->Add(sizerTopLine,
     /** "in the main orientation of the wxBoxSizer - where 0 stands for not
      * changeable" */
     0,
-    wxEXPAND, 1);
+    wxEXPAND, 0);
 
   cr8ListCtrl();
 
@@ -90,6 +106,7 @@ wxSizer * SupportedSMART_IDsDialog::CreateGUI(
 void SupportedSMART_IDsDialog::FillGUI(
   SMARTuniqueID & sMARTuniqueID
   ,SMARTmonitorClient & sMARTmonClient
+  ,const bool create
   )
 {
   fastestUnsignedDataType SMART_ID;
@@ -106,7 +123,8 @@ void SupportedSMART_IDsDialog::FillGUI(
   
   //Get supported SMART IDs for data carrier identifier
   std::string dvc = wxGetApp().s_dataCarrierID2devicePath[sMARTuniqueID];
-  wxGetApp().m_SMARTaccess.readSMARTforDevice(
+  const enum SMARTaccessBase::retCodes SMARTaccRetCode = wxGetApp().
+    m_SMARTaccess.readSMARTforDevice(
     dvc.c_str(),
     sMARTuniqueID,
     wxGetApp().s_dataCarrierID2devicePath,
@@ -119,18 +137,20 @@ void SupportedSMART_IDsDialog::FillGUI(
   for(fastestUnsignedDataType lineNumber = 0; lineNumber < numDifferentSMART_IDs
     && sMARTuniqueID.supportedSMART_IDs[lineNumber] != 0; ++ lineNumber)
   {
-    wxListItem item;
     SMART_ID = sMARTuniqueID.supportedSMART_IDs[lineNumber];
-    item.SetId(lineNumber); //item line number
-    m_pwxlistctrl->InsertItem( item );
-    ///Necessary for indirectly called SMARTtableListCtrl::SetSMARTattribValue(
-    m_pwxlistctrl->m_SMARTattribIDtoLineNumber[SMART_ID] = lineNumber;
-    
-    wxGetApp().setIDandLabel(SMART_ID, m_pwxlistctrl);
+    if(create){
+      wxListItem item;
+      item.SetId(lineNumber); //item line number
+      m_pwxlistctrl->InsertItem( item );
+     ///Necessary for indirectly called SMARTtableListCtrl::SetSMARTattribValue(
+      m_pwxlistctrl->m_SMARTattribIDtoLineNumber[SMART_ID] = lineNumber;
+      wxGetApp().setIDandLabel(SMART_ID, m_pwxlistctrl);
+    }
 #ifdef directSMARTaccess
-    sMARTmonClient.upd8rawAndH_andTime(SMART_ID, 
-      sMARTuniqueIDandValues,
-      m_pwxlistctrl);
+    if(SMARTaccRetCode == SMARTaccessBase::success)
+      sMARTmonClient.upd8rawAndH_andTime(SMART_ID, 
+        sMARTuniqueIDandValues,
+        m_pwxlistctrl);
 #endif
   }
 }
@@ -139,6 +159,10 @@ void SupportedSMART_IDsDialog::OnCloseWindow(wxCloseEvent& event)
 {
   wxGetApp().openTopLevelWindows.erase(this);
   Destroy();
+}
+
+void SupportedSMART_IDsDialog::OnUpd8SupportedSMART_IDs(wxCommandEvent & event){
+  FillGUI(m_sMARTuniqueID, m_sMARTmonClient, false);
 }
 
 void SupportedSMART_IDsDialog::SetTitleFromDataCarrierID(
@@ -150,5 +174,5 @@ void SupportedSMART_IDsDialog::SetTitleFromDataCarrierID(
   wxString wstrDataCarrierID = wxWidgets::GetwxString_Inline(std_oss.str() );
   /** Show data carrier model (, firmware, serial #) in title bar because 
    *  the supported attribute IDs are specific to the HDD model e.g.. */
-  SetTitle( /*"SMART IDs supported by " +*/ wstrDataCarrierID );  
+  SetTitle(wstrDataCarrierID + wxT("--all supported S.M.A.R.T. IDs") );
 }

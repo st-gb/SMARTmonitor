@@ -9,13 +9,17 @@
 
 /** E.g. 32 bit Linux: size of long int is 4 bytes*/
 fastestUnsignedDataType SMARTvalue::s_sizeOfLongIntInBytes = sizeof(long int);
+fastestUnsignedDataType SMARTvalue::s_numTimesLongIntFitsInto8Bytes = 8/
+  s_sizeOfLongIntInBytes;
 
+///https://en.wikibooks.org/wiki/C%2B%2B_Programming/Operators/Operator_Overloading#Assignment_operator
 SMARTvalue & SMARTvalue::operator = ( const SMARTvalue & copyFrom )
 {
   LOGN_DEBUG("begin")
   m_timeStampOfRetrieval = copyFrom.m_timeStampOfRetrieval;
   m_successfullyReadSMARTrawValue = copyFrom.m_successfullyReadSMARTrawValue;
   SetRawValue( * (uint64_t *) copyFrom.m_rawValue);
+  return *this;
 }
 
 /** copy c'tor */
@@ -92,6 +96,40 @@ void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
   }
 }
 
+///TODO AtomicExchange(...) necessary?
+bool SMARTvalue::GetRetrievalTime(uint64_t & uptimeInMs) const{
+  long int liTimePart, timeCheckSum = m_timeStampOfRetrieval;
+  AtomicExchange( (long int *) & uptimeInMs, m_timeStampOfRetrieval);
+  for(fastestUnsignedDataType idx = 1; idx < 
+    SMARTvalue::s_numTimesLongIntFitsInto8Bytes; ++idx)
+  {
+    liTimePart = * ( ((long int *) & m_timeStampOfRetrieval) + idx);
+    AtomicExchange( ((long int *) & uptimeInMs) + idx, liTimePart);
+    /** ServiceBasse::BeforeWait() may read this value while it is written in
+    .*  the SMARTaccesBase-derived class. Therefore the checksum.*/
+    timeCheckSum ^= liTimePart;
+  }
+  return timeCheckSum == m_timeCheckSum;
+}
+
+void SMARTvalue::SetRetrievalTime(const long double & uptimeInSeconds){
+  uint64_t uptimeInMs = (uint64_t) (uptimeInSeconds * 1000.0);
+  long int liTimePart;
+  //TODO make as generic algorithm also for SetRawValue(...)
+  liTimePart = uptimeInMs;
+  AtomicExchange( (long int *) & m_timeStampOfRetrieval, liTimePart);
+  m_timeCheckSum = liTimePart;
+  for(fastestUnsignedDataType idx = 1; idx < 
+    SMARTvalue::s_numTimesLongIntFitsInto8Bytes; ++idx)
+  {
+    liTimePart = * ( ((long int *) & uptimeInMs) + idx);
+    AtomicExchange( ((long int *) & m_timeStampOfRetrieval) +idx, liTimePart);
+    /** ServiceBasse::BeforeWait() may read this value while it is written in
+     *  the SMARTaccesBase-derived class. Therefore the checksum.*/
+    m_timeCheckSum ^= liTimePart;
+  }
+}
+
 /** @brief purpose of this function: because a SMART raw value takes 6 bytes.
  *   But on a 32 bit OS (even when executed on a 64 bit CPU) this value can't
  *    be stored in 1 thread safe atomic operation ( e.g. 
@@ -154,7 +192,8 @@ SMARTuniqueIDandValues::SMARTuniqueIDandValues (const SMARTuniqueID & _SMARTuniq
 SMARTuniqueIDandValues::SMARTuniqueIDandValues( const SMARTuniqueIDandValues & obj)
 {
   m_SMARTuniqueID = obj.getSMARTuniqueID();
-  for(fastestUnsignedDataType arrayIndex = 0; arrayIndex < NUM_DIFFERENT_SMART_ENTRIES; arrayIndex ++)
+  for(fastestUnsignedDataType arrayIndex = 0; arrayIndex <
+    numDifferentSMART_IDsPlus1; arrayIndex ++)
   {
     m_SMARTvalues[arrayIndex] = obj.m_SMARTvalues[arrayIndex];
   }

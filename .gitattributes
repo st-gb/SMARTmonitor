@@ -1,0 +1,2 @@
+#Bash scripts must not contain Windows line endings
+.sh text eol=lf

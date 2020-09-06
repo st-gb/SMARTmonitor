@@ -18,7 +18,6 @@ set(CMakeScriptFilePaths
   ${CMAKE_CURRENT_LIST_FILE}#this CMake file
 )
 
-set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_DEBUG_POSTFIX "_debug")
 #set(<variable> <value>  ... <valueN>)
 #set(WXWIDGETS_SOURCECODE_ROOT_PATH )
@@ -166,6 +165,10 @@ if(UNIX)#only Unix binaries into .deb file
   if(DEFINED cr8DebPkg)#"-Dcr8DebPkg" as cmake command line parameter
     include(createDebPkg.cmake)
   endif()
+endif()
+
+if(DEFINED cr8zip)#"-Dcr8zip" as cmake command line parameter
+  #include(createZip.cmake)
 endif()
 
 include(${cmnSrcDir}/CMake/writeItemsToFile.cmake)

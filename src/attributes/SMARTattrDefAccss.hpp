@@ -21,7 +21,8 @@ class SMARTattrDefAccss///def=definition: https://en.wiktionary.org/wiki/def
 protected:
 //  SMARTattrDefContType SMARTattrDefs;
   /**If SMART attribute definitions are in an array, access to it is very fast*/
-  static SMARTattrDef SMARTattrDefs[NUM_DIFFERENT_SMART_ENTRIES];
+  /** The first definition is stored at index 1*/
+  static SMARTattrDef SMARTattrDefs[numDifferentSMART_IDsPlus1];
   
 public:
 static void Add(const SMARTattrDef & sMARTattrDef)
@@ -32,7 +33,7 @@ static void Add(const SMARTattrDef & sMARTattrDef)
 static void clearSMARTattrDefs()
 {
 //  SMARTattrDefs.clear();
-  for(fastestUnsignedDataType idx; idx < NUM_DIFFERENT_SMART_ENTRIES; idx++){
+  for(fastestUnsignedDataType idx = 0; idx < numDifferentSMART_IDsPlus1; idx++){
     SMARTattrDefs[idx].SetAttributeID(0);
     SMARTattrDefs[idx].SetName("");
     SMARTattrDefs[idx].SetCritical(false);
@@ -43,7 +44,7 @@ static int GetNumSMARTattrDefs()
 {
   fastestUnsignedDataType numSMARTattrDefs = 0;
 //  numSMARTattrDefs = SMARTattrDefs.size();
-  for(fastestUnsignedDataType idx = 0;idx < NUM_DIFFERENT_SMART_ENTRIES; idx++){
+  for(fastestUnsignedDataType idx = 0;idx < numDifferentSMART_IDsPlus1; idx++){
     if(SMARTattrDefs[idx].GetAttributeID() != 0)
       numSMARTattrDefs++;
   }

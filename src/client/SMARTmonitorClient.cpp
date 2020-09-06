@@ -1,5 +1,15 @@
-/** Author: sg
+/** Author: Stefan gebauer, M.Sc. Comp.Sc.
  * Created on 20. November 2016, 17:43 */
+
+///from Stefan Gebauer's common_sourcecode git repository:
+/** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
+ *  winsock2.h before windows.h [-Wcpp]" */
+#include <OperatingSystem/BSD/socket/socket.h>///readFromSocket(...)
+#include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
+#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
+///OperatingSystem::GetLastErrorCode()
+#include <OperatingSystem/GetLastErrorCode.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN(...)
 
 ///This repository's header files:
 #include "SMARTmonitorClient.h"///this class' header file
@@ -12,14 +22,6 @@
 #include <stdint.h> //uint8_t
 ///http://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/close?view=vs-2019
 #include <unistd.h>///close(...), read(...)
-
-///from Stefan Gebauer's common_sourcecode git repository:
-#include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
-#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
-///OperatingSystem::GetLastErrorCode()
-#include <OperatingSystem/GetLastErrorCode.hpp>
-//#include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
-#include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN(...)
 
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
@@ -39,6 +41,9 @@ SMARTvalueRater SMARTmonitorClient::s_SMARTvalueRater;
 
 SMARTmonitorClient::SMARTmonitorClient() 
   : m_serviceConnectionCountDownInSeconds(60)
+#ifdef _DEBUG
+  , GetSMARTvalsAndUpd8UIthreadID(0)
+#endif
 {
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
   /** Setting seconds to an invalid number (100) indicates that the time
@@ -122,6 +127,19 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     /*sMARTuniqueIDandValues*/);
   if(getSMARTvaluesResult == 0)
   {
+    //TODO the following code could go into a function of a new
+    // "class SMARTuniqueIDsAndValues
+    // : public SMARTuniqueIDandValsContType"
+    ///Important if no S.M.A.R.T. attributes to read exist yet.
+    for(SMARTuniqueIDandValsContType::iterator iter = 
+      SMARTuniqueIDsAndValues.begin(); iter != SMARTuniqueIDsAndValues.end();
+      iter++)
+    {
+      SMARTuniqueID & sMARTuniqueID =(SMARTuniqueID &) iter->getSMARTuniqueID();
+      if(sMARTuniqueID.noSMARTattrsToRead() )
+        ( (SMARTuniqueIDandValues &) *iter).
+          setSMART_IDsToReadFromSuccSMARTrawValUpd8();
+    }
     SetSMARTattributesToObserve(sMARTuniqueIDandValues);
 //      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
     ReBuildUserInterface();
@@ -194,8 +212,12 @@ void SMARTmonitorClient::HandleTransmissionError(
   enum SMARTmonitorClient::TransmissionError transmissionError)
 {
   std::ostringstream stdoss;
-  const int lastErrorNumber = OperatingSystem::GetLastErrorCode();
   char * errorMessageForErrno = NULL;
+#ifdef _WIN32
+  int lastWSAerror = WSAGetLastError();
+  //http://stackoverflow.com/questions/3400922/how-do-i-retrieve-an-error-string-from-wsagetlasterror
+#endif
+  const int lastErrorNumber = /*OperatingSystem::GetLastErrorCode();*/ errno;
   if( lastErrorNumber != 0)
   {
     switch(lastErrorNumber)
@@ -253,7 +275,8 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
   uint8_t * XMLdata = new uint8_t[numBytesToAllocate];
   if( XMLdata)
   {
-    int numBytesRead = read(m_socketFileDesc, XMLdata, numBytesToRead);
+    int numBytesRead = OperatingSystem::BSD::sockets::readFromSocket(
+      m_socketFileDesc, XMLdata, numBytesToRead);
     if (numBytesRead < numBytesToRead) {
       HandleTransmissionError(SMARTdata);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
@@ -265,6 +288,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
 
     GetSupportedSMARTattributesViaXML(XMLdata, numBytesToRead, 
       dataCarrierIDandSMARTidsContainer);
+    delete [] XMLdata;
   }
   return 0;
 }
@@ -333,11 +357,11 @@ void SMARTmonitorClient::setIDandLabel(const fastestUnsignedDataType
 
 void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
   const fastestUnsignedDataType SMARTattributeID,
-  const long int timeStampOfRetrievalIn1ks, void * data)
+  const uint64_t timeStampOfRetrievalInMs, void * data)
 {  
   std::string timeFormatString;
   UserInterface::FormatTime(
-    timeStampOfRetrievalIn1ks, 
+    timeStampOfRetrievalInMs, 
     timeFormatString);
   SetAttribute(
     SMARTattributeID,
@@ -434,7 +458,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
     uint64_t realCircaValue;
     double accuracy = 0.0;
     double lowerUnitLimit = 0.0, upperLimit;
-    if(unit & ~highestBit)///If unit > 0 after bit removed
+    if(unit & ~highestBit)///If unit is determined <=> > 0 after bit removed
     {
       lowerUnitLimit = (double) sMARTuniqueID.lowerUnitBound[SMARTattrID];
       if(unit & highestBit ){///If highmost bit set/>=
@@ -443,7 +467,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         stdstrHumanReadableRawVal = ">=~";
         if(lowerUnitLimit != 0.0)/** Lower unit bound set*/{
           std::string humanReadableAccuracy = SMARTvalueFormatter::
-            FormatHumanReadable(SMARTattrID, lowerUnitLimit);
+            FormatHumanReadable(SMARTattrID, lowerUnitLimit, true);
           std_ossUnitAccuracy << ">=~" << humanReadableAccuracy;
           ///Value can get high: 16230×3618000 = 58720140000
           realCircaValue = SMARTrawVal * (uint64_t) lowerUnitLimit;
@@ -461,21 +485,22 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         if(upperLimit != 0.0)///Prevent division by 0.
           accuracy = lowerUnitLimit / upperLimit;
       }
-      std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID,unit);
+      std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID,unit,
+        true);
       
       stdstrHumanReadableRawVal += SMARTvalueFormatter::
-        FormatHumanReadable(SMARTattrID, realCircaValue);
+        FormatHumanReadable(SMARTattrID, realCircaValue, true);
       if(accuracy != 0.0){
         std::string humanReadableAccuracy = SMARTvalueFormatter::
-          FormatHumanReadable(SMARTattrID, lowerUnitLimit);
+          FormatHumanReadable(SMARTattrID, lowerUnitLimit, true);
         std_ossUnitAccuracy << " " << std::fixed << humanReadableAccuracy <<
           "-";/** "..." */
         humanReadableAccuracy = SMARTvalueFormatter::FormatHumanReadable(
-          SMARTattrID, upperLimit);
+          SMARTattrID, upperLimit, true);
         std_ossUnitAccuracy << std::fixed << /* "]" */ humanReadableAccuracy;
       }
     }
-    else{///Unknown unit/use deafault unit
+    else{///Unknown unit/use default unit
       uint64_t numForHumanReadableFormat;
       switch(SMARTattrID)
       {
@@ -485,7 +510,10 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         realCircaValue = CurrTemp(SMARTrawVal);
         break;
        case SMARTattributeNames::PowerOnTime:
-         numForHumanReadableFormat = SMARTrawVal * /**ms to h*/3600000;
+         numForHumanReadableFormat = SMARTrawVal * /**h to ms*/3600000ULL;
+       case SMARTattributeNames::HeadFlyingHours:
+         numForHumanReadableFormat = (SMARTrawVal & 0xFFFFFF) * /**h to ms*/
+           3600000ULL;
          std_ossUnit << "~h?";
          break;
        default:
@@ -499,18 +527,25 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
         case SMARTattributeNames::UDMA_CRCerrorCnt:
           std_ossUnit << "#?";
           break;
+        case SMARTattributeNames::TotalDataWritten:
+        case SMARTattributeNames::TotalDataRead:
+          std_ossUnit << ">=1sector?";
+          break;
 		default:
           std_ossUnit << "?";
         }
         realCircaValue = SMARTrawVal;
       }
       stdstrHumanReadableRawVal = SMARTvalueFormatter::
-        FormatHumanReadable(SMARTattrID, numForHumanReadableFormat);
+        FormatHumanReadable(SMARTattrID, numForHumanReadableFormat, false);
     }
     std::ostringstream std_ossRawSMARTval;
     switch(SMARTattrID)
     {
      case SMARTattributeNames::GiB_Erased:
+    /** https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
+     *  : "Value is equal to (100-temp. °C)"*/
+     case SMARTattributeNames::TempDiffOrAirflowTemp:
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      * 9 Jul 2020: "Lowest byte of the raw value contains the exact temperature
      * value (Celsius degrees)"*/
@@ -520,6 +555,7 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
      * 9 Jul 2020: "Decoded as: byte 0-1-2 = average erase count (big endian)
      * and byte 3-4-5 = max erase count (big endian).*/
      case SMARTattributeNames::AvgEraseCntAndMaxEraseCnt:
+     case SMARTattributeNames::HeadFlyingHours:
        std_ossRawSMARTval << std::hex << /**To better differentiate between number and
        * base*/std::uppercase << SMARTrawVal << "h";
        break;
@@ -576,9 +612,13 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
 //        }
 //        else
 //          m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxGREEN);
+    
+    uint64_t upTimeOfRetrievalInMs;
+    if(! sMARTvalue.GetRetrievalTime(upTimeOfRetrievalInMs) )
+      upTimeOfRetrievalInMs = 0;
     UpdateTimeOfSMARTvalueRetrieval(
       SMARTattrID,
-      sMARTvalue.m_timeStampOfRetrieval,
+      upTimeOfRetrievalInMs,
       data);
   }
 //  }
