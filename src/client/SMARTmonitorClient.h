@@ -8,7 +8,7 @@
 #include "../SMARTmonitorBase.hpp"
 
 ///Stefan Gebauer's common_sourcecode repository header files:
-#include <OperatingSystem/multithread/nativeThreadType.hpp>
+#include <OperatingSystem/multithread/nativeThreadType.hpp>///nativeThread_type
 
 #include <UserInterface/columnIndices.hpp>
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater

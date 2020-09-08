@@ -32,7 +32,7 @@ public:
     case HighFlyWrites:
     case EndToEndError:
     case ReportedUncorrError:
-    case G_senseErrorRate:
+    case G_senseErrorCnt:
     case ReallocEvtCnt:
     case CurrPendSecCnt:
     case UncorrSecCnt:
