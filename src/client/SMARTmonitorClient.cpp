@@ -623,6 +623,14 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
       upTimeOfRetrievalInMs,
       data);
   }
+  if(upTimeOfRetrievalInMs == 0)
+    SetAttribute(
+      SMARTattrID,
+      ColumnIndices::lastUpdate,
+      "error:uptime is 0",
+      sMARTvalueRating,
+      data);
+  	;
 //  }
 //  else
 //  {//TODO show message that no S.M.A.R.T. attribute definition found

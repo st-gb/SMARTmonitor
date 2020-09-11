@@ -22,7 +22,7 @@ public:
     /** Initialization of this attribute is important for 
      * SetSMARTattributesToObserve(...) */
     : m_successfullyReadSMARTrawValue(0) {}
-  SMARTvalue(SMARTvalue & copyFrom); //copy constructor
+  SMARTvalue(const SMARTvalue &);///copy constructor
   SMARTvalue & operator = ( const SMARTvalue & rhs ); //assignment operator
   
   //calculation of array size adapted from 
@@ -39,7 +39,8 @@ public:
   bool GetRetrievalTime(uint64_t & uptimeInMs) const;
   void SetRetrievalTime(const long double &);
   bool IsConsistent(uint64_t &) const;
-private:  
+private:
+  inline void copyAttrs(const SMARTvalue &);
   /** Has to be uint64_t in order to also work if built as 32 bit program and a
    *  long uptime in ms. 100d each 24 h each 60 min each 60 s each 1000 ms=
    *  100*24*60*60*1000=8640000000=8640M */

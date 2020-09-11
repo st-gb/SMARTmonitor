@@ -151,7 +151,7 @@ int readSMARTAttrs(
     & libatasmart_attribHelper);
   if( retVal < 0 )
   {
-    LOGN("sk_disk_smart_parse_attributes retVal:" << retVal)
+    LOGN_ERROR("sk_disk_smart_parse_attributes failed.retVal:" << retVal)
     return -1;
   }
 /*  if( ! libatasmart_attribHelper.found) {

@@ -64,17 +64,17 @@ void HandleSingleSMARTentry(
   tinyxml2::XMLElement * p_SMARTelement,
   SMARTuniqueIDandValues & sMARTuniqueIDandValues)
 {
-  const int SMARTattributeID = p_SMARTelement->IntAttribute("ID", 0);
-  if( CheckSMARTidRange(SMARTattributeID) != 0)
+  const int SMARTattrID = p_SMARTelement->IntAttribute("ID", 0);
+  if( CheckSMARTidRange(SMARTattrID) != 0)
   {
     LOGN_ERROR("SMART ID is not in range 0..255->not processing this SMART entry")
     return;
   }
   const int64_t SMARTrawVal = p_SMARTelement->Int64Attribute("raw_value", 0);
-  SMARTvalue & sMARTvalue = sMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID];
+  SMARTvalue & sMARTvalue = sMARTuniqueIDandValues.m_SMARTvalues[SMARTattrID];
   if( SMARTrawVal < 0)
   {
-    LOGN_ERROR("SMART raw value for attrib ID " << SMARTattributeID 
+    LOGN_ERROR("SMART raw value for attrib ID " << SMARTattrID 
       << " is negative:" << SMARTrawVal)
     //sMARTuniqueIDandValues.m_successfullyReadSMARTrawValue[SMARTattributeID] = 0;
     AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 0);
@@ -84,10 +84,15 @@ void HandleSingleSMARTentry(
   
   const int64_t lowerUnitBound = p_SMARTelement->Int64Attribute(
     "lower_unit_bound", 0);
-  const char * unit = p_SMARTelement->Attribute("unit", NULL);
-  if(lowerUnitBound && strlen(unit) > 0){
-    if(unit[0] == '>')
-      ;
+  const char * unitStr = p_SMARTelement->Attribute("unit", NULL);
+  if(/**If "unit" attribute exists */ unitStr && strlen(unitStr) > 0){
+    long lUnit = 0;
+    if(unitStr[0] == '>'){
+      unitStr++;///Set string begin to character after ">".
+      setGreaterBit(lUnit);
+    }
+    ( (SMARTuniqueID & ) sMARTuniqueIDandValues.getSMARTuniqueID()).units[
+      SMARTattrID] = lUnit | atol(unitStr);
   }
   
   const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
@@ -95,7 +100,7 @@ void HandleSingleSMARTentry(
   sMARTvalue.SetRetrievalTime(timeInS);
   
   LOGN("adding SMART raw value " << SMARTrawVal << " (time:" << timeInS 
-    << ") to SMART ID " << SMARTattributeID)
+    << ") to SMART ID " << SMARTattrID)
   sMARTvalue.SetRawValue(SMARTrawVal);
 }
 
