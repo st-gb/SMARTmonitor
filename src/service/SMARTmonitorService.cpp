@@ -402,7 +402,7 @@ void SMARTmonitorService::BeforeWait()
       SMARTattrID = SMARTuniqueID.m_SMART_IDsToRd[arrIdx];
       //OperatingSystem::GetTimeCountInNanoSeconds(timeCountInNanoSeconds);
       //OperatingSystem::GetTimeCountInSeconds(timeCountInSeconds);
-      const SMARTvalue & sMARTvalue = sMARTuniqueIDandVals).m_SMARTvalues[
+      const SMARTvalue & sMARTvalue = sMARTuniqueIDandVals.m_SMARTvalues[
         SMARTattrID];
       
       uint64_t timeInMs;
@@ -434,6 +434,12 @@ void SMARTmonitorService::BeforeWait()
           else
             oss << "\" unit=\"" << unit;
         }
+        if(SMARTuniqueID.lowerUnitBound[SMARTattrID] != 0)
+          oss << "\" lower_unit_bound=\"" << SMARTuniqueID.lowerUnitBound[
+            SMARTattrID];
+        if(SMARTuniqueID.upperUnitBound[SMARTattrID] != 0)
+          oss << "\" upper_unit_bound=\"" << SMARTuniqueID.upperUnitBound[
+            SMARTattrID];
         oss << "\"/>";
       }
       //m_arSMARTrawValue[lineNumber];  

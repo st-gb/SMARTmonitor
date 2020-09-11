@@ -82,8 +82,14 @@ void HandleSingleSMARTentry(
   }
   AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 1);
   
+  SMARTuniqueID & sMARTuniqueID = ( (SMARTuniqueID & ) sMARTuniqueIDandValues.
+    getSMARTuniqueID());
   const int64_t lowerUnitBound = p_SMARTelement->Int64Attribute(
     "lower_unit_bound", 0);
+  sMARTuniqueID.lowerUnitBound[SMARTattrID] = lowerUnitBound;
+  const int64_t upperUnitBound = p_SMARTelement->Int64Attribute(
+    "upper_unit_bound", 0);
+  sMARTuniqueID.upperUnitBound[SMARTattrID] = upperUnitBound;
   const char * unitStr = p_SMARTelement->Attribute("unit", NULL);
   if(/**If "unit" attribute exists */ unitStr && strlen(unitStr) > 0){
     long lUnit = 0;
@@ -91,8 +97,7 @@ void HandleSingleSMARTentry(
       unitStr++;///Set string begin to character after ">".
       setGreaterBit(lUnit);
     }
-    ( (SMARTuniqueID & ) sMARTuniqueIDandValues.getSMARTuniqueID()).units[
-      SMARTattrID] = lUnit | atol(unitStr);
+    sMARTuniqueID.units[SMARTattrID] = lUnit | atol(unitStr);
   }
   
   const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
