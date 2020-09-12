@@ -63,6 +63,7 @@ public:
   typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
+  fastestUnsignedDataType m_timeOutInSeconds;
 public:
   SMARTmonitorBase();
   //template<typename charType>

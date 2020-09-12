@@ -77,7 +77,8 @@ void SMARTmonitorClient::EndUpdateUIthread()
       "and starts waiting */
     //m_p_wxCloseCondition->Wait();
     
-    s_updateSMARTparameterValuesThread.WaitForTermination();
+    m_updateSMARTparameterValuesThread.WaitForTermination();
+    GetSMARTvalsAndUpd8UIthreadID = 0;
     ChangeState(unconnectedFromService);
   }
 }
@@ -136,6 +137,9 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
       iter++)
     {
       SMARTuniqueID & sMARTuniqueID =(SMARTuniqueID &) iter->getSMARTuniqueID();
+      /** Avoid using old values for unit etc. after reconnecting (to another
+       * server) */
+      sMARTuniqueID.initAttrVals();
       if(sMARTuniqueID.noSMARTattrsToRead() )
         ( (SMARTuniqueIDandValues &) *iter).
           setSMART_IDsToReadFromSuccSMARTrawValUpd8();
@@ -201,11 +205,12 @@ void SMARTmonitorClient::ConnectToServer() {
   EndUpdateUIthread();
 #endif
 //  std::string stdstrServerAddress;
-  GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
+  //GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
+  ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
 
-  SetServiceAddress(m_stdstrServerAddress);
+//  SetServiceAddress(m_stdstrServerAddress);
 //  BeforeConnectToServer();
-  ConnectToServerAndGetSMARTvalues();
+//  ConnectToServerAndGetSMARTvalues();
 }
 
 void SMARTmonitorClient::HandleTransmissionError( 

@@ -80,7 +80,7 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
 //      /*smartAttributesToObserve*/ (SMARTaccessBase::SMARTattributesType &)
 //      m_SMARTaccess.getSMARTattributesToObserve(),
 //      * this)
-  , m_pConnectToServerDialog(NULL)
+  , m_p_cnnctToSrvDlg(NULL)
   , m_wxtimer(this, TIMER_ID)
 {
   s_GUIthreadID = OperatingSystem::GetCurrentThreadNumber();
@@ -160,13 +160,10 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNon
  * interface thread.*/
 void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 {
-  if( m_pConnectToServerDialog )
+  if(m_p_cnnctToSrvDlg)
   {
-    const bool successfullyClosed = m_pConnectToServerDialog->Close(true);
-//    delete m_pConnectToServerDialog;
-    /** http://docs.wxwidgets.org/3.0/classwx_window.html#a6bf0c5be864544d9ce0560087667b7fc */
-    const bool successfullyDestroyed = m_pConnectToServerDialog->Destroy();
-    m_pConnectToServerDialog = NULL;
+    m_p_cnnctToSrvDlg->End();
+    m_p_cnnctToSrvDlg = NULL;
   }
   int connectResult = commandEvent.GetInt();
   //TODO The following could go into a "AfterCnnctToSrvInUIthread" function
@@ -480,13 +477,24 @@ void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress,
   if( currentThreadNumber = s_GUIthreadID )
     ;
 #endif
-  m_pConnectToServerDialog = new ConnectToServerDialog(
-    pchServerAddress, m_socketPortNumber, connectTimeOutInSeconds, m_socketFileDesc);
+  m_p_cnnctToSrvDlg = new ConnectToServerDialog(
+    pchServerAddress, m_socketPortNumber, connectTimeOutInSeconds,
+    m_socketFileDesc);
   //TODO dialog appears in foreground
-  m_pConnectToServerDialog->Show();
+  m_p_cnnctToSrvDlg->Show();
 //  m_pConnectToServerDialog->ShowWindowModal();
   /** Ensures "connect" can't be pressed a second time */
 //  m_pConnectToServerDialog->ShowModal();
+}
+
+void wxSMARTmonitorApp::ShwCnnctToSrvrDlg(const std::string & srvAddr){
+  m_p_cnnctToSrvDlg = new ConnectToServerDialog(
+    ///Alternative: pass (pointer to) _this_ object and assign in dialog c'tor
+    m_stdstrServiceHostName.c_str(),
+    m_socketPortNumber,
+    m_timeOutInSeconds,
+    m_socketFileDesc);
+  m_p_cnnctToSrvDlg->Show();
 }
 
 void wxSMARTmonitorApp::OnShowMessage(wxCommandEvent & event)

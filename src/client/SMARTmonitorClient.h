@@ -87,6 +87,7 @@ public:
     m_stdstrServerAddress = str;
   }
   void SetSMARTattribIDandNameLabel();
+  virtual void ShwCnnctToSrvrDlg(const std::string &){};
   virtual void StartServiceConnectionCountDown(
     const fastestUnsignedDataType countDownInSeconds) {}
   /** Operations that only need to be done once after connection to the service

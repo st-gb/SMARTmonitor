@@ -50,7 +50,8 @@ SMARTmonitorBase::SMARTmonitorBase()
   : m_socketPortNumber(1000),
     mp_configurationLoader(NULL),
     m_cmdLineArgStrings(NULL),
-    m_ar_stdwstrCmdLineArgs(NULL)
+    m_ar_stdwstrCmdLineArgs(NULL),
+  m_timeOutInSeconds(30)
 #ifdef directSMARTaccess
   , m_SMARTaccess(SMARTuniqueIDsAndValues)
 #endif
