@@ -373,6 +373,14 @@ bool wxSMARTmonitorApp::OnInit()
 //{
 //}
 
+void wxSMARTmonitorApp::DisableSrvUIctrls(){
+  gs_dialog->m_p_ConnectAndDisconnectButton->Enable(false);
+}
+
+void wxSMARTmonitorApp::EnableSrvUIctrls(){
+  gs_dialog->m_p_ConnectAndDisconnectButton->Enable(true);
+}
+
 bool wxSMARTmonitorApp::GetIcon(
   wxIcon & icon,
   wxString iconFileName, 

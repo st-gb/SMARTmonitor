@@ -49,6 +49,8 @@ public:
   void ChangeState(enum serverConnectionState newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
+  void DisableSrvUIctrls();
+  void EnableSrvUIctrls();
   void GetTextFromUser(const char * label, std::string & );
   bool OnInit();
   void OnTimer(wxTimerEvent& event);

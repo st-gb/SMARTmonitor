@@ -63,7 +63,6 @@ public:
   typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
-  fastestUnsignedDataType m_timeOutInSeconds;
 public:
   SMARTmonitorBase();
   //template<typename charType>
@@ -93,6 +92,7 @@ protected:
    *  -or from config file */
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
 public:
+  fastestUnsignedDataType m_timeOutInSeconds;
   std::wstring GetProgramOptionValue(const /*enum programOptionNames*/
     fastestUnsignedDataType programOptionName) {
 //    const wchar_t * programOptionValue = L"";

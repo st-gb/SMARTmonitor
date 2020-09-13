@@ -4,9 +4,13 @@
 
 #include "ConnectToServerDialog.hpp"
 #include "wxSMARTmonitorApp.hpp"///wxGetApp()
-#include <wx/sizer.h> //class wxBoxSizer
-#include <wx/stattext.h> //class wxStaticText
-#include <wx/button.h> //class wxButton
+
+///wxWidgets include files:
+#include <wx/button.h>///class wxButton
+#include <wx/msgdlg.h>///wxMessageBox(...)
+#include <wx/sizer.h>///class wxBoxSizer
+#include <wx/stattext.h>///class wxStaticText
+
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
 #include "wxSMARTmonitorDialog.hpp"
@@ -104,8 +108,25 @@ void ConnectToServerDialog::End(){
 void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
   m_timer.Start(1000);///1 second interval
   wxGetApp().m_stdstrServiceHostName = m_p_srvAddrTxtCtrl->GetValue();
-//  wxGetApp().m_socketPortNumber <<= *m_p_portNoTxtCtrl;//->GetValue();
-  wxGetApp().ConnectToServerAndGetSMARTvalues();
+  unsigned long * p_socketPortNo = (unsigned long *) & wxGetApp().
+    m_socketPortNumber;
+  bool convFailed = false;
+  if(! m_p_portNoTxtCtrl->GetValue().ToULong(p_socketPortNo) ){
+    wxMessageBox(wxT("error converting port number character string to "
+      "integer"));
+    convFailed = true;
+  }
+  unsigned long * p_timeoutInS = (unsigned long *) & wxGetApp().
+    m_timeOutInSeconds;
+  if(! m_p_timeoutInS_TxtCtrl->GetValue().ToULong(p_timeoutInS) ){
+    wxMessageBox(wxT("error converting timeout character string to integer") );
+    convFailed = true;
+  }
+  if(convFailed)
+    wxMessageBox(wxT("not connecting to server because character string "
+      "conversion failed.") );
+  else
+    wxGetApp().ConnectToServerAndGetSMARTvalues();
   /** Stop timer and close this dialog in "SMARTmonitorClient::
    * AfterCcnnectToServer" (in a derived class) */
 }
@@ -125,6 +146,7 @@ void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)
     EndModal(0);
   else
     Destroy();
+  wxGetApp().EnableSrvUIctrls();
 }
   
 void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
