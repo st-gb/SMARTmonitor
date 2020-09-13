@@ -101,6 +101,9 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     return;
   }
 #endif
+  /** Avoid using old values for unit etc. after reconnecting (to another
+   *  server) */
+  SMARTuniqueIDsAndValues.clear();
   /** Before calling this function the connection should be established. */
   //TODO possibly move this line to after successfull connection.
   m_serverConnectionState = connectedToService;
@@ -137,9 +140,6 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
       iter++)
     {
       SMARTuniqueID & sMARTuniqueID =(SMARTuniqueID &) iter->getSMARTuniqueID();
-      /** Avoid using old values for unit etc. after reconnecting (to another
-       * server) */
-      sMARTuniqueID.initAttrVals();
       if(sMARTuniqueID.noSMARTattrsToRead() )
         ( (SMARTuniqueIDandValues &) *iter).
           setSMART_IDsToReadFromSuccSMARTrawValUpd8();

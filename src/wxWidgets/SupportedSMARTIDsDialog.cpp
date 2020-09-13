@@ -112,6 +112,8 @@ void SupportedSMART_IDsDialog::FillGUI(
   fastestUnsignedDataType SMART_ID;
 //  m_pwxlistctrl->SetItemCount(SMARTattributeNamesAndIDs.size() );
   
+  const SMARTuniqueIDandValues * p_sMARTuniqueIDandValues = NULL;
+
 #ifdef directSMARTaccess
   //TODO # supported SMART IDs is 30? -> less space
   fastestUnsignedDataType sMARTattrIDsToRead[numDifferentSMART_IDs];
@@ -123,15 +125,26 @@ void SupportedSMART_IDsDialog::FillGUI(
   
   //Get supported SMART IDs for data carrier identifier
   std::string dvc = wxGetApp().s_dataCarrierID2devicePath[sMARTuniqueID];
-  const enum SMARTaccessBase::retCodes SMARTaccRetCode = wxGetApp().
-    m_SMARTaccess.readSMARTforDevice(
-    dvc.c_str(),
-    sMARTuniqueID,
-    wxGetApp().s_dataCarrierID2devicePath,
-    sMARTattrIDsToRead);
-  const SMARTuniqueIDandValues & sMARTuniqueIDandValues = *wxGetApp().
-    m_SMARTaccess.GetSMARTuniqueIDandValues().find(SMARTuniqueIDandValues(
-    sMARTuniqueID));
+  if(dvc != ""){///Empty string if S.M.A.R.T. data indirectly/from server.
+    const enum SMARTaccessBase::retCodes SMARTaccRetCode = wxGetApp().
+      m_SMARTaccess.readSMARTforDevice(
+      dvc.c_str(),
+      sMARTuniqueID,
+      wxGetApp().s_dataCarrierID2devicePath,
+      sMARTattrIDsToRead);
+    if(SMARTaccRetCode == SMARTaccessBase::success)
+      p_sMARTuniqueIDandValues = &*wxGetApp().m_SMARTaccess.
+        GetSMARTuniqueIDandValues().find(SMARTuniqueIDandValues(sMARTuniqueID));
+  }
+  else{
+#endif
+  SMARTmonitorBase::SMARTuniqueIDandValsContType::const_iterator
+    sMARTuniqueIDandValsIter = wxGetApp().GetSMARTuniqueIDsAndVals().find(
+    SMARTuniqueIDandValues(sMARTuniqueID) );
+  if(sMARTuniqueIDandValsIter != wxGetApp().GetSMARTuniqueIDsAndVals().end() )
+    p_sMARTuniqueIDandValues = &*sMARTuniqueIDandValsIter;
+#ifdef directSMARTaccess
+  }
 #endif
   
   for(fastestUnsignedDataType lineNumber = 0; lineNumber < numDifferentSMART_IDs
@@ -146,12 +159,9 @@ void SupportedSMART_IDsDialog::FillGUI(
       m_pwxlistctrl->m_SMARTattribIDtoLineNumber[SMART_ID] = lineNumber;
       wxGetApp().setIDandLabel(SMART_ID, m_pwxlistctrl);
     }
-#ifdef directSMARTaccess
-    if(SMARTaccRetCode == SMARTaccessBase::success)
-      sMARTmonClient.upd8rawAndH_andTime(SMART_ID, 
-        sMARTuniqueIDandValues,
+    if(p_sMARTuniqueIDandValues)
+      sMARTmonClient.upd8rawAndH_andTime(SMART_ID, *p_sMARTuniqueIDandValues,
         m_pwxlistctrl);
-#endif
   }
 }
 

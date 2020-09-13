@@ -303,14 +303,14 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
     fastestUnsignedDataType arrIdx = 0;
     suppSMART_IDsType suppSMARTattrNamesAndIDs;
     supportedSMARTattrIDsType supportedSMARTattrIDs;
-    for(;*p_currChar != '\0'; ++ p_currChar, arrIdx++)
+    for(;*p_currChar != '\0'; ++ p_currChar)
     {
       if(* p_currChar == ',')
       {
         * p_currChar = '\0';
         const int number = ConvertStringToInt(p_lastComma);
 //      supportedSMARTattrIDs.insert(number);
-        sMARTuniqueID.supportedSMART_IDs[arrIdx] = number;
+        sMARTuniqueID.supportedSMART_IDs[arrIdx++] = number;
         supportedSMARTattrIDs.insert(number);
         suppSMARTattrNamesAndIDs.insert(SMARTattributeNameAndID("", number) );
         p_lastComma = p_currChar + 1;
