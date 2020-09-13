@@ -1,1 +1,1 @@
-mingw32-make -f Makefile -j$1
+mingw32-make -f Makefile -j%1
