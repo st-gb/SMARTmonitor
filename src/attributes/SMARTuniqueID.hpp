@@ -67,7 +67,7 @@ struct SMARTuniqueID {
   unitDataType lowerUnitBound[numItems];
   unitDataType upperUnitBound[numItems];
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
-  SMARTuniqueID(){
+  void initAttrVals(){
     supportedSMART_IDs[0] = 0;///Means:array is empty
     m_SMART_IDsToRd[0] = 0;///Means:array is empty
     memset(units, 0, sizeof(units[0])*numItems);
@@ -81,11 +81,14 @@ struct SMARTuniqueID {
     memset(lowerUnitBound, 0, sizeof(lowerUnitBound[0])*numItems);
     memset(upperUnitBound, 0, sizeof(upperUnitBound[0])*numItems);
   }
+  SMARTuniqueID(){
+    initAttrVals();
+  }
 #ifdef __linux__
 //  SMARTuniqueID(const SkIdentifyParsedData & l);
 #endif
   ~SMARTuniqueID();
-  
+
   const fastestUnsignedDataType * getSupportedSMART_IDs() const{
     return supportedSMART_IDs;
   }
@@ -159,7 +162,7 @@ struct SMARTuniqueID {
            sMART_IDtoRead < suppSMART_ID);
       }
       if(SMART_IDsToReadIdx < numDifferentSMART_IDs)
-        m_SMART_IDsToRd[SMART_IDsToReadIdx] = 0;
+        m_SMART_IDsToRd[SMART_IDsToObsIdx] = 0;
     }
   }
   

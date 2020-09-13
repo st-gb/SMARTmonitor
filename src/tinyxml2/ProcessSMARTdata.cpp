@@ -7,6 +7,7 @@
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 #include <hardware/dataCarrier/ATA3Std.h>///numDifferentSMART_IDsPlus1
 #include <preprocessor_macros/logging_preprocessor_macros.h>
+//#include <data_structures/set.hpp>///std::set that uses emplace if >= C++11
 
 bool GetSMARTuniqueID(
   tinyxml2::XMLElement * p_tinyxml2XMLelement, 
@@ -63,29 +64,48 @@ void HandleSingleSMARTentry(
   tinyxml2::XMLElement * p_SMARTelement,
   SMARTuniqueIDandValues & sMARTuniqueIDandValues)
 {
-  const int SMARTattributeID = p_SMARTelement->IntAttribute("ID", 0);
-  if( CheckSMARTidRange(SMARTattributeID) != 0)
+  const int SMARTattrID = p_SMARTelement->IntAttribute("ID", 0);
+  if( CheckSMARTidRange(SMARTattrID) != 0)
   {
     LOGN_ERROR("SMART ID is not in range 0..255->not processing this SMART entry")
     return;
   }
   const int64_t SMARTrawVal = p_SMARTelement->Int64Attribute("raw_value", 0);
-  SMARTvalue & sMARTvalue = sMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID];
+  SMARTvalue & sMARTvalue = sMARTuniqueIDandValues.m_SMARTvalues[SMARTattrID];
   if( SMARTrawVal < 0)
   {
-    LOGN_ERROR("SMART raw value for attrib ID " << SMARTattributeID 
+    LOGN_ERROR("SMART raw value for attrib ID " << SMARTattrID 
       << " is negative:" << SMARTrawVal)
     //sMARTuniqueIDandValues.m_successfullyReadSMARTrawValue[SMARTattributeID] = 0;
     AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 0);
     return;
   }
   AtomicExchange(& sMARTvalue.m_successfullyReadSMARTrawValue, 1);
-  const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
   
+  SMARTuniqueID & sMARTuniqueID = ( (SMARTuniqueID & ) sMARTuniqueIDandValues.
+    getSMARTuniqueID());
+  const int64_t lowerUnitBound = p_SMARTelement->Int64Attribute(
+    "lower_unit_bound", 0);
+  sMARTuniqueID.lowerUnitBound[SMARTattrID] = lowerUnitBound;
+  const int64_t upperUnitBound = p_SMARTelement->Int64Attribute(
+    "upper_unit_bound", 0);
+  sMARTuniqueID.upperUnitBound[SMARTattrID] = upperUnitBound;
+  const char * unitStr = p_SMARTelement->Attribute("unit", NULL);
+  if(/**If "unit" attribute exists */ unitStr && strlen(unitStr) > 0){
+    long lUnit = 0;
+    if(unitStr[0] == '>'){
+      unitStr++;///Set string begin to character after ">".
+      setGreaterBit(lUnit);
+    }
+    sMARTuniqueID.units[SMARTattrID] = lUnit | atol(unitStr);
+  }
+  
+  const float timeInS = p_SMARTelement->FloatAttribute("time_in_s", 0.0f);
+  //TODO inaccuracy because of floating point: 764717.375 * 1000.0f =764717376
   sMARTvalue.SetRetrievalTime(timeInS);
   
   LOGN("adding SMART raw value " << SMARTrawVal << " (time:" << timeInS 
-    << ") to SMART ID " << SMARTattributeID)
+    << ") to SMART ID " << SMARTattrID)
   sMARTvalue.SetRawValue(SMARTrawVal);
 }
 
@@ -283,14 +303,14 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
     fastestUnsignedDataType arrIdx = 0;
     suppSMART_IDsType suppSMARTattrNamesAndIDs;
     supportedSMARTattrIDsType supportedSMARTattrIDs;
-    for(;*p_currChar != '\0'; ++ p_currChar, arrIdx++)
+    for(;*p_currChar != '\0'; ++ p_currChar)
     {
       if(* p_currChar == ',')
       {
         * p_currChar = '\0';
         const int number = ConvertStringToInt(p_lastComma);
 //      supportedSMARTattrIDs.insert(number);
-        sMARTuniqueID.supportedSMART_IDs[arrIdx] = number;
+        sMARTuniqueID.supportedSMART_IDs[arrIdx++] = number;
         supportedSMARTattrIDs.insert(number);
         suppSMARTattrNamesAndIDs.insert(SMARTattributeNameAndID("", number) );
         p_lastComma = p_currChar + 1;
@@ -312,8 +332,9 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
       m_SMARTattrIDsToObs);
     //TODO Uncomment. Causes not to display the current SMART data at least if
     // data from service.
-//    SMARTuniqueIDsAndValues.insert/*emplace*/(SMARTuniqueIDandValues(
-//      sMARTuniqueID) );
+    SMARTuniqueIDsAndValues.insert/*emplace insOrEmpl*/(SMARTuniqueIDandValues(
+      sMARTuniqueID) );
+
     dataCarrierID2supportedSMARTattrs.insert( std::make_pair(sMARTuniqueID, 
       supportedSMARTattrIDs) );
   }

@@ -279,13 +279,13 @@ void SMARTdialog::OnConnectToServer(wxCommandEvent& WXUNUSED(event))
 {
 //  if( m_p_ConnectAndDisconnectButton->GetLabelText(wxT("&Disconnect") );
   //TODO or more general: disable all service interacting buttons
-//  DisableServiceInteractingButtons();
-  m_p_ConnectAndDisconnectButton->Enable(false);
+  wxGetApp().DisableSrvUIctrls();
   //TODO Cancel connection countdown if attempt before failed.
   wxGetApp().ConnectToServer();
 }
 
-void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState newState)
+void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
+  newState)
 {
   switch(newState)
   {

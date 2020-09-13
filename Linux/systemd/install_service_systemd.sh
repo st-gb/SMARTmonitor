@@ -1,6 +1,9 @@
 # systemd is Linux-specific: https://en.wikipedia.org/wiki/Systemd
 #https://www.freedesktop.org/software/systemd/man/systemd.unit.html
 
+dirPathOfThisScript=$(readlink -f $0)
+dirPathOfThisScript=$(dirname "$dirPathOfThisScript")
+
 numCmdLineArgs=$#
 if [ $numCmdLineArgs -ge 1 ]; then #If at least 1 command line argument
  SMARTmonWorkDir=$1
@@ -23,10 +26,10 @@ echo "sed replace string:" $sedReplaceStr
 
 #Following has to be executed in the directory of the .skeleton file?
 #TODO Only replace if it is not within a comment
-sed $sedReplaceStr SMARTmon.service.skeleton > SMARTmon.service
+sed $sedReplaceStr $dirPathOfThisScript/SMARTmon.service.skeleton > $dirPathOfThisScript/SMARTmon.service
 
 echo "copying SMARTmon.service to /etc/systemd/system/"
-cp SMARTmon.service /etc/systemd/system/
+cp $dirPathOfThisScript/SMARTmon.service /etc/systemd/system/
 
 echo "enabling SMARTmon.service"
 #https://unix.stackexchange.com/questions/47695/how-to-write-startup-script-for-systemd

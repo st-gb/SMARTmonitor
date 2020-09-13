@@ -10,7 +10,7 @@
 
 namespace wxWidgets
 {
-
+  //TODO make constructor with SMARTuniqueID? because all values depend on it
   SMARTtableListCtrl::SMARTtableListCtrl(
     wxWindow * parent,
     wxWindowID id /*= wxID_ANY*/,

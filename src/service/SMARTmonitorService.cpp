@@ -92,6 +92,9 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
       LOGN_DEBUG("device file path belonging to (SMART) data carrier ID:"
          << device )
       suppSMART_IDsType SMARTattrNamesAndIDs;
+      //TODO Getting supported SMART attrs only needs to be done once for a drive
+      // should be the same for all same model or same model, firmware
+      // Can store this in a dataCarrierID2supportedSMARTattributesMap_type
       SMARTaccess.GetSupportedSMART_IDs(device, SMARTattrNamesAndIDs);
       suppSMART_IDsType::const_iterator supportedSMARTattrIDsIter =
         SMARTattrNamesAndIDs.begin();
@@ -376,7 +379,6 @@ void SMARTmonitorService::BeforeWait()
 
   std::ostringstream oss;
   oss.precision(3); //Allow 3 digits right of decimal point
-  unsigned lineNumber = 0;
   for(fastestUnsignedDataType currentDriveIndex = 0;
     currentDriveIndex < numberOfDifferentDrives;
     ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
@@ -390,29 +392,29 @@ void SMARTmonitorService::BeforeWait()
       << " serial_number=\"" << SMARTuniqueID.m_serialNumber << "\">";
     
 //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
-    SMARTattrToObsType::const_iterator
-      SMARTattrToObsIter = m_IDsOfSMARTattrsToObserve.begin();
 //    long int currentSMARTrawValue;
     //TimeCountInNanosec_type timeCountInNanoSeconds;
 //    long double timeCountInSeconds;
-    SMARTvalue sMARTvalue;
     //TODO crashes here (iterator-related?!-> thread access problem??)
-    for( ; SMARTattrToObsIter != m_IDsOfSMARTattrsToObserve.end();
-        SMARTattrToObsIter ++, ++lineNumber )
+    for(fastestUnsignedDataType arrIdx = 0;
+      SMARTuniqueID.SMART_IDsToReadNotEnd(arrIdx); arrIdx++)
     {
-      SMARTattrID = *SMARTattrToObsIter;
+      SMARTattrID = SMARTuniqueID.m_SMART_IDsToRd[arrIdx];
       //OperatingSystem::GetTimeCountInNanoSeconds(timeCountInNanoSeconds);
       //OperatingSystem::GetTimeCountInSeconds(timeCountInSeconds);
-      sMARTvalue = sMARTuniqueIDandVals.m_SMARTvalues[SMARTattrID];
+      const SMARTvalue & sMARTvalue = sMARTuniqueIDandVals.m_SMARTvalues[
+        SMARTattrID];
       
-      uint64_t timInMs;
-      float fTimeInS; 
-      if(sMARTvalue.GetRetrievalTime(timInMs) )
-        fTimeInS = (float) timInMs / 1000.0f;
-      else
+      uint64_t timeInMs;
+      float fTimeInS;
+      if(sMARTvalue.GetRetrievalTime(timeInMs) )
+        fTimeInS = (float) timeInMs / 1000.0f;
+      else{
         fTimeInS = 0.0f;
-      LOGN("time in [s] as int * 1000: " << sMARTvalue.m_timeStampOfRetrieval 
-          << "as float:" << fTimeInS)
+        LOGN_WARNING("uptime of S.M.A.R.T. value retrieval is 0")
+      }
+      LOGN("time in [s] as int * 1000: " << timeInMs
+          << " as float:" << fTimeInS)
       if( sMARTvalue.m_successfullyReadSMARTrawValue &&
           //m_timeStampOfRetrieval > 0 && 
           sMARTvalue.IsConsistent(SMARTrawValue) )
@@ -432,6 +434,12 @@ void SMARTmonitorService::BeforeWait()
           else
             oss << "\" unit=\"" << unit;
         }
+        if(SMARTuniqueID.lowerUnitBound[SMARTattrID] != 0)
+          oss << "\" lower_unit_bound=\"" << SMARTuniqueID.lowerUnitBound[
+            SMARTattrID];
+        if(SMARTuniqueID.upperUnitBound[SMARTattrID] != 0)
+          oss << "\" upper_unit_bound=\"" << SMARTuniqueID.upperUnitBound[
+            SMARTattrID];
         oss << "\"/>";
       }
       //m_arSMARTrawValue[lineNumber];  

@@ -77,7 +77,8 @@ void SMARTmonitorClient::EndUpdateUIthread()
       "and starts waiting */
     //m_p_wxCloseCondition->Wait();
     
-    s_updateSMARTparameterValuesThread.WaitForTermination();
+    m_updateSMARTparameterValuesThread.WaitForTermination();
+    GetSMARTvalsAndUpd8UIthreadID = 0;
     ChangeState(unconnectedFromService);
   }
 }
@@ -100,6 +101,9 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     return;
   }
 #endif
+  /** Avoid using old values for unit etc. after reconnecting (to another
+   *  server) */
+  SMARTuniqueIDsAndValues.clear();
   /** Before calling this function the connection should be established. */
   //TODO possibly move this line to after successfull connection.
   m_serverConnectionState = connectedToService;
@@ -201,11 +205,12 @@ void SMARTmonitorClient::ConnectToServer() {
   EndUpdateUIthread();
 #endif
 //  std::string stdstrServerAddress;
-  GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
+  //GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
+  ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
 
-  SetServiceAddress(m_stdstrServerAddress);
+//  SetServiceAddress(m_stdstrServerAddress);
 //  BeforeConnectToServer();
-  ConnectToServerAndGetSMARTvalues();
+//  ConnectToServerAndGetSMARTvalues();
 }
 
 void SMARTmonitorClient::HandleTransmissionError( 
@@ -442,8 +447,13 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
 //      memory_barrier(); //TODO: not really necessary??
   int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
 
+  uint64_t upTimeOfRetrievalInMs;
+  /** Also fails if client wants attribute ID but service did not send raw
+   * S.M.A.R.T. values. */
+  if(! sMARTvalue.GetRetrievalTime(upTimeOfRetrievalInMs) )
+    upTimeOfRetrievalInMs = 0;
   //memory_barrier(); //TODO: not really necessary??
-  if( /*successfullyUpdatedSMART*/ isConsistent )
+  if( /*successfullyUpdatedSMART*/ isConsistent && upTimeOfRetrievalInMs)
   {
 //    SMARTattrDef & sMARTattrDef = *p_sMARTattrDef;
     std::string stdstrHumanReadableRawVal;
@@ -613,15 +623,19 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
 //        }
 //        else
 //          m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxGREEN);
-    
-    uint64_t upTimeOfRetrievalInMs;
-    if(! sMARTvalue.GetRetrievalTime(upTimeOfRetrievalInMs) )
-      upTimeOfRetrievalInMs = 0;
     UpdateTimeOfSMARTvalueRetrieval(
       SMARTattrID,
       upTimeOfRetrievalInMs,
       data);
   }
+  if(upTimeOfRetrievalInMs == 0)
+    SetAttribute(
+      SMARTattrID,
+      ColumnIndices::lastUpdate,
+      "error:uptime is 0",
+      sMARTvalueRating,
+      data);
+  	;
 //  }
 //  else
 //  {//TODO show message that no S.M.A.R.T. attribute definition found

@@ -12,23 +12,36 @@ fastestUnsignedDataType SMARTvalue::s_sizeOfLongIntInBytes = sizeof(long int);
 fastestUnsignedDataType SMARTvalue::s_numTimesLongIntFitsInto8Bytes = 8/
   s_sizeOfLongIntInBytes;
 
-///https://en.wikibooks.org/wiki/C%2B%2B_Programming/Operators/Operator_Overloading#Assignment_operator
-SMARTvalue & SMARTvalue::operator = ( const SMARTvalue & copyFrom )
-{
+/**\brief does all copy operations necessary for assignment operator or copy
+ * constructor */
+void SMARTvalue::copyAttrs(const SMARTvalue & copyFrom){
   m_timeStampOfRetrieval = copyFrom.m_timeStampOfRetrieval;
+  m_timeCheckSum = copyFrom.m_timeCheckSum;
   m_successfullyReadSMARTrawValue = copyFrom.m_successfullyReadSMARTrawValue;
   SetRawValue( * (uint64_t *) copyFrom.m_rawValue);
+}
+
+///https://en.wikibooks.org/wiki/C%2B%2B_Programming/Operators/Operator_Overloading#Assignment_operator
+SMARTvalue & SMARTvalue::operator = (const SMARTvalue & copyFrom)
+{
+  LOGN_DEBUG("begin")
+  copyAttrs(copyFrom);
   return *this;
 }
 
-/** copy c'tor */
-SMARTvalue::SMARTvalue(SMARTvalue & copyFrom)
+/** Copy constructor.
+ *  http://web.stanford.edu/class/archive/cs/cs106b/cs106b.1084/cs106l/handouts/170_Copy_Constructor_Assignment_Operator.pdf :
+ *  "Copy constructors are invoked whenever:
+ *   1.A newly-created object is initialized to the value of an existing object.
+ *   2.An object is passed to a function as a non-reference parameter.
+ *   3.An object is returned from a function." */
+SMARTvalue::SMARTvalue(const SMARTvalue & copyFrom)
 {
-  m_timeStampOfRetrieval = copyFrom.m_timeStampOfRetrieval;
-  m_successfullyReadSMARTrawValue = copyFrom.m_successfullyReadSMARTrawValue;
-  SetRawValue( * (uint64_t *) copyFrom.m_rawValue);
+  LOGN_DEBUG("begin")
+  copyAttrs(copyFrom);
 }
 
+//TODO is this sufficient? psrts of the raw value may have been changed
 void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
   an 8 byte type here */ uint64_t & rawSMARTattrValue)
 {
@@ -106,7 +119,14 @@ bool SMARTvalue::GetRetrievalTime(uint64_t & uptimeInMs) const{
     .*  the SMARTaccesBase-derived class. Therefore the checksum.*/
     timeCheckSum ^= liTimePart;
   }
+#ifdef _DEBUG
+  const bool identical = (timeCheckSum == m_timeCheckSum);
+  if(! identical)
+  	LOGN_WARNING("checksums not identical")
+  return identical;
+#else
   return timeCheckSum == m_timeCheckSum;
+#endif
 }
 
 void SMARTvalue::SetRetrievalTime(const long double & uptimeInSeconds){
@@ -115,7 +135,8 @@ void SMARTvalue::SetRetrievalTime(const long double & uptimeInSeconds){
   //TODO make as generic algorithm also for SetRawValue(...)
   liTimePart = uptimeInMs;
   AtomicExchange( (long int *) & m_timeStampOfRetrieval, liTimePart);
-  m_timeCheckSum = liTimePart;
+  //TODO Really needs atomic Compare-And-Swap?
+  AtomicExchange( & m_timeCheckSum, liTimePart);
   for(fastestUnsignedDataType idx = 1; idx < 
     SMARTvalue::s_numTimesLongIntFitsInto8Bytes; ++idx)
   {
@@ -174,7 +195,8 @@ bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
   }
 #ifdef DEBUG
   if( rawValueCheckSum != m_rawValueCheckSum )
-    LOGN_WARNING("values differ")
+    LOGN_WARNING("values differ: " << rawValueCheckSum << " " <<
+      m_rawValueCheckSum)
 #endif
   return rawValueCheckSum == m_rawValueCheckSum;
 }

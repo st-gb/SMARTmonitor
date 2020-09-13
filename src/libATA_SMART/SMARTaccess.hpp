@@ -32,6 +32,7 @@ struct attr_helper {
 };
 
   int getSupportedSMART_IDs(const char * const,
+    //TODO make as std::set
     std::vector<SMARTattributeNameAndID> & );
 
   static void getSMARTrawValueCallback(
@@ -39,10 +40,10 @@ struct attr_helper {
     const SkSmartAttributeParsedData * a,
     struct libatasmart::attr_helper *ah);
 
-  int readSMARTAttrs(/*const char attributeName []*/
-    fastestUnsignedDataType SMARTattributeID,
-    SkDisk * p_skDisk, 
-    uint64_t & value);
+int readSMARTAttrs(/*const char attributeName []*/
+  fastestUnsignedDataType SMARTattributeID,
+  SkDisk * p_skDisk, 
+  uint64_t & value);
 
 class SMARTaccess
   : public SMARTaccessBase

@@ -21,7 +21,7 @@ WorkingDirectory=SMARTmonWorkDir
 #If relative path then error "Failed to start SMARTmon.service: Unit
 # SMARTmon.service is not loaded properly: Exec format error." and
 # "Executable path is not absolute" running "systemctl status SMARTmon.service"
-ExecStart=SMARTmonWorkDir/SMARTmonitor_service logfilefolder=/run/
+ExecStart=SMARTmonWorkDir/SMARTmonitor_service.elf logfilefolder=/run/
 #Restart=on-failure
 #LimitNOFILE=10000
 

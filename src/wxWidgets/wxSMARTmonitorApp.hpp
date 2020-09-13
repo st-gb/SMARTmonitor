@@ -26,7 +26,7 @@ class ConnectToServerDialog;
 class wxSMARTmonitorApp
   : public wxApp, public /*SMARTmonitorBase*/ SMARTmonitorClient
 {
-  ConnectToServerDialog * m_pConnectToServerDialog/*(pch, timeOut )*/;
+  ConnectToServerDialog * m_p_cnnctToSrvDlg/*(pch, timeOut )*/;
   wxTimer m_wxtimer;
 public:
   enum IDs {TIMER_ID = 0};
@@ -49,6 +49,8 @@ public:
   void ChangeState(enum serverConnectionState newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
+  void DisableSrvUIctrls();
+  void EnableSrvUIctrls();
   void GetTextFromUser(const char * label, std::string & );
   bool OnInit();
   void OnTimer(wxTimerEvent& event);
@@ -64,6 +66,7 @@ public:
     const std::string &,
     const enum SMARTvalueRating, void * data);
   void ShowConnectionState(const char * const pch, int timeOut);
+  void ShwCnnctToSrvrDlg(const std::string &);
   void ShowMessage(const char * const ) const;
   void ShowMessage(const char * const, enum MessageType::messageTypes msg) const;
   wxIcon ShowSMARTokIcon();

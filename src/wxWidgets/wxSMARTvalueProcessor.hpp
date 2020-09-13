@@ -1,9 +1,6 @@
-/*
- * wxSMARTreader.hpp
- *
+/** wxSMARTreader.hpp
  *  Created on: 28.11.2013
- *      Author: mr.sys
- */
+ *  Author: Stefan Gebauer, M.Sc.Comp.Sc.*/
 
 #ifndef WXSMARTREADER_HPP_
 #define WXSMARTREADER_HPP_
@@ -17,23 +14,23 @@
 namespace wxWidgets
 {
 
-  class wxSMARTvalueProcessor
+  class DynLibSMARTvalProc
     : public SMARTvalueProcessorBase
   {
     dynlib_OnChangedCriticalSMARTparameters_type m_p_OnChangedCriticalSMARTparameters;
     wxDynamicLibrary m_wxdynlib;
   public:
-    wxSMARTvalueProcessor();
+    DynLibSMARTvalProc();
     virtual
-    ~wxSMARTvalueProcessor();
+    ~DynLibSMARTvalProc();
 
     void Init();
     void ExecuteChangedCriticalParametersAction(
-      SMARTentry & sMARTentry,
+      SMARTattrDef & sMARTentry,
       SMARTuniqueID & sMARTuniqueID
       );
-    void OnChangedCriticalSMARTparameters(
-      SMARTentry & sMARTentry,
+    void OnChangedSMARTparams(
+      SMARTattrDef & sMARTentry,
       SMARTuniqueID & sMARTuniqueID
       );
 

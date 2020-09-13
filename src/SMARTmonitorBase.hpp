@@ -92,6 +92,7 @@ protected:
    *  -or from config file */
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
 public:
+  fastestUnsignedDataType m_timeOutInSeconds;
   std::wstring GetProgramOptionValue(const /*enum programOptionNames*/
     fastestUnsignedDataType programOptionName) {
 //    const wchar_t * programOptionValue = L"";

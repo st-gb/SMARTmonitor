@@ -11,6 +11,7 @@
 
 /** Forward declarations: */
 class wxStaticText;
+class wxTextCtrl;
 
 class ConnectToServerDialog
   : public wxDialog
@@ -20,15 +21,21 @@ public:
     const char * const pchServerAddress,
     const fastestUnsignedDataType servicePortNumber,
     const fastestUnsignedDataType timeOutInSeconds,
-    const int connectToServerSocketFileDescriptor);
+    const int cnnctToSrvSocketFileDesc);
   virtual ~ConnectToServerDialog();
-  enum IDs {TIMER_ID = 0};
+  enum IDs {TIMER_ID = 0, connect};
+  void End();
 private:
   wxTimer m_timer;
   fastestUnsignedDataType m_timeOutInSeconds;
   int m_connectToServerSocketFileDescriptor;
   wxStaticText * m_p_wxStaticTextTimeout;
+  wxTextCtrl * m_p_srvAddrTxtCtrl;
+  wxTextCtrl * m_p_portNoTxtCtrl;
+  wxTextCtrl * m_p_timeoutInS_TxtCtrl;
+  void buildUI();
   void OnCancel(wxCommandEvent& event);
+  void OnConnect(wxCommandEvent &);
   void OnCloseWindow(wxCloseEvent& event);
   void OnTimer(wxTimerEvent& event);
   
