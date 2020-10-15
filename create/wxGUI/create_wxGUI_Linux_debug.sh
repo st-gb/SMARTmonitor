@@ -18,8 +18,10 @@ fi;
 wxSetupHpath=/usr/lib/$machHWname-linux-gnu/wx/include/gtk2-unicode-debug-3.0
 echo "path containing wx/setup.h: $wxSetupHpath"
 
+CMakeBuildGenerator=$1
+
 bash $dirPathOfThisScript/create_wxGUI_Linux.sh \
-"Unix Makefiles" \
+"$CMakeBuildGenerator" \
 "-Dmultithread=ON -DCMAKE_BUILD_TYPE=Debug -DdirectSMARTaccess=ON" \
 $wxSetupHpath
 
