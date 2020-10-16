@@ -99,10 +99,16 @@ void ConnectToServerDialog::buildUI(){
 }
 
 void ConnectToServerDialog::End(){
-  const bool successfullyClosed = Close(true);
 //  delete this;
-  /** http://docs.wxwidgets.org/3.0/classwx_window.html#a6bf0c5be864544d9ce0560087667b7fc */
-  const bool successfullyDestroyed = Destroy();
+  /** http://docs.wxwidgets.org/3.0/classwx_window.html#a6bf0c5be864544d9ce0560087667b7fc
+   *  wxWindow::Close : "To guarantee that the window will be destroyed, call
+   *  wxWindow::Destroy instead" */
+  m_timer.Stop();
+  if( IsModal() )
+    EndModal(0);
+  else
+    const bool successfullyDestroyed = Destroy();
+  wxGetApp().EnableSrvUIctrls();
 }
 
 void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
@@ -126,7 +132,7 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
     wxMessageBox(wxT("not connecting to server because character string "
       "conversion failed.") );
   else
-    wxGetApp().ConnectToServerAndGetSMARTvalues();
+    wxGetApp().ConnectToServerAndGetSMARTvalues(true);
   /** Stop timer and close this dialog in "SMARTmonitorClient::
    * AfterCcnnectToServer" (in a derived class) */
 }
@@ -141,14 +147,9 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
 
 void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)
 {
-  m_timer.Stop();
-  if( IsModal() )
-    EndModal(0);
-  else
-    Destroy();
-  wxGetApp().EnableSrvUIctrls();
+  End();
 }
-  
+
 void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
 {
   if( m_timeOutInSeconds > 0)
@@ -163,4 +164,3 @@ void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
 ConnectToServerDialog::~ConnectToServerDialog() {
   m_timer.Stop();
 }
-

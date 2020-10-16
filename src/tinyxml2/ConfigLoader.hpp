@@ -15,8 +15,8 @@ namespace tinyxml2
 
 namespace tinyxml2
 {
-  class ConfigLoader : public ConfigurationLoaderBase
-  {
+class ConfigLoader : public ConfigurationLoaderBase
+{
   public:
     ConfigLoader(
       SMARTmonitorBase::SMARTattrDefsType /*&*/ SMARTattrDefs,
@@ -36,10 +36,11 @@ namespace tinyxml2
     tinyxml2::XMLElement * OpenConfigFile(
       const std::string & stdstrFullConfigFilePath,
       tinyxml2::XMLDocument & tinyXML2Doc);
+  void readModelAndFirmwareCfg(const tinyxml2::XMLElement *);
     void ReadServiceConnectionSettings(const std::wstring & );
   private:
 
-  };
+};
 }
 
 #endif /* CONFIGLOADER_HPP */

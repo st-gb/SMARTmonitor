@@ -26,7 +26,7 @@
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
 #ifdef multithread
-nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
+//nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
 #endif
 bool SMARTmonitorClient::s_atLeast1CriticalNonNullValue = false;
 fastestUnsignedDataType SMARTmonitorClient::s_maxNumCharsNeededForDisplay [] =
@@ -176,7 +176,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 
 /** Called e.g. when server address was given via program options/
  *  as command line argument */
-void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
+void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues(const bool asyncCnnctToSvc)
 {
   LOGN_DEBUG("begin")
 #ifdef directSMARTaccess
@@ -188,11 +188,10 @@ void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues()
 //    return;
   }
 #endif
-  bool asyncConnectToService = /*true*/ false;
 //  BeforeConnectToServer();
   const fastestUnsignedDataType connectToServerResult = ConnectToServer(
-    m_stdstrServiceHostName.c_str(), asyncConnectToService );
-  if ( ! asyncConnectToService )
+    m_stdstrServiceHostName.c_str(), asyncCnnctToSvc);
+  if(! asyncCnnctToSvc)
   {
     AfterConnectToServer(connectToServerResult);
   }
@@ -468,6 +467,15 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
     uint64_t realCircaValue;
     double accuracy = 0.0;
     double lowerUnitLimit = 0.0, upperLimit;
+    //TODO
+    /* std::string stdstrUnit;
+    if(SMARTuniqueIDandVals.mp_modelAndFirmwareTuple &&
+      (stdstrUnit = SMARTuniqueIDandVals.mp_modelAndFirmwareTuple->getParamUnit(
+      SMARTattrID) ) != "" )
+    {
+      std_ossUnitAccuracy << stdstrUnit;
+    }
+    else{*/
     if(unit & ~highestBit)///If unit is determined <=> > 0 after bit removed
     {
       lowerUnitLimit = (double) sMARTuniqueID.lowerUnitBound[SMARTattrID];

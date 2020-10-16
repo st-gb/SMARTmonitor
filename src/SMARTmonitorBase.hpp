@@ -15,6 +15,7 @@
 ///struct CommandLineOption
 #include <OperatingSystem/Process/CommandLineOption.hpp>
 
+#include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 #include <attributes/SMARTattrDefAccss.hpp>///base class SMARTattrDefAccss
 #include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
 //#include "libConfig/ConfigurationLoader.hpp"
@@ -61,6 +62,7 @@ public:
     SMARTattrContConstIterType;
 //  SMARTattrDefContType SMARTattrDefs;
   typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
+  std::set<ModelAndFirmware> m_modelAndFirmwareTuples;
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
 public:

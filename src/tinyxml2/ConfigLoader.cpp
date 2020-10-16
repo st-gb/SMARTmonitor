@@ -9,6 +9,7 @@
 #include <Controller/character_string/ConvertStdStringToTypename.hpp>
 #include <tinyxml2.h>
 #include <SMARTmonitorBase.hpp>
+#include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 
 namespace tinyxml2
 {
@@ -120,6 +121,7 @@ bool ConfigLoader::LoadSMARTparametersConfiguration(
         //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
 
       ReadNetworkConfig(p_tinyxml2XMLelement);
+  readModelAndFirmwareCfg(p_tinyxml2XMLelement);
       GetSMARTattributesToObserve(p_tinyxml2XMLelement);
 
       p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
@@ -201,6 +203,44 @@ bool ConfigLoader::LoadSMARTparametersConfiguration(
       }while(p_tinyxml2XMLelement );
     return true;
   }
+
+/** Model and firmware for a HDD/SSD determine the S.M.A.R.T. parameter units .
+ * : if the firmware changes for a model then the parameter unit may change. */
+void ConfigLoader::readModelAndFirmwareCfg(const tinyxml2::XMLElement *
+  p_tinyxml2XMLelement)
+{
+  /** Both client and server need to use the same port. */
+  p_tinyxml2XMLelement = p_tinyxml2XMLelement->
+    FirstChildElement("data_carrier");
+  if(p_tinyxml2XMLelement)
+  {
+    do{
+      /** Value: specify '0' in order to retrieve the value */ //NULL);
+    const char * p_chModel = p_tinyxml2XMLelement->Attribute("model", NULL);
+    const char * p_chFirmware = p_tinyxml2XMLelement->Attribute("firmware",
+      NULL);
+    ModelAndFirmware modelAndFirmware;
+    if(p_chModel && p_chFirmware){
+      modelAndFirmware.Set(p_chModel, p_chFirmware);
+      m_r_SMARTmonitorBase.m_modelAndFirmwareTuples.insert(modelAndFirmware);
+    }
+    p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement("SMART");
+    if(p_tinyxml2XMLelement){
+    do{
+    const int paramID = p_tinyxml2XMLelement->IntAttribute("paramID", 0);
+    const char * p_chUnit = p_tinyxml2XMLelement->Attribute("unit", NULL);
+    if(paramID != 0 && p_chUnit)
+    {
+      modelAndFirmware.setParamUnit(paramID, p_chUnit);
+      LOGN("setting SMART param unit for ID " << paramID << "to " << p_chUnit)
+    }
+    p_tinyxml2XMLelement = p_tinyxml2XMLelement->NextSiblingElement();
+  }while(p_tinyxml2XMLelement);
+  }
+    p_tinyxml2XMLelement = p_tinyxml2XMLelement->NextSiblingElement();
+  }while(p_tinyxml2XMLelement);
+  }
+}
 
   void ConfigLoader::ReadServiceConnectionSettings(
     const std::wstring & stdwstrWorkingDirWithConfigFilePrefix)

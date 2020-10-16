@@ -277,7 +277,7 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
       m_socketPortNumber);
     gs_dialog->SetStatus(status);
     m_wxtimer.Stop();
-    ConnectToServerAndGetSMARTvalues();
+    ConnectToServerAndGetSMARTvalues(true);
   }
 }
 
@@ -336,7 +336,7 @@ bool wxSMARTmonitorApp::OnInit()
     if( ! stdwstrServiceConnectionConfigFile.empty() )
     {
 //      m_wxtimer.StartOnce(1000);
-      ConnectToServerAndGetSMARTvalues();
+      ConnectToServerAndGetSMARTvalues(true);
     }
 #ifdef directSMARTaccess
     else

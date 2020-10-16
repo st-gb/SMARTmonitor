@@ -332,6 +332,9 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
       m_SMARTattrIDsToObs);
     //TODO Uncomment. Causes not to display the current SMART data at least if
     // data from service.
+#ifdef _DEBUG
+    std::pair<SMARTuniqueIDandValsContType::iterator, bool> insSucceeded =
+#endif
     SMARTuniqueIDsAndValues.insert/*emplace insOrEmpl*/(SMARTuniqueIDandValues(
       sMARTuniqueID) );
 

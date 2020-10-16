@@ -29,7 +29,7 @@ public:
   static char * s_columnAttriuteNames [];
       
   static bool s_atLeast1CriticalNonNullValue;
-  static nativeThread_type s_updateSMARTparameterValuesThread;
+//  static nativeThread_type s_updateSMARTparameterValuesThread;
   static fastestUnsignedDataType s_updateUI;
   dataCarrierID2supportedSMARTattrMap_type
     dataCarrierIDandSMARTidsContainer;
@@ -58,7 +58,7 @@ public:
   void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
     fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
   virtual void ChangeState(enum serverConnectionState newState) { };
-  void ConnectToServerAndGetSMARTvalues();
+  void ConnectToServerAndGetSMARTvalues(const bool asyncCnnctToSvc);
   void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(

@@ -7,6 +7,13 @@
  <!-- IDs that are interesting for ALL drives -->
  <SMART_parameters_to_observe>1,3,4,5,7,8,9,10.11.12,100,187,194,195,196,198,199,200,201,204,240,241,242,250,254</SMART_parameters_to_observe>
 
+<!-- -->
+<data_carrier model="HFS256G39TND-N210A" firmware="30001P10">  
+ <SMART paramID="9" unit="1h15s">
+ <SMART paramID="241" unit="1GB">
+ <SMART paramID="242" unit="1GB">
+</data_carrier>
+
 <!-- see/details from
  -GSMARTControl 1.1.3 with a HFS256G39TND-N210A SSD [GSMARTCtl1.1.3]
  -libatasmart homepage
@@ -28,7 +35,7 @@
   <SMART_parameter Id="10" Name="Spin Retry Count" Details="Count of retry of spin start attempts. This attribute stores a total count of the spin start attempts to reach the fully operational speed (under the condition that the first attempt was unsuccessful). An increase of this attribute value is a sign of problems in the hard disk mechanical subsystem." />
   <SMART_parameter Id="11" Name="Recalibration Retries or Calibration Retry Count" Details="This attribute indicates the count that recalibration was requested (under the condition that the first attempt was unsuccessful). An increase of this attribute value is a sign of problems in the hard disk mechanical subsystem." />
   <SMART_parameter Id="12" Name="Power Cycle Count" Details="This attribute indicates the count of full hard disk power on/off cycles." />
-  <SMART_parameter Id="100" Name="GiB Erased"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_parameter Id="100" Name="Data Erased"/><!--[GSMARTCtl1.1.3]-->
   <SMART_parameter Id="168" Name="SATA Physical Error Count"/><!--[GSMARTCtl1.1.3]-->
   <SMART_parameter Id="169" Name="Bad Block Count"/><!--[GSMARTCtl1.1.3]-->
   <SMART_parameter Id="171" Name="Program Fail Count"/><!--[enWikip]-->
