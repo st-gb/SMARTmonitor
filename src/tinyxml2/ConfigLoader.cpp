@@ -207,38 +207,36 @@ bool ConfigLoader::LoadSMARTparametersConfiguration(
 /** Model and firmware for a HDD/SSD determine the S.M.A.R.T. parameter units .
  * : if the firmware changes for a model then the parameter unit may change. */
 void ConfigLoader::readModelAndFirmwareCfg(const tinyxml2::XMLElement *
-  p_tinyxml2XMLelement)
+  const p_rootXMLele)
 {
-  /** Both client and server need to use the same port. */
-  p_tinyxml2XMLelement = p_tinyxml2XMLelement->
+  const tinyxml2::XMLElement * p_dataCarrierXMLele = p_rootXMLele->
     FirstChildElement("data_carrier");
-  if(p_tinyxml2XMLelement)
+  while(p_dataCarrierXMLele)
   {
-    do{
-      /** Value: specify '0' in order to retrieve the value */ //NULL);
-    const char * p_chModel = p_tinyxml2XMLelement->Attribute("model", NULL);
-    const char * p_chFirmware = p_tinyxml2XMLelement->Attribute("firmware",
+    /** Value: specify '0' in order to retrieve the value */ //NULL);
+    const char * p_chModel = p_dataCarrierXMLele->Attribute("model", NULL);
+    const char * p_chFirmware = p_dataCarrierXMLele->Attribute("firmware",
       NULL);
     ModelAndFirmware modelAndFirmware;
     if(p_chModel && p_chFirmware){
       modelAndFirmware.Set(p_chModel, p_chFirmware);
       m_r_SMARTmonitorBase.m_modelAndFirmwareTuples.insert(modelAndFirmware);
     }
-    p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement("SMART");
-    if(p_tinyxml2XMLelement){
-    do{
-    const int paramID = p_tinyxml2XMLelement->IntAttribute("paramID", 0);
-    const char * p_chUnit = p_tinyxml2XMLelement->Attribute("unit", NULL);
-    if(paramID != 0 && p_chUnit)
-    {
-      modelAndFirmware.setParamUnit(paramID, p_chUnit);
-      LOGN("setting SMART param unit for ID " << paramID << "to " << p_chUnit)
+    const tinyxml2::XMLElement * p_tinyxml2XMLelement;
+    p_tinyxml2XMLelement = p_dataCarrierXMLele->FirstChildElement("SMART");
+    while(p_tinyxml2XMLelement){
+      const int paramID = p_tinyxml2XMLelement->IntAttribute("paramID", 0);
+      const char * p_chUnit = p_tinyxml2XMLelement->Attribute("unit", NULL);
+      if(paramID != 0 && p_chUnit)
+      {
+        modelAndFirmware.setParamUnit(paramID, p_chUnit);
+        LOGN("setting SMART param unit for ID " << paramID << "to " << p_chUnit)
+      }
+      ///Next sibling element must be called from sibling:
+      /// http://www.grinninglizard.com/tinyxmldocs/classTiXmlHandle.html#f0643f8683f3f2b779b8c9d78c67b2c0
+      p_tinyxml2XMLelement = p_tinyxml2XMLelement->NextSiblingElement("SMART");
     }
-    p_tinyxml2XMLelement = p_tinyxml2XMLelement->NextSiblingElement();
-  }while(p_tinyxml2XMLelement);
-  }
-    p_tinyxml2XMLelement = p_tinyxml2XMLelement->NextSiblingElement();
-  }while(p_tinyxml2XMLelement);
+    p_dataCarrierXMLele = p_dataCarrierXMLele->NextSiblingElement("data_carrier");
   }
 }
 

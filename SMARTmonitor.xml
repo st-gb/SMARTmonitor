@@ -9,9 +9,9 @@
 
 <!-- -->
 <data_carrier model="HFS256G39TND-N210A" firmware="30001P10">  
- <SMART paramID="9" unit="1h15s">
- <SMART paramID="241" unit="1GB">
- <SMART paramID="242" unit="1GB">
+ <SMART paramID="9" unit="1h15s"/>
+ <SMART paramID="241" unit="1GB"/>
+ <SMART paramID="242" unit="1GB"/>
 </data_carrier>
 
 <!-- see/details from
