@@ -62,7 +62,8 @@ public:
     SMARTattrContConstIterType;
 //  SMARTattrDefContType SMARTattrDefs;
   typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
-  std::set<ModelAndFirmware> m_modelAndFirmwareTuples;
+  typedef std::set<ModelAndFirmware> ModelAndFirmwareTuplesType;
+  ModelAndFirmwareTuplesType m_modelAndFirmwareTuples;
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
 public:
