@@ -28,7 +28,8 @@ fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
 #ifdef multithread
 //nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
 #endif
-bool SMARTmonitorClient::s_atLeast1CriticalNonNullValue = false;
+enum SMARTvalueRating SMARTmonitorClient::s_atLeast1CriticalNonNullValue =
+  unknown;
 fastestUnsignedDataType SMARTmonitorClient::s_maxNumCharsNeededForDisplay [] =
  { 3, 30, 15, 20, 40};
 fastestUnsignedDataType SMARTmonitorClient::s_charPosOAttrNameBegin [] =
@@ -395,6 +396,7 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
 #endif
   //memory_barrier(); //TODO: not really necessary??
   
+  enum SMARTvalueRating sMARTvalueRating, entireSMARTvalRating = SMARTvalueOK;
   /** Loop over data carriers. */
   //TODO (only) 1 item here when wxGUI started as root?
   for(fastestUnsignedDataType currentDriveIndex = 0;
@@ -417,15 +419,18 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
       const SMARTuniqueIDandValues & sMARTuniqueIDandVals = 
         *SMARTuniqueIDandValuesIter;
 #endif
-      upd8rawAndH_andTime(SMARTattrID, *SMARTuniqueIDandValuesIter, NULL);
+      sMARTvalueRating = upd8rawAndH_andTime(SMARTattrID,
+        *SMARTuniqueIDandValuesIter, NULL);
+      if(sMARTvalueRating == SMARTvalueWarning)
+        entireSMARTvalRating = SMARTvalueWarning;
     }
   }
   /** ^= state changed. */
-  if( s_atLeast1CriticalNonNullValue != atLeast1CriticalNonNullValue )
+  if(s_atLeast1CriticalNonNullValue != entireSMARTvalRating)
   {
-    ShowStateAccordingToSMARTvalues(atLeast1CriticalNonNullValue);
+    ShowStateAccordingToSMARTvalues(entireSMARTvalRating == SMARTvalueWarning);
   }
-  s_atLeast1CriticalNonNullValue = atLeast1CriticalNonNullValue;
+  s_atLeast1CriticalNonNullValue = entireSMARTvalRating;
 }
 
 bool getRealValue(const std::string & stdstrUnit, const uint64_t SMARTrawVal,
@@ -468,6 +473,8 @@ bool getRealValue(const std::string & stdstrUnit, const uint64_t SMARTrawVal,
           isNumber = false;
         }
         switch(ch){
+          case 'B':///Needs to be contained for not to be in "default" branch.
+            break;
           case 'G':
             currNum *= 1000000000;
             break;
@@ -585,7 +592,7 @@ inline void useDeterminedUnits(
   }
 }
 
-void SMARTmonitorClient::upd8rawAndH_andTime(
+enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
   const fastestUnsignedDataType SMARTattrID,
   const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
   void * data)
@@ -639,8 +646,8 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
       stdstrUnit = thisModelAndFirmware.getParamUnit(SMARTattrID);
       if( stdstrUnit != "" )
       {
-        std_ossUnit << iter->getParamUnit(SMARTattrID);
-        if(getRealValue(stdstrUnit, SMARTrawVal, realCircaValue) ){
+        if(! getRealValue(stdstrUnit, SMARTrawVal, realCircaValue) ){
+          std_ossUnit << iter->getParamUnit(SMARTattrID);
           useDeterminedUnit = false;
           stdstrHumanReadableRawVal += SMARTvalueFormatter::
             FormatHumanReadable(SMARTattrID, realCircaValue, true);
@@ -744,4 +751,5 @@ void SMARTmonitorClient::upd8rawAndH_andTime(
 //  else
 //  {//TODO show message that no S.M.A.R.T. attribute definition found
 //  }
+  return sMARTvalueRating;
 }

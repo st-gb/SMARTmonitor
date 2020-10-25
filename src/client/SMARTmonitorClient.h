@@ -28,7 +28,7 @@ public:
   static fastestUnsignedDataType s_charPosOAttrNameBegin[ColumnIndices::beyondLast];
   static char * s_columnAttriuteNames [];
       
-  static bool s_atLeast1CriticalNonNullValue;
+  static enum SMARTvalueRating s_atLeast1CriticalNonNullValue;
 //  static nativeThread_type s_updateSMARTparameterValuesThread;
   static fastestUnsignedDataType s_updateUI;
   dataCarrierID2supportedSMARTattrMap_type
@@ -98,7 +98,8 @@ public:
     SetSMARTattribIDandNameLabel();
   }
   void setIDandLabel(const fastestUnsignedDataType SMARTattrID, void * data);
-  void upd8rawAndH_andTime(const fastestUnsignedDataType SMARTattrID,
+  enum SMARTvalueRating upd8rawAndH_andTime(
+    const fastestUnsignedDataType SMARTattrID,
     const SMARTuniqueIDandValues &, void * data);
   inline void UpdateTimeOfSMARTvalueRetrieval(
     const fastestUnsignedDataType SMARTattributeID,
