@@ -214,7 +214,9 @@ void SMARTmonitorClient::ConnectToServer() {
 }
 
 void SMARTmonitorClient::HandleTransmissionError( 
-  enum SMARTmonitorClient::TransmissionError transmissionError)
+  enum SMARTmonitorClient::TransmissionError transmissionError,
+  const fastestUnsignedDataType numBread,
+  const fastestUnsignedDataType numBtoRead)
 {
   std::ostringstream stdoss;
   char * errorMessageForErrno = NULL;
@@ -243,7 +245,8 @@ void SMARTmonitorClient::HandleTransmissionError(
   switch(transmissionError)
   {
     case numBytesToReceive :
-      stdoss << "ERROR reading the number of following bytes from socket";
+      stdoss << "ERROR reading the number of following bytes from socket (read "
+        << numBread << "B instead of " << numBtoRead << "B)";
       break;
     case SMARTparameterValues :
       stdoss << "ERROR reading SMART parameter values from socket";
@@ -282,8 +285,8 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
   {
     int numBytesRead = OperatingSystem::BSD::sockets::readFromSocket(
       m_socketFileDesc, XMLdata, numBytesToRead);
-    if (numBytesRead < numBytesToRead) {
-      HandleTransmissionError(SMARTdata);
+    if(numBytesRead < numBytesToRead) {
+      HandleTransmissionError(SMARTdata, numBytesRead, numBytesToRead);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
       return 2; //TODO provide error handling (show message to user etc.)

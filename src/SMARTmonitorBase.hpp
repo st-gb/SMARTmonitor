@@ -53,6 +53,12 @@ class SMARTmonitorBase
   , public SMARTattrDefAccss
 {
 public:
+  const struct tm & GetLastSMARTvaluesUpdateTime() const {
+    //TODO because "tm" is a struct with multiple fields/members:
+    // changes non-atomically in get SMART values thread.
+    // ->possible inconsistency
+    return m_timeOfLastSMARTvaluesUpdate; }
+  struct tm m_timeOfLastSMARTvaluesUpdate;
   ///attr=attribute Def=definition Cont=container
   typedef std::/*set<SMARTattrDef>*/ map<unsigned,SMARTattrDef> 
     SMARTattrDefContType;

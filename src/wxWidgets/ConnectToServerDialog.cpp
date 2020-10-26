@@ -16,7 +16,7 @@
 #include "wxSMARTmonitorDialog.hpp"
 extern SMARTdialog * gs_dialog;
 
-DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
+//DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
 
 BEGIN_EVENT_TABLE(ConnectToServerDialog, wxDialog)
   EVT_TIMER(TIMER_ID, ConnectToServerDialog::OnTimer)
@@ -116,6 +116,7 @@ void ConnectToServerDialog::End(){
   else
     const bool successfullyDestroyed = Destroy();
   wxGetApp().EnableSrvUIctrls();
+  wxGetApp().m_p_cnnctToSrvDlg = NULL;
 }
 
 static void sigHandler(int signo){}

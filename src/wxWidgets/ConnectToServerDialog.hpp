@@ -26,8 +26,8 @@ public:
   virtual ~ConnectToServerDialog();
   enum IDs {TIMER_ID = 0, connect};
   void End();
-private:
   wxTimer m_timer;
+private:
   fastestUnsignedDataType m_timeOutInSeconds;
   int m_connectToServerSocketFileDescriptor;
   wxStaticText * m_p_wxStaticTextTimeout;

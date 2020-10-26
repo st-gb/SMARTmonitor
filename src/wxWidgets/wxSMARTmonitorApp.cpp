@@ -62,10 +62,13 @@ wxIcon wxSMARTmonitorApp::s_SMARTwarningIcon;
 DEFINE_LOCAL_EVENT_TYPE(AfterConnectToServerEventType)
 DEFINE_LOCAL_EVENT_TYPE(ShowMessageEventType)
 DEFINE_LOCAL_EVENT_TYPE(StartServiceConnectionCountDownEventType)
+DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
 
 BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
   EVT_COMMAND(wxID_ANY, AfterConnectToServerEventType, wxSMARTmonitorApp::OnAfterConnectToServer)
   EVT_COMMAND(wxID_ANY, ShowMessageEventType, wxSMARTmonitorApp::OnShowMessage)
+  EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
+    OnStartCntDown)
   EVT_COMMAND(wxID_ANY, StartServiceConnectionCountDownEventType, 
     wxSMARTmonitorApp::OnStartServiceConnectionCountDown)
   EVT_TIMER(TIMER_ID, wxSMARTmonitorApp ::OnTimer)
@@ -117,6 +120,15 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 #else
   wxGetApp().m_taskBarIcon = new TaskBarIcon();
 #endif
+}
+
+void wxSMARTmonitorApp::OnStartCntDown(wxCommandEvent & event){
+  if(! m_p_cnnctToSrvDlg){
+    wxGetApp().DisableSrvUIctrls();
+    ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
+  }
+  if(m_p_cnnctToSrvDlg)
+    m_p_cnnctToSrvDlg->m_timer.Start(1000);
 }
 
 void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
@@ -507,8 +519,11 @@ void wxSMARTmonitorApp::ShwCnnctToSrvrDlg(const std::string & srvAddr){
 
 void wxSMARTmonitorApp::startCnnctCountDown()
 {
-  wxCommandEvent wxcommand_event(StartCnnctCntDownEvtType);
-  wxPostEvent( (ConnectToServerDialog *) m_p_cnnctToSrvDlg, wxcommand_event);
+//  if(m_p_cnnctToSrvDlg){
+    wxCommandEvent wxcommand_event(StartCnnctCntDownEvtType);
+//    wxPostEvent( (ConnectToServerDialog *) m_p_cnnctToSrvDlg, wxcommand_event);
+    wxPostEvent(this, wxcommand_event);
+//  }
 }
 
 void wxSMARTmonitorApp::OnShowMessage(wxCommandEvent & event)

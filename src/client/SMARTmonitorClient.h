@@ -74,14 +74,9 @@ public:
   ///Should be called in user interface thread? (because it calls functions to 
   /// create the user interface)
   void GetSMARTvaluesAndUpdateUI();
-  void HandleTransmissionError(enum TransmissionError transmissionError);
-  
-  const struct tm & GetLastSMARTvaluesUpdateTime() const {
-    //TODO because "tm" is a struct with multiple fields/members: 
-    // changes non-atomically in get SMART values thread.
-    // ->possible inconsistency 
-    return m_timeOfLastSMARTvaluesUpdate; }
-  struct tm m_timeOfLastSMARTvaluesUpdate;
+  void HandleTransmissionError(enum TransmissionError,
+    const fastestUnsignedDataType numBread,
+    const fastestUnsignedDataType numBtoRead);
   
   void SetServiceAddress(const std::string & str) {
     m_stdstrServerAddress = str;

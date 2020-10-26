@@ -36,7 +36,7 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
     & numDataBytesToRead,
     numBytesToRead);
   if(numBytesRead < (int) numBytesToRead){
-    HandleTransmissionError(numBytesToReceive);
+    HandleTransmissionError(numBytesToReceive, numBytesRead, numBytesToRead);
     return -1;
   }
   numDataBytesToRead = ntohs(numDataBytesToRead);
@@ -85,8 +85,8 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
       SMARTdataXML, numBytesToRead);
     //TODO often numBytesRead < numBytesToRead if this function is called from 
     //  "UpdateSMARTparameterValuesThreadFunc"
-    if (numBytesRead < numBytesToRead) {
-      HandleTransmissionError(SMARTparameterValues);
+    if(numBytesRead < numBytesToRead) {
+      HandleTransmissionError(SMARTparameterValues,numBytesRead,numBytesToRead);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
       std::string stdstrXML((char*)SMARTdataXML, numBytesRead);
