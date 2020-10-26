@@ -26,9 +26,9 @@ class ConnectToServerDialog;
 class wxSMARTmonitorApp
   : public wxApp, public /*SMARTmonitorBase*/ SMARTmonitorClient
 {
-  ConnectToServerDialog * m_p_cnnctToSrvDlg/*(pch, timeOut )*/;
   wxTimer m_wxtimer;
 public:
+  ConnectToServerDialog * m_p_cnnctToSrvDlg/*(pch, timeOut )*/;
   enum IDs {TIMER_ID = 0};
   static wxIcon s_SMARTokIcon;
   static wxIcon s_SMARTstatusUnknownIcon;
@@ -73,6 +73,7 @@ public:
   wxIcon ShowSMARTstatusUnknownIcon();
   wxIcon ShowSMARTwarningIcon();
   void ShowIcon(const wxIcon & icon, const wxString & message );
+  void startCnnctCountDown();
   void ShowStateAccordingToSMARTvalues(bool b);
   void StartServiceConnectionCountDown(const fastestUnsignedDataType);
   void ReBuildUserInterface();

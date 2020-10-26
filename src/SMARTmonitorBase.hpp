@@ -95,6 +95,8 @@ protected:
    *  -or from config file */
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
 public:
+  nativeThread_type connectThread;
+  virtual void startCnnctCountDown(){};
   fastestUnsignedDataType m_timeOutInSeconds;
   std::wstring GetProgramOptionValue(const /*enum programOptionNames*/
     fastestUnsignedDataType programOptionName) {

@@ -22,6 +22,7 @@ public:
     const fastestUnsignedDataType servicePortNumber,
     const fastestUnsignedDataType timeOutInSeconds,
     const int cnnctToSrvSocketFileDesc);
+  static wxString title;
   virtual ~ConnectToServerDialog();
   enum IDs {TIMER_ID = 0, connect};
   void End();
@@ -34,13 +35,17 @@ private:
   wxTextCtrl * m_p_portNoTxtCtrl;
   wxTextCtrl * m_p_timeoutInS_TxtCtrl;
   void buildUI();
+  void StartTimer(){m_timer.Start();}
   void OnCancel(wxCommandEvent& event);
   void OnConnect(wxCommandEvent &);
   void OnCloseWindow(wxCloseEvent& event);
+  void OnStartCntDown(wxCommandEvent &);
   void OnTimer(wxTimerEvent& event);
   
   DECLARE_EVENT_TABLE()
 };
 
-#endif /* CONNECTTOSERVERDIALOG_HPP */
+///For using the event outside of the implementation file.
+DECLARE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType, -1)
 
+#endif /* CONNECTTOSERVERDIALOG_HPP */

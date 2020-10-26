@@ -505,6 +505,12 @@ void wxSMARTmonitorApp::ShwCnnctToSrvrDlg(const std::string & srvAddr){
   m_p_cnnctToSrvDlg->Show();
 }
 
+void wxSMARTmonitorApp::startCnnctCountDown()
+{
+  wxCommandEvent wxcommand_event(StartCnnctCntDownEvtType);
+  wxPostEvent( (ConnectToServerDialog *) m_p_cnnctToSrvDlg, wxcommand_event);
+}
+
 void wxSMARTmonitorApp::OnShowMessage(wxCommandEvent & event)
 {
     wxString wxstrMessage = event.GetString();

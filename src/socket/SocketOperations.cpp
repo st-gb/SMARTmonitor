@@ -151,7 +151,8 @@ struct SocketConnectThreadFuncParams
 int ConnectToSocketNonBlocking(
   int socketFileDescriptor, 
   struct sockaddr_in & serv_addr, 
-  long int connectTimeoutInSeconds)
+  long int connectTimeoutInSeconds,
+  SMARTmonitorClient * p_smartMonClient)
 {
   /** from http://www.linuxquestions.org/questions/programming-9/why-does-connect-block-for-a-long-time-708647/ */
 //  fcntl(socketFD, F_SETFL, curflags | O_NONBLOCK);
@@ -177,12 +178,25 @@ int ConnectToSocketNonBlocking(
       socketConnectTimeout.tv_sec = connectTimeoutInSeconds;
       socketConnectTimeout.tv_usec = 0;
 
-      /** https://linux.die.net/man/2/select : 
+      ///from https://linux.die.net/man/2/pselect , section "Description"
+      sigset_t origmask, sigmask;
+      ///https://www.gnu.org/software/libc/manual/html_node/Signal-Sets.html
+      int i = sigfillset(&sigmask);
+      pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
+
+      /** Because returning from select(...) may take some (see its last
+       * parameter) seconds->show timeout in UI.*/
+      p_smartMonClient->startCnnctCountDown();
+      /** https://linux.die.net/man/2/select :
         * "waiting until one or more of the file descriptors become
-          "ready" for some class of I/O operation (e.g., input possible)."  */
-      //TODO may take some (socketConnectTimeout) seconds->show timeout in UI
-      result = select(socketFileDescriptor + 1, & readFileDescriptorSet,
+        * "ready" for some class of I/O operation (e.g., input possible)."  */
+      result = select(/** "This argument should be set to the highest-numbered
+        file descriptor in any of the three sets, plus 1.  The indicated
+        file descriptors in each set are checked, up to this limit
+        (but see BUGS)." */
+        socketFileDescriptor + 1, & readFileDescriptorSet,
         /**writefds*/NULL, /**exceptfds*/NULL, &socketConnectTimeout);
+      pthread_sigmask(SIG_SETMASK, &origmask, NULL);
 //      int errorNumber = errno;
       if (result > 0) /** connected */
       {
@@ -247,7 +261,8 @@ DWORD SocketConnectThreadFunc(void * p_v)
     int connectResult = ConnectToSocketNonBlocking(
       p_socketConnectThreadFuncParams->socketFileDesc,
       p_socketConnectThreadFuncParams->serv_addr,
-      p_socketConnectThreadFuncParams->connectTimeoutInSeconds
+      p_socketConnectThreadFuncParams->connectTimeoutInSeconds,
+      p_socketConnectThreadFuncParams->p_SMARTmonitorClient
       );
   
     if( connectResult < 0)
@@ -299,8 +314,6 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   if( asyncConnect )
   {
     ShowConnectionState(hostName, cnnctTimeoutInS);
-    //TODO make as member variable (else is deleted if this block ends).
-    nativeThread_type connectThread;
     SocketConnectThreadFuncParams * p_socketConnectThreadFuncParams = new 
       SocketConnectThreadFuncParams {m_socketFileDesc, srvAddr, this,
         (fastestUnsignedDataType)cnnctTimeoutInS };
