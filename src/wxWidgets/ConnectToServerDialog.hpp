@@ -27,6 +27,7 @@ public:
   enum IDs {TIMER_ID = 0, connect};
   void End();
   wxTimer m_timer;
+  void ReStartTimer(){m_timeOutInSeconds = 30; m_timer.Start();}
 private:
   fastestUnsignedDataType m_timeOutInSeconds;
   int m_connectToServerSocketFileDescriptor;

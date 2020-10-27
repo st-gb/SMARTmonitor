@@ -26,8 +26,8 @@ class ConnectToServerDialog;
 class wxSMARTmonitorApp
   : public wxApp, public /*SMARTmonitorBase*/ SMARTmonitorClient
 {
-  wxTimer m_wxtimer;
 public:
+  wxTimer m_wxtimer;
   ConnectToServerDialog * m_p_cnnctToSrvDlg/*(pch, timeOut )*/;
   enum IDs {TIMER_ID = 0};
   static wxIcon s_SMARTokIcon;

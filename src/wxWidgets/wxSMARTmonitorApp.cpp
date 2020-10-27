@@ -172,16 +172,17 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNon
  * interface thread.*/
 void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 {
-  if(m_p_cnnctToSrvDlg)
-  {
-    m_p_cnnctToSrvDlg->End();
-    m_p_cnnctToSrvDlg = NULL;
-  }
   int connectResult = commandEvent.GetInt();
   //TODO The following could go into a "AfterCnnctToSrvInUIthread" function
   // usable by all subclasses of SMARTmonitorClient.
   if( connectResult == connectedToService)
   {
+//    connectedToSrv();
+    if(m_p_cnnctToSrvDlg)
+    {
+      m_p_cnnctToSrvDlg->End();///Only close connect dialog if connected
+      m_p_cnnctToSrvDlg = NULL;
+    }
 //    SuccessfullyConnectedToClient();
     /*if( !*/ GetSMARTvaluesAndUpdateUI(); //)
 //      StartServiceConnectionCountDown(countDownInSeconds);
@@ -290,6 +291,7 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
     gs_dialog->SetStatus(status);
     m_wxtimer.Stop();
     ConnectToServerAndGetSMARTvalues(true);
+    m_p_cnnctToSrvDlg->ReStartTimer();
   }
 }
 
@@ -508,13 +510,15 @@ void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress,
 }
 
 void wxSMARTmonitorApp::ShwCnnctToSrvrDlg(const std::string & srvAddr){
-  m_p_cnnctToSrvDlg = new ConnectToServerDialog(
-    ///Alternative: pass (pointer to) _this_ object and assign in dialog c'tor
-    m_stdstrServiceHostName.c_str(),
-    m_socketPortNumber,
-    m_timeOutInSeconds,
-    m_socketFileDesc);
-  m_p_cnnctToSrvDlg->Show();
+  if(! m_p_cnnctToSrvDlg){
+    m_p_cnnctToSrvDlg = new ConnectToServerDialog(
+      ///Alternative: pass (pointer to) _this_ object and assign in dialog c'tor
+      m_stdstrServiceHostName.c_str(),
+      m_socketPortNumber,
+      m_timeOutInSeconds,
+      m_socketFileDesc);
+    m_p_cnnctToSrvDlg->Show();
+  }
 }
 
 void wxSMARTmonitorApp::startCnnctCountDown()

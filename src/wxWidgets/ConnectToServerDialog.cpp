@@ -28,7 +28,7 @@ BEGIN_EVENT_TABLE(ConnectToServerDialog, wxDialog)
 END_EVENT_TABLE()
 
 wxString ConnectToServerDialog::title =
-  wxT("connect to S.M.A.R.T. values server/service (via TCP)");
+  wxT("connect to S.M.A.R.T. values server/service");
 
 inline wxString GetTimeOutLabelText(const fastestUnsignedDataType timeOutInSeconds)
 {
@@ -84,7 +84,7 @@ void ConnectToServerDialog::buildUI(){
   wxStaticText * p_portNoLabel = new wxStaticText(this, wxID_ANY,
     /** http://en.wikipedia.org/wiki/Port_(computer_networking)#Port_number :
      *  "0 to 65535" */
-    wxT("socket port number (0-65535):") );
+    wxT("TCP socket port number (0-65535):") );
   addToHorizSizer(sizerTop, p_portNoLabel, m_p_portNoTxtCtrl);
 
   m_p_timeoutInS_TxtCtrl = new wxTextCtrl(this, wxID_ANY,
@@ -100,6 +100,12 @@ void ConnectToServerDialog::buildUI(){
   actionSizer->Add(p_wxCancelButton, 0, 0, 0);
   sizerTop->Add(actionSizer);
 
+  /** https://wiki.wxwidgets.org/Beech:Using_custom_dialogs_with_sizers :
+   * "SetSizeHints() directs the sizer to set the minimal size of the window to
+   * match the sizer's minimal size." */
+  sizerTop->SetSizeHints(this);
+  //TODO set with to fit title bar width
+//  SetSize(GetSize().y, GetSize().x)
 //  SetSizerAndFit(sizerTop);
   SetSizer(sizerTop);
   Centre();
@@ -162,6 +168,7 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
   /*kill(getpid(), SIGUSR1);*/
   raise(SIGUSR1);///This cancels the waiting in "select(...)".
   m_timer.Stop();
+  wxGetApp().m_wxtimer.Stop();//stop connect timer in main window
 }
 
 void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)
@@ -182,8 +189,10 @@ void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
       //TODO In _Linux_: could also use timeout argument from "select(...)"
       m_timeOutInSeconds) );
   }
-  else
+  else{
     m_timer.Stop();
+    SetTitle(title);
+  }
 }
 
 ConnectToServerDialog::~ConnectToServerDialog() {
