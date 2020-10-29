@@ -275,7 +275,7 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
   {
     /** Create title as local variable for easier debugging. */
     wxString status = wxString::Format(
-      wxT("conn. attempt to %s,port %u in %u s"),
+      wxT("conn. attempt to \"%s\",port %u in %u s"),
       wxstrServiceHostName.c_str(), 
       m_socketPortNumber, 
       m_serviceConnectionCountDownInSeconds);
@@ -285,13 +285,14 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
   {
     //TODO move status line creation to base class SMARTmonitorClient
     wxString status = wxString::Format(
-      wxT("connected to %s,port%u"),
+      wxT("conn. attempt to \"%s\",port %u"),
       wxstrServiceHostName.c_str(), 
       m_socketPortNumber);
     gs_dialog->SetStatus(status);
     m_wxtimer.Stop();
     ConnectToServerAndGetSMARTvalues(true);
-    m_p_cnnctToSrvDlg->ReStartTimer();
+    if(m_p_cnnctToSrvDlg)
+      m_p_cnnctToSrvDlg->ReStartTimer();
   }
 }
 
@@ -467,11 +468,13 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 }
 
 void wxSMARTmonitorApp::SetAttribute(
+  const SMARTuniqueID & sMARTuniqueID,
   fastestUnsignedDataType SMARTattributeID,
   const enum ColumnIndices::columnIndices & columnIndex,
   const std::string & std_strValue,
   const enum SMARTvalueRating sMARTvalueRating,
-  void * data///which list control to use
+  void * data/** Which list control to use (for supported S.M.A.R.T. IDs dialog
+    it is non-NULL */
   )
 {
   wxString wxstrValue = wxWidgets::GetwxString_Inline(std_strValue );
@@ -480,8 +483,11 @@ void wxSMARTmonitorApp::SetAttribute(
   //SMARTmonitorDialog as param. "sMARTuniqueID" needs to be taken into account
   
   wxWidgets::SMARTtableListCtrl * wxSMARTtableListCtrl;
-  if(data == NULL)
-    wxSMARTtableListCtrl = gs_dialog->m_pwxlistctrl;
+  if(data == NULL){
+    PerDataCarrierPanel * perDataCarrierPanel = gs_dialog->
+      m_SMARTuniqueID2perDataCarrierPanel[sMARTuniqueID];
+    wxSMARTtableListCtrl = perDataCarrierPanel->m_pwxlistctrl;
+  }
   else
     wxSMARTtableListCtrl = (wxWidgets::SMARTtableListCtrl *) data;
   wxSMARTtableListCtrl->SetSMARTattribValue(
@@ -499,11 +505,11 @@ void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress,
   if( currentThreadNumber = s_GUIthreadID )
     ;
 #endif
-  m_p_cnnctToSrvDlg = new ConnectToServerDialog(
-    pchServerAddress, m_socketPortNumber, connectTimeOutInSeconds,
-    m_socketFileDesc);
+//  m_p_cnnctToSrvDlg = new ConnectToServerDialog(
+//    pchServerAddress, m_socketPortNumber, connectTimeOutInSeconds,
+//    m_socketFileDesc);
   //TODO dialog appears in foreground
-  m_p_cnnctToSrvDlg->Show();
+//  m_p_cnnctToSrvDlg->Show();
 //  m_pConnectToServerDialog->ShowWindowModal();
   /** Ensures "connect" can't be pressed a second time */
 //  m_pConnectToServerDialog->ShowModal();

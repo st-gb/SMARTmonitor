@@ -61,6 +61,7 @@ public:
   bool GetSMARTwarningIcon(wxIcon & icon);
   void OnStartCntDown(wxCommandEvent &);
   void SetAttribute(
+    const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */

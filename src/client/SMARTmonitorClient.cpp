@@ -323,7 +323,7 @@ void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
       SMART_IDsToReadIdx++)
     {
       SMARTattributeID = sMARTuniqueID.m_SMART_IDsToRd[SMART_IDsToReadIdx];
-      setIDandLabel(SMARTattributeID, NULL);
+      setIDandLabel(sMARTuniqueID, SMARTattributeID, NULL);
     }
     //TODO regard multiple data carriers
     break;///Only set ID and label for 1 data carrier
@@ -331,12 +331,16 @@ void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
   LOGN_DEBUG("end")
 }
 
-void SMARTmonitorClient::setIDandLabel(const fastestUnsignedDataType
-  SMARTattrID, void * data)
+///param data: For supported S.M.A.R.T. IDs dialog list cotrol
+void SMARTmonitorClient::setIDandLabel(
+  const SMARTuniqueID & sMARTuniqueID,
+  const fastestUnsignedDataType SMARTattrID,
+  void * data)
 {
   std::ostringstream std_oss;
   std_oss << SMARTattrID;
   SetAttribute(
+    sMARTuniqueID,
     SMARTattrID,
     ColumnIndices::SMART_ID,
     std_oss.str(),
@@ -355,6 +359,7 @@ void SMARTmonitorClient::setIDandLabel(const fastestUnsignedDataType
   }
     //SMARTattributeToObserve.name
   SetAttribute(
+    sMARTuniqueID,
     SMARTattrID,
     ColumnIndices::SMARTparameterName,
     stdstrSMARTattrName,
@@ -364,6 +369,7 @@ void SMARTmonitorClient::setIDandLabel(const fastestUnsignedDataType
 }
 
 void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
+  const SMARTuniqueID & sMARTuniqueID,
   const fastestUnsignedDataType SMARTattributeID,
   const uint64_t timeStampOfRetrievalInMs, void * data)
 {  
@@ -372,6 +378,7 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
     timeStampOfRetrievalInMs, 
     timeFormatString);
   SetAttribute(
+    sMARTuniqueID,
     SMARTattributeID,
     ColumnIndices::lastUpdate /** column #/ index */,
     timeFormatString,
@@ -618,6 +625,8 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
    * S.M.A.R.T. values. */
   if(! sMARTvalue.GetRetrievalTime(upTimeOfRetrievalInMs) )
     upTimeOfRetrievalInMs = 0;
+  const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandVals.
+    getSMARTuniqueID();
   //memory_barrier(); //TODO: not really necessary??
   if( /*successfullyUpdatedSMART*/ isConsistent && upTimeOfRetrievalInMs)
   {
@@ -627,8 +636,6 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
   //TODO move following code so it can be used in another place when not
   // SMARTmonitorClient-derived
     std::ostringstream std_ossUnit, std_ossUnitAccuracy;
-    const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandVals.
-      getSMARTuniqueID();
     long unit = sMARTuniqueID.units[SMARTattrID];
     uint64_t realCircaValue;
     double accuracy = 0.0;
@@ -695,18 +702,21 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
     sMARTvalueRating = s_SMARTvalueRater.GetSMARTvalueRating(SMARTattrID,
       SMARTuniqueIDandVals, realCircaValue);
     SetAttribute(
+      sMARTuniqueID,
       SMARTattrID,
       ColumnIndices::rawValue /** column #/ index */,
       std_ossRawSMARTval.str(),
       sMARTvalueRating,
       data);
     SetAttribute(
+      sMARTuniqueID,
       SMARTattrID,
       ColumnIndices::humanReadableRawValue,
       stdstrHumanReadableRawVal,
       sMARTvalueRating,
       data);
     SetAttribute(
+      sMARTuniqueID,
       SMARTattrID,
       ColumnIndices::unit,
       stdstrUnit,
@@ -714,6 +724,7 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
       data);
     if(! std_ossUnitAccuracy.str().empty() )
     SetAttribute(
+      sMARTuniqueID,
       SMARTattrID,
       ColumnIndices::unitRange,
       std_ossUnitAccuracy.str(),
@@ -738,12 +749,14 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
 //        else
 //          m_pwxlistctrl->SetItemBackgroundColour(lineNumber, * wxGREEN);
     UpdateTimeOfSMARTvalueRetrieval(
+      sMARTuniqueID,
       SMARTattrID,
       upTimeOfRetrievalInMs,
       data);
   }
   if(upTimeOfRetrievalInMs == 0)
     SetAttribute(
+      sMARTuniqueID,
       SMARTattrID,
       ColumnIndices::lastUpdate,
       "error:uptime is 0",

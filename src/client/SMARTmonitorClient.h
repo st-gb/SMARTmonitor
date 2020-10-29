@@ -92,17 +92,20 @@ public:
     //SetSMARTdriveID();
     SetSMARTattribIDandNameLabel();
   }
-  void setIDandLabel(const fastestUnsignedDataType SMARTattrID, void * data);
+  void setIDandLabel(const SMARTuniqueID &,
+    const fastestUnsignedDataType SMARTattrID, void * data);
   enum SMARTvalueRating upd8rawAndH_andTime(
     const fastestUnsignedDataType SMARTattrID,
     const SMARTuniqueIDandValues &, void * data);
   inline void UpdateTimeOfSMARTvalueRetrieval(
+    const SMARTuniqueID &,
     const fastestUnsignedDataType SMARTattributeID,
     /** Needs to be uint64_t in order to also work if built as 32 bit program
      *  and a long uptime in ms.*/
     const uint64_t timeStampOfRetrieval, void * data);
   /*virtual*/ void UpdateSMARTvaluesUI();
   virtual void SetAttribute(
+    const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */

@@ -1,20 +1,23 @@
 /*  wxSMARTmonitorDialog.hpp
  *  Created on: 26.11.2013
- *      Author: mr.sys  */
+ *  Author: Stefan Gebauer, M.Sc. Comp. Sc. */
 
 #ifndef WXSMARTMONITORDIALOG_HPP_
 #define WXSMARTMONITORDIALOG_HPP_
 
+///wxWidgets files:
+#include <wx/defs.h>///wxID_HIGHEST
 #include <wx/dialog.h>
 #include <wx/timer.h> //class wxTimer
+#include <wx/thread.h>///class wxCondition
 //#ifdef _WINDOWS
 //  #include "SmartReader.h" //class CSmartReader
 //#endif
+
+///This repository's files:
+#include "PerDataCarrierPanel.hpp"///class PerDataCarrierPanel
 #include "wxSMARTmonitorTaskBarIcon.hpp"
 #include "client/SMARTmonitorClient.h" //enum SMARTmonitorClient::state
-#include <wx/thread.h> //class wxCondition
-#include "SMARTtableListCtrl.hpp"
-#include <wx/defs.h> //wxID_HIGHEST
 
 class TaskBarIcon;
 class wxListCtrl;
@@ -24,15 +27,16 @@ class SMARTdialog: public wxDialog
 {
   //enum IDs { CONNECT = wxID_HIGHEST + 1};
 //  wxWidgets::wxSMARTvalueProcessor & m_SMARTvalueProcessor;
-  enum IDs {TIMER_ID = 0, showSupportedSMART_IDs, CONNECT};
+  enum IDs {TIMER_ID = 0, showSupportedSMART_IDs, CONNECT, directSMARTdata};
   /** Called "data carrier" and not "drive" because SMART info affect data 
    *  carriers / media and not "drives" (where they are inserted) */
-  wxTextCtrl * m_p_wxDataCarrierIDtextCtrl;
   wxTextCtrl * m_p_wxMessageTextCtrl;
-  wxButton * m_p_showSupportedSMART_IDs;
 //  wxTimer m_timer;
+  wxSizer * p_sMARTinfoSizer;
 public:
-  SMARTtableListCtrl * m_pwxlistctrl;
+  typedef std::map<SMARTuniqueID, PerDataCarrierPanel *>
+    SMARTuniqueID2perDataCarrierPanelType;
+  SMARTuniqueID2perDataCarrierPanelType m_SMARTuniqueID2perDataCarrierPanel;
 //  SMARTaccess_type & m_SMARTaccess;
   wxCondition * m_p_wxCloseCondition;
   wxMutex m_wxCloseMutex;
@@ -43,13 +47,15 @@ public:
     );
   virtual ~SMARTdialog();
   
-  wxSizer * CreatePerDiskUIctrls();
+  void buildUI();
+  void EnableShowSupportedSMART_IDs();
+  void CreatePerDiskUIctrls(wxSizer * p_sizer);
   void SetStatus(const wxString &);
   void StartAsyncDrctUpd8Thread();
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();
   void UpdateSMARTvaluesUI();
   void UpdateUIregarding1DataCarrierOnly();
-  void SetSMARTdriveID();
+  void SetSMARTdriveID(const SMARTuniqueID &);
   void SetState(enum SMARTmonitorClient::serverConnectionState newState);
   void ReBuildUserInterface();
   void EnableServerInteractingControls(int );

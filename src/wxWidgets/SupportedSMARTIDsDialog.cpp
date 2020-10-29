@@ -157,7 +157,7 @@ void SupportedSMART_IDsDialog::FillGUI(
       m_pwxlistctrl->InsertItem( item );
      ///Necessary for indirectly called SMARTtableListCtrl::SetSMARTattribValue(
       m_pwxlistctrl->m_SMARTattribIDtoLineNumber[SMART_ID] = lineNumber;
-      wxGetApp().setIDandLabel(SMART_ID, m_pwxlistctrl);
+      wxGetApp().setIDandLabel(sMARTuniqueID, SMART_ID, m_pwxlistctrl);
     }
     if(p_sMARTuniqueIDandValues)
       sMARTmonClient.upd8rawAndH_andTime(SMART_ID, *p_sMARTuniqueIDandValues,
