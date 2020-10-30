@@ -26,9 +26,9 @@ class ConnectToServerDialog;
 class wxSMARTmonitorApp
   : public wxApp, public /*SMARTmonitorBase*/ SMARTmonitorClient
 {
-  ConnectToServerDialog * m_p_cnnctToSrvDlg/*(pch, timeOut )*/;
-  wxTimer m_wxtimer;
 public:
+  wxTimer m_wxtimer;
+  ConnectToServerDialog * m_p_cnnctToSrvDlg/*(pch, timeOut )*/;
   enum IDs {TIMER_ID = 0};
   static wxIcon s_SMARTokIcon;
   static wxIcon s_SMARTstatusUnknownIcon;
@@ -59,7 +59,9 @@ public:
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTstatusUnknownIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
+  void OnStartCntDown(wxCommandEvent &);
   void SetAttribute(
+    const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
@@ -73,6 +75,7 @@ public:
   wxIcon ShowSMARTstatusUnknownIcon();
   wxIcon ShowSMARTwarningIcon();
   void ShowIcon(const wxIcon & icon, const wxString & message );
+  void startCnnctCountDown();
   void ShowStateAccordingToSMARTvalues(bool b);
   void StartServiceConnectionCountDown(const fastestUnsignedDataType);
   void ReBuildUserInterface();

@@ -12,12 +12,14 @@
 #include <Controller/Logger/LogFileAccessException.hpp>
 typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
+#include <FileSystem/File/GetAbsoluteFilePath.hpp>///GetAbsoluteFilePath(...)
 #include <FileSystem/GetCurrentWorkingDir.hpp> //OperatingSystem::GetCurrentWorkingDirA_inl(...)
 #include <FileSystem/PathSeperatorChar.hpp>///FileSystem::dirSeperatorChar
 #include <FileSystem/path_seperator.h>///PATH_SEPERATOR_CHAR_STRING
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
-#include <FileSystem/File/GetAbsoluteFilePath.hpp> // GetAbsoluteFilePath(...)
+///OperatingSystem::GetCurrentTime(...)
+#include <OperatingSystem/time/GetCurrentTime.hpp>
 
 #include "SMARTmonitorBase.hpp"///class SMARTmonitorBase
 #include <SMARTaccessBase.hpp> //class SMARTaccessBase
@@ -452,6 +454,7 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
         }
       }
     }
+    OperatingSystem::GetCurrentTime(m_timeOfLastSMARTvaluesUpdate);
     //    }
   } else // e.g. SMARTaccessBase::accessDenied
     ;

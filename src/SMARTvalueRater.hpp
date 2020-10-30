@@ -6,7 +6,7 @@
 #define SMARTVALUERATER_HPP
 
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
-
+//TODO encapsulate in own namespace?
 enum SMARTvalueRating{noCriticalValue,SMARTvalueOK,SMARTvalueWarning,unknown};
 
 using namespace SMARTattributeNames;///enum SMARTattributeNames

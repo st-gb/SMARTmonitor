@@ -33,7 +33,9 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
 {
   switch(SMARTattrID){
    case SMARTattributeNames::PowerOnTime:{
-    long int uptimeInNs;
+    /** "long int" may not be sufficient for uptime in ns (especially for 32
+     * bit) */
+    uint64_t uptimeInNs;
     OperatingSystem::GetUptimeInNs(uptimeInNs);
     sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, uptimeInNs
       /**to ms*//1000000);

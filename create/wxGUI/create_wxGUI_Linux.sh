@@ -6,14 +6,15 @@ dirPathOfThisScript=$(dirname "$dirPathOfThisScript")
 
 CMakeBuildSysGenerator=$1
 AdditionalCMakeOpts=$2
+wxSetupHpath=$3
 echo "CMakeBuildSysGenerator: \"$CMakeBuildSysGenerator\""
 echo "AdditionalCMakeOpts: \"$AdditionalCMakeOpts\""
 
 bash $dirPathOfThisScript/create_wxGUI.sh \
 /usr/include/wx-3.0 \
-/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-debug-3.0 \
-/media/sg/devel/Libs/TinyXML2/tinyxml2 \
-/media/sg/devel/SourceCodeManagement/common_sourcecode \
+$wxSetupHpath \
+$dirPathOfThisScript/../../../../tinyxml2-master \
+$dirPathOfThisScript/../../../common_sourcecode \
 /usr/bin/gcc \
 /usr/bin/g++ \
 "$CMakeBuildSysGenerator" \

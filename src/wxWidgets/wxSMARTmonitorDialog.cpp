@@ -1,7 +1,8 @@
 /* wxSMARTmonitiorDialog.cpp
  *  Created on: 26.11.2013
- *      Author: mr.sys  */
+ *  Author: Stefan Gebauer, M.Sc. Comp. Sc. */
 
+///wxWidgets files:
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
 
@@ -12,24 +13,29 @@
 #ifndef WX_PRECOMP
     #include "wx/wx.h"
 #endif
+
+///This repository's files:
+#include "PerDataCarrierPanel.hpp"///class PerDataCarrierPanel
 #include "wxSMARTmonitorDialog.hpp"
 #include "wxSMARTmonitorApp.hpp" //wxGetApp()
 #include "wxSMARTmonitorTaskBarIcon.hpp"
+#include <wxWidgets/SupportedSMARTIDsDialog.hpp>///class
+
+///Stefan Gebauer's common_sourcecode repository:
 #include <compiler/GCC/enable_disable_warning.h>
 GCC_DIAG_OFF(write-strings)
 //#include "warning.xpm"
 //#include "smile.xpm"
 GCC_DIAG_ON(write-strings)
-#include <wx/listctrl.h> //class wxListCtrl
-#include <hardware/CPU/atomic/AtomicExchange.h>
-#include <preprocessor_macros/logging_preprocessor_macros.h>
 typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
-#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
-#include <wxWidgets/SupportedSMARTIDsDialog.hpp>
-#include <sstream> //ostringstream
-#include <wx/textdlg.h> //wxGetTextFromUser
+#include <hardware/CPU/atomic/AtomicExchange.h>
 #include <hardware/CPU/atomic/memory_barrier.h>
+#include <preprocessor_macros/logging_preprocessor_macros.h>
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+
+///Standard C(++) files:
+#include <sstream> //ostringstream
 
 //extern wxSMARTmonitorApp theApp;
 /** Static (class) variables. */
@@ -113,12 +119,23 @@ void SMARTdialog::SetStatus(const wxString & status)
   SetTitle(title);
 }
 
+void SMARTdialog::EnableShowSupportedSMART_IDs()
+{
+  for(SMARTuniqueID2perDataCarrierPanelType::const_iterator iter =
+    m_SMARTuniqueID2perDataCarrierPanel.begin();
+    iter != m_SMARTuniqueID2perDataCarrierPanel.end(); iter++)
+  {
+    iter->second->EnableShowSupportedSMART_IDs();
+  }
+}
+
 void SMARTdialog::EnableServerInteractingControls(int n)
 {
 //  if( n != 0)
 //    m_p_ConnectAndDisconnectButton->SetLabelText(wxT("&Disconnect") );
   m_p_ConnectAndDisconnectButton->Enable();
-  m_p_showSupportedSMART_IDs->Enable();
+
+  EnableShowSupportedSMART_IDs();
 }
 
 void SMARTdialog::InformAboutTerminationOfUpdateThread()
@@ -131,39 +148,46 @@ void SMARTdialog::InformAboutTerminationOfUpdateThread()
 }
 
 ///Call for every disk.
-wxSizer * SMARTdialog::CreatePerDiskUIctrls()
+void SMARTdialog::CreatePerDiskUIctrls(wxSizer * p_sizer)
 {
-  wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
+  LOGN_DEBUG("begin--evtID2SMARTuniqueID size:" << wxGetApp().
+    m_evtID2SMARTuniqueID.size() )
+  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = wxGetApp().
+    GetSMARTuniqueIDsAndVals();
+  std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
+    SMARTuniqueIDsAndValues.begin();
 
-//  flags.Border(wxALL, 0);
+  /** The map may contain invalid SMART unique IDs e.g. if direct SMART access
+   * at first and from server later. So empty it.*/
+  wxGetApp().m_evtID2SMARTuniqueID.clear();
 
-  m_p_wxDataCarrierIDtextCtrl = new wxTextCtrl(this, wxID_ANY, wxT("") );
-  m_p_wxDataCarrierIDtextCtrl->SetEditable(false);
-  m_p_wxDataCarrierIDtextCtrl->SetToolTip(wxT("data carrier ID"));
+  fastestUnsignedDataType evtID = showSupportedSMART_IDs;
+  for( ; SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
+    SMARTuniqueIDandValuesIter ++)
+  {
+    const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandValuesIter->
+      getSMARTuniqueID();
 
-  wxSizer * const diskIDsizer = new wxBoxSizer(wxHORIZONTAL);
+    PerDataCarrierPanel * p_perDataCarrierPanel = new PerDataCarrierPanel(this);
+    p_sizer->Add(p_perDataCarrierPanel, 1,
+      wxEXPAND, 0);
+    m_SMARTuniqueID2perDataCarrierPanel.insert(std::make_pair(
+      sMARTuniqueID, p_perDataCarrierPanel) );
 
-  m_p_showSupportedSMART_IDs = new wxButton(this, showSupportedSMART_IDs, 
-    wxT("supported SMART IDs"));
-  
-  diskIDsizer->Add( m_p_wxDataCarrierIDtextCtrl,
-    /** "in the main orientation of the wxBoxSizer - where 0 stands for not
-     * changeable" */
-    1,
-    wxEXPAND, 0);
-  diskIDsizer->Add( m_p_showSupportedSMART_IDs, 0, wxSTRETCH_NOT, 0);
-  sizerTop->Add( diskIDsizer, 0, wxEXPAND, 0);
+    /** Dynamically connect wxEvent to OnShowSupportedSMART_IDs because multiple
+     *  data carriers possible.*/
+    ///https://wiki.wxwidgets.org/Example_Of_Using_Connect_For_Events
+    //TODO use Bind(...) instead as suggested here?:
+    // https://wiki.wxwidgets.org/Events#Using_Connect.28.29
+    Connect(/*wxID_HIGHEST+1*/evtID, wxEVT_BUTTON,
+      wxCommandEventHandler(SMARTdialog::OnShowSupportedSMART_IDs) );
+    LOGN_DEBUG("adding SMART unique ID pointer " << & sMARTuniqueID << " to "
+      "m_evtID2SMARTuniqueID")
 
-  m_pwxlistctrl = new SMARTtableListCtrl(this//, wxID_ANY, wxDefaultPosition,
-    //wxDefaultSize, wxLC_REPORT
-    );
-
-  sizerTop->Add( m_pwxlistctrl,
-    /** "in the main orientation of the wxBoxSizer - where 0 stands for not changeable" */
-    1 //proportion
-    , wxEXPAND //int flag=0
-    , /*int border*/ 0);
-  return sizerTop;
+    //TODO Disconnect(...) the event afterwards?
+    wxGetApp().m_evtID2SMARTuniqueID.insert(std::make_pair(
+        evtID, & sMARTuniqueID) );
+  }
 }
 
 SMARTdialog::SMARTdialog(
@@ -179,7 +203,6 @@ SMARTdialog::SMARTdialog(
 //  , m_SMARTaccess(SMARTvalueProcessor.getSMARTaccess() )
   , m_wxCloseMutex()
   //, m_wxCloseCondition(m_wxCloseMutex)
-
 {
   /** Must create the wxCondition on heap. When it was a member of this class 
      and created on stack then an error ~"wxCondtion not initialzed" occured.*/
@@ -193,8 +216,15 @@ SMARTdialog::SMARTdialog(
   LOGN("Mutex is OK?:" << m_wxCloseMutex.IsOk() << " cond.OK?:" << 
     m_p_wxCloseCondition->IsOk() )
   
+  buildUI();
+}
+
+void SMARTdialog::buildUI()
+{
   wxSizerFlags flags;
-  wxSizer * const sizerTop = CreatePerDiskUIctrls();
+  p_sMARTinfoSizer = new wxBoxSizer(wxVERTICAL);
+
+  CreatePerDiskUIctrls(p_sMARTinfoSizer);
 //    wxSizer * const sizerListCtrl = new wxBoxSizer(wxHORIZONTAL);
 //    sizerListCtrl->Add( m_pwxlistctrl, 0,
 //        wxEXPAND //int flag=0
@@ -206,6 +236,12 @@ SMARTdialog::SMARTdialog(
   wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
   sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
   m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT, wxT("&Connect") );
+  #ifdef directSMARTaccess
+    //TODO only add if sufficient access rights: if(directSMARTaccessAvailable)
+    wxButton * p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,
+      wxT("&direct S.M.A.R.T.") );
+    sizerBtns->Add(p_directSMARTaccesBtn),
+  #endif
   sizerBtns->Add(m_p_ConnectAndDisconnectButton, flags);
   /** Needs to compile with wxWidgets headers > 2.8.x */
   if( wxTaskBarIcon::IsAvailable() )
@@ -217,22 +253,20 @@ SMARTdialog::SMARTdialog(
   }
   sizerBtns->Add(new wxButton(this, wxID_EXIT, wxT("E&xit")), flags);
 
-  sizerTop->Add(sizerBtns, flags.Align(wxALIGN_CENTER_HORIZONTAL));
+  p_sMARTinfoSizer->Add(sizerBtns, flags.Align(wxALIGN_CENTER_HORIZONTAL));
   m_p_wxMessageTextCtrl = new wxTextCtrl(this, wxID_ANY, wxT(""), 
     wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE );
   m_p_wxMessageTextCtrl->SetEditable(false);
-  sizerTop->Add(
+  p_sMARTinfoSizer->Add(
     m_p_wxMessageTextCtrl,
     /** "in the main orientation of the wxBoxSizer - where 0 stands for not changeable" */
     0 //proportion
     , wxEXPAND //int flag=0
     , /*int border*/ 0);
-;
-  SetSizerAndFit(sizerTop);
+  
+  ///Important, else only the last added User Interface control is shown.
+  SetSizerAndFit(p_sMARTinfoSizer);
   Centre();
-
-//  wxIcon okIcon = wxGetApp().ShowSMARTokIcon();
-//  SetIcon(wxGetApp().s_SMARTokIcon);
 }
 
 SMARTdialog::~SMARTdialog()
@@ -346,19 +380,30 @@ void SMARTdialog::ShowMessage(
       m_p_wxMessageTextCtrl->SetBackgroundColour(*wxWHITE);
       break;
   }
-  m_p_wxMessageTextCtrl->SetValue(wxstrText);  
+  m_p_wxMessageTextCtrl->SetValue(wxstrText);
 }
+
 /** Rebuilds the lines for SMART IDs and parameter names. */
 void SMARTdialog::ReBuildUserInterface()
 {
-  SetSMARTdriveID();
-  /** TODO: avoid creating of double lines if connecting to a server more than 
-   * once*/
-  const bool allItemsDeleted = m_pwxlistctrl->DeleteAllItems();
-  LOGN_DEBUG("all list control items deleted:" << (allItemsDeleted ? "yes" : "no" ))
-  
+  //TODO remove all PerDataCarrierIDpanel instances.
+//  unsigned itemCount;
+//  while( (itemCount = p_sMARTinfoSizer->GetItemCount() ) > 1)
+//    p_sMARTinfoSizer->Remove(0);
+//  ClearUI();
+//  CreatePerDiskUIctrls();
+ 
+  LOGN_DEBUG("begin--evtID2SMARTuniqueID size:" << wxGetApp().
+    m_evtID2SMARTuniqueID.size() )
+  /** The map may contain invalid SMART unique IDs e.g. if direct SMART access
+   * at first and from server later. So empty it.*/
+  wxGetApp().m_evtID2SMARTuniqueID.clear();
+  fastestUnsignedDataType evtID = showSupportedSMART_IDs;
+
   SMARTmonitorBase::SMARTuniqueIDandValsContType & SMARTuniqueIDsAndValues =
     wxGetApp().GetSMARTuniqueIDsAndVals();
+  SMARTuniqueID2perDataCarrierPanelType::iterator iter =
+    m_SMARTuniqueID2perDataCarrierPanel.begin();
   for(SMARTmonitorBase::SMARTuniqueIDandValsContType::const_iterator
     sMARTuniqueIDandValsIter = SMARTuniqueIDsAndValues.begin();
     sMARTuniqueIDandValsIter != SMARTuniqueIDsAndValues.end();
@@ -366,13 +411,37 @@ void SMARTdialog::ReBuildUserInterface()
   {
     const SMARTuniqueID & sMARTuniqueID = sMARTuniqueIDandValsIter->
       getSMARTuniqueID();
+    PerDataCarrierPanel * p_perDataCarrierPanel;
+    if(iter == m_SMARTuniqueID2perDataCarrierPanel.end() ){
+      p_perDataCarrierPanel = new PerDataCarrierPanel(this);
+      p_sMARTinfoSizer->Insert(0, p_perDataCarrierPanel, 1, wxEXPAND, 0);
+      m_SMARTuniqueID2perDataCarrierPanel.insert(std::make_pair(
+        sMARTuniqueID, p_perDataCarrierPanel) );
+    }
+    else{
+      p_perDataCarrierPanel = (iter->second);
+      iter++;
+    }
+    p_perDataCarrierPanel->ReCreate(sMARTuniqueID);
+    p_perDataCarrierPanel->SetSMARTdriveID(sMARTuniqueID);
+    p_perDataCarrierPanel->SetSMARTattribIDandNameLabel(sMARTuniqueID);
+    
+    //TODO Works with Bind(...) without event ID but not with Connect(...)
+    /*p_perDataCarrierPanel->getSupportedSMART_IDsBtn()->*/Connect(
+      /*wxID_HIGHEST+1*/evtID, wxEVT_BUTTON,
+      wxCommandEventHandler(SMARTdialog::OnShowSupportedSMART_IDs) );
+    //TODO Disconnect(...) the event afterwards?
+//    p_perDataCarrierPanel->getSupportedSMART_IDsBtn()->Bind(wxEVT_BUTTON,
+//      &SMARTdialog::OnShowSupportedSMART_IDs, this, showSupportedSMART_IDs);
+    LOGN_DEBUG("adding mapping SMART unique ID pointer " << & sMARTuniqueID <<
+      "-> evtID to m_evtID2SMARTuniqueID")
+    wxGetApp().m_evtID2SMARTuniqueID.insert(std::make_pair(
+        evtID++, & sMARTuniqueID) );
+  }
+  
     //TODO to support multiple data carriers:
     // p_wxlistctrl = SMARTuniqueID2listCtl[&sMARTuniqueID];
     // p_wxlistctrl->CreateLines();
-    m_pwxlistctrl->CreateLines(sMARTuniqueID);
-    break;///Add only SMART attributes for 1 data carrier
-  }
-  wxGetApp().SetSMARTattribIDandNameLabel();
 }
 
 //TODO enable showing supported SMART IDs for multiple disks
@@ -418,57 +487,6 @@ void SMARTdialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
   Destroy();
 }
 
-void SMARTdialog::UpdateUIregarding1DataCarrierOnly()
-{
-  const int listItemCount = m_pwxlistctrl->GetItemCount();
-//#endif
-  DWORD tickCountOfCurrentTimeInMilliSeconds;
-  DWORD numberOfMilliSecondsPassedSinceLastSMARTquery;
-  wxString currentTime;
-
-  for( unsigned index = 0; index < listItemCount; ++ index)
-  {
-    m_pwxlistctrl->SetItem(
-      index,
-      ColumnIndices::rawValue /** column #/ index */,
-      wxString::Format(wxT("%u"), wxGetApp().m_arSMARTrawValue[index]) );
-    LOGN( "raw value:" << wxGetApp().m_arSMARTrawValue[index] )
-
-//    const SkSmartAttributeParsedData & skSmartAttributeParsedData = * SMARTattributesToObserveIter;
-//    wxListItem listItem;
-//    listItem.SetId(index);
-//    listItem.SetColumn(SMARTtableListCtrl::COL_IDX_rawValue);
-
-    if( //SMARTattributesToObserveIter->threshold < SMARTattributesToObserveIter->worst_value
-        wxGetApp().m_arSMARTrawValue[index] > 0 )
-//      wxListItemAttr;
-      m_pwxlistctrl->SetItemBackgroundColour(index, * wxRED);
-      //listItem.SetBackgroundColour(* wxRED);
-    else
-      m_pwxlistctrl->SetItemBackgroundColour(index, * wxGREEN);
-      //listItem.SetBackgroundColour(* wxGREEN);
-//    m_pwxlistctrl->SetItem(listItem);
-
-//    tickCountOfCurrentTimeInMilliSeconds = GetTickCount();
-//    numberOfMilliSecondsPassedSinceLastSMARTquery =
-//      tickCountOfCurrentTimeInMilliSeconds -
-//      m_arTickCountOfLastQueryInMilliSeconds[index];
-
-    //TODO save time in UpdateSMARTvaluesThreadSafe and use this time here.
-    currentTime = wxNow();
-
-//    strftime(buffer, 80,"Now it's %I:%M%p.",timeinfo);
-//    m_arTickCountOfLastQueryInMilliSeconds[index]
-
-    m_pwxlistctrl->SetItem(
-      index,
-      ColumnIndices::lastUpdate /** column #/ index */,
-      //wxString::Format(wxT("%u ms ago"), numberOfMilliSecondsPassedSinceLastSMARTquery )
-      currentTime
-      );
-  }
-}
-
 /**@brief Usually called by posting a wxEVT_COMMAND_BUTTON_CLICKED event */
 void SMARTdialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
 {
@@ -493,45 +511,6 @@ void SMARTdialog::StartAsyncDrctUpd8Thread()
   else
     wxMessageBox(wxT("no S.M.A.R.T. attributes to observe defined"));
 }
-//TODO make for more than 1 data carrier
-void SMARTdialog::SetSMARTdriveID()
-{
-  LOGN_DEBUG("begin--evtID2SMARTuniqueID size:" << wxGetApp().
-    m_evtID2SMARTuniqueID.size() )
-  /** The map may contain invalid SMART unique IDs e.g. if direct SMART access
-   * at first and from server later. So empty it.*/
-  wxGetApp().m_evtID2SMARTuniqueID.clear();
-  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = wxGetApp().
-    GetSMARTuniqueIDsAndVals();
-  std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
-    SMARTuniqueIDsAndValues.begin();
-  for( ; SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
-    SMARTuniqueIDandValuesIter ++)
-  {
-    const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandValuesIter->
-      getSMARTuniqueID();
-    std::ostringstream oss;
-    oss << "model:" << sMARTuniqueID.m_modelName;
-    oss << " firmware:" << sMARTuniqueID.m_firmWareName;
-    oss << " serial:" << sMARTuniqueID.m_serialNumber;
-    std::string mediaInfo = oss.str();
-    m_p_wxDataCarrierIDtextCtrl->SetValue( wxWidgets::GetwxString_Inline(
-      mediaInfo) );
-    
-    /** Dynamically connect wxEvent to OnShowSupportedSMART_IDs because multiple
-     *  data carriers possible.*/
-    ///https://wiki.wxwidgets.org/Example_Of_Using_Connect_For_Events
-    //TODO use Bind(...) instead as suggested here?:
-    // https://wiki.wxwidgets.org/Events#Using_Connect.28.29
-    Connect(/*wxID_HIGHEST+1*/showSupportedSMART_IDs, wxEVT_BUTTON,
-      wxCommandEventHandler(SMARTdialog::OnShowSupportedSMART_IDs) );
-    LOGN_DEBUG("adding SMART unique ID pointer " << & sMARTuniqueID << " to "
-      "m_evtID2SMARTuniqueID")
-    //TODO Disconnect(...) the event afterwards?
-    wxGetApp().m_evtID2SMARTuniqueID.insert(std::make_pair(
-      showSupportedSMART_IDs, & sMARTuniqueID) );
-  }
-}
 
 #ifdef directSMARTaccess
 void SMARTdialog::ReadSMARTvaluesAndUpdateUI()
@@ -549,8 +528,6 @@ void SMARTdialog::ReadSMARTvaluesAndUpdateUI()
   }
   else
     SetTitle( wxT("wxSMARTmonitor") );
-
-  m_pwxlistctrl->DeleteAllItems();
 
   ReBuildUserInterface();
 //  UpdateSMARTvaluesUI();

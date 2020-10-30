@@ -9,6 +9,7 @@
 #include <Controller/character_string/ConvertStdStringToTypename.hpp>
 #include <tinyxml2.h>
 #include <SMARTmonitorBase.hpp>
+#include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 
 namespace tinyxml2
 {
@@ -120,6 +121,7 @@ bool ConfigLoader::LoadSMARTparametersConfiguration(
         //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
 
       ReadNetworkConfig(p_tinyxml2XMLelement);
+  readModelAndFirmwareCfg(p_tinyxml2XMLelement);
       GetSMARTattributesToObserve(p_tinyxml2XMLelement);
 
       p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
@@ -201,6 +203,42 @@ bool ConfigLoader::LoadSMARTparametersConfiguration(
       }while(p_tinyxml2XMLelement );
     return true;
   }
+
+/** Model and firmware for a HDD/SSD determine the S.M.A.R.T. parameter units .
+ * : if the firmware changes for a model then the parameter unit may change. */
+void ConfigLoader::readModelAndFirmwareCfg(const tinyxml2::XMLElement *
+  const p_rootXMLele)
+{
+  const tinyxml2::XMLElement * p_dataCarrierXMLele = p_rootXMLele->
+    FirstChildElement("data_carrier");
+  while(p_dataCarrierXMLele)
+  {
+    /** Value: specify '0' in order to retrieve the value */ //NULL);
+    const char * p_chModel = p_dataCarrierXMLele->Attribute("model", NULL);
+    const char * p_chFirmware = p_dataCarrierXMLele->Attribute("firmware",
+      NULL);
+    ModelAndFirmware modelAndFirmware;
+    if(p_chModel && p_chFirmware){
+      modelAndFirmware.Set(p_chModel, p_chFirmware);
+      const tinyxml2::XMLElement * p_tinyxml2XMLelement;
+      p_tinyxml2XMLelement = p_dataCarrierXMLele->FirstChildElement("SMART");
+      while(p_tinyxml2XMLelement){
+        const int paramID = p_tinyxml2XMLelement->IntAttribute("paramID", 0);
+        const char * p_chUnit = p_tinyxml2XMLelement->Attribute("unit", NULL);
+        if(paramID != 0 && p_chUnit)
+        {
+          modelAndFirmware.setParamUnit(paramID, p_chUnit);
+          LOGN("setting SMART param unit for ID " << paramID << "to " << p_chUnit)
+        }
+        ///Next sibling element must be called from sibling:
+        /// http://www.grinninglizard.com/tinyxmldocs/classTiXmlHandle.html#f0643f8683f3f2b779b8c9d78c67b2c0
+        p_tinyxml2XMLelement = p_tinyxml2XMLelement->NextSiblingElement("SMART");
+      }
+      m_r_SMARTmonitorBase.m_modelAndFirmwareTuples.insert(modelAndFirmware);
+    }
+    p_dataCarrierXMLele = p_dataCarrierXMLele->NextSiblingElement("data_carrier");
+  }
+}
 
   void ConfigLoader::ReadServiceConnectionSettings(
     const std::wstring & stdwstrWorkingDirWithConfigFilePrefix)

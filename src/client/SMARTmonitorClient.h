@@ -28,8 +28,8 @@ public:
   static fastestUnsignedDataType s_charPosOAttrNameBegin[ColumnIndices::beyondLast];
   static char * s_columnAttriuteNames [];
       
-  static bool s_atLeast1CriticalNonNullValue;
-  static nativeThread_type s_updateSMARTparameterValuesThread;
+  static enum SMARTvalueRating s_atLeast1CriticalNonNullValue;
+//  static nativeThread_type s_updateSMARTparameterValuesThread;
   static fastestUnsignedDataType s_updateUI;
   dataCarrierID2supportedSMARTattrMap_type
     dataCarrierIDandSMARTidsContainer;
@@ -58,7 +58,7 @@ public:
   void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
     fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
   virtual void ChangeState(enum serverConnectionState newState) { };
-  void ConnectToServerAndGetSMARTvalues();
+  void ConnectToServerAndGetSMARTvalues(const bool asyncCnnctToSvc);
   void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
@@ -74,14 +74,9 @@ public:
   ///Should be called in user interface thread? (because it calls functions to 
   /// create the user interface)
   void GetSMARTvaluesAndUpdateUI();
-  void HandleTransmissionError(enum TransmissionError transmissionError);
-  
-  const struct tm & GetLastSMARTvaluesUpdateTime() const {
-    //TODO because "tm" is a struct with multiple fields/members: 
-    // changes non-atomically in get SMART values thread.
-    // ->possible inconsistency 
-    return m_timeOfLastSMARTvaluesUpdate; }
-  struct tm m_timeOfLastSMARTvaluesUpdate;
+  void HandleTransmissionError(enum TransmissionError,
+    const fastestUnsignedDataType numBread,
+    const fastestUnsignedDataType numBtoRead);
   
   void SetServiceAddress(const std::string & str) {
     m_stdstrServerAddress = str;
@@ -97,16 +92,20 @@ public:
     //SetSMARTdriveID();
     SetSMARTattribIDandNameLabel();
   }
-  void setIDandLabel(const fastestUnsignedDataType SMARTattrID, void * data);
-  void upd8rawAndH_andTime(const fastestUnsignedDataType SMARTattrID,
+  void setIDandLabel(const SMARTuniqueID &,
+    const fastestUnsignedDataType SMARTattrID, void * data);
+  enum SMARTvalueRating upd8rawAndH_andTime(
+    const fastestUnsignedDataType SMARTattrID,
     const SMARTuniqueIDandValues &, void * data);
   inline void UpdateTimeOfSMARTvalueRetrieval(
+    const SMARTuniqueID &,
     const fastestUnsignedDataType SMARTattributeID,
     /** Needs to be uint64_t in order to also work if built as 32 bit program
      *  and a long uptime in ms.*/
     const uint64_t timeStampOfRetrieval, void * data);
   /*virtual*/ void UpdateSMARTvaluesUI();
   virtual void SetAttribute(
+    const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */

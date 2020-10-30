@@ -15,6 +15,7 @@
 ///struct CommandLineOption
 #include <OperatingSystem/Process/CommandLineOption.hpp>
 
+#include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 #include <attributes/SMARTattrDefAccss.hpp>///base class SMARTattrDefAccss
 #include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
 //#include "libConfig/ConfigurationLoader.hpp"
@@ -52,6 +53,12 @@ class SMARTmonitorBase
   , public SMARTattrDefAccss
 {
 public:
+  const struct tm & GetLastSMARTvaluesUpdateTime() const {
+    //TODO because "tm" is a struct with multiple fields/members:
+    // changes non-atomically in get SMART values thread.
+    // ->possible inconsistency
+    return m_timeOfLastSMARTvaluesUpdate; }
+  struct tm m_timeOfLastSMARTvaluesUpdate;
   ///attr=attribute Def=definition Cont=container
   typedef std::/*set<SMARTattrDef>*/ map<unsigned,SMARTattrDef> 
     SMARTattrDefContType;
@@ -61,6 +68,8 @@ public:
     SMARTattrContConstIterType;
 //  SMARTattrDefContType SMARTattrDefs;
   typedef std::set<SMARTuniqueIDandValues> SMARTuniqueIDandValsContType;
+  typedef std::set<ModelAndFirmware> ModelAndFirmwareTuplesType;
+  ModelAndFirmwareTuplesType m_modelAndFirmwareTuples;
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
 public:
@@ -92,6 +101,8 @@ protected:
    *  -or from config file */
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
 public:
+  nativeThread_type connectThread;
+  virtual void startCnnctCountDown(){};
   fastestUnsignedDataType m_timeOutInSeconds;
   std::wstring GetProgramOptionValue(const /*enum programOptionNames*/
     fastestUnsignedDataType programOptionName) {

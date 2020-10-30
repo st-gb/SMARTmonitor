@@ -248,8 +248,9 @@ struct SMARTuniqueID {
       }
       break;
       /**SMART raw value increased for at least the 3rd time*/
-      case getUnit:{///The higher the difference  the more accurate?
-        ///Was not always the case.
+      case getUnit:{/** Idea for not updating m_prevSMARTrawVals[] :
+      	* The higher the difference  the more accurate?
+        * But on the other hand: this was not always the case. */
         if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID]){
         uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
         if( SMARTrawValDiff > m_SMARTrawValDiffs[SMARTattrID]){

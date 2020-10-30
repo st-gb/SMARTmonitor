@@ -16,12 +16,19 @@
 #include "wxSMARTmonitorDialog.hpp"
 extern SMARTdialog * gs_dialog;
 
+//DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
+
 BEGIN_EVENT_TABLE(ConnectToServerDialog, wxDialog)
   EVT_TIMER(TIMER_ID, ConnectToServerDialog::OnTimer)
   EVT_CLOSE(ConnectToServerDialog::OnCloseWindow)
   EVT_BUTTON(wxID_CANCEL, ConnectToServerDialog::OnCancel)
   EVT_BUTTON(connect, ConnectToServerDialog::OnConnect)
+  EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, ConnectToServerDialog::
+    OnStartCntDown)
 END_EVENT_TABLE()
+
+wxString ConnectToServerDialog::title =
+  wxT("connect to S.M.A.R.T. values server/service");
 
 inline wxString GetTimeOutLabelText(const fastestUnsignedDataType timeOutInSeconds)
 {
@@ -46,10 +53,10 @@ ConnectToServerDialog::ConnectToServerDialog(
   const fastestUnsignedDataType timeOutInSeconds,
   const int connectToServerSocketFileDescriptor)
   : wxDialog(/*NULL*/ gs_dialog, 
-        wxID_ANY, wxT("") //, 
-//      wxDefaultPosition, //wxDefaultSize,
-//      wxSize(400,400),
-//      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
+      wxID_ANY, wxT(""),
+      wxDefaultPosition,
+      /*wxDefaultSize*/wxSize(550,200),
+      /**For "close dialog" button.*/wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
     )
   , m_timer(this, TIMER_ID)
   , m_timeOutInSeconds(timeOutInSeconds)
@@ -61,7 +68,7 @@ ConnectToServerDialog::ConnectToServerDialog(
 void ConnectToServerDialog::buildUI(){
 //  const wxString wxstrServerAddress = wxWidgets::GetwxString_Inline(
 //    pchServerAddress);
-  SetTitle(wxT("connect to S.M.A.R.T. values server/service (via TCP)"));
+  SetTitle(title);
   // \"%s\" port:%u"),
 //    wxstrServerAddress, servicePortNumber));
   wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
@@ -77,7 +84,7 @@ void ConnectToServerDialog::buildUI(){
   wxStaticText * p_portNoLabel = new wxStaticText(this, wxID_ANY,
     /** http://en.wikipedia.org/wiki/Port_(computer_networking)#Port_number :
      *  "0 to 65535" */
-    wxT("socket port number (0-65535):") );
+    wxT("TCP socket port number (0-65535):") );
   addToHorizSizer(sizerTop, p_portNoLabel, m_p_portNoTxtCtrl);
 
   m_p_timeoutInS_TxtCtrl = new wxTextCtrl(this, wxID_ANY,
@@ -93,20 +100,35 @@ void ConnectToServerDialog::buildUI(){
   actionSizer->Add(p_wxCancelButton, 0, 0, 0);
   sizerTop->Add(actionSizer);
 
+  /** https://wiki.wxwidgets.org/Beech:Using_custom_dialogs_with_sizers :
+   * "SetSizeHints() directs the sizer to set the minimal size of the window to
+   * match the sizer's minimal size." */
+  sizerTop->SetSizeHints(this);
+  //TODO set with to fit title bar width
+//  SetSize(GetSize().y, GetSize().x)
 //  SetSizerAndFit(sizerTop);
   SetSizer(sizerTop);
   Centre();
 }
 
 void ConnectToServerDialog::End(){
-  const bool successfullyClosed = Close(true);
 //  delete this;
-  /** http://docs.wxwidgets.org/3.0/classwx_window.html#a6bf0c5be864544d9ce0560087667b7fc */
-  const bool successfullyDestroyed = Destroy();
+  /** http://docs.wxwidgets.org/3.0/classwx_window.html#a6bf0c5be864544d9ce0560087667b7fc
+   *  wxWindow::Close : "To guarantee that the window will be destroyed, call
+   *  wxWindow::Destroy instead" */
+  m_timer.Stop();
+  if( IsModal() )
+    EndModal(0);
+  else
+    const bool successfullyDestroyed = Destroy();
+  wxGetApp().EnableSrvUIctrls();
+  wxGetApp().m_p_cnnctToSrvDlg = NULL;
 }
 
+static void sigHandler(int signo){}
+
 void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
-  m_timer.Start(1000);///1 second interval
+//  m_timer.Start(1000);///1 second interval
   wxGetApp().m_stdstrServiceHostName = m_p_srvAddrTxtCtrl->GetValue();
   unsigned long * p_socketPortNo = (unsigned long *) & wxGetApp().
     m_socketPortNumber;
@@ -125,8 +147,13 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
   if(convFailed)
     wxMessageBox(wxT("not connecting to server because character string "
       "conversion failed.") );
-  else
-    wxGetApp().ConnectToServerAndGetSMARTvalues();
+  else{
+    wxGetApp().m_p_cnnctToSrvDlg = this;
+    ///https://en.wikipedia.org/wiki/C_signal_handling
+    ///Needed, else program exits when calling raise(SIGUSR1).
+    signal(SIGUSR1, sigHandler);
+    wxGetApp().ConnectToServerAndGetSMARTvalues(true);
+  }
   /** Stop timer and close this dialog in "SMARTmonitorClient::
    * AfterCcnnectToServer" (in a derived class) */
 }
@@ -137,30 +164,37 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
   /** Closing the socket causes the server connect thread to break/finish */
   close(m_connectToServerSocketFileDescriptor);
 //  Close(true);
+  ///https://www.thegeekstuff.com/2011/02/send-signal-to-process/
+  /*kill(getpid(), SIGUSR1);*/
+  raise(SIGUSR1);///This cancels the waiting in "select(...)".
+  m_timer.Stop();
+  wxGetApp().m_wxtimer.Stop();//stop connect timer in main window
 }
 
 void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)
 {
-  m_timer.Stop();
-  if( IsModal() )
-    EndModal(0);
-  else
-    Destroy();
-  wxGetApp().EnableSrvUIctrls();
+  End();
 }
-  
+
+void ConnectToServerDialog::OnStartCntDown(wxCommandEvent & event){
+  m_timer.Start(1000);
+}
+
 void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
 {
   if( m_timeOutInSeconds > 0)
   {
     m_timeOutInSeconds --;
-    m_p_wxStaticTextTimeout->SetLabel( GetTimeOutLabelText(m_timeOutInSeconds) );
+    SetTitle(wxString::Format(wxT("%s--timeout in ca. %us"), title.c_str(),
+      //TODO In _Linux_: could also use timeout argument from "select(...)"
+      m_timeOutInSeconds) );
   }
-  else
-    m_timer.Stop();    
+  else{
+    m_timer.Stop();
+    SetTitle(title);
+  }
 }
 
 ConnectToServerDialog::~ConnectToServerDialog() {
   m_timer.Stop();
 }
-

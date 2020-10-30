@@ -62,10 +62,13 @@ wxIcon wxSMARTmonitorApp::s_SMARTwarningIcon;
 DEFINE_LOCAL_EVENT_TYPE(AfterConnectToServerEventType)
 DEFINE_LOCAL_EVENT_TYPE(ShowMessageEventType)
 DEFINE_LOCAL_EVENT_TYPE(StartServiceConnectionCountDownEventType)
+DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
 
 BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
   EVT_COMMAND(wxID_ANY, AfterConnectToServerEventType, wxSMARTmonitorApp::OnAfterConnectToServer)
   EVT_COMMAND(wxID_ANY, ShowMessageEventType, wxSMARTmonitorApp::OnShowMessage)
+  EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
+    OnStartCntDown)
   EVT_COMMAND(wxID_ANY, StartServiceConnectionCountDownEventType, 
     wxSMARTmonitorApp::OnStartServiceConnectionCountDown)
   EVT_TIMER(TIMER_ID, wxSMARTmonitorApp ::OnTimer)
@@ -119,6 +122,15 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 #endif
 }
 
+void wxSMARTmonitorApp::OnStartCntDown(wxCommandEvent & event){
+  if(! m_p_cnnctToSrvDlg){
+    wxGetApp().DisableSrvUIctrls();
+    ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
+  }
+  if(m_p_cnnctToSrvDlg)
+    m_p_cnnctToSrvDlg->m_timer.Start(1000);
+}
+
 void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
   wxCommandEvent & event)
 {
@@ -160,16 +172,17 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNon
  * interface thread.*/
 void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 {
-  if(m_p_cnnctToSrvDlg)
-  {
-    m_p_cnnctToSrvDlg->End();
-    m_p_cnnctToSrvDlg = NULL;
-  }
   int connectResult = commandEvent.GetInt();
   //TODO The following could go into a "AfterCnnctToSrvInUIthread" function
   // usable by all subclasses of SMARTmonitorClient.
   if( connectResult == connectedToService)
   {
+//    connectedToSrv();
+    if(m_p_cnnctToSrvDlg)
+    {
+      m_p_cnnctToSrvDlg->End();///Only close connect dialog if connected
+      m_p_cnnctToSrvDlg = NULL;
+    }
 //    SuccessfullyConnectedToClient();
     /*if( !*/ GetSMARTvaluesAndUpdateUI(); //)
 //      StartServiceConnectionCountDown(countDownInSeconds);
@@ -262,7 +275,7 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
   {
     /** Create title as local variable for easier debugging. */
     wxString status = wxString::Format(
-      wxT("conn. attempt to %s,port %u in %u s"),
+      wxT("conn. attempt to \"%s\",port %u in %u s"),
       wxstrServiceHostName.c_str(), 
       m_socketPortNumber, 
       m_serviceConnectionCountDownInSeconds);
@@ -272,12 +285,14 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
   {
     //TODO move status line creation to base class SMARTmonitorClient
     wxString status = wxString::Format(
-      wxT("connected to %s,port%u"),
+      wxT("conn. attempt to \"%s\",port %u"),
       wxstrServiceHostName.c_str(), 
       m_socketPortNumber);
     gs_dialog->SetStatus(status);
     m_wxtimer.Stop();
-    ConnectToServerAndGetSMARTvalues();
+    ConnectToServerAndGetSMARTvalues(true);
+    if(m_p_cnnctToSrvDlg)
+      m_p_cnnctToSrvDlg->ReStartTimer();
   }
 }
 
@@ -336,7 +351,7 @@ bool wxSMARTmonitorApp::OnInit()
     if( ! stdwstrServiceConnectionConfigFile.empty() )
     {
 //      m_wxtimer.StartOnce(1000);
-      ConnectToServerAndGetSMARTvalues();
+      ConnectToServerAndGetSMARTvalues(true);
     }
 #ifdef directSMARTaccess
     else
@@ -453,11 +468,13 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 }
 
 void wxSMARTmonitorApp::SetAttribute(
+  const SMARTuniqueID & sMARTuniqueID,
   fastestUnsignedDataType SMARTattributeID,
   const enum ColumnIndices::columnIndices & columnIndex,
   const std::string & std_strValue,
   const enum SMARTvalueRating sMARTvalueRating,
-  void * data///which list control to use
+  void * data/** Which list control to use (for supported S.M.A.R.T. IDs dialog
+    it is non-NULL */
   )
 {
   wxString wxstrValue = wxWidgets::GetwxString_Inline(std_strValue );
@@ -466,8 +483,11 @@ void wxSMARTmonitorApp::SetAttribute(
   //SMARTmonitorDialog as param. "sMARTuniqueID" needs to be taken into account
   
   wxWidgets::SMARTtableListCtrl * wxSMARTtableListCtrl;
-  if(data == NULL)
-    wxSMARTtableListCtrl = gs_dialog->m_pwxlistctrl;
+  if(data == NULL){
+    PerDataCarrierPanel * perDataCarrierPanel = gs_dialog->
+      m_SMARTuniqueID2perDataCarrierPanel[sMARTuniqueID];
+    wxSMARTtableListCtrl = perDataCarrierPanel->m_pwxlistctrl;
+  }
   else
     wxSMARTtableListCtrl = (wxWidgets::SMARTtableListCtrl *) data;
   wxSMARTtableListCtrl->SetSMARTattribValue(
@@ -485,24 +505,35 @@ void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress,
   if( currentThreadNumber = s_GUIthreadID )
     ;
 #endif
-  m_p_cnnctToSrvDlg = new ConnectToServerDialog(
-    pchServerAddress, m_socketPortNumber, connectTimeOutInSeconds,
-    m_socketFileDesc);
+//  m_p_cnnctToSrvDlg = new ConnectToServerDialog(
+//    pchServerAddress, m_socketPortNumber, connectTimeOutInSeconds,
+//    m_socketFileDesc);
   //TODO dialog appears in foreground
-  m_p_cnnctToSrvDlg->Show();
+//  m_p_cnnctToSrvDlg->Show();
 //  m_pConnectToServerDialog->ShowWindowModal();
   /** Ensures "connect" can't be pressed a second time */
 //  m_pConnectToServerDialog->ShowModal();
 }
 
 void wxSMARTmonitorApp::ShwCnnctToSrvrDlg(const std::string & srvAddr){
-  m_p_cnnctToSrvDlg = new ConnectToServerDialog(
-    ///Alternative: pass (pointer to) _this_ object and assign in dialog c'tor
-    m_stdstrServiceHostName.c_str(),
-    m_socketPortNumber,
-    m_timeOutInSeconds,
-    m_socketFileDesc);
-  m_p_cnnctToSrvDlg->Show();
+  if(! m_p_cnnctToSrvDlg){
+    m_p_cnnctToSrvDlg = new ConnectToServerDialog(
+      ///Alternative: pass (pointer to) _this_ object and assign in dialog c'tor
+      m_stdstrServiceHostName.c_str(),
+      m_socketPortNumber,
+      m_timeOutInSeconds,
+      m_socketFileDesc);
+    m_p_cnnctToSrvDlg->Show();
+  }
+}
+
+void wxSMARTmonitorApp::startCnnctCountDown()
+{
+//  if(m_p_cnnctToSrvDlg){
+    wxCommandEvent wxcommand_event(StartCnnctCntDownEvtType);
+//    wxPostEvent( (ConnectToServerDialog *) m_p_cnnctToSrvDlg, wxcommand_event);
+    wxPostEvent(this, wxcommand_event);
+//  }
 }
 
 void wxSMARTmonitorApp::OnShowMessage(wxCommandEvent & event)
