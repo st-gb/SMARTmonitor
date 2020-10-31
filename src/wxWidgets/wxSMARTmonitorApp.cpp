@@ -496,7 +496,26 @@ void wxSMARTmonitorApp::SetAttribute(
     wxstrValue,
     sMARTvalueRating);
 }
-  
+
+void wxSMARTmonitorApp::SetGetDirectSMARTvals()
+{
+  wxString status = wxString::Format(
+    wxT("direct S.M.A.R.T. values in %u ms interval"),
+    s_numberOfMilliSecondsToWaitBetweenSMARTquery);
+  gs_dialog->SetStatus(status);
+  SetGetSMARTvalsMode(SMARTmonitorBase::directSMARTvals);
+}
+
+void wxSMARTmonitorApp::SetGetSMARTvalsMode(const enum GetSMARTvalsMode mode)
+{
+  m_getSMARTvalsMode = mode;
+  switch(mode){
+   case directSMARTvals :
+//    gs_dialog->DisableGetSMARTvalsDrctly();
+     break;
+  }
+}
+
 void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress, 
   int connectTimeOutInSeconds)
 {

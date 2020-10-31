@@ -53,6 +53,8 @@ class SMARTmonitorBase
   , public SMARTattrDefAccss
 {
 public:
+  enum GetSMARTvalsMode{directSMARTvals, noUpdate};
+  enum GetSMARTvalsMode m_getSMARTvalsMode;
   const struct tm & GetLastSMARTvaluesUpdateTime() const {
     //TODO because "tm" is a struct with multiple fields/members:
     // changes non-atomically in get SMART values thread.
@@ -185,6 +187,7 @@ public:
   fastestUnsignedDataType GetNumSMARTattrToObs(){return m_IDsOfSMARTattrsToObserve.size(); }
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
   void OutputUsage();
+  virtual void SetGetSMARTvalMode(enum GetSMARTvalsMode){};
   CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}
   
   std::wstring GetCommandLineOptionValue(const wchar_t * const cmdLineOptionName);

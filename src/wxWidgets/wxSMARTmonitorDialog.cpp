@@ -161,14 +161,15 @@ void SMARTdialog::CreatePerDiskUIctrls(wxSizer * p_sizer)
    * at first and from server later. So empty it.*/
   wxGetApp().m_evtID2SMARTuniqueID.clear();
 
-  fastestUnsignedDataType evtID = showSupportedSMART_IDs;
+  fastestUnsignedDataType windowID = showSupportedSMART_IDs;
   for( ; SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
     SMARTuniqueIDandValuesIter ++)
   {
     const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandValuesIter->
       getSMARTuniqueID();
 
-    PerDataCarrierPanel * p_perDataCarrierPanel = new PerDataCarrierPanel(this);
+    PerDataCarrierPanel * p_perDataCarrierPanel = new PerDataCarrierPanel(this,
+      windowID);
     p_sizer->Add(p_perDataCarrierPanel, 1,
       wxEXPAND, 0);
     m_SMARTuniqueID2perDataCarrierPanel.insert(std::make_pair(
@@ -179,14 +180,14 @@ void SMARTdialog::CreatePerDiskUIctrls(wxSizer * p_sizer)
     ///https://wiki.wxwidgets.org/Example_Of_Using_Connect_For_Events
     //TODO use Bind(...) instead as suggested here?:
     // https://wiki.wxwidgets.org/Events#Using_Connect.28.29
-    Connect(/*wxID_HIGHEST+1*/evtID, wxEVT_BUTTON,
+    Connect(/*wxID_HIGHEST+1*/windowID, wxEVT_BUTTON,
       wxCommandEventHandler(SMARTdialog::OnShowSupportedSMART_IDs) );
     LOGN_DEBUG("adding SMART unique ID pointer " << & sMARTuniqueID << " to "
       "m_evtID2SMARTuniqueID")
 
     //TODO Disconnect(...) the event afterwards?
     wxGetApp().m_evtID2SMARTuniqueID.insert(std::make_pair(
-        evtID, & sMARTuniqueID) );
+        windowID, & sMARTuniqueID) );
   }
 }
 
@@ -398,7 +399,7 @@ void SMARTdialog::ReBuildUserInterface()
   /** The map may contain invalid SMART unique IDs e.g. if direct SMART access
    * at first and from server later. So empty it.*/
   wxGetApp().m_evtID2SMARTuniqueID.clear();
-  fastestUnsignedDataType evtID = showSupportedSMART_IDs;
+  fastestUnsignedDataType windowID = showSupportedSMART_IDs;
 
   SMARTmonitorBase::SMARTuniqueIDandValsContType & SMARTuniqueIDsAndValues =
     wxGetApp().GetSMARTuniqueIDsAndVals();
@@ -413,7 +414,7 @@ void SMARTdialog::ReBuildUserInterface()
       getSMARTuniqueID();
     PerDataCarrierPanel * p_perDataCarrierPanel;
     if(iter == m_SMARTuniqueID2perDataCarrierPanel.end() ){
-      p_perDataCarrierPanel = new PerDataCarrierPanel(this);
+      p_perDataCarrierPanel = new PerDataCarrierPanel(this, windowID);
       p_sMARTinfoSizer->Insert(0, p_perDataCarrierPanel, 1, wxEXPAND, 0);
       m_SMARTuniqueID2perDataCarrierPanel.insert(std::make_pair(
         sMARTuniqueID, p_perDataCarrierPanel) );
@@ -428,7 +429,7 @@ void SMARTdialog::ReBuildUserInterface()
     
     //TODO Works with Bind(...) without event ID but not with Connect(...)
     /*p_perDataCarrierPanel->getSupportedSMART_IDsBtn()->*/Connect(
-      /*wxID_HIGHEST+1*/evtID, wxEVT_BUTTON,
+      /*wxID_HIGHEST+1*/windowID /** window ID */, wxEVT_BUTTON /**eventType*/,
       wxCommandEventHandler(SMARTdialog::OnShowSupportedSMART_IDs) );
     //TODO Disconnect(...) the event afterwards?
 //    p_perDataCarrierPanel->getSupportedSMART_IDsBtn()->Bind(wxEVT_BUTTON,
@@ -436,23 +437,26 @@ void SMARTdialog::ReBuildUserInterface()
     LOGN_DEBUG("adding mapping SMART unique ID pointer " << & sMARTuniqueID <<
       "-> evtID to m_evtID2SMARTuniqueID")
     wxGetApp().m_evtID2SMARTuniqueID.insert(std::make_pair(
-        evtID++, & sMARTuniqueID) );
+        windowID++, & sMARTuniqueID) );
   }
   
     //TODO to support multiple data carriers:
     // p_wxlistctrl = SMARTuniqueID2listCtl[&sMARTuniqueID];
     // p_wxlistctrl->CreateLines();
+  /** Without "Fit()" the main dialog size only contains the general buttons and
+   * message box. */
+  Fit();
 }
 
 //TODO enable showing supported SMART IDs for multiple disks
 void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent & event)
 {
   ///Get SMART IDentifier from event ID because there may be > 1 data carrier.
-  const int evtID = event.GetId();
-  LOGN_DEBUG("begin--" << evtID)
+  const int windowID = event.GetId();
+  LOGN_DEBUG("begin--" << windowID)
 //  wxString dvcPath = event.GetString();
   const SMARTuniqueID * p_SMARTuniqueID = wxGetApp().m_evtID2SMARTuniqueID[
-    evtID];
+    windowID];
   LOGN_DEBUG("SMART unique ID pointer " << p_SMARTuniqueID)
   if(p_SMARTuniqueID)
   {
@@ -494,6 +498,8 @@ void SMARTdialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
   wxGetApp().UpdateSMARTvaluesUI();
 }
 
+//TODO move this function to class SMARTmonitorBase? (because it may be needed
+// by all SMARTmonitorBase-derived classes)
 void SMARTdialog::StartAsyncDrctUpd8Thread()
 {
   LOGN_DEBUG("begin")
@@ -506,6 +512,8 @@ void SMARTdialog::StartAsyncDrctUpd8Thread()
 //      wxUpdateSMARTparameterValuesThreadFunc, this);
     wxGetApp().StartAsyncUpdateThread(& SMARTmonitorBase::
       Upd8SMARTvalsDrctlyThreadSafe);
+    
+    wxGetApp().SetGetDirectSMARTvals();
 #endif
   }
   else

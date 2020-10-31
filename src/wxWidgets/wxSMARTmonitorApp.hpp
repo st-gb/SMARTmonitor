@@ -67,6 +67,8 @@ public:
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
     const enum SMARTvalueRating, void * data);
+  void SetGetDirectSMARTvals();
+  void SetGetSMARTvalsMode(const enum GetSMARTvalsMode);
   void ShowConnectionState(const char * const pch, int timeOut);
   void ShwCnnctToSrvrDlg(const std::string &);
   void ShowMessage(const char * const ) const;

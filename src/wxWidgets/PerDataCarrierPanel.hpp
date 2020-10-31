@@ -15,7 +15,7 @@ class PerDataCarrierPanel
   wxButton * m_p_showSupportedSMART_IDs;
 public:
   SMARTtableListCtrl * m_pwxlistctrl;
-  PerDataCarrierPanel(wxWindow * parent)
+  PerDataCarrierPanel(wxWindow * parent, const wxWindowID windowID)
     : wxPanel(parent)
   {
     wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
@@ -32,7 +32,7 @@ public:
     //TODO: retrieve unit all the time until the unit is determined (see class
     // SMARTuniqueID)
   //  m_p_determineUnits() = new wxBitmapButton(this);
-    m_p_showSupportedSMART_IDs = new wxButton(this, wxID_ANY,
+    m_p_showSupportedSMART_IDs = new wxButton(this, windowID,
       wxT("supported SMART IDs"));
 
     diskIDsizer->Add( m_p_wxDataCarrierIDtextCtrl,
