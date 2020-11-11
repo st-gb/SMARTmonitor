@@ -58,6 +58,9 @@ class SMARTaccess
   void fill(const char device[], SMARTuniqueID & sMARTuniqueID)
   {
     SkDisk * p_skDisk;
+    /** Did not work with TS32GSSD25-M firmware TS32GSSD25-M SSD via USB JMicron
+     * Technology Corp. / JMicron USA Technology Corp. JM20337 Hi-Speed USB to
+     * SATA & PATA Combo Bridge */
     int i = sk_disk_open(device, /* SkDisk **_d*/ & p_skDisk);
     if( i != -1)
     {

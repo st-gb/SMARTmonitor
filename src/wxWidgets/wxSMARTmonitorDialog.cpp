@@ -203,6 +203,7 @@ SMARTdialog::SMARTdialog(
 //  , m_SMARTvalueProcessor( (wxWidgets::wxSMARTvalueProcessor &) SMARTvalueProcessor)
 //  , m_SMARTaccess(SMARTvalueProcessor.getSMARTaccess() )
   , m_wxCloseMutex()
+  , m_p_directSMARTaccesBtn(NULL)
   //, m_wxCloseCondition(m_wxCloseMutex)
 {
   /** Must create the wxCondition on heap. When it was a member of this class 
@@ -239,9 +240,9 @@ void SMARTdialog::buildUI()
   m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT, wxT("&Connect") );
   #ifdef directSMARTaccess
     //TODO only add if sufficient access rights: if(directSMARTaccessAvailable)
-    wxButton * p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,
+    m_p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,
       wxT("&direct S.M.A.R.T.") );
-    sizerBtns->Add(p_directSMARTaccesBtn),
+    sizerBtns->Add(m_p_directSMARTaccesBtn),
   #endif
   sizerBtns->Add(m_p_ConnectAndDisconnectButton, flags);
   /** Needs to compile with wxWidgets headers > 2.8.x */

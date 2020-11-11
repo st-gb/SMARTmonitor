@@ -1,7 +1,10 @@
-#pragma once
+#pragma once///Include guard
 
+///wxWidgets header files:
+#include <wx/button.h>///class wxButton
 #include <wx/listctrl.h>///class wxListCtrl
 #include <wx/panel.h>///class wxPanel
+#include <wx/sizer.h>///class wxSizer
 
 #include "SMARTtableListCtrl.hpp"///class wxWidgets::SMARTtableListCtrl
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
@@ -52,7 +55,6 @@ public:
       1 //proportion
       , wxEXPAND //int flag=0
       , /*int border*/ 0);
-  //    return sizerTop;
     SetSizerAndFit(sizerTop);
   }
 

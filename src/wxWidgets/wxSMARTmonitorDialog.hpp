@@ -33,6 +33,7 @@ class SMARTdialog: public wxDialog
   wxTextCtrl * m_p_wxMessageTextCtrl;
 //  wxTimer m_timer;
   wxSizer * p_sMARTinfoSizer;
+  wxButton * m_p_directSMARTaccesBtn;
 public:
   typedef std::map<SMARTuniqueID, PerDataCarrierPanel *>
     SMARTuniqueID2perDataCarrierPanelType;
@@ -50,6 +51,10 @@ public:
   void buildUI();
   void EnableShowSupportedSMART_IDs();
   void CreatePerDiskUIctrls(wxSizer * p_sizer);
+  void disableDrctSMARTaccss(const wxString & cause){
+    m_p_directSMARTaccesBtn->Disable();
+    m_p_directSMARTaccesBtn->SetToolTip(cause);
+  }
   void SetStatus(const wxString &);
   void StartAsyncDrctUpd8Thread();
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();

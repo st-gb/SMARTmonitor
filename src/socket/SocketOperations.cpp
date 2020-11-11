@@ -147,6 +147,7 @@ struct SocketConnectThreadFuncParams
 };
 
 #ifdef __linux__
+///\return -1 if connection failed.
 ///Non-Blocking is an alternative option to set a self-defined connect timeout.
 int ConnectToSocketNonBlocking(
   int socketFileDescriptor, 
@@ -163,11 +164,13 @@ int ConnectToSocketNonBlocking(
   fcntl(socketFileDescriptor, F_SETFL, flags | O_NONBLOCK);
 
   /** http://man7.org/linux/man-pages/man2/connect.2.html :
-      "If the connection or binding succeeds, zero is returned." */
-  int result = connect(socketFileDescriptor, (struct sockaddr *) & serv_addr, sizeof(serv_addr) );
-  if (result == -1)
+   *  "If the connection or binding succeeds, zero is returned. On error,
+   *  -1 is returned, and errno is set appropriately." */
+  int result = connect(socketFileDescriptor, (struct sockaddr *) & serv_addr,
+    sizeof(serv_addr) );
+  if(result == -1)/// -1 for non-blocking sockets
   {
-    if (errno == EINPROGRESS) /** For non-blocking sockets */
+    if(errno == EINPROGRESS) /** For non-blocking _BSD_ sockets */
     {
 //      fd_set wfd;
       fd_set readFileDescriptorSet;
@@ -188,9 +191,18 @@ int ConnectToSocketNonBlocking(
        * parameter) seconds->show timeout in UI.*/
       p_smartMonClient->startCnnctCountDown();
       /** https://linux.die.net/man/2/select :
-        * "waiting until one or more of the file descriptors become
-        * "ready" for some class of I/O operation (e.g., input possible)."  */
-      result = select(/** "This argument should be set to the highest-numbered
+       * "On success, select() and pselect() return the number of file
+       * descriptors contained in the three returned descriptor sets (that is,
+       * the total number of bits that are set in readfds, writefds, exceptfds)
+       * which may be zero if the timeout expires before anything interesting
+       * happens. On error, -1 is returned, and errno is set appropriately; the
+       * sets and timeout become undefined, so do not rely on their contents
+       * after an error." */
+      result = 
+        /** https://linux.die.net/man/2/select :
+          * "waiting until one or more of the file descriptors become
+          * "ready" for some class of I/O operation (e.g., input possible)."*/
+        select(/** "This argument should be set to the highest-numbered
         file descriptor in any of the three sets, plus 1.  The indicated
         file descriptors in each set are checked, up to this limit
         (but see BUGS)." */
@@ -198,7 +210,7 @@ int ConnectToSocketNonBlocking(
         /**writefds*/NULL, /**exceptfds*/NULL, &socketConnectTimeout);
       pthread_sigmask(SIG_SETMASK, &origmask, NULL);
 //      int errorNumber = errno;
-      if (result > 0) /** connected */
+      if(result > 0) /** > 0 ready file descriptors */
       {
 //        FD_ISSET()
         //http://pubs.opengroup.org/onlinepubs/7908799/xns/getsockopt.html
@@ -219,8 +231,13 @@ int ConnectToSocketNonBlocking(
           & iSO_ERROR //void *optval
           , & optlen //socklen_t *optlen
           );
-        if( result == 0 && iSO_ERROR == 0)
-        {
+        const int isSet =FD_ISSET(socketFileDescriptor,& readFileDescriptorSet);
+        if(isSet){
+          close(socketFileDescriptor);
+          result = -1;
+        }
+        else if(result == 0 && iSO_ERROR == 0)//TODO result is 0 even if not connected
+        {// (if 2nd time connection attempt with that socket FD?)
           
           LOGN_INFO("successfully connected to " << serv_addr.sin_addr.s_addr )
           //TODO result was success even if the server/service is not running
@@ -228,11 +245,13 @@ int ConnectToSocketNonBlocking(
           result = fcntl(socketFileDescriptor, F_SETFL, flags);
         }
         else
-          result = iSO_ERROR;
+          close(socketFileDescriptor);
+//          result = iSO_ERROR;
       }
-      else if (result == 0) // time out occurred
+      else if(result == 0) // time out occurred
       {
-        result = errno;
+//        result = errno;
+        close(socketFileDescriptor);
       }
       else
       {

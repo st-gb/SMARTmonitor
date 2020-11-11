@@ -26,6 +26,7 @@ public:
   virtual ~ConnectToServerDialog();
   enum IDs {TIMER_ID = 0, connect};
   void End();
+  void EndTimer(){ m_timer.Stop(); SetTitle(title); }
   wxTimer m_timer;
   void ReStartTimer(){m_timeOutInSeconds = 30; m_timer.Start();}
 private:

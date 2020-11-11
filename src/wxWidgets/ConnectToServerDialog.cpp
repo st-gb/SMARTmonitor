@@ -167,8 +167,8 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
   ///https://www.thegeekstuff.com/2011/02/send-signal-to-process/
   /*kill(getpid(), SIGUSR1);*/
   raise(SIGUSR1);///This cancels the waiting in "select(...)".
-  m_timer.Stop();
-  wxGetApp().m_wxtimer.Stop();//stop connect timer in main window
+  EndTimer();
+  wxGetApp().EndWaitTillCnnctTimer();
 }
 
 void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)

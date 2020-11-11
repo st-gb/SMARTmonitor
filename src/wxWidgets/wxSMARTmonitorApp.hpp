@@ -1,9 +1,6 @@
-/*
- * wxSMARTmonitorApp.hpp
- *
+/* wxSMARTmonitorApp.hpp
  *  Created on: 26.11.2013
- *      Author: mr.sys
- */
+ *  Author: Stefan Gebauer, M. Sc. Comp. Sc. */
 
 #ifndef WXSMARTMONITORAPP_HPP_
 #define WXSMARTMONITORAPP_HPP_
@@ -18,6 +15,9 @@
 #include <client/SMARTmonitorClient.h> //base class SMARTmonitorClient
 //#include <libATA_SMART/SMARTaccess.hpp>
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
+#include "wxSMARTmonitorDialog.hpp"///class SMARTdialog
+
+/*static*/ extern SMARTdialog * gs_dialog;
 
 /** Forward declarations: */
 class TaskBarIcon;
@@ -51,6 +51,10 @@ public:
   void CreateTaskBarIcon();
   void DisableSrvUIctrls();
   void EnableSrvUIctrls();
+  void EndWaitTillCnnctTimer(){
+    m_wxtimer.Stop();//stop connect timer in main window
+    gs_dialog->SetTitle(GetAppDisplayName() );
+  }
   void GetTextFromUser(const char * label, std::string & );
   bool OnInit();
   void OnTimer(wxTimerEvent& event);

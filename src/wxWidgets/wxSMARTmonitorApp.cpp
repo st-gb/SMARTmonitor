@@ -1,7 +1,8 @@
 /* wxSMARTmonitorApp.cpp
  * Created on: 26.11.2013
- *  Author: mr.sys
+ *  Author:Stefan Gebauer, M. Sc. Comp. Sc.
  *  adapted from the wxWidgets "tbtest" sample  */
+
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
 
@@ -20,14 +21,24 @@
 //
 //#include "smile.xpm"
 
-#include "wxSMARTmonitorApp.hpp"
-#include "wxSMARTmonitorDialog.hpp" // class MyDialog
-//#include "libConfig/ConfigurationLoader.hpp"
-#include <wx/taskbar.h>
+///wxWidgets header files:
 #include <wx/filefn.h> //wxFILE_SEP_PATH
 #include <wx/log.h>///class wxLogNull
+#include <wx/taskbar.h>
+
+///Stefan Gebauer's "common_sourcecode" repository header files:
 ///GCC_DIAG_ON(...), GCC_DIAG_OFF(...) preprocessor macros
 #include "compiler/GCC/enable_disable_warning.h"
+#include <FileSystem/File/FileException.hpp>
+#include <FileSystem/PathSeperatorChar.hpp>///dirSeperatorCharW
+#include <OperatingSystem/multithread/GetCurrentThreadNumber.hpp>
+#ifdef __MINGW32__
+#include <OperatingSystem/Windows/HideMinGWconsoleWindow.h>
+#endif
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(..)
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+
+///This repository's header files:
 /** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
  *  to ‘char*’" when including the "xpm" file */
 GCC_DIAG_OFF(write-strings)
@@ -35,21 +46,16 @@ GCC_DIAG_OFF(write-strings)
 #include "../S.M.A.R.T._unknown.xpm"
 #include "../S.M.A.R.T._warning.xpm"
 GCC_DIAG_ON(write-strings)
-
-#include <iostream> //class std::cerr
-#include <OperatingSystem/multithread/GetCurrentThreadNumber.hpp>
-#include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
-#ifdef __MINGW32__
-#include <OperatingSystem/Windows/HideMinGWconsoleWindow.h>
-#endif
-#include <FileSystem/File/FileException.hpp>
-#include <FileSystem/PathSeperatorChar.hpp>///dirSeperatorCharW
-#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
-#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(..)
+#include "wxSMARTmonitorApp.hpp"
 #include "ConnectToServerDialog.hpp"
+#include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
+//#include "libConfig/ConfigurationLoader.hpp"
+
+///Standard C(++) header files:
+#include <iostream> //class std::cerr
 
 // global variables
-/*static*/ SMARTdialog *gs_dialog = NULL;
+/*static*/ SMARTdialog * gs_dialog = NULL;
 
 /** definitions of static class members. */
 fastestUnsignedDataType wxSMARTmonitorApp::s_GUIthreadID;
@@ -192,6 +198,7 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
   {
     /** If not closing the socket then socket file descriptor number increases?*/
     close(m_socketFileDesc);
+    m_p_cnnctToSrvDlg->EndTimer();
     gs_dialog->EnableServerInteractingControls(connectResult);
     HandleConnectionError("");
     fastestUnsignedDataType countDownInSeconds = 60;
@@ -348,6 +355,7 @@ bool wxSMARTmonitorApp::OnInit()
 //    ShowSMARTokIcon();
     ShowSMARTstatusUnknownIcon();
     //TODO execute after OnInit(): else no dialog is shown?
+    bool drctSMARTaccess = false;
     if( ! stdwstrServiceConnectionConfigFile.empty() )
     {
 //      m_wxtimer.StartOnce(1000);
@@ -358,16 +366,17 @@ bool wxSMARTmonitorApp::OnInit()
       if( initSMARTresult == SMARTaccessBase::success)
     {
       EnsureSMARTattrToObsExist();
-      //TODO exchange by wxGetApp().StartAsyncUpdateThread();
-      //GetSMARTvaluesFunctionParams getSMARTvaluesFunctionParams;
-//      m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
-//        & SMARTmonitorBase::UpdateSMARTvaluesThreadSafe;
-//      StartAsyncUpdateThread(m_getSMARTvaluesFunctionParams);
-      //gs_dialog->m_pwxlistctrl->SetItemCount(NUM_DIFFERENT_SMART_ENTRIES);
       gs_dialog->ReBuildUserInterface();
       gs_dialog->StartAsyncDrctUpd8Thread();
+      drctSMARTaccess = true;
     }
 #endif
+    if(drctSMARTaccess == false)
+      if(initSMARTresult == accessToSMARTdenied)
+        gs_dialog->disableDrctSMARTaccss(wxT("access to SMART denied (maybe due"
+          "to insufficient rights)"));
+      else
+        gs_dialog->disableDrctSMARTaccss(wxT("no built-in direct SMART access"));
 //    else if( result == SMARTaccessBase::noSingleSMARTdevice )
 //      return false;
   }
