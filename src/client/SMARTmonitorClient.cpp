@@ -194,7 +194,7 @@ void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues(const bool asyncCnnctT
     m_stdstrServiceHostName.c_str(), asyncCnnctToSvc);
   if(! asyncCnnctToSvc)
   {
-    AfterConnectToServer(connectToServerResult);
+//    AfterConnectToServer(connectToServerResult);
   }
 }
 
@@ -283,10 +283,12 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
   uint8_t * XMLdata = new uint8_t[numBytesToAllocate];
   if( XMLdata)
   {
-    int numBytesRead = OperatingSystem::BSD::sockets::readFromSocket(
-      m_socketFileDesc, XMLdata, numBytesToRead);
+    unsigned numBytesRead;
+    int rdFrmScktRslt = OperatingSystem::BSD::sockets::readFromSocket2(
+      m_socketFileDesc, XMLdata, numBytesToRead, & numBytesRead);
     if(numBytesRead < numBytesToRead) {
-      HandleTransmissionError(SMARTdata, numBytesRead, numBytesToRead);
+      HandleTransmissionError(SMARTdata,//numBytesRead < -1 ? 0 : numBytesRead
+        numBytesRead, numBytesToRead);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
       return 2; //TODO provide error handling (show message to user etc.)
@@ -438,7 +440,7 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
   /** ^= state changed. */
   if(s_atLeast1CriticalNonNullValue != entireSMARTvalRating)
   {
-    ShowStateAccordingToSMARTvalues(entireSMARTvalRating == SMARTvalueWarning);
+    ShowStateAccordingToSMARTvalues(entireSMARTvalRating);
   }
   s_atLeast1CriticalNonNullValue = entireSMARTvalRating;
 }

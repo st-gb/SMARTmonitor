@@ -337,6 +337,7 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
       break;
     case SMARTmonitorClient::unconnectedFromService :
     {
+      wxGetApp().GetSMARTvalsAndUpd8UIthreadID = 0;
       wxString wxstrTitle = wxGetApp().GetAppName();
       const struct tm & timeOfLastSMARTvaluesUpdate = wxGetApp().
         GetLastSMARTvaluesUpdateTime();

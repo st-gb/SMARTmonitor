@@ -74,6 +74,7 @@ public:
   ModelAndFirmwareTuplesType m_modelAndFirmwareTuples;
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
+  bool asynCnnct = false;
 public:
   SMARTmonitorBase();
   //template<typename charType>

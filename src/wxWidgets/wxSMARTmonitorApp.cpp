@@ -129,8 +129,9 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 }
 
 void wxSMARTmonitorApp::OnStartCntDown(wxCommandEvent & event){
+  ///Only needs to be done in case connect dialog is not already shown.
+  wxGetApp().DisableSrvUIctrls();
   if(! m_p_cnnctToSrvDlg){
-    wxGetApp().DisableSrvUIctrls();
     ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
   }
   if(m_p_cnnctToSrvDlg)
@@ -167,12 +168,17 @@ void wxSMARTmonitorApp::ReBuildUserInterface(){
   gs_dialog->ReBuildUserInterface();
 }
 
-void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(bool atLeast1CriticalNonNullValue)
+void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(
+  const SMARTvalueRating entireSMARTvalRating)
 {
-  if( atLeast1CriticalNonNullValue )
+  switch(entireSMARTvalRating){
+   case SMARTvalueWarning:
     ShowSMARTwarningIcon();
-  else
+    break;
+  case SMARTvalueOK:
     ShowSMARTokIcon();
+    break;
+  }
 }
 /** Usually called via wxWidgets events (from another thread) to run in user 
  * interface thread.*/
@@ -198,7 +204,8 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
   {
     /** If not closing the socket then socket file descriptor number increases?*/
     close(m_socketFileDesc);
-    m_p_cnnctToSrvDlg->EndTimer();
+    if(m_p_cnnctToSrvDlg)
+      m_p_cnnctToSrvDlg->EndTimer();
     gs_dialog->EnableServerInteractingControls(connectResult);
     HandleConnectionError("");
     fastestUnsignedDataType countDownInSeconds = 60;
@@ -297,7 +304,7 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
       m_socketPortNumber);
     gs_dialog->SetStatus(status);
     m_wxtimer.Stop();
-    ConnectToServerAndGetSMARTvalues(true);
+    ConnectToServerAndGetSMARTvalues(asynCnnct);
     if(m_p_cnnctToSrvDlg)
       m_p_cnnctToSrvDlg->ReStartTimer();
   }
@@ -359,7 +366,7 @@ bool wxSMARTmonitorApp::OnInit()
     if( ! stdwstrServiceConnectionConfigFile.empty() )
     {
 //      m_wxtimer.StartOnce(1000);
-      ConnectToServerAndGetSMARTvalues(true);
+      ConnectToServerAndGetSMARTvalues(asynCnnct);
     }
 #ifdef directSMARTaccess
     else

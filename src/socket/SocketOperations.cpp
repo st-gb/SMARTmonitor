@@ -29,14 +29,16 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   ioctl(m_socketFileDesc, FIONREAD, &numBinRead);
   LOGN_DEBUG("# bytes in read buffer for socket:" << numBinRead)
 #endif
+  unsigned numBytesRead;
   //TODO connection to service error here when expecting data for the 2nd time 
   // running the wx GUI. errno: 11 from GetSMARTattrValsFromSrv
   // Maybe because the 2nd time is from another thread.
-  int numBytesRead = readFromSocket(m_socketFileDesc,
-    & numDataBytesToRead,
-    numBytesToRead);
+  int rdFrmScktRslt = OperatingSystem::BSD::sockets::readFromSocket2(
+    m_socketFileDesc,& numDataBytesToRead, numBytesToRead, & numBytesRead);
   if(numBytesRead < (int) numBytesToRead){
-    HandleTransmissionError(numBytesToReceive, numBytesRead, numBytesToRead);
+    HandleTransmissionError(numBytesToReceive,
+      /*numBytesRead < 0 ? 0 : numBytesRead*/numBytesRead,
+      numBytesToRead);
     return -1;
   }
   numDataBytesToRead = ntohs(numDataBytesToRead);
@@ -57,7 +59,8 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
 //  sMARTuniqueIDandValsCont.clear();
   //TODO if a data carrier is detached it does not disappear in 
   // SMARTuniqueIDsAndValues?
-  int numBytesRead;
+  int rdFrmScktRslt;
+  unsigned numBytesRead;
   ///Value is 0 if connect to server for the 2nd call of this function.
   ///Value is garbage if connect to server in another thread for the 2nd call 
   /// of this function.
@@ -81,12 +84,14 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
 #endif
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
-    numBytesRead = readFromSocket(m_socketFileDesc,
-      SMARTdataXML, numBytesToRead);
+    rdFrmScktRslt = readFromSocket2(m_socketFileDesc,
+      SMARTdataXML, numBytesToRead, & numBytesRead);
     //TODO often numBytesRead < numBytesToRead if this function is called from 
     //  "UpdateSMARTparameterValuesThreadFunc"
     if(numBytesRead < numBytesToRead) {
-      HandleTransmissionError(SMARTparameterValues,numBytesRead,numBytesToRead);
+      HandleTransmissionError(SMARTparameterValues,
+        //numBytesRead < 0 ? 0: numBytesRead,
+        numBytesRead, numBytesToRead);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
       std::string stdstrXML((char*)SMARTdataXML, numBytesRead);
@@ -159,7 +164,7 @@ int ConnectToSocketNonBlocking(
 //  fcntl(socketFD, F_SETFL, curflags | O_NONBLOCK);
   //http://stackoverflow.com/questions/29598508/how-to-get-out-from-a-tcp-blocking-connect-call
   //https://stackoverflow.com/questions/17769964/linux-sockets-non-blocking-connect
-  
+  ///see https://www.cs.odu.edu/~cs779/spring10/lectures/nonblockingIO.html
   int flags = fcntl(socketFileDescriptor, F_GETFL, 0);
   fcntl(socketFileDescriptor, F_SETFL, flags | O_NONBLOCK);
 
@@ -183,7 +188,9 @@ int ConnectToSocketNonBlocking(
 
       ///from https://linux.die.net/man/2/pselect , section "Description"
       sigset_t origmask, sigmask;
-      ///https://www.gnu.org/software/libc/manual/html_node/Signal-Sets.html
+      /** https://www.gnu.org/software/libc/manual/html_node/Signal-Sets.html
+       * for being able to stop in select().from the User Interface thread via
+       * a signal. */
       int i = sigfillset(&sigmask);
       pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
 
@@ -203,11 +210,18 @@ int ConnectToSocketNonBlocking(
           * "waiting until one or more of the file descriptors become
           * "ready" for some class of I/O operation (e.g., input possible)."*/
         select(/** "This argument should be set to the highest-numbered
-        file descriptor in any of the three sets, plus 1.  The indicated
-        file descriptors in each set are checked, up to this limit
-        (but see BUGS)." */
+        * file descriptor in any of the three sets, plus 1.  The indicated
+        * file descriptors in each set are checked, up to this limit
+        * (but see BUGS)."
+        * https://www.gnu.org/software/libc/manual/html_node/Waiting-for-I_002fO.html
+        * : "The select function checks only the first nfds file descriptors."
+        * -> checks >nfds< lowmost bits of all max. 3 fds bitmasks ? */
         socketFileDescriptor + 1, & readFileDescriptorSet,
-        /**writefds*/NULL, /**exceptfds*/NULL, &socketConnectTimeout);
+        /**write file descriptors*/NULL,
+        /**except file descriptors*/NULL,
+        &socketConnectTimeout);
+      /** File Descriptor. set included 1st param val of select() after select(...)
+       * when the connection was successful. */
       pthread_sigmask(SIG_SETMASK, &origmask, NULL);
 //      int errorNumber = errno;
       if(result > 0) /** > 0 ready file descriptors */
@@ -232,9 +246,9 @@ int ConnectToSocketNonBlocking(
           , & optlen //socklen_t *optlen
           );
         const int isSet =FD_ISSET(socketFileDescriptor,& readFileDescriptorSet);
-        if(isSet){
-          close(socketFileDescriptor);
-          result = -1;
+        if(/*isSet*/ iSO_ERROR > 0){
+          /*close(socketFileDescriptor);
+          result = -1;*/
         }
         else if(result == 0 && iSO_ERROR == 0)//TODO result is 0 even if not connected
         {// (if 2nd time connection attempt with that socket FD?)
@@ -279,7 +293,7 @@ DWORD SocketConnectThreadFunc(void * p_v)
 //      sizeof(serv_addr) );
     int connectResult = ConnectToSocketNonBlocking(
       p_socketConnectThreadFuncParams->socketFileDesc,
-      p_socketConnectThreadFuncParams->serv_addr,
+      p_socketConnectThreadFuncParams->srvAddr,
       p_socketConnectThreadFuncParams->connectTimeoutInSeconds,
       p_socketConnectThreadFuncParams->p_SMARTmonitorClient
       );
@@ -306,6 +320,35 @@ DWORD SocketConnectThreadFunc(void * p_v)
 }
 #endif///#ifdef __linux__
 
+DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
+{
+  int cnnctRslt = -1;
+  SocketConnectThreadFuncParams * p_socketConnectThreadFuncParams = 
+    (SocketConnectThreadFuncParams *) p_v;
+  if( p_socketConnectThreadFuncParams)
+  {
+    ///from https://linux.die.net/man/2/pselect , section "Description"
+    sigset_t origmask, sigmask;
+    /** https://www.gnu.org/software/libc/manual/html_node/Signal-Sets.html
+     * for being able to stop in select().from the User Interface thread via
+     * a signal. */
+    int i = sigfillset(&sigmask);
+    pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
+
+    /** Because returning from connect(...) may take some (see its last
+     * parameter) seconds->show timeout in UI.*/
+    p_socketConnectThreadFuncParams->p_SMARTmonitorClient->startCnnctCountDown();
+    cnnctRslt = connect(p_socketConnectThreadFuncParams->socketFileDesc,
+      (struct sockaddr *) & p_socketConnectThreadFuncParams->srvAddr,
+      sizeof(p_socketConnectThreadFuncParams->srvAddr) );
+    pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
+    p_socketConnectThreadFuncParams->p_SMARTmonitorClient->
+      AfterConnectToServer(cnnctRslt);
+    delete p_socketConnectThreadFuncParams;
+  }
+  return cnnctRslt;
+}
+
 fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   const char * hostName, bool asyncConnect)
 {
@@ -330,14 +373,14 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
 //  }
 #ifdef multithread
 #ifdef __linux__
+  SocketConnectThreadFuncParams * p_socketCnnctThrdFnParams = new 
+    SocketConnectThreadFuncParams {m_socketFileDesc, srvAddr, this,
+      (fastestUnsignedDataType)cnnctTimeoutInS };
   if( asyncConnect )
   {
     ShowConnectionState(hostName, cnnctTimeoutInS);
-    SocketConnectThreadFuncParams * p_socketConnectThreadFuncParams = new 
-      SocketConnectThreadFuncParams {m_socketFileDesc, srvAddr, this,
-        (fastestUnsignedDataType)cnnctTimeoutInS };
     /** call in another thread in order to enable breaking connection */
-    connectThread.start(SocketConnectThreadFunc, p_socketConnectThreadFuncParams);
+    connectThread.start(SocketConnectThreadFunc, p_socketCnnctThrdFnParams);
     BeforeConnectToServer();
   }
   else
@@ -349,7 +392,8 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
 //      m_socketFileDesc, 
 //      serv_addr, 
 //      connectTimeoutInSeconds);
-    return connect(m_socketFileDesc, (struct sockaddr *) & srvAddr, sizeof(srvAddr) );
+    connectThread.start(InterruptableBlckngCnnctToSrvThrdFn,
+      p_socketCnnctThrdFnParams);
 //  ShowConnectToServerStatus("cancel connection");
 //  close(m_socketFileDesc);
 //  connectThread.WaitForTermination();
@@ -385,6 +429,10 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName)
       oss << "No process listening on the remote address \"" << //hostName 
         m_stdstrServiceHostName
         << "\", port:" << m_socketPortNumber;
+      break;
+    case EBADFD :///https://man7.org/linux/man-pages/man2/connect.2.html
+      oss << "The socket file descriptor #" << m_socketPortNumber <<
+        " is not a valid open file descriptor.";
       break;
     default :
     {

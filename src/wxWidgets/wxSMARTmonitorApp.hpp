@@ -82,7 +82,8 @@ public:
   wxIcon ShowSMARTwarningIcon();
   void ShowIcon(const wxIcon & icon, const wxString & message );
   void startCnnctCountDown();
-  void ShowStateAccordingToSMARTvalues(bool b);
+  void ShowStateAccordingToSMARTvalues(const SMARTvalueRating
+    entireSMARTvalRating);
   void StartServiceConnectionCountDown(const fastestUnsignedDataType);
   void ReBuildUserInterface();
   

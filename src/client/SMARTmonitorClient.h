@@ -71,6 +71,7 @@ public:
   fastestSignedDataType ReadNumFollowingBytes();
   fastestUnsignedDataType GetSMARTattrValsFromSrv(//std::set<SMARTuniqueIDandValues> & 
     );
+  bool isAsyncCnnct() const {return asynCnnct;}
   ///Should be called in user interface thread? (because it calls functions to 
   /// create the user interface)
   void GetSMARTvaluesAndUpdateUI();
@@ -111,7 +112,7 @@ public:
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
     const enum SMARTvalueRating, /**e.g. pointer to list ctrl */void * data){}
-  virtual void ShowStateAccordingToSMARTvalues(bool ) { }
+  virtual void ShowStateAccordingToSMARTvalues(const enum SMARTvalueRating){}
   std::string m_stdstrServerAddress;
 protected:
   tinyxml2::SrvDataProcessor srvDataProcessor;

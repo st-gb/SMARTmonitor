@@ -152,7 +152,7 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
     ///https://en.wikipedia.org/wiki/C_signal_handling
     ///Needed, else program exits when calling raise(SIGUSR1).
     signal(SIGUSR1, sigHandler);
-    wxGetApp().ConnectToServerAndGetSMARTvalues(true);
+    wxGetApp().ConnectToServerAndGetSMARTvalues(wxGetApp().isAsyncCnnct() );
   }
   /** Stop timer and close this dialog in "SMARTmonitorClient::
    * AfterCcnnectToServer" (in a derived class) */
