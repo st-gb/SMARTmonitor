@@ -325,15 +325,12 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
 {
   switch(newState)
   {
+    case SMARTmonitorClient::valUpd8:
+      SetTitle(wxGetApp().GetTitleInclDataSrc() + wxT("--last update:") +
+        wxNow() );
+     break;
     case SMARTmonitorClient::connectedToService :
-    {
-      const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
-        wxGetApp().m_stdstrServiceHostName);
-      SetTitle(wxString::Format("wxSMARTmonitor--data from %s:%u", 
-        wxstrServiceAddress,
-        wxGetApp().m_socketPortNumber)
-        );
-    }
+      SetTitle(wxGetApp().GetTitleInclDataSrc() );
       break;
     case SMARTmonitorClient::unconnectedFromService :
     {
@@ -349,6 +346,7 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
         wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.c_str() ) );
       SetTitle(wxstrTitle);
     }
+      wxGetApp().ShowSMARTstatusUnknownIcon();
       break;
   }
 }
@@ -498,6 +496,7 @@ void SMARTdialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
 {
 //#ifdef _DEBUG
   wxGetApp().UpdateSMARTvaluesUI();
+  LOGN_DEBUG("end")
 }
 
 //TODO move this function to class SMARTmonitorBase? (because it may be needed

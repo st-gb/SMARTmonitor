@@ -79,6 +79,8 @@ void SMARTmonitorClient::EndUpdateUIthread()
     //m_p_wxCloseCondition->Wait();
     
     m_updateSMARTparameterValuesThread.WaitForTermination();
+    ///Enable get S.M.A.R.T. values loop.
+    AtomicExchange( (long *) & s_updateSMARTvalues, 1);
     GetSMARTvalsAndUpd8UIthreadID = 0;
     ChangeState(unconnectedFromService);
   }
@@ -173,6 +175,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     //TODO use variable m_serviceConnectionCountDownInSeconds as parameter
     StartServiceConnectionCountDown(60);
   }
+  LOGN_DEBUG("end")
 }
 
 /** Called e.g. when server address was given via program options/
@@ -393,6 +396,7 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
 /// of the S.M.A.R.T. values table.
 void SMARTmonitorClient::UpdateSMARTvaluesUI()
 {
+  LOGN_DEBUG("begin")
   bool atLeast1CriticalNonNullValue = false;
 
   const fastestUnsignedDataType numberOfDifferentDrives = 
@@ -437,12 +441,14 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
         entireSMARTvalRating = SMARTvalueWarning;
     }
   }
+  ChangeState(valUpd8);
   /** ^= state changed. */
   if(s_atLeast1CriticalNonNullValue != entireSMARTvalRating)
   {
     ShowStateAccordingToSMARTvalues(entireSMARTvalRating);
   }
   s_atLeast1CriticalNonNullValue = entireSMARTvalRating;
+  LOGN_DEBUG("end")
 }
 
 bool getRealValue(const std::string & stdstrUnit, const uint64_t SMARTrawVal,
@@ -609,6 +615,7 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
   const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
   void * data)
 {
+  LOGN_DEBUG("begin--S.M.A.R.T. attribute ID:" << SMARTattrID)
   enum SMARTvalueRating sMARTvalueRating;
   uint64_t SMARTrawVal;
   //TODO attribute IDs of SMART values to observe may not be a subset of
@@ -769,5 +776,6 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
 //  else
 //  {//TODO show message that no S.M.A.R.T. attribute definition found
 //  }
+  LOGN_DEBUG("return " << sMARTvalueRating)
   return sMARTvalueRating;
 }

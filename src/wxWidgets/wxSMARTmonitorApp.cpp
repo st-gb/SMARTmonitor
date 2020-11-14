@@ -229,6 +229,7 @@ void wxSMARTmonitorApp::AfterConnectToServer(int connectResult)
 
 void wxSMARTmonitorApp::BeforeWait()
 {
+  LOGN_DEBUG("begin")
   /** This function is usually called from a non-GUI thread. So we have to send
    *  an event to let the GUI update happen in the UI thread to avoid a program 
    * crash. */
@@ -642,7 +643,8 @@ void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 
 wxIcon wxSMARTmonitorApp::ShowSMARTokIcon()
 {
-  ShowIcon(s_SMARTokIcon, wxT("raw value for all critical S.M.A.R.T. parameters is 0") );
+  ShowIcon(s_SMARTokIcon, wxT("values for (all) (critical) S.M.A.R.T. "
+    "parameters are in a safe range") );
   return s_SMARTokIcon;
 }
 
@@ -654,7 +656,7 @@ wxIcon wxSMARTmonitorApp::ShowSMARTstatusUnknownIcon()
 
 wxIcon wxSMARTmonitorApp::ShowSMARTwarningIcon()
 {
-  ShowIcon(s_SMARTwarningIcon, wxT("raw value for at least 1 critical S.M.A.R.T. "
-    "parameter is > 0") );
+  ShowIcon(s_SMARTwarningIcon, wxT("value for at least 1 (critical) S.M.A.R.T. "
+    "parameter is not in a safe range") );
   return s_SMARTwarningIcon;
 }

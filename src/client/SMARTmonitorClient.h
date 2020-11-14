@@ -35,7 +35,8 @@ public:
     dataCarrierIDandSMARTidsContainer;
   static SMARTvalueRater s_SMARTvalueRater;
   
-  enum serverConnectionState {connectedToService, unconnectedFromService};
+  enum serverConnectionState {connectedToService, unconnectedFromService,
+    /**to diplay the (local) time of last S.M.A.R.T. value update*/ valUpd8};
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
   

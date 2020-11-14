@@ -56,6 +56,7 @@ public:
     gs_dialog->SetTitle(GetAppDisplayName() );
   }
   void GetTextFromUser(const char * label, std::string & );
+  inline wxString GetTitleInclDataSrc();
   bool OnInit();
   void OnTimer(wxTimerEvent& event);
 //  int OnRun();
@@ -92,6 +93,17 @@ public:
   void OnShowMessage(wxCommandEvent & event);
   void OnStartServiceConnectionCountDown(wxCommandEvent & event);
 };
+
+wxString wxSMARTmonitorApp::GetTitleInclDataSrc()
+{
+  const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
+    m_stdstrServiceHostName);
+  return wxString::Format("wxSMARTmonitor--data from %s:%u in ca. %u ms "
+    "interval",
+    wxstrServiceAddress,
+    m_socketPortNumber,
+    GetNumberOfMilliSecondsToWaitBetweenSMARTquery() );
+}
 
 DECLARE_APP(wxSMARTmonitorApp) //wxGetApp()
 

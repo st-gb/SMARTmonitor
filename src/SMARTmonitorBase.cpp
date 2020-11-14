@@ -470,6 +470,7 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   void * p_v)
 {
+  LOGN_DEBUG("begin")
   struct GetSMARTvaluesFunctionParams * p_getSMARTvalsFnParams =
     (struct GetSMARTvaluesFunctionParams *) p_v;
   try{
@@ -504,11 +505,12 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
       res = (*p_SMARTmonitorBase.*p_getSMARTvaluesFunction)();
       if( res == 0 )
         p_SMARTmonitorBase->BeforeWait();
-      else
+      else{
+        LOGN_ERROR("get S.M.A.R.T. values function returned non-0")
         break;
-
+      }
       numberOfSecondsToWaitBetweenSMARTquery =
-              numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
+        numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
       while (numberOfSecondsToWaitBetweenSMARTquery-- &&
               SMARTmonitorBase::s_updateSMARTvalues) {
         /**If this program ends it needs max. the sleep time to terminate.
@@ -533,10 +535,13 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   }
   }///E.g. if rolling file appender and permission denied for the new file.
   catch(LogFileAccessException & lfae){
+    LOGN_ERROR("Log file access exception")
     //TODO does not respond anymore after this exception.
     p_getSMARTvalsFnParams->p_SMARTmonitorBase->ShowMessage(lfae.
       GetErrorMessageA().c_str(), UserInterface::MessageType::error);
   }
+  LOGN_DEBUG("return 0--update S.M.A.R.T. values?:" << SMARTmonitorBase::
+    s_updateSMARTvalues)
   return 0;
 }
 
@@ -567,6 +572,8 @@ void SMARTmonitorBase::StartAsyncUpdateThread(
   struct GetSMARTvaluesFunctionParams & getSMARTvaluesFunctionParams
   )
 {
+  LOGN_DEBUG("# S.M.A.R.T. attributes to observe:" <<
+    m_IDsOfSMARTattrsToObserve.size() )
   /** Preconditions */
   if (m_IDsOfSMARTattrsToObserve.size() > 0) {
 //    struct GetSMARTvaluesFunctionParams
