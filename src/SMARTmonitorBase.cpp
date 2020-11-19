@@ -29,7 +29,7 @@ typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 /** Static/Class members must be defined once in a source file. Do this here */
 dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
-fastestSignedDataType SMARTmonitorBase::s_updateSMARTvalues = 1;
+AtomicExchType SMARTmonitorBase::s_updateSMARTvalues = 1;
 extern const char FileSystem::dirSeperatorChar;
 CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"logfilefolder", "<absolute or relative log file FOLDER>, e.g. \"/run/\" "

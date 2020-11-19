@@ -90,6 +90,7 @@ public:
   
   DECLARE_EVENT_TABLE()
   void OnAfterConnectToServer(wxCommandEvent & );
+  void OnCnnctToSrvr(wxCommandEvent &);
   void OnShowMessage(wxCommandEvent & event);
   void OnStartServiceConnectionCountDown(wxCommandEvent & event);
 };

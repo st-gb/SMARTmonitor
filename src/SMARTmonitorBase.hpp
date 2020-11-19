@@ -1,5 +1,5 @@
 /* File:   SMARTmonitorBase.hpp
- * Author: sg
+ * Author: Stefan Gebauer, M.Sc. Comp.Sc.
  * Created on 17. November 2016, 13:05 */
 
 #ifndef SMARTMONITORBASE_HPP
@@ -10,6 +10,7 @@
 #include <string>///class std::wstring
 
 ///common_sourcecode repository header files:
+#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchType
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
 ///struct CommandLineOption
@@ -164,8 +165,9 @@ public:
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
     return s_numberOfMilliSecondsToWaitBetweenSMARTquery;
     }
-  
-  static fastestSignedDataType s_updateSMARTvalues;
+  /* Use same data type as AtomExchange function from common_sourcecode repo
+   * to avoid adress sanitizer errors. */
+  static /*fastestSignedDataType*/ AtomicExchType s_updateSMARTvalues;
   static CommandLineOption/*<char>*/ s_commandLineOptions [] ;
   /*DWORD*/ uint64_t m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
 //  long int m_arSMART_ID[255]; //provide space for up t 255 SMART attribute values

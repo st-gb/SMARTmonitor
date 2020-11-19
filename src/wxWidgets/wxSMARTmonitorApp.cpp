@@ -66,12 +66,14 @@ wxIcon wxSMARTmonitorApp::s_SMARTwarningIcon;
 //from https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case
 //const wxEventType AfterConnectToServerEventType = wxNewEventType();
 DEFINE_LOCAL_EVENT_TYPE(AfterConnectToServerEventType)
+DEFINE_LOCAL_EVENT_TYPE(CnnctToSrvrEvtType)
 DEFINE_LOCAL_EVENT_TYPE(ShowMessageEventType)
 DEFINE_LOCAL_EVENT_TYPE(StartServiceConnectionCountDownEventType)
 DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
 
 BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
   EVT_COMMAND(wxID_ANY, AfterConnectToServerEventType, wxSMARTmonitorApp::OnAfterConnectToServer)
+  EVT_COMMAND(wxID_ANY, CnnctToSrvrEvtType, wxSMARTmonitorApp::OnCnnctToSrvr)
   EVT_COMMAND(wxID_ANY, ShowMessageEventType, wxSMARTmonitorApp::OnShowMessage)
   EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
     OnStartCntDown)
@@ -180,6 +182,7 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(
     break;
   }
 }
+
 /** Usually called via wxWidgets events (from another thread) to run in user 
  * interface thread.*/
 void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
@@ -213,6 +216,11 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 //    m_wxtimer.StartOnce(countDownInSeconds * 1000);
     StartServiceConnectionCountDown(countDownInSeconds);
   }
+}
+
+void wxSMARTmonitorApp::OnCnnctToSrvr(wxCommandEvent & commandEvent)
+{
+  ConnectToServerAndGetSMARTvalues(asynCnnct);
 }
 
 /** Should only be called from the UI thread?!, else program crash? */
@@ -362,12 +370,13 @@ bool wxSMARTmonitorApp::OnInit()
 
 //    ShowSMARTokIcon();
     ShowSMARTstatusUnknownIcon();
-    //TODO execute after OnInit(): else no dialog is shown?
     bool drctSMARTaccess = false;
     if( ! stdwstrServiceConnectionConfigFile.empty() )
     {
 //      m_wxtimer.StartOnce(1000);
-      ConnectToServerAndGetSMARTvalues(asynCnnct);
+      ///Execute after OnInit() finished to enable cancelling in GUI?
+      wxCommandEvent cnnctToSrvrEvt(CnnctToSrvrEvtType );
+      wxPostEvent(this, cnnctToSrvrEvt);
     }
 #ifdef directSMARTaccess
     else
@@ -375,6 +384,7 @@ bool wxSMARTmonitorApp::OnInit()
     {
       EnsureSMARTattrToObsExist();
       gs_dialog->ReBuildUserInterface();
+      //TODO execute after OnInit(): else no dialog is shown?
       gs_dialog->StartAsyncDrctUpd8Thread();
       drctSMARTaccess = true;
     }
