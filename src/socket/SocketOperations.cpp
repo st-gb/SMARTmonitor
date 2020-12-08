@@ -142,7 +142,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
 struct SocketConnectThreadFuncParams
 {
   int socketFileDesc;
-  struct sockaddr_in serv_addr;
+  struct sockaddr_in srvAddr;
   SMARTmonitorClient * p_SMARTmonitorClient;
   fastestUnsignedDataType connectTimeoutInSeconds;
   void AfterConnectToServer()

@@ -644,8 +644,8 @@ void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
   wxString tooltip = wxString::Format( wxT("for %s:\n%s"), 
     serviceLocation, message );
   
-    //if ( wxGetApp().m_taskBarIcon == NULL )  
-  if ( ! m_taskBarIcon->SetIcon( icon, tooltip ) )
+  if(m_taskBarIcon///May be NULL if wxTaskBarIcon::IsAvailable() returns false
+    && ! m_taskBarIcon->SetIcon(icon, tooltip) )
     wxMessageBox(wxT("Could not set new taskbar icon."), wxT("wxSMARTmonitor") );
   if( gs_dialog)
     gs_dialog->SetIcon(icon);
