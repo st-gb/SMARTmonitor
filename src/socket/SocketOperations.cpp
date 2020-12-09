@@ -135,14 +135,14 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
   {
     LOGN_ERROR("Failed to allocate " << numBytesToAllocate << " bytes")
   }
-  LOGN("end")
+  LOGN("return " << successfull)
   return successfull;
 }
 
 struct SocketConnectThreadFuncParams
 {
   int socketFileDesc;
-  struct sockaddr_in serv_addr;
+  struct sockaddr_in srvAddr;
   SMARTmonitorClient * p_SMARTmonitorClient;
   fastestUnsignedDataType connectTimeoutInSeconds;
   void AfterConnectToServer()
@@ -238,10 +238,11 @@ int ConnectToSocketNonBlocking(
         
         /** http://man7.org/linux/man-pages/man2/setsockopt.2.html
          * " On success, zero is returned for the standard options." */
-        result = getsockopt(
+        result = getsockopt(//optval for SO_RCVBUF size is 16 if was connected
           socketFileDescriptor, 
-          SOL_SOCKET /*int level*/, 
-          SO_ERROR, //int optname
+          SOL_SOCKET /*int level*/,
+          ///"This option stores an int value in the optval argument. "
+          SO_RCVBUF, //SO_ERROR, //int optname
           & iSO_ERROR //void *optval
           , & optlen //socklen_t *optlen
           );
@@ -250,9 +251,10 @@ int ConnectToSocketNonBlocking(
           /*close(socketFileDescriptor);
           result = -1;*/
         }
-        else if(result == 0 && iSO_ERROR == 0)//TODO result is 0 even if not connected
-        {// (if 2nd time connection attempt with that socket FD?)
-          
+        /** Result is sometimes 0 even if not connected(e.g.if 2nd time
+         *  connection attempt with that socket FD?)? */
+        else if(result == 0 && iSO_ERROR == 0)
+        {
           LOGN_INFO("successfully connected to " << serv_addr.sin_addr.s_addr )
           //TODO result was success even if the server/service is not running
           /** Change back to blocking mode. */
