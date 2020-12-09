@@ -39,12 +39,6 @@ if( NOT DEFINED WXWIDGETS_INCLUDE_DIR )
    "on Linux it may be like: /usr/include/wx-2.8")
 endif( NOT DEFINED WXWIDGETS_INCLUDE_DIR )
   
-set(INCLUDE_DIRS
-  ${INCLUDE_DIRS}
-  ${WXWIDGETS_SETUP_H_PATH}
-  ${WXWIDGETS_INCLUDE_DIR}
-  )
-
 #include_directories( ${INCLUDE_DIRS} )
 
 if(SetwxVarsManually)
@@ -52,6 +46,12 @@ if(SetwxVarsManually)
 #part of the file name: "wx_baseu-3.0" 
 set( LIBRARIES
   ${LIBRARIES}
+  )
+#Only add to "include directories" if manual setup
+set(INCLUDE_DIRS
+  ${INCLUDE_DIRS}
+  ${WXWIDGETS_SETUP_H_PATH}
+  ${WXWIDGETS_INCLUDE_DIR}
   )
 
 if(WIN32)

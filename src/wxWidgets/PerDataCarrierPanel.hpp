@@ -7,7 +7,11 @@
 #include <wx/sizer.h>///class wxSizer
 
 #include "SMARTtableListCtrl.hpp"///class wxWidgets::SMARTtableListCtrl
+
+///from Stefan Gebauer's "common_sourcecode" repository :
+///wxWidgets::GetwxString_Inline(...)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN_DEBUG(...)
 
 using namespace wxWidgets;
 

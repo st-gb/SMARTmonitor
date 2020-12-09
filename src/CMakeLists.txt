@@ -89,10 +89,13 @@ set( INCLUDE_DIRS
   ${INCLUDE_DIRS} #include the wxWidgets dirs from above
   ${InclDirs}
 )
-message("include directories: ${INCLUDE_DIRS}")
 
 #https://www.johnlamp.net/cmake-tutorial-4-libraries-and-subdirectories.html
 include_directories(${INCLUDE_DIRS})
+
+#message("include directories: ${INCLUDE_DIRS}")
+include(${cmnSrcDir}/CMake/ShowMsg_CompLvl.cmake)
+showInclDirs(5)
 
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
   #set(directSMARTaccess TRUE)
