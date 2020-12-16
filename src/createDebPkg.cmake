@@ -10,6 +10,11 @@
 # worden sind, wie etwa selbstkompilierte oder unabhängig von der Distribution
 # heruntergeladene Programme und Dateien."
 
+message("Executable name:" ${EXE_NAME})
+#TODO handle cross-compiling (e.g. 64 bit but compiling for 32 bit)
+message("CPU archictecture:" ${CMAKE_SYSTEM_PROCESSOR})
+set(CPACK_PACKAGE_NAME ${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR})
+message("Debian package name:" ${CPACK_PACKAGE_NAME})
 install(TARGETS ${EXE_NAME}#target name
   #required
   RUNTIME DESTINATION local/bin # -> extracted into "/usr/local/bin"
@@ -27,6 +32,7 @@ else()
     ../SMARTmonitor.xml
     )
 endif()
+message("additional Debian package files:" ${additionalFiles})
 #https://stackoverflow.com/questions/5232555/how-to-add-files-to-debian-package-with-cpack
 INSTALL(FILES ${additionalFiles}
   #required
@@ -56,7 +62,9 @@ if(${EXE_TYPE} STREQUAL "wxGUI")
   #Needs at least wxWidgets 3.0?
   set(libsDependendOn "${libsDependendOn}, libwxgtk3.0-0v5, libwxbase3.0-0v5")
 endif()
+message("Debian package depends on libraries:" ${libsDependendOn})
 set(CPACK_DEBIAN_PACKAGE_DEPENDS ${libsDependendOn})
 
 SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Stefan Gebauer, M.Sc.Comp.Sc.")#required
 INCLUDE(CPack)# This must always be last!
+message("Create Debian package running \"cpack\"")

@@ -141,6 +141,7 @@ if( ${EXE_TYPE} STREQUAL "UNIX_service")
   set(EXE_NAME ${PROJECT_NAME}_service)
 endif()
 
+set(EXE_NAME_WOUT_EXT ${EXE_NAME})
 include(${cmnSrcDir}/CMake/addExeFileExt.cmake)
 addExeFileExt(EXE_NAME)
 
@@ -166,7 +167,7 @@ endif()
 if(UNIX)#only Unix binaries into .deb file
   message("cr8DebPkg: ${cr8DebPkg}")
   if(DEFINED cr8DebPkg)#"-Dcr8DebPkg" as cmake command line parameter
-    include(createDebPkg.cmake)
+    include(createDebPkg.cmake)#run CPack with "cpack --debug --verbose"
   endif()
 endif()
 

@@ -19,7 +19,7 @@
 ///numSMART_SNbytes, numSMART_FWbytes, numSMARTmodelBytes, numDifferentSMART_IDs
 #include <hardware/dataCarrier/ATA3Std.h>
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
-
+#include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN_ERROR(...)
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
 #include "SMARTattributeNameAndID.hpp"///class SMARTattributeNameAndID
 
@@ -53,6 +53,12 @@ struct SMARTuniqueID {
   }
   bool noSMARTattrsToRead() const{ return ! SMART_IDsToReadNotEnd(0); }
   
+  /** https://docs.oracle.com/cd/E19253-01/817-6223/chp-typeopexpr-2/index.html
+   * : long int has 4 bytes at 32 bit, 8 bytes at 64 bit
+   * If 32 bit uptime in milliseconds it overflows after: 2^31=2147483648 ms=
+   * 2147483,648 seconds = 596,523235556 hours = 24,855134815 days
+   * For Total Data Read/Written:
+   * If 32 bit overflows after: 2^31=2147483648 # bytes=~2 GB written */
   typedef long int unitDataType;
   //TODO not needed anoymore because calculated from upper - lower bound?
   unitDataType units[numItems];
@@ -64,6 +70,8 @@ struct SMARTuniqueID {
   fastestUnsignedDataType state[numItems];
 //  fastestUnsignedDataType numSamples[numItems];//Not needed?
   unitDataType otherMtrcValAtLastSMARTrawValInc[numItems];//TODO Show in UI?
+  /** For units long int is sufficient under 32 bit for # data read/written if
+   *  unit is <= 2/4 GB. */
   unitDataType lowerUnitBound[numItems];
   unitDataType upperUnitBound[numItems];
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
@@ -267,10 +275,28 @@ struct SMARTuniqueID {
             else
               upperBound[SMARTattrID] -= unitDiff;
           }else*/
-          if(unitDiff > 0)///New value lower than stored value.
+#ifdef _DEBUG
+          double schwankung;
+#endif
+          if(///unitDiff > 0)///New value lower than stored value.
+            unit < lowerUnitBound[SMARTattrID]){
+#ifdef _DEBUG
+            ///Starke Schwankungen/Ausreißer erkennen.
+            schwankung = (double) unit / (double) lowerUnitBound[SMARTattrID];
+#endif
             lowerUnitBound[SMARTattrID] = unit;
-          else
+          }
+          else if(unit > upperUnitBound[SMARTattrID]){
+#ifdef _DEBUG
+            ///Starke Schwankungen/Ausreißer erkennen.
+            schwankung = (double) unit / (double) upperUnitBound[SMARTattrID];
+#endif
             upperUnitBound[SMARTattrID] = unit;
+          }
+#ifdef _DEBUG
+          if(schwankung < 0.5 || schwankung > 1.5)
+            LOGN_ERROR("starke Schwankung")
+#endif
           /** Can be shown in user interface to give an info when the SMART raw
            *  value increments next time. For this calculate:
            * otherVal - otherMtrcValAtLastSMARTrawValInc[SMARTattrID] */

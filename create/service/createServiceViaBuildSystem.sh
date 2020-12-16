@@ -20,4 +20,4 @@ cmake \
 -DdirectSMARTaccess:BOOL=ON \
 -Dmultithread:BOOL=ON \
 $otherCMakeArgs \
-src
+.
