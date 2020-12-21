@@ -63,6 +63,7 @@ SMARTmonitorBase::SMARTmonitorBase()
 #ifdef directSMARTaccess
   mp_SMARTaccess = & m_SMARTaccess;
 #endif
+  setDfltSMARTattrDef();
   mp_configurationLoader = new tinyxml2::ConfigLoader(
     (SMARTattrDefsType /*&*/) SMARTaccessBase::getSMARTattrDefs(), * this);
   //  InitializeLogger();
@@ -83,6 +84,29 @@ SMARTmonitorBase::~SMARTmonitorBase() {
 //https://gcc.gnu.org/onlinedocs/cpp/Stringification.html#Stringification
 #define xstringify(s) stringify(s)
 #define stringify(s) #s
+
+void SMARTmonitorBase::setDfltSMARTattrDef(){
+  SMARTattrDefAccss::Set(1, "Read Error Rate");
+  SMARTattrDefAccss::Set(2, "Throughput Performance");
+  SMARTattrDefAccss::Set(3, "Spin-Up Time");
+  SMARTattrDefAccss::Set(4, "Start/Stop Count");
+  SMARTattrDefAccss::Set(5, "Reallocated Sectors Count");
+  SMARTattrDefAccss::Set(7, "Seek Error Rate");
+  SMARTattrDefAccss::Set(8, "Seek Time Performances");
+  SMARTattrDefAccss::Set(9, "Power-On Time");
+  SMARTattrDefAccss::Set(10, "Spin Retry Count");
+  SMARTattrDefAccss::Set(11, "Recalibration Retries or Calibration Retry Count");
+  SMARTattrDefAccss::Set(12, "Power Cycle Count");
+  SMARTattrDefAccss::Set(190, "Temperature Difference or Airflow Temperature");
+  SMARTattrDefAccss::Set(194, "Temperature Celsius");
+  SMARTattrDefAccss::Set(195, "Hardware ECC Recovered");
+  SMARTattrDefAccss::Set(196, "Reallocation Event Count");
+  SMARTattrDefAccss::Set(197, "Current Pending Sector Count");
+  SMARTattrDefAccss::Set(198, "Uncorrectable Sector Count");
+  SMARTattrDefAccss::Set(199, "UltraDMA CRC Error Count");
+  SMARTattrDefAccss::Set(200, "Multi-Zone Error Rate or Write Error Rate");
+  SMARTattrDefAccss::Set(201, "Soft Read Error Rate or TA Counter Detected");
+}
 
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
   /** IMPORTANT: creating the arrays can't be done in the constructor of this

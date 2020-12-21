@@ -84,6 +84,7 @@ public:
     }*/
   virtual ~SMARTmonitorBase();
   
+  static void setDfltSMARTattrDef();
   /** Needs to persist over the call to 
    *  ::UpdateSMARTparameterValuesThreadFunc(...) so making it a member 
    *  variable is feasible. 
