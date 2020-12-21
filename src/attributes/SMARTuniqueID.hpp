@@ -20,7 +20,7 @@
 #include <hardware/dataCarrier/ATA3Std.h>
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
 #include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN_ERROR(...)
-#include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
+
 #include "SMARTattributeNameAndID.hpp"///class SMARTattributeNameAndID
 
 ///So the last SMART attrubute ID (254) can be used to index (255 items array)

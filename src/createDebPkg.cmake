@@ -13,7 +13,9 @@
 message("Executable name:" ${EXE_NAME})
 #TODO handle cross-compiling (e.g. 64 bit but compiling for 32 bit)
 message("CPU archictecture:" ${CMAKE_SYSTEM_PROCESSOR})
-set(CPACK_PACKAGE_NAME ${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR})
+#Define distribution via "-DDistri=>name<"
+message("Packaging for Linux distribution:" ${Distri})
+set(CPACK_PACKAGE_NAME ${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR}_${Distri})
 message("Debian package name:" ${CPACK_PACKAGE_NAME})
 install(TARGETS ${EXE_NAME}#target name
   #required
@@ -27,9 +29,11 @@ if(${EXE_TYPE} STREQUAL "wxGUI")
     ../S.M.A.R.T._unknown.xpm
     ../S.M.A.R.T._warning.xpm
     )
-else()
+else()#service
   set(additionalFiles
     ../SMARTmonitor.xml
+    ../Linux/systemd/install_service_systemd.sh
+    ../Linux/systemd/SMARTmon.service.skeleton
     )
 endif()
 message("additional Debian package files:" ${additionalFiles})
@@ -60,10 +64,20 @@ if(DEFINED directSMARTaccess)
 endif()
 if(${EXE_TYPE} STREQUAL "wxGUI")
   #Needs at least wxWidgets 3.0?
-  set(libsDependendOn "${libsDependendOn}, libwxgtk3.0-0v5, libwxbase3.0-0v5")
+  set(libsDependendOn "${libsDependendOn}, libwxbase3.0-0v5")
+  if(${Distri} STREQUAL "Lubuntu")
+    message("Adding dependent packages for Lubuntu")
+    #Package name in Lubuntu is different from Ubuntu (additional "gtk3-").
+    set(libsDependendOn ${libsDependendOn} ", libwxgtk3.0-gtk3-0v5")
+  else()
+    set(libsDependendOn ${libsDependendOn} ", libwxgtk3.0-0v5")
+  endif()
 endif()
 message("Debian package depends on libraries:" ${libsDependendOn})
+# https://cmake.org/cmake/help/v3.3/module/CPackDeb.html
 set(CPACK_DEBIAN_PACKAGE_DEPENDS ${libsDependendOn})
+#https://cmake.org/cmake/help/v3.3/module/CPackDeb.html#variable:CPACK_DEBIAN_PACKAGE_SHLIBDEPS
+#  CPACK_DEBIAN_PACKAGE_SHLIBDEPS 
 
 SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Stefan Gebauer, M.Sc.Comp.Sc.")#required
 INCLUDE(CPack)# This must always be last!
