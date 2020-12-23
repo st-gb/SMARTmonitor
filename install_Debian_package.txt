@@ -1,0 +1,14 @@
+If the Debian package can not be installed
+==========================================
+
+1. dpkg -I  >>path to Debian package<< | grep Depends
+2. for all listed packages there:
+apt-get install >package name<
+
+change dependencies package name
+--------------------------------
+-control.tar.gz
+ -file "control"
+
+readelf -d ../wxSMARTmonitor_GUI.elf
+->shows libraries dependent on
