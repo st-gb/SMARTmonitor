@@ -3,10 +3,14 @@ https://gist.github.com/PurpleBooth/109311bb0361f32d87a2#file-readme-template-md
 
 # S.M.A.R.T. monitor
 
-A tool to monitor (critical) [S.M.A.R.T.]
-(https://en.wikipedia.org/wiki/S.M.A.R.T.) values locally or via BSD sockets.
-Values are retrieved periodically in an inverval.
+A tool to monitor raw values for (critical)
+[S.M.A.R.T.](https://en.wikipedia.org/wiki/S.M.A.R.T.) parameters locally or
+via [BSD sockets](https://en.wikipedia.org/wiki/Berkeley_sockets).
+S.M.A.R.T. values are retrieved periodically in an inverval.
 
+Some units (Power-On Time, Total Data Written, ...) for some
+[S.M.A.R.T. attributes](https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)
+are tried to be determined.
 
 ## Building Prerequisites
 
@@ -72,8 +76,8 @@ the User Interface (wxGUI, command line etc.).
   - command line:
 
     ```
-    apt-get install libwxbase3.0-dev"
-    apt-get install libwxgtk3.0-dev"
+    apt-get install libwxbase3.0-dev
+    apt-get install libwxgtk3.0-dev
     ```
     ([...]gtk[...] is "adv" library for Linux/GTK)
 
