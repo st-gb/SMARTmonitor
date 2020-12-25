@@ -49,7 +49,8 @@ std::wstring SMARTmonitorBase::s_programOptionValues[beyondLastProgramOptionName
 //}
 
 SMARTmonitorBase::SMARTmonitorBase()
-  : m_socketPortNumber(1000),
+  ///Use port number > well-known ports (1024) for less privileges.
+  : m_socketPortNumber(2000),
     mp_configurationLoader(NULL),
     m_cmdLineArgStrings(NULL),
     m_ar_stdwstrCmdLineArgs(NULL),
@@ -85,19 +86,49 @@ SMARTmonitorBase::~SMARTmonitorBase() {
 #define xstringify(s) stringify(s)
 #define stringify(s) #s
 
+/** Rationale: even If the S.M.A.R.T. attribute definition configuration file is
+ * missing parameter names are possible. */
 void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(1, "Read Error Rate");
   SMARTattrDefAccss::Set(2, "Throughput Performance");
   SMARTattrDefAccss::Set(3, "Spin-Up Time");
   SMARTattrDefAccss::Set(4, "Start/Stop Count");
   SMARTattrDefAccss::Set(5, "Reallocated Sectors Count");
+  SMARTattrDefAccss::Set(6, "Read Channel Margin");
   SMARTattrDefAccss::Set(7, "Seek Error Rate");
   SMARTattrDefAccss::Set(8, "Seek Time Performances");
   SMARTattrDefAccss::Set(9, "Power-On Time");
   SMARTattrDefAccss::Set(10, "Spin Retry Count");
   SMARTattrDefAccss::Set(11, "Recalibration Retries or Calibration Retry Count");
   SMARTattrDefAccss::Set(12, "Power Cycle Count");
+  
+  SMARTattrDefAccss::Set(100, "Data Erased");
+  
+  SMARTattrDefAccss::Set(168, "SATA Physical Error Count");
+  SMARTattrDefAccss::Set(169, "Bad Block Count");
+  
+  SMARTattrDefAccss::Set(171, "Program Fail Count");
+  SMARTattrDefAccss::Set(172, "SSD Erase Fail Count");
+  
+  SMARTattrDefAccss::Set(174, "Unexpected Power Loss Count");
+  SMARTattrDefAccss::Set(175, "Power Loss Protection Failure");
+  SMARTattrDefAccss::Set(176, "Erase Fail Count");
+  SMARTattrDefAccss::Set(177, "Wear Range Delta");
+  SMARTattrDefAccss::Set(178, "Used Reserved Block Count (Chip)");
+  SMARTattrDefAccss::Set(179, "Used Reserved Block Count Total");
+  SMARTattrDefAccss::Set(180, "Unused Reserved Block Count Total");
+  SMARTattrDefAccss::Set(181, "Program Fail Count");
+  SMARTattrDefAccss::Set(182, "Erase Fail Count");
+  SMARTattrDefAccss::Set(183, "Runtime Bad Blocks");
+  SMARTattrDefAccss::Set(184, "End to End Error");
+  
+  SMARTattrDefAccss::Set(187, "Reported Uncorrectable Errors");
+  SMARTattrDefAccss::Set(188, "Command Timeout");
+  SMARTattrDefAccss::Set(189, "High Fly Writes");
   SMARTattrDefAccss::Set(190, "Temperature Difference or Airflow Temperature");
+  SMARTattrDefAccss::Set(191, "G-sense Error Rate");
+  SMARTattrDefAccss::Set(192, "Power-off/Emergency Retract Count");
+  SMARTattrDefAccss::Set(193, "Load(/Unload) Cycle Count");
   SMARTattrDefAccss::Set(194, "Temperature Celsius");
   SMARTattrDefAccss::Set(195, "Hardware ECC Recovered");
   SMARTattrDefAccss::Set(196, "Reallocation Event Count");
@@ -106,6 +137,25 @@ void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(199, "UltraDMA CRC Error Count");
   SMARTattrDefAccss::Set(200, "Multi-Zone Error Rate or Write Error Rate");
   SMARTattrDefAccss::Set(201, "Soft Read Error Rate or TA Counter Detected");
+  
+  SMARTattrDefAccss::Set(204, "Soft ECC Correction");
+  
+  SMARTattrDefAccss::Set(212, "Shock During Write");
+  
+  SMARTattrDefAccss::Set(220, "Disk Shift");
+ 
+  SMARTattrDefAccss::Set(223, "Load/Unload Retry Count");
+  
+  SMARTattrDefAccss::Set(234, "Average erase count AND Maximum Erase Count");
+  SMARTattrDefAccss::Set(235, "Good Block Count AND System(Free) Block Count");
+  
+  SMARTattrDefAccss::Set(240, "Head Flying Hours/Transfer Error Rate");
+  SMARTattrDefAccss::Set(241, "Total Data Written");
+  SMARTattrDefAccss::Set(242, "Total Data Read");
+  
+  SMARTattrDefAccss::Set(250, "Read Error Retry Rate");
+  
+  SMARTattrDefAccss::Set(254, "Free Fall Protection");
 }
 
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {

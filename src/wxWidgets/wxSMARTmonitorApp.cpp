@@ -391,8 +391,9 @@ bool wxSMARTmonitorApp::OnInit()
 #endif
     if(drctSMARTaccess == false)
       if(initSMARTresult == accessToSMARTdenied)
-        gs_dialog->disableDrctSMARTaccss(wxT("access to SMART denied (maybe due"
-          "to insufficient rights)"));
+        gs_dialog->disableDrctSMARTaccss(wxT("access to SMART denied\n"
+          "(maybe due to insufficient rights\n"
+          "--start as administrator to enable)"));
       else
         gs_dialog->disableDrctSMARTaccss(wxT("no built-in direct SMART access"));
 //    else if( result == SMARTaccessBase::noSingleSMARTdevice )

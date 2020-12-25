@@ -31,6 +31,8 @@ typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
 #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <hardware/CPU/atomic/memory_barrier.h>
+///FileSystem::GetCurrentWorkingDir
+#include <FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
@@ -292,12 +294,19 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
     "\n(C) 2013-" __DATE__ 
     "\nby Stefan Gebauer, M.Sc. Comp. Science, Berlin, Germany");
 
-#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
-  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,
-    wxICON_INFORMATION);
-#else // !__WXMSW__
-    wxMessageBox(message, title, wxICON_INFORMATION | wxOK, this);
-#endif // __WXMSW__/!__WXMSW__
+  std::string currWorkDir;
+  OperatingSystem::GetCurrentWorkingDirA_inl(currWorkDir);
+  
+  ///Current working directory is relevant for reading configuration files.
+  wxString aboutString = message + wxString("\n\ncurrent working directory:\n")
+    + wxWidgets::GetwxString_Inline(currWorkDir);
+  
+//#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
+//  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,
+//    wxICON_INFORMATION);
+//#else // !__WXMSW__
+  wxMessageBox(aboutString, title, wxICON_INFORMATION | wxOK, this);
+//#endif // __WXMSW__/!__WXMSW__
 }
 
 void SMARTdialog::OnOK(wxCommandEvent& WXUNUSED(event))

@@ -24,6 +24,10 @@ public:
   SMARTattrDef(const fastestUnsignedDataType attributeID) {
     m_attributeID = attributeID;
   }
+  SMARTattrDef(const fastestUnsignedDataType attrID, const char attrName []){
+    m_attributeID = attrID;
+    attributeName = attrName;
+  }
   
   fastestUnsignedDataType GetAttributeID() const { return m_attributeID; }
   void SetAttributeID(const fastestUnsignedDataType attributeID) {
