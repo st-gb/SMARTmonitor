@@ -12,7 +12,11 @@ Some units (Power-On Time, Total Data Written, ...) for some
 [S.M.A.R.T. attributes](https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)
 are tried to be determined.
 
-## general
+## General
+
+This affects all builds/targets.
+
+### Invocation
 
 1. Change to _repository_root_/src" directory where 
 [CMakeLists.txt](https://cmake.org/cmake/help/latest/guide/tutorial/index.html#a-basic-starting-point-step-1)
@@ -36,6 +40,34 @@ resides.
       ```
 
     * call the build scripts in _repository_root_/create" directory
+
+### Additional options
+
+Additonal options can be passed either to CMake command line directly or to the
+script file as parameter for "AdditionalCMakeArgs".
+
+If passed to the script for the "AdditionalCMakeOpts" parameter, multiple
+options must be enclosed in brackets:
+
+"_option1_=_value1_ _option2_=_value2_" 
+
+#### Create Debian package
+
+Pass "-Dcr8DebPkg=TRUE" to [CMake](https://cmake.org) command line.
+Call "cpack" afterwards.
+
+#### Specify build type
+
+Pass "-DCMAKE\_BUILD\_TYPE=_type_" to [CMake](https://cmake.org) command line.
+
+The
+[build type](https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html)
+can be 1 of
+
+* Debug
+* Release
+* RelWithDebInfo
+* MinSizeRel
 
 ## Build Examples
 
@@ -87,8 +119,10 @@ if the CMake build system generator created a Makefile:
   there):
 
   ```
-  make -j >number of max. concurrent jobs<
+  make -j _number of max. concurrent jobs_
   ```
+
+  argument right of "-j" should be <= _number of CPU cores_
 
 ## Authors
 
