@@ -16,7 +16,7 @@ class UserInterface
 public:
   class MessageType{
     public:
-    enum messageTypes { success, error, warning};
+    enum messageTypes {success, error, warning, info};
   };
   ~UserInterface() { }
   virtual void ShowMessage(const char * const ) const = 0;

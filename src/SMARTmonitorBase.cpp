@@ -1,4 +1,4 @@
-/** Author: sg
+/** Author: Stefan Gebauer, M.Sc. Comp. Sc.
  * Created on 17. November 2016, 13:05 */
 
 ///Standard C/C++ header files:
@@ -536,6 +536,38 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 }
 #endif
 
+inline void SMARTmonitorBase::WaitForSignalOrTimeout(
+  const fastestUnsignedDataType ms)
+{
+  waitOrSignalEvt.WaitForSignalOrTimeoutInMs(ms);
+/*#ifdef __linux__
+  timespec ts{numberOfSecondsToWaitBetweenSMARTquery,
+    numberOfMilliSecondsToWaitBetweenSMARTquery * 1000000};
+    
+  pthread_cond_timedwait(&cond, &mutex, &ts);
+#endif*/
+}
+
+inline void SMARTmonitorBase::WaitForTimeout(
+  fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery,
+  const fastestUnsignedDataType numberOfMilliSecondsToWaitBetweenSMARTquery)
+{
+  numberOfSecondsToWaitBetweenSMARTquery =
+    numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
+  while (numberOfSecondsToWaitBetweenSMARTquery-- &&
+          SMARTmonitorBase::s_updateSMARTvalues) {
+    /**If this program ends it needs max. the sleep time to terminate.
+    * The lower the argument for sleep the more responsive this 
+    * program gets.
+    * Alternatives (needn't wait the whole time):
+    * -WaitForSingleObjectEx(...) for MS Windows API
+    * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
+    sleep(1);///http://linux.die.net/man/3/sleep
+  }
+  //Sleep in microseconds (1/1000th of a millisecond))
+  usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
+}
+
 ///Function that can be used by clients and service.
 ///It shouldn't be called from the UI thread because getting S.M.A.R.T. infos
 /// needs some milliseconds->blocks the UI in this time.
@@ -562,7 +594,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
     
     const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
       SMARTmonitorBase::GetNumberOfMilliSecondsToWaitBetweenSMARTquery();
-    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;    
+    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;
       
     GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType 
       p_getSMARTvaluesFunction = 
@@ -583,20 +615,11 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
         LOGN_ERROR("get S.M.A.R.T. values function returned non-0")
         break;
       }
-      numberOfSecondsToWaitBetweenSMARTquery =
-        numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
-      while (numberOfSecondsToWaitBetweenSMARTquery-- &&
-              SMARTmonitorBase::s_updateSMARTvalues) {
-        /**If this program ends it needs max. the sleep time to terminate.
-        * The lower the argument for sleep the more responsive this 
-        * program gets.
-        * Alternatives (needn't wait the whole time):
-        * -WaitForSingleObject(...) for MS Windows API
-        * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
-        sleep(1);///http://linux.die.net/man/3/sleep
-      }
-      //Sleep in microseconds (1/1000th of a millisecond))
-      usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
+      /*p_SMARTmonitorBase->WaitForTimeout(
+        numberOfSecondsToWaitBetweenSMARTquery,
+        numberOfMilliSecondsToWaitBetweenSMARTquery);*/
+      p_SMARTmonitorBase->WaitForSignalOrTimeout(
+        numberOfMilliSecondsToWaitBetweenSMARTquery);
     } while (SMARTmonitorBase::s_updateSMARTvalues);
 //    if(SMARTmonitorBase::s_updateSMARTvalues)
       /** The SMARTmonitor object may have already been destroyed if 

@@ -11,6 +11,9 @@
 
 ///common_sourcecode repository header files:
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchType
+///typedef nativeEvent_type
+#include <OperatingSystem/multithread/nativeEvent_type.hpp>
+///typedef nativeThread_type
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
 ///struct CommandLineOption
@@ -76,6 +79,7 @@ public:
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
   bool asynCnnct = false;
+  nativeEvent_type waitOrSignalEvt;
 public:
   SMARTmonitorBase();
   //template<typename charType>
@@ -204,6 +208,11 @@ public:
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
   
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
+  inline void WaitForSignalOrTimeout(
+    const fastestUnsignedDataType numberOfMilliSecondsToWaitBetweenSMARTquery);
+  inline void WaitForTimeout(
+    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery,
+    const fastestUnsignedDataType numberOfMilliSecondsToWaitBetweenSMARTquery);
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
   const wchar_t ** m_cmdLineArgStrings;
