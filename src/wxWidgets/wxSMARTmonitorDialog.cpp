@@ -126,10 +126,30 @@ void SMARTdialog::SetStatus(const wxString & status)
 void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
   currAction)
 {
-  switch(currAction){
+  switch(currAction){//TODO ability to show in different languages
    case SMARTmonitorClient::readNumBytesForSuppSMART_IDs:
-    wxString str(wxT("reading number of bytes for supported S.M.A.R.T: IDs") );
+    {
+    wxString str(wxT("reading number of bytes for supported S.M.A.R.T. IDs") );
     ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::readNumBytesForSMARTdata :
+    {
+    wxString str(wxT("reading number of bytes for S.M.A.R.T. data") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::readSuppSMART_IDsXMLdata:
+    {
+    wxString str(wxT("reading supported S.M.A.R.T. IDs data") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::readSMARTvaluesXMLdata:
+    {
+    wxString str(wxT("reading S.M.A.R.T. data") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
     break;
   }
 }

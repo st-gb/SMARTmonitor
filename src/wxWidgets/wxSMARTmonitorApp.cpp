@@ -205,8 +205,16 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
       m_p_cnnctToSrvDlg = NULL;
     }
 //    SuccessfullyConnectedToClient();
+#if execGetSMARTvalsAndUpd8UIinUIthread
+    GetSMARTvaluesAndUpdateUI();
+#else
     m_GetSMARTvalsAndUpd8UIthread.start(
-    /*if( !*/ GetSMARTvaluesAndUpdateUIthreadFn, this); //)
+      GetSMARTvaluesAndUpdateUIthreadFn,
+      /** Need to upcast to class SMARTmonitorClient else the pointer casted to
+       * class SMARTmonitorClient from "void *" parameter in SMARTmonitorClient
+       * ::GetSMARTvaluesAndUpdateUIthreadFn is wrong. */
+      (SMARTmonitorClient *)this);
+#endif
 //      StartServiceConnectionCountDown(countDownInSeconds);
     gs_dialog->EnableServerInteractingControls(connectResult);
   }
