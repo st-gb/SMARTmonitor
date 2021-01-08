@@ -539,13 +539,15 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 inline void SMARTmonitorBase::WaitForSignalOrTimeout(
   const fastestUnsignedDataType ms)
 {
-  waitOrSignalEvt.WaitForSignalOrTimeoutInMs(ms);
+  LOGN_DEBUG("begin--" << ms << "ms")
+  I_Condition::state st = waitOrSignalEvt.WaitForSignalOrTimeoutInMs(ms);
 /*#ifdef __linux__
   timespec ts{numberOfSecondsToWaitBetweenSMARTquery,
     numberOfMilliSecondsToWaitBetweenSMARTquery * 1000000};
     
   pthread_cond_timedwait(&cond, &mutex, &ts);
 #endif*/
+  LOGN_DEBUG("end--return value of WaitForSignalOrTimeoutInMs:" << st)
 }
 
 inline void SMARTmonitorBase::WaitForTimeout(

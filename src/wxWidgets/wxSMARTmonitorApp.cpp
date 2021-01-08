@@ -208,7 +208,7 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 #if execGetSMARTvalsAndUpd8UIinUIthread
     GetSMARTvaluesAndUpdateUI();
 #else
-    m_GetSMARTvalsAndUpd8UIthread.start(
+    /*m_GetSMARTvalsAndUpd8UIthread*/m_updateSMARTparameterValuesThread.start(
       GetSMARTvaluesAndUpdateUIthreadFn,
       /** Need to upcast to class SMARTmonitorClient else the pointer casted to
        * class SMARTmonitorClient from "void *" parameter in SMARTmonitorClient

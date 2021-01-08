@@ -339,15 +339,17 @@ DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
     int i = sigfillset(&sigmask);
     pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
 
+    SMARTmonitorClient * p_SMARTmonitorClient = p_socketConnectThreadFuncParams
+      ->p_SMARTmonitorClient;
     /** Because returning from connect(...) may take some (see its last
      * parameter) seconds->show timeout in UI.*/
-    p_socketConnectThreadFuncParams->p_SMARTmonitorClient->startCnnctCountDown();
+    p_SMARTmonitorClient->startCnnctCountDown();
+    p_SMARTmonitorClient->SetCurrentAction(SMARTmonitorClient::cnnctToSrv);
     cnnctRslt = connect(p_socketConnectThreadFuncParams->socketFileDesc,
       (struct sockaddr *) & p_socketConnectThreadFuncParams->srvAddr,
       sizeof(p_socketConnectThreadFuncParams->srvAddr) );
     pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
-    p_socketConnectThreadFuncParams->p_SMARTmonitorClient->
-      AfterConnectToServer(cnnctRslt);
+    p_SMARTmonitorClient->AfterConnectToServer(cnnctRslt);
     delete p_socketConnectThreadFuncParams;
   }
   return cnnctRslt;
@@ -387,7 +389,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
     connectThread.start(SocketConnectThreadFunc, p_socketCnnctThrdFnParams);
     BeforeConnectToServer();
   }
-  else
+  else///sychronous connect to server
 #endif
 #endif
   /** http://man7.org/linux/man-pages/man2/connect.2.html :

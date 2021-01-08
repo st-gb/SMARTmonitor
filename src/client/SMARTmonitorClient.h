@@ -22,6 +22,7 @@ class SMARTmonitorClient
 public:
   enum CurrentAction
   {
+    cnnctToSrv,
     readNumBytesForSuppSMART_IDs,
     readSuppSMART_IDsXMLdata,
     readNumBytesForSMARTdata,
@@ -131,7 +132,7 @@ public:
   std::string m_stdstrServerAddress;
 protected:
   tinyxml2::SrvDataProcessor srvDataProcessor;
-  nativeThread_type m_GetSMARTvalsAndUpd8UIthread;
+//  nativeThread_type m_GetSMARTvalsAndUpd8UIthread;
 private:
 };
 

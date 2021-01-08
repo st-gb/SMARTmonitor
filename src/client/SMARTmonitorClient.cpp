@@ -72,6 +72,7 @@ void SMARTmonitorClient::EndUpdateUIthread()
     /** Inform the SMART values update thread about we're going to exit,*/
     //m_wxCloseMutex.TryLock();
     LOGN("disabling update UI (ends update UI thread)");
+    waitOrSignalEvt.Broadcast();
     AtomicExchange( (long *) & s_updateSMARTvalues, 0);
     
     LOGN("waiting for close event");
@@ -170,13 +171,15 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
       & SMARTmonitorBase::GetSMARTattrValsFromSrv;
 #ifdef multithread
-  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+//  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+    /** To start thread object m_updateSMARTparameterValuesThread which is
+     * waited for thread termination at exit. */
     StartAsyncUpdateThread(
       //UpdateSMARTvaluesThreadSafe 
       m_getSMARTvaluesFunctionParams
       );
-  else
-    UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
+//  else
+//    UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
 #else
     UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
 #endif
