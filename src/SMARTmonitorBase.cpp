@@ -1,4 +1,4 @@
-/** Author: sg
+/** Author: Stefan Gebauer, M.Sc. Comp. Sc.
  * Created on 17. November 2016, 13:05 */
 
 ///Standard C/C++ header files:
@@ -29,7 +29,7 @@ typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 /** Static/Class members must be defined once in a source file. Do this here */
 dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
-fastestSignedDataType SMARTmonitorBase::s_updateSMARTvalues = 1;
+AtomicExchType SMARTmonitorBase::s_updateSMARTvalues = 1;
 extern const char FileSystem::dirSeperatorChar;
 CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"logfilefolder", "<absolute or relative log file FOLDER>, e.g. \"/run/\" "
@@ -49,7 +49,8 @@ std::wstring SMARTmonitorBase::s_programOptionValues[beyondLastProgramOptionName
 //}
 
 SMARTmonitorBase::SMARTmonitorBase()
-  : m_socketPortNumber(1000),
+  ///Use port number > well-known ports (1024) for less privileges.
+  : m_socketPortNumber(2000),
     mp_configurationLoader(NULL),
     m_cmdLineArgStrings(NULL),
     m_ar_stdwstrCmdLineArgs(NULL),
@@ -63,6 +64,7 @@ SMARTmonitorBase::SMARTmonitorBase()
 #ifdef directSMARTaccess
   mp_SMARTaccess = & m_SMARTaccess;
 #endif
+  setDfltSMARTattrDef();
   mp_configurationLoader = new tinyxml2::ConfigLoader(
     (SMARTattrDefsType /*&*/) SMARTaccessBase::getSMARTattrDefs(), * this);
   //  InitializeLogger();
@@ -83,6 +85,78 @@ SMARTmonitorBase::~SMARTmonitorBase() {
 //https://gcc.gnu.org/onlinedocs/cpp/Stringification.html#Stringification
 #define xstringify(s) stringify(s)
 #define stringify(s) #s
+
+/** Rationale: even If the S.M.A.R.T. attribute definition configuration file is
+ * missing parameter names are possible. */
+void SMARTmonitorBase::setDfltSMARTattrDef(){
+  SMARTattrDefAccss::Set(1, "Read Error Rate");
+  SMARTattrDefAccss::Set(2, "Throughput Performance");
+  SMARTattrDefAccss::Set(3, "Spin-Up Time");
+  SMARTattrDefAccss::Set(4, "Start/Stop Count");
+  SMARTattrDefAccss::Set(5, "Reallocated Sectors Count");
+  SMARTattrDefAccss::Set(6, "Read Channel Margin");
+  SMARTattrDefAccss::Set(7, "Seek Error Rate");
+  SMARTattrDefAccss::Set(8, "Seek Time Performances");
+  SMARTattrDefAccss::Set(9, "Power-On Time");
+  SMARTattrDefAccss::Set(10, "Spin Retry Count");
+  SMARTattrDefAccss::Set(11, "Recalibration Retries or Calibration Retry Count");
+  SMARTattrDefAccss::Set(12, "Power Cycle Count");
+  
+  SMARTattrDefAccss::Set(100, "Data Erased");
+  
+  SMARTattrDefAccss::Set(168, "SATA Physical Error Count");
+  SMARTattrDefAccss::Set(169, "Bad Block Count");
+  
+  SMARTattrDefAccss::Set(171, "Program Fail Count");
+  SMARTattrDefAccss::Set(172, "SSD Erase Fail Count");
+  
+  SMARTattrDefAccss::Set(174, "Unexpected Power Loss Count");
+  SMARTattrDefAccss::Set(175, "Power Loss Protection Failure");
+  SMARTattrDefAccss::Set(176, "Erase Fail Count");
+  SMARTattrDefAccss::Set(177, "Wear Range Delta");
+  SMARTattrDefAccss::Set(178, "Used Reserved Block Count (Chip)");
+  SMARTattrDefAccss::Set(179, "Used Reserved Block Count Total");
+  SMARTattrDefAccss::Set(180, "Unused Reserved Block Count Total");
+  SMARTattrDefAccss::Set(181, "Program Fail Count");
+  SMARTattrDefAccss::Set(182, "Erase Fail Count");
+  SMARTattrDefAccss::Set(183, "Runtime Bad Blocks");
+  SMARTattrDefAccss::Set(184, "End to End Error");
+  
+  SMARTattrDefAccss::Set(187, "Reported Uncorrectable Errors");
+  SMARTattrDefAccss::Set(188, "Command Timeout");
+  SMARTattrDefAccss::Set(189, "High Fly Writes");
+  SMARTattrDefAccss::Set(190, "Temperature Difference or Airflow Temperature");
+  SMARTattrDefAccss::Set(191, "G-sense Error Rate");
+  SMARTattrDefAccss::Set(192, "Power-off/Emergency Retract Count");
+  SMARTattrDefAccss::Set(193, "Load(/Unload) Cycle Count");
+  SMARTattrDefAccss::Set(194, "Temperature Celsius");
+  SMARTattrDefAccss::Set(195, "Hardware ECC Recovered");
+  SMARTattrDefAccss::Set(196, "Reallocation Event Count");
+  SMARTattrDefAccss::Set(197, "Current Pending Sector Count");
+  SMARTattrDefAccss::Set(198, "Uncorrectable Sector Count");
+  SMARTattrDefAccss::Set(199, "UltraDMA CRC Error Count");
+  SMARTattrDefAccss::Set(200, "Multi-Zone Error Rate or Write Error Rate");
+  SMARTattrDefAccss::Set(201, "Soft Read Error Rate or TA Counter Detected");
+  
+  SMARTattrDefAccss::Set(204, "Soft ECC Correction");
+  
+  SMARTattrDefAccss::Set(212, "Shock During Write");
+  
+  SMARTattrDefAccss::Set(220, "Disk Shift");
+ 
+  SMARTattrDefAccss::Set(223, "Load/Unload Retry Count");
+  
+  SMARTattrDefAccss::Set(234, "Average erase count AND Maximum Erase Count");
+  SMARTattrDefAccss::Set(235, "Good Block Count AND System(Free) Block Count");
+  
+  SMARTattrDefAccss::Set(240, "Head Flying Hours/Transfer Error Rate");
+  SMARTattrDefAccss::Set(241, "Total Data Written");
+  SMARTattrDefAccss::Set(242, "Total Data Read");
+  
+  SMARTattrDefAccss::Set(250, "Read Error Retry Rate");
+  
+  SMARTattrDefAccss::Set(254, "Free Fall Protection");
+}
 
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
   /** IMPORTANT: creating the arrays can't be done in the constructor of this
@@ -462,6 +536,40 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 }
 #endif
 
+inline void SMARTmonitorBase::WaitForSignalOrTimeout(
+  const fastestUnsignedDataType ms)
+{
+  LOGN_DEBUG("begin--" << ms << "ms")
+  I_Condition::state st = waitOrSignalEvt.WaitForSignalOrTimeoutInMs(ms);
+/*#ifdef __linux__
+  timespec ts{numberOfSecondsToWaitBetweenSMARTquery,
+    numberOfMilliSecondsToWaitBetweenSMARTquery * 1000000};
+    
+  pthread_cond_timedwait(&cond, &mutex, &ts);
+#endif*/
+  LOGN_DEBUG("end--return value of WaitForSignalOrTimeoutInMs:" << st)
+}
+
+inline void SMARTmonitorBase::WaitForTimeout(
+  fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery,
+  const fastestUnsignedDataType numberOfMilliSecondsToWaitBetweenSMARTquery)
+{
+  numberOfSecondsToWaitBetweenSMARTquery =
+    numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
+  while (numberOfSecondsToWaitBetweenSMARTquery-- &&
+          SMARTmonitorBase::s_updateSMARTvalues) {
+    /**If this program ends it needs max. the sleep time to terminate.
+    * The lower the argument for sleep the more responsive this 
+    * program gets.
+    * Alternatives (needn't wait the whole time):
+    * -WaitForSingleObjectEx(...) for MS Windows API
+    * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
+    sleep(1);///http://linux.die.net/man/3/sleep
+  }
+  //Sleep in microseconds (1/1000th of a millisecond))
+  usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
+}
+
 ///Function that can be used by clients and service.
 ///It shouldn't be called from the UI thread because getting S.M.A.R.T. infos
 /// needs some milliseconds->blocks the UI in this time.
@@ -470,6 +578,7 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   void * p_v)
 {
+  LOGN_DEBUG("begin")
   struct GetSMARTvaluesFunctionParams * p_getSMARTvalsFnParams =
     (struct GetSMARTvaluesFunctionParams *) p_v;
   try{
@@ -487,7 +596,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
     
     const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
       SMARTmonitorBase::GetNumberOfMilliSecondsToWaitBetweenSMARTquery();
-    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;    
+    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;
       
     GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType 
       p_getSMARTvaluesFunction = 
@@ -504,23 +613,15 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
       res = (*p_SMARTmonitorBase.*p_getSMARTvaluesFunction)();
       if( res == 0 )
         p_SMARTmonitorBase->BeforeWait();
-      else
+      else{
+        LOGN_ERROR("get S.M.A.R.T. values function returned non-0")
         break;
-
-      numberOfSecondsToWaitBetweenSMARTquery =
-              numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
-      while (numberOfSecondsToWaitBetweenSMARTquery-- &&
-              SMARTmonitorBase::s_updateSMARTvalues) {
-        /**If this program ends it needs max. the sleep time to terminate.
-        * The lower the argument for sleep the more responsive this 
-        * program gets.
-        * Alternatives (needn't wait the whole time):
-        * -WaitForSingleObject(...) for MS Windows API
-        * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
-        sleep(1);///http://linux.die.net/man/3/sleep
       }
-      //Sleep in microseconds (1/1000th of a millisecond))
-      usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
+      /*p_SMARTmonitorBase->WaitForTimeout(
+        numberOfSecondsToWaitBetweenSMARTquery,
+        numberOfMilliSecondsToWaitBetweenSMARTquery);*/
+      p_SMARTmonitorBase->WaitForSignalOrTimeout(
+        numberOfMilliSecondsToWaitBetweenSMARTquery);
     } while (SMARTmonitorBase::s_updateSMARTvalues);
 //    if(SMARTmonitorBase::s_updateSMARTvalues)
       /** The SMARTmonitor object may have already been destroyed if 
@@ -533,10 +634,13 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   }
   }///E.g. if rolling file appender and permission denied for the new file.
   catch(LogFileAccessException & lfae){
+    LOGN_ERROR("Log file access exception")
     //TODO does not respond anymore after this exception.
     p_getSMARTvalsFnParams->p_SMARTmonitorBase->ShowMessage(lfae.
       GetErrorMessageA().c_str(), UserInterface::MessageType::error);
   }
+  LOGN_DEBUG("return 0--update S.M.A.R.T. values?:" << SMARTmonitorBase::
+    s_updateSMARTvalues)
   return 0;
 }
 
@@ -567,6 +671,8 @@ void SMARTmonitorBase::StartAsyncUpdateThread(
   struct GetSMARTvaluesFunctionParams & getSMARTvaluesFunctionParams
   )
 {
+  LOGN_DEBUG("# S.M.A.R.T. attributes to observe:" <<
+    m_IDsOfSMARTattrsToObserve.size() )
   /** Preconditions */
   if (m_IDsOfSMARTattrsToObserve.size() > 0) {
 //    struct GetSMARTvaluesFunctionParams

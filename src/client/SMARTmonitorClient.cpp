@@ -7,6 +7,7 @@
 #include <OperatingSystem/BSD/socket/socket.h>///readFromSocket(...)
 #include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
+#include <hardware/CPU/atomic/memory_barrier.h>///memory_barrier(...)
 ///OperatingSystem::GetLastErrorCode()
 #include <OperatingSystem/GetLastErrorCode.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN(...)
@@ -24,6 +25,7 @@
 #include <unistd.h>///close(...), read(...)
 
 /** Static/class variable defintion: */
+fastestUnsignedDataType SMARTmonitorClient::s_UIthreadID;
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
 #ifdef multithread
 //nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
@@ -70,6 +72,7 @@ void SMARTmonitorClient::EndUpdateUIthread()
     /** Inform the SMART values update thread about we're going to exit,*/
     //m_wxCloseMutex.TryLock();
     LOGN("disabling update UI (ends update UI thread)");
+    waitOrSignalEvt.Broadcast();
     AtomicExchange( (long *) & s_updateSMARTvalues, 0);
     
     LOGN("waiting for close event");
@@ -79,11 +82,19 @@ void SMARTmonitorClient::EndUpdateUIthread()
     //m_p_wxCloseCondition->Wait();
     
     m_updateSMARTparameterValuesThread.WaitForTermination();
-    GetSMARTvalsAndUpd8UIthreadID = 0;
-    ChangeState(unconnectedFromService);
+    ///Enable get S.M.A.R.T. values loop.
+    AtomicExchange( (long *) & s_updateSMARTvalues, 1);
+    AtomicExchange( (long *) & GetSMARTvalsAndUpd8UIthreadID, 0);
+    ChangeConnectionState(unconnectedFromService);
   }
 }
 #endif
+
+DWORD SMARTmonitorClient::GetSMARTvaluesAndUpdateUIthreadFn(void * p)
+{
+  SMARTmonitorClient * p_sMARTmonitorClient = (SMARTmonitorClient *)p;
+  p_sMARTmonitorClient->GetSMARTvaluesAndUpdateUI();
+}
 
 /** @brief Gets S.M.A.R.T. values and starts "get S.M.A.R.T. values" loop (in a
  *  dedicated thread if multithreaded) */
@@ -92,8 +103,12 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 #ifdef _DEBUG
   /**Prevent the update thread from running more than once (this brings socket
    * problems--read the wrong size of bytes to receive)*/
-  if( GetSMARTvalsAndUpd8UIthreadID == 0)
-    GetSMARTvalsAndUpd8UIthreadID = OperatingSystem::GetCurrentThreadNumber();
+  if( GetSMARTvalsAndUpd8UIthreadID == 0){
+    const DWORD currentThreadNum = OperatingSystem::GetCurrentThreadNumber();
+//    GetSMARTvalsAndUpd8UIthreadID = currentThreadNum;
+    AtomicExchange( (AtomicExchType *) & GetSMARTvalsAndUpd8UIthreadID,
+      (AtomicExchType) currentThreadNum);
+  }
   else
   {
 //  std::string fnName = compiler::GetCurrFnName();
@@ -108,7 +123,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
   /** Before calling this function the connection should be established. */
   //TODO possibly move this line to after successfull connection.
   m_serverConnectionState = connectedToService;
-  ChangeState(connectedToService);
+  ChangeConnectionState(connectedToService);
   //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
   std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = 
     SMARTuniqueIDsAndValues;
@@ -156,10 +171,15 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
       & SMARTmonitorBase::GetSMARTattrValsFromSrv;
 #ifdef multithread
+//  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+    /** To start thread object m_updateSMARTparameterValuesThread which is
+     * waited for thread termination at exit. */
     StartAsyncUpdateThread(
       //UpdateSMARTvaluesThreadSafe 
       m_getSMARTvaluesFunctionParams
       );
+//  else
+//    UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
 #else
     UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
 #endif
@@ -173,6 +193,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     //TODO use variable m_serviceConnectionCountDownInSeconds as parameter
     StartServiceConnectionCountDown(60);
   }
+  LOGN_DEBUG("end")
 }
 
 /** Called e.g. when server address was given via program options/
@@ -194,7 +215,7 @@ void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues(const bool asyncCnnctT
     m_stdstrServiceHostName.c_str(), asyncCnnctToSvc);
   if(! asyncCnnctToSvc)
   {
-    AfterConnectToServer(connectToServerResult);
+//    AfterConnectToServer(connectToServerResult);
   }
 }
 
@@ -261,7 +282,7 @@ void SMARTmonitorClient::HandleTransmissionError(
   ShowMessage(stdoss.str().c_str(), MessageType::error);
   //TODO set connection status of the user interface to "network errors"/"unconnected"
   m_serverConnectionState = connectedToService;
-  ChangeState(unconnectedFromService);
+  ChangeConnectionState(unconnectedFromService);
   //TODO close socket, set status (also in UI) to unconnected
 }
 
@@ -269,6 +290,7 @@ void SMARTmonitorClient::HandleTransmissionError(
 fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
 {
   dataCarrierIDandSMARTidsContainer.clear();
+  SetCurrentAction(readNumBytesForSuppSMART_IDs);
   fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
   if( numBytesToRead < 1 )
     return readLessBytesThanIntended;
@@ -283,10 +305,13 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
   uint8_t * XMLdata = new uint8_t[numBytesToAllocate];
   if( XMLdata)
   {
-    int numBytesRead = OperatingSystem::BSD::sockets::readFromSocket(
-      m_socketFileDesc, XMLdata, numBytesToRead);
+    unsigned numBytesRead;
+    SetCurrentAction(readSuppSMART_IDsXMLdata);
+    int rdFrmScktRslt = OperatingSystem::BSD::sockets::readFromSocket2(
+      m_socketFileDesc, XMLdata, numBytesToRead, & numBytesRead);
     if(numBytesRead < numBytesToRead) {
-      HandleTransmissionError(SMARTdata, numBytesRead, numBytesToRead);
+      HandleTransmissionError(SMARTdata,//numBytesRead < -1 ? 0 : numBytesRead
+        numBytesRead, numBytesToRead);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
       return 2; //TODO provide error handling (show message to user etc.)
@@ -391,6 +416,7 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
 /// of the S.M.A.R.T. values table.
 void SMARTmonitorClient::UpdateSMARTvaluesUI()
 {
+  LOGN_DEBUG("begin")
   bool atLeast1CriticalNonNullValue = false;
 
   const fastestUnsignedDataType numberOfDifferentDrives = 
@@ -435,12 +461,14 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
         entireSMARTvalRating = SMARTvalueWarning;
     }
   }
+  ChangeConnectionState(valUpd8);
   /** ^= state changed. */
   if(s_atLeast1CriticalNonNullValue != entireSMARTvalRating)
   {
-    ShowStateAccordingToSMARTvalues(entireSMARTvalRating == SMARTvalueWarning);
+    ShowStateAccordingToSMARTvalues(entireSMARTvalRating);
   }
   s_atLeast1CriticalNonNullValue = entireSMARTvalRating;
+  LOGN_DEBUG("end")
 }
 
 bool getRealValue(const std::string & stdstrUnit, const uint64_t SMARTrawVal,
@@ -607,6 +635,7 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
   const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
   void * data)
 {
+  LOGN_DEBUG("begin--S.M.A.R.T. attribute ID:" << SMARTattrID)
   enum SMARTvalueRating sMARTvalueRating;
   uint64_t SMARTrawVal;
   //TODO attribute IDs of SMART values to observe may not be a subset of
@@ -767,5 +796,6 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
 //  else
 //  {//TODO show message that no S.M.A.R.T. attribute definition found
 //  }
+  LOGN_DEBUG("return " << sMARTvalueRating)
   return sMARTvalueRating;
 }

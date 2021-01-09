@@ -1,5 +1,5 @@
 /* File:   SMARTmonitorBase.hpp
- * Author: sg
+ * Author: Stefan Gebauer, M.Sc. Comp.Sc.
  * Created on 17. November 2016, 13:05 */
 
 #ifndef SMARTMONITORBASE_HPP
@@ -10,6 +10,10 @@
 #include <string>///class std::wstring
 
 ///common_sourcecode repository header files:
+#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchType
+///typedef nativeEvent_type
+#include <OperatingSystem/multithread/nativeEvent_type.hpp>
+///typedef nativeThread_type
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
 ///struct CommandLineOption
@@ -53,6 +57,8 @@ class SMARTmonitorBase
   , public SMARTattrDefAccss
 {
 public:
+  enum GetSMARTvalsMode{directSMARTvals, noUpdate};
+  enum GetSMARTvalsMode m_getSMARTvalsMode;
   const struct tm & GetLastSMARTvaluesUpdateTime() const {
     //TODO because "tm" is a struct with multiple fields/members:
     // changes non-atomically in get SMART values thread.
@@ -72,6 +78,8 @@ public:
   ModelAndFirmwareTuplesType m_modelAndFirmwareTuples;
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
+  bool asynCnnct = false;
+  nativeEvent_type waitOrSignalEvt;
 public:
   SMARTmonitorBase();
   //template<typename charType>
@@ -80,6 +88,7 @@ public:
     }*/
   virtual ~SMARTmonitorBase();
   
+  static void setDfltSMARTattrDef();
   /** Needs to persist over the call to 
    *  ::UpdateSMARTparameterValuesThreadFunc(...) so making it a member 
    *  variable is feasible. 
@@ -161,8 +170,9 @@ public:
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
     return s_numberOfMilliSecondsToWaitBetweenSMARTquery;
     }
-  
-  static fastestSignedDataType s_updateSMARTvalues;
+  /* Use same data type as AtomExchange function from common_sourcecode repo
+   * to avoid adress sanitizer errors. */
+  static /*fastestSignedDataType*/ AtomicExchType s_updateSMARTvalues;
   static CommandLineOption/*<char>*/ s_commandLineOptions [] ;
   /*DWORD*/ uint64_t m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
 //  long int m_arSMART_ID[255]; //provide space for up t 255 SMART attribute values
@@ -185,6 +195,7 @@ public:
   fastestUnsignedDataType GetNumSMARTattrToObs(){return m_IDsOfSMARTattrsToObserve.size(); }
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
   void OutputUsage();
+  virtual void SetGetSMARTvalMode(enum GetSMARTvalsMode){};
   CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}
   
   std::wstring GetCommandLineOptionValue(const wchar_t * const cmdLineOptionName);
@@ -197,6 +208,11 @@ public:
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
   
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
+  inline void WaitForSignalOrTimeout(
+    const fastestUnsignedDataType numberOfMilliSecondsToWaitBetweenSMARTquery);
+  inline void WaitForTimeout(
+    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery,
+    const fastestUnsignedDataType numberOfMilliSecondsToWaitBetweenSMARTquery);
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
   const wchar_t ** m_cmdLineArgStrings;

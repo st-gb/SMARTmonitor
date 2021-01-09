@@ -31,6 +31,8 @@ typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
 #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <hardware/CPU/atomic/memory_barrier.h>
+///FileSystem::GetCurrentWorkingDir
+#include <FileSystem/GetCurrentWorkingDir.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
@@ -42,7 +44,8 @@ typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
 
 //from https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case
 //const wxEventType UpdateSMARTparameterValuesInGUIEventType = wxNewEventType();
-DEFINE_LOCAL_EVENT_TYPE(UpdateSMARTparameterValuesInGUIEventType)
+DEFINE_LOCAL_EVENT_TYPE(UpdateSMARTparamValsInGUIevtType)
+DEFINE_LOCAL_EVENT_TYPE(ReBuildUIeventType)
 
 //wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
@@ -53,8 +56,9 @@ BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
     EVT_BUTTON(showSupportedSMART_IDs, SMARTdialog::OnShowSupportedSMART_IDs)
     EVT_BUTTON(CONNECT, SMARTdialog::OnConnectToServer)
     EVT_CLOSE(SMARTdialog::OnCloseWindow)
-    EVT_COMMAND(wxID_ANY, UpdateSMARTparameterValuesInGUIEventType,
+    EVT_COMMAND(wxID_ANY, UpdateSMARTparamValsInGUIevtType,
       SMARTdialog::OnUpdateSMARTparameterValuesInGUI)
+    EVT_COMMAND(wxID_ANY, ReBuildUIeventType, SMARTdialog::OnReBuildUI)
 END_EVENT_TABLE()
 
 //TODO delete this function? Because UpdateSMARTparameterValuesThreadFunc is 
@@ -119,6 +123,43 @@ void SMARTdialog::SetStatus(const wxString & status)
   SetTitle(title);
 }
 
+void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
+  currAction)
+{
+  switch(currAction){//TODO ability to show in different languages
+   case SMARTmonitorClient::cnnctToSrv :
+    {
+    wxString str(wxT("connecting to server") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::readNumBytesForSuppSMART_IDs:
+    {
+    wxString str(wxT("reading number of bytes for supported S.M.A.R.T. IDs") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::readNumBytesForSMARTdata :
+    {
+    wxString str(wxT("reading number of bytes for S.M.A.R.T. data") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::readSuppSMART_IDsXMLdata:
+    {
+    wxString str(wxT("reading supported S.M.A.R.T. IDs data") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::readSMARTvaluesXMLdata:
+    {
+    wxString str(wxT("reading S.M.A.R.T. data") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+  }
+}
+
 void SMARTdialog::EnableShowSupportedSMART_IDs()
 {
   for(SMARTuniqueID2perDataCarrierPanelType::const_iterator iter =
@@ -161,14 +202,15 @@ void SMARTdialog::CreatePerDiskUIctrls(wxSizer * p_sizer)
    * at first and from server later. So empty it.*/
   wxGetApp().m_evtID2SMARTuniqueID.clear();
 
-  fastestUnsignedDataType evtID = showSupportedSMART_IDs;
+  fastestUnsignedDataType windowID = showSupportedSMART_IDs;
   for( ; SMARTuniqueIDandValuesIter != SMARTuniqueIDsAndValues.end() ;
     SMARTuniqueIDandValuesIter ++)
   {
     const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandValuesIter->
       getSMARTuniqueID();
 
-    PerDataCarrierPanel * p_perDataCarrierPanel = new PerDataCarrierPanel(this);
+    PerDataCarrierPanel * p_perDataCarrierPanel = new PerDataCarrierPanel(this,
+      windowID);
     p_sizer->Add(p_perDataCarrierPanel, 1,
       wxEXPAND, 0);
     m_SMARTuniqueID2perDataCarrierPanel.insert(std::make_pair(
@@ -179,14 +221,14 @@ void SMARTdialog::CreatePerDiskUIctrls(wxSizer * p_sizer)
     ///https://wiki.wxwidgets.org/Example_Of_Using_Connect_For_Events
     //TODO use Bind(...) instead as suggested here?:
     // https://wiki.wxwidgets.org/Events#Using_Connect.28.29
-    Connect(/*wxID_HIGHEST+1*/evtID, wxEVT_BUTTON,
+    Connect(/*wxID_HIGHEST+1*/windowID, wxEVT_BUTTON,
       wxCommandEventHandler(SMARTdialog::OnShowSupportedSMART_IDs) );
     LOGN_DEBUG("adding SMART unique ID pointer " << & sMARTuniqueID << " to "
       "m_evtID2SMARTuniqueID")
 
     //TODO Disconnect(...) the event afterwards?
     wxGetApp().m_evtID2SMARTuniqueID.insert(std::make_pair(
-        evtID, & sMARTuniqueID) );
+        windowID, & sMARTuniqueID) );
   }
 }
 
@@ -202,6 +244,7 @@ SMARTdialog::SMARTdialog(
 //  , m_SMARTvalueProcessor( (wxWidgets::wxSMARTvalueProcessor &) SMARTvalueProcessor)
 //  , m_SMARTaccess(SMARTvalueProcessor.getSMARTaccess() )
   , m_wxCloseMutex()
+  , m_p_directSMARTaccesBtn(NULL)
   //, m_wxCloseCondition(m_wxCloseMutex)
 {
   /** Must create the wxCondition on heap. When it was a member of this class 
@@ -238,9 +281,9 @@ void SMARTdialog::buildUI()
   m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT, wxT("&Connect") );
   #ifdef directSMARTaccess
     //TODO only add if sufficient access rights: if(directSMARTaccessAvailable)
-    wxButton * p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,
+    m_p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,
       wxT("&direct S.M.A.R.T.") );
-    sizerBtns->Add(p_directSMARTaccesBtn),
+    sizerBtns->Add(m_p_directSMARTaccesBtn),
   #endif
   sizerBtns->Add(m_p_ConnectAndDisconnectButton, flags);
   /** Needs to compile with wxWidgets headers > 2.8.x */
@@ -290,12 +333,19 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
     "\n(C) 2013-" __DATE__ 
     "\nby Stefan Gebauer, M.Sc. Comp. Science, Berlin, Germany");
 
-#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
-  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,
-    wxICON_INFORMATION);
-#else // !__WXMSW__
-    wxMessageBox(message, title, wxICON_INFORMATION | wxOK, this);
-#endif // __WXMSW__/!__WXMSW__
+  std::string currWorkDir;
+  OperatingSystem::GetCurrentWorkingDirA_inl(currWorkDir);
+  
+  ///Current working directory is relevant for reading configuration files.
+  wxString aboutString = message + wxString("\n\ncurrent working directory:\n")
+    + wxWidgets::GetwxString_Inline(currWorkDir);
+  
+//#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
+//  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,
+//    wxICON_INFORMATION);
+//#else // !__WXMSW__
+  wxMessageBox(aboutString, title, wxICON_INFORMATION | wxOK, this);
+//#endif // __WXMSW__/!__WXMSW__
 }
 
 void SMARTdialog::OnOK(wxCommandEvent& WXUNUSED(event))
@@ -323,18 +373,16 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
 {
   switch(newState)
   {
+    case SMARTmonitorClient::valUpd8:
+      SetTitle(wxGetApp().GetTitleInclDataSrc() + wxT("--last update:") +
+        wxNow() );
+     break;
     case SMARTmonitorClient::connectedToService :
-    {
-      const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
-        wxGetApp().m_stdstrServiceHostName);
-      SetTitle(wxString::Format("wxSMARTmonitor--data from %s:%u", 
-        wxstrServiceAddress,
-        wxGetApp().m_socketPortNumber)
-        );
-    }
+      SetTitle(wxGetApp().GetTitleInclDataSrc() );
       break;
     case SMARTmonitorClient::unconnectedFromService :
     {
+      wxGetApp().GetSMARTvalsAndUpd8UIthreadID = 0;
       wxString wxstrTitle = wxGetApp().GetAppName();
       const struct tm & timeOfLastSMARTvaluesUpdate = wxGetApp().
         GetLastSMARTvaluesUpdateTime();
@@ -346,6 +394,7 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
         wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.c_str() ) );
       SetTitle(wxstrTitle);
     }
+      wxGetApp().ShowSMARTstatusUnknownIcon();
       break;
   }
 }
@@ -386,6 +435,7 @@ void SMARTdialog::ShowMessage(
 /** Rebuilds the lines for SMART IDs and parameter names. */
 void SMARTdialog::ReBuildUserInterface()
 {
+  if(OperatingSystem::GetCurrentThreadNumber() == wxGetApp().s_UIthreadID){
   //TODO remove all PerDataCarrierIDpanel instances.
 //  unsigned itemCount;
 //  while( (itemCount = p_sMARTinfoSizer->GetItemCount() ) > 1)
@@ -398,7 +448,7 @@ void SMARTdialog::ReBuildUserInterface()
   /** The map may contain invalid SMART unique IDs e.g. if direct SMART access
    * at first and from server later. So empty it.*/
   wxGetApp().m_evtID2SMARTuniqueID.clear();
-  fastestUnsignedDataType evtID = showSupportedSMART_IDs;
+  fastestUnsignedDataType windowID = showSupportedSMART_IDs;
 
   SMARTmonitorBase::SMARTuniqueIDandValsContType & SMARTuniqueIDsAndValues =
     wxGetApp().GetSMARTuniqueIDsAndVals();
@@ -413,7 +463,7 @@ void SMARTdialog::ReBuildUserInterface()
       getSMARTuniqueID();
     PerDataCarrierPanel * p_perDataCarrierPanel;
     if(iter == m_SMARTuniqueID2perDataCarrierPanel.end() ){
-      p_perDataCarrierPanel = new PerDataCarrierPanel(this);
+      p_perDataCarrierPanel = new PerDataCarrierPanel(this, windowID);
       p_sMARTinfoSizer->Insert(0, p_perDataCarrierPanel, 1, wxEXPAND, 0);
       m_SMARTuniqueID2perDataCarrierPanel.insert(std::make_pair(
         sMARTuniqueID, p_perDataCarrierPanel) );
@@ -428,7 +478,7 @@ void SMARTdialog::ReBuildUserInterface()
     
     //TODO Works with Bind(...) without event ID but not with Connect(...)
     /*p_perDataCarrierPanel->getSupportedSMART_IDsBtn()->*/Connect(
-      /*wxID_HIGHEST+1*/evtID, wxEVT_BUTTON,
+      /*wxID_HIGHEST+1*/windowID /** window ID */, wxEVT_BUTTON /**eventType*/,
       wxCommandEventHandler(SMARTdialog::OnShowSupportedSMART_IDs) );
     //TODO Disconnect(...) the event afterwards?
 //    p_perDataCarrierPanel->getSupportedSMART_IDsBtn()->Bind(wxEVT_BUTTON,
@@ -436,23 +486,33 @@ void SMARTdialog::ReBuildUserInterface()
     LOGN_DEBUG("adding mapping SMART unique ID pointer " << & sMARTuniqueID <<
       "-> evtID to m_evtID2SMARTuniqueID")
     wxGetApp().m_evtID2SMARTuniqueID.insert(std::make_pair(
-        evtID++, & sMARTuniqueID) );
+        windowID++, & sMARTuniqueID) );
   }
   
     //TODO to support multiple data carriers:
     // p_wxlistctrl = SMARTuniqueID2listCtl[&sMARTuniqueID];
     // p_wxlistctrl->CreateLines();
+  /** Without "Fit()" the main dialog size only contains the general buttons and
+   * message box. */
+  Fit();
+  }
+  else{
+    /** To execute in UI thread.
+     * https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case */
+    wxCommandEvent reBuildUIevent(ReBuildUIeventType);
+    wxPostEvent(this, reBuildUIevent);
+  }
 }
 
 //TODO enable showing supported SMART IDs for multiple disks
 void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent & event)
 {
   ///Get SMART IDentifier from event ID because there may be > 1 data carrier.
-  const int evtID = event.GetId();
-  LOGN_DEBUG("begin--" << evtID)
+  const int windowID = event.GetId();
+  LOGN_DEBUG("begin--" << windowID)
 //  wxString dvcPath = event.GetString();
   const SMARTuniqueID * p_SMARTuniqueID = wxGetApp().m_evtID2SMARTuniqueID[
-    evtID];
+    windowID];
   LOGN_DEBUG("SMART unique ID pointer " << p_SMARTuniqueID)
   if(p_SMARTuniqueID)
   {
@@ -468,7 +528,7 @@ void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent & event)
 void SMARTdialog::EndAllThreadsAndCloseAllOtherTopLevelWindows()
 {
   wxGetApp().EndUpdateUIthread();
-  if( OperatingSystem::GetCurrentThreadNumber() == wxGetApp().s_GUIthreadID )
+  if(OperatingSystem::GetCurrentThreadNumber() == wxGetApp().s_UIthreadID)
   {
     /** This code should only be executed in UI thread! */
     for( std::set<wxTopLevelWindow *>::iterator iter = 
@@ -487,13 +547,21 @@ void SMARTdialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
   Destroy();
 }
 
+void SMARTdialog::OnReBuildUI(wxCommandEvent& event)
+{
+  ReBuildUserInterface();
+}
+
 /**@brief Usually called by posting a wxEVT_COMMAND_BUTTON_CLICKED event */
 void SMARTdialog::OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event)
 {
 //#ifdef _DEBUG
   wxGetApp().UpdateSMARTvaluesUI();
+  LOGN_DEBUG("end")
 }
 
+//TODO move this function to class SMARTmonitorBase? (because it may be needed
+// by all SMARTmonitorBase-derived classes)
 void SMARTdialog::StartAsyncDrctUpd8Thread()
 {
   LOGN_DEBUG("begin")
@@ -506,6 +574,8 @@ void SMARTdialog::StartAsyncDrctUpd8Thread()
 //      wxUpdateSMARTparameterValuesThreadFunc, this);
     wxGetApp().StartAsyncUpdateThread(& SMARTmonitorBase::
       Upd8SMARTvalsDrctlyThreadSafe);
+    
+    wxGetApp().SetGetDirectSMARTvals();
 #endif
   }
   else

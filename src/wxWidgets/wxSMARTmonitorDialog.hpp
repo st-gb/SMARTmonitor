@@ -33,6 +33,7 @@ class SMARTdialog: public wxDialog
   wxTextCtrl * m_p_wxMessageTextCtrl;
 //  wxTimer m_timer;
   wxSizer * p_sMARTinfoSizer;
+  wxButton * m_p_directSMARTaccesBtn;
 public:
   typedef std::map<SMARTuniqueID, PerDataCarrierPanel *>
     SMARTuniqueID2perDataCarrierPanelType;
@@ -50,7 +51,12 @@ public:
   void buildUI();
   void EnableShowSupportedSMART_IDs();
   void CreatePerDiskUIctrls(wxSizer * p_sizer);
+  void disableDrctSMARTaccss(const wxString & cause){
+    m_p_directSMARTaccesBtn->Disable();
+    m_p_directSMARTaccesBtn->SetToolTip(cause);
+  }
   void SetStatus(const wxString &);
+  void ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction);
   void StartAsyncDrctUpd8Thread();
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();
   void UpdateSMARTvaluesUI();
@@ -70,6 +76,7 @@ protected:
   void OnExit(wxCommandEvent& event);
   void OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event));
   void OnConnectToServer(wxCommandEvent& WXUNUSED(event));
+  void OnReBuildUI(wxCommandEvent &);
   void OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event);
   void OnCloseWindow(wxCloseEvent& event);
   void OnTimer(wxTimerEvent& event);
@@ -82,6 +89,6 @@ protected:
   DECLARE_EVENT_TABLE()
 };
 
-DECLARE_LOCAL_EVENT_TYPE(UpdateSMARTparameterValuesInGUIEventType, wxNewEventType())
+DECLARE_LOCAL_EVENT_TYPE(UpdateSMARTparamValsInGUIevtType, wxNewEventType())
  
 #endif /* WXSMARTMONITORDIALOG_HPP_ */

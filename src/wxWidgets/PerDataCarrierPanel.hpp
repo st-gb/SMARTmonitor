@@ -1,10 +1,17 @@
-#pragma once
+#pragma once///Include guard
 
+///wxWidgets header files:
+#include <wx/button.h>///class wxButton
 #include <wx/listctrl.h>///class wxListCtrl
 #include <wx/panel.h>///class wxPanel
+#include <wx/sizer.h>///class wxSizer
 
 #include "SMARTtableListCtrl.hpp"///class wxWidgets::SMARTtableListCtrl
+
+///from Stefan Gebauer's "common_sourcecode" repository :
+///wxWidgets::GetwxString_Inline(...)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN_DEBUG(...)
 
 using namespace wxWidgets;
 
@@ -15,7 +22,7 @@ class PerDataCarrierPanel
   wxButton * m_p_showSupportedSMART_IDs;
 public:
   SMARTtableListCtrl * m_pwxlistctrl;
-  PerDataCarrierPanel(wxWindow * parent)
+  PerDataCarrierPanel(wxWindow * parent, const wxWindowID windowID)
     : wxPanel(parent)
   {
     wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
@@ -32,7 +39,7 @@ public:
     //TODO: retrieve unit all the time until the unit is determined (see class
     // SMARTuniqueID)
   //  m_p_determineUnits() = new wxBitmapButton(this);
-    m_p_showSupportedSMART_IDs = new wxButton(this, wxID_ANY,
+    m_p_showSupportedSMART_IDs = new wxButton(this, windowID,
       wxT("supported SMART IDs"));
 
     diskIDsizer->Add( m_p_wxDataCarrierIDtextCtrl,
@@ -52,7 +59,6 @@ public:
       1 //proportion
       , wxEXPAND //int flag=0
       , /*int border*/ 0);
-  //    return sizerTop;
     SetSizerAndFit(sizerTop);
   }
 

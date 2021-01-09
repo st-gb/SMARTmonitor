@@ -1,9 +1,6 @@
-/*
- * wxSMARTmonitorApp.hpp
- *
+/* wxSMARTmonitorApp.hpp
  *  Created on: 26.11.2013
- *      Author: mr.sys
- */
+ *  Author: Stefan Gebauer, M. Sc. Comp. Sc. */
 
 #ifndef WXSMARTMONITORAPP_HPP_
 #define WXSMARTMONITORAPP_HPP_
@@ -18,6 +15,9 @@
 #include <client/SMARTmonitorClient.h> //base class SMARTmonitorClient
 //#include <libATA_SMART/SMARTaccess.hpp>
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
+#include "wxSMARTmonitorDialog.hpp"///class SMARTdialog
+
+/*static*/ extern SMARTdialog * gs_dialog;
 
 /** Forward declarations: */
 class TaskBarIcon;
@@ -36,7 +36,6 @@ public:
   //SMARTaccess_type & m_SMARTaccess;
   //static const wxString appName;
   TaskBarIcon * m_taskBarIcon;
-  static fastestUnsignedDataType s_GUIthreadID;
   std::map<fastestUnsignedDataType,const SMARTuniqueID *> m_evtID2SMARTuniqueID;
   wxSMARTmonitorApp();
   virtual
@@ -46,12 +45,17 @@ public:
   void AfterConnectToServer(int connectResult);
   void BeforeConnectToServer() {};
   void BeforeWait();
-  void ChangeState(enum serverConnectionState newState);
+  void ChangeConnectionState(enum serverConnectionState newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
   void DisableSrvUIctrls();
   void EnableSrvUIctrls();
+  void EndWaitTillCnnctTimer(){
+    m_wxtimer.Stop();//stop connect timer in main window
+    gs_dialog->SetTitle(GetAppDisplayName() );
+  }
   void GetTextFromUser(const char * label, std::string & );
+  inline wxString GetTitleInclDataSrc();
   bool OnInit();
   void OnTimer(wxTimerEvent& event);
 //  int OnRun();
@@ -67,6 +71,9 @@ public:
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
     const enum SMARTvalueRating, void * data);
+  void SetCurrentAction(enum CurrentAction currAction);
+  void SetGetDirectSMARTvals();
+  void SetGetSMARTvalsMode(const enum GetSMARTvalsMode);
   void ShowConnectionState(const char * const pch, int timeOut);
   void ShwCnnctToSrvrDlg(const std::string &);
   void ShowMessage(const char * const ) const;
@@ -76,15 +83,30 @@ public:
   wxIcon ShowSMARTwarningIcon();
   void ShowIcon(const wxIcon & icon, const wxString & message );
   void startCnnctCountDown();
-  void ShowStateAccordingToSMARTvalues(bool b);
+  void ShowStateAccordingToSMARTvalues(const SMARTvalueRating
+    entireSMARTvalRating);
   void StartServiceConnectionCountDown(const fastestUnsignedDataType);
   void ReBuildUserInterface();
   
   DECLARE_EVENT_TABLE()
-  void OnAfterConnectToServer(wxCommandEvent & );
+  void OnAfterConnectToServer(wxCommandEvent &);
+  void OnChangeState(wxCommandEvent &);
+  void OnCnnctToSrvr(wxCommandEvent &);
   void OnShowMessage(wxCommandEvent & event);
+  void OnShowCurrentAction(wxCommandEvent &);
   void OnStartServiceConnectionCountDown(wxCommandEvent & event);
 };
+
+wxString wxSMARTmonitorApp::GetTitleInclDataSrc()
+{
+  const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
+    m_stdstrServiceHostName);
+  return wxString::Format("wxSMARTmonitor--data from %s:%u in ca. %u ms "
+    "interval",
+    wxstrServiceAddress,
+    m_socketPortNumber,
+    GetNumberOfMilliSecondsToWaitBetweenSMARTquery() );
+}
 
 DECLARE_APP(wxSMARTmonitorApp) //wxGetApp()
 

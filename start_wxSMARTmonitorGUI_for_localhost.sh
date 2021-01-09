@@ -2,4 +2,4 @@
 BASEDIR=$(dirname $0)
 echo $BASEDIR
 cd $BASEDIR
-./wxSMARTmonitor_GUI svcConnConfFile=localhost.xml
+./wxSMARTmonitor_GUI.elf svcConnConfFile=localhost.xml

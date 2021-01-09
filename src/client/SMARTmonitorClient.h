@@ -14,16 +14,29 @@
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater
 #include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
 
+/** Base class for all BSD socket clients that receive data from a.S.M.A.R.T.
+ server */
 class SMARTmonitorClient 
   : public SMARTmonitorBase
 {
 public:
+  enum CurrentAction
+  {
+    cnnctToSrv,
+    readNumBytesForSuppSMART_IDs,
+    readSuppSMART_IDsXMLdata,
+    readNumBytesForSMARTdata,
+    readSMARTvaluesXMLdata
+  };
+
   SMARTmonitorClient();
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
 #ifdef _DEBUG
   DWORD GetSMARTvalsAndUpd8UIthreadID /*= 0*/;
 #endif
+  ///To check whether we need to run UI operations in another thread or not.
+  static fastestUnsignedDataType s_UIthreadID;
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
   static fastestUnsignedDataType s_charPosOAttrNameBegin[ColumnIndices::beyondLast];
   static char * s_columnAttriuteNames [];
@@ -35,7 +48,8 @@ public:
     dataCarrierIDandSMARTidsContainer;
   static SMARTvalueRater s_SMARTvalueRater;
   
-  enum serverConnectionState {connectedToService, unconnectedFromService};
+  enum serverConnectionState {connectedToService, unconnectedFromService,
+    /**to diplay the (local) time of last S.M.A.R.T. value update*/ valUpd8};
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
   
@@ -57,7 +71,7 @@ public:
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
     fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
-  virtual void ChangeState(enum serverConnectionState newState) { };
+  virtual void ChangeConnectionState(enum serverConnectionState newState){}
   void ConnectToServerAndGetSMARTvalues(const bool asyncCnnctToSvc);
   void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
@@ -71,13 +85,16 @@ public:
   fastestSignedDataType ReadNumFollowingBytes();
   fastestUnsignedDataType GetSMARTattrValsFromSrv(//std::set<SMARTuniqueIDandValues> & 
     );
+  bool isAsyncCnnct() const {return asynCnnct;}
   ///Should be called in user interface thread? (because it calls functions to 
   /// create the user interface)
   void GetSMARTvaluesAndUpdateUI();
+  static DWORD GetSMARTvaluesAndUpdateUIthreadFn(void *);
   void HandleTransmissionError(enum TransmissionError,
     const fastestUnsignedDataType numBread,
     const fastestUnsignedDataType numBtoRead);
   
+  virtual void SetCurrentAction(enum CurrentAction){}
   void SetServiceAddress(const std::string & str) {
     m_stdstrServerAddress = str;
   }
@@ -111,10 +128,11 @@ public:
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
     const enum SMARTvalueRating, /**e.g. pointer to list ctrl */void * data){}
-  virtual void ShowStateAccordingToSMARTvalues(bool ) { }
+  virtual void ShowStateAccordingToSMARTvalues(const enum SMARTvalueRating){}
   std::string m_stdstrServerAddress;
 protected:
   tinyxml2::SrvDataProcessor srvDataProcessor;
+//  nativeThread_type m_GetSMARTvalsAndUpd8UIthread;
 private:
 };
 

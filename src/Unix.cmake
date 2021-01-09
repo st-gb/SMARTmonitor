@@ -17,6 +17,8 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
   ${CLIENT_SERVER_BASE_SOURCE_FILES}
   ${CmnSrcOS}/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
   ${CmnSrcOS}/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp
+  #pthread::Condition::WaitForSignalOrTimeoutInMs(...)
+  ${CmnSrcOS}/POSIX/multithread/Event.cpp
 )
 #Needed for direct access to S.M.A.R.T. data, i.e. at least for server/service
 if(directSMARTaccess)

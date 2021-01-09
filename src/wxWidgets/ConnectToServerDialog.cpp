@@ -93,6 +93,9 @@ void ConnectToServerDialog::buildUI(){
     GetTimeOutLabelText(m_timeOutInSeconds) );
   addToHorizSizer(sizerTop, m_p_wxStaticTextTimeout, m_p_timeoutInS_TxtCtrl);
 
+  m_p_timeoutLabel = new wxStaticText(this, wxID_ANY, wxT("current state:"));
+  sizerTop->Add(m_p_timeoutLabel);
+
   wxButton * p_wxCnnctBtn = new wxButton(this, connect, wxT("connect"));
   wxButton * p_wxCancelButton = new wxButton(this, wxID_CANCEL, wxT("cancel"));
   wxSizer * const actionSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -152,7 +155,7 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
     ///https://en.wikipedia.org/wiki/C_signal_handling
     ///Needed, else program exits when calling raise(SIGUSR1).
     signal(SIGUSR1, sigHandler);
-    wxGetApp().ConnectToServerAndGetSMARTvalues(true);
+    wxGetApp().ConnectToServerAndGetSMARTvalues(wxGetApp().isAsyncCnnct() );
   }
   /** Stop timer and close this dialog in "SMARTmonitorClient::
    * AfterCcnnectToServer" (in a derived class) */
@@ -167,8 +170,8 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
   ///https://www.thegeekstuff.com/2011/02/send-signal-to-process/
   /*kill(getpid(), SIGUSR1);*/
   raise(SIGUSR1);///This cancels the waiting in "select(...)".
-  m_timer.Stop();
-  wxGetApp().m_wxtimer.Stop();//stop connect timer in main window
+  EndTimer();
+  wxGetApp().EndWaitTillCnnctTimer();
 }
 
 void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)
@@ -180,14 +183,24 @@ void ConnectToServerDialog::OnStartCntDown(wxCommandEvent & event){
   m_timer.Start(1000);
 }
 
+inline void ConnectToServerDialog::showTimeoutInTitle(){
+  SetTitle(wxString::Format(wxT("%s--timeout in max. ca. %us"), title.c_str(),
+    //TODO In _Linux_: could also use timeout argument from "select(...)"
+    m_timeOutInSeconds) );
+  //TODO set the dialog width to include the title
+  //wxSystemSettings::GetMetric(wxSYS_CAPTION_Y);
+  //MS Windows: SystemParametersInfo SPI_GETNONCLIENTMETRICS NONCLIENTMETRICS
+  // lfCaptionFont
+}
+
 void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
 {
   if( m_timeOutInSeconds > 0)
   {
     m_timeOutInSeconds --;
-    SetTitle(wxString::Format(wxT("%s--timeout in ca. %us"), title.c_str(),
-      //TODO In _Linux_: could also use timeout argument from "select(...)"
-      m_timeOutInSeconds) );
+//    showTimoutInTitle();
+    m_p_timeoutLabel->SetLabel(wxString::Format(
+      wxT("connection timeout in ca. %us"), m_timeOutInSeconds) );
   }
   else{
     m_timer.Stop();
