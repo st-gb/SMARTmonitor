@@ -24,7 +24,15 @@
 #include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <SMARTvalueProcessorBase.hpp> //
-#include <UserInterface/UserInterface.hpp> //base class UserInterface
+#include <UserInterface/UserInterface.hpp>///base class UserInterface
+
+#include <tinyxml2/ConfigLoader.hpp>///tinyxml2::ConfigLoader, loaderParamType
+typedef tinyxml2::ConfigLoader CfgLoaderType;
+
+typedef bool (CfgLoaderType::*loadFuncType)(
+  std::wstring * stdwstrWorkingDirWithConfigFilePrefix,
+  std::string * stdstrFullConfigFilePath,
+  loaderParamType);
 
 #if directSMARTaccess
   #include <SMARTaccType.hpp>///typedef SMARTaccess_type
@@ -68,7 +76,6 @@ public:
   ///attr=attribute Def=definition Cont=container
   typedef std::/*set<SMARTattrDef>*/ map<unsigned,SMARTattrDef> 
     SMARTattrDefContType;
-  typedef SMARTattrDef * SMARTattrDefsType;
   typedef const SMARTattrDefContType constSMARTattrDefContType;
   typedef SMARTattrDefContType::const_iterator 
     SMARTattrContConstIterType;
@@ -144,6 +151,9 @@ public:
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
   virtual void ShowMessage(const char * const msg) const;
+  virtual void ShowMessage(const std::string & str) const{
+    ShowMessage(str.c_str() );
+  }
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
   virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const;
@@ -164,6 +174,7 @@ public:
       getSMARTvaluesFunctionType
     );
 #endif
+  bool tryCfgFilePaths(const wchar_t fileName[], loadFuncType);
   fastestUnsignedDataType Upd8SMARTvalsDrctlyThreadSafe();
   virtual void BeforeWait() { }
   virtual void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult) { }
@@ -220,7 +231,7 @@ protected:
   /** Must persist the OnInit() method because the strings are referred from
    *  libATAsmart's SMART access class. So create the config loader on heap.*/
 //  libConfig::ConfigurationLoader configurationLoader;
-  ConfigurationLoaderBase * mp_configurationLoader;
+  CfgLoaderType m_cfgLoader;
   CommandLineArgs</*charType*/ wchar_t> m_commandLineArgs;
 #ifdef multithread
   nativeThread_type m_updateSMARTparameterValuesThread;

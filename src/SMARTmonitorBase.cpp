@@ -51,7 +51,9 @@ std::wstring SMARTmonitorBase::s_programOptionValues[beyondLastProgramOptionName
 SMARTmonitorBase::SMARTmonitorBase()
   ///Use port number > well-known ports (1024) for less privileges.
   : m_socketPortNumber(2000),
-    mp_configurationLoader(NULL),
+//    mp_cfgLoader(NULL),
+    m_cfgLoader((SMARTmonitor::SMARTattrDefsType /*&*/) SMARTaccessBase::
+      getSMARTattrDefs(), *this),
     m_cmdLineArgStrings(NULL),
     m_ar_stdwstrCmdLineArgs(NULL),
   m_timeOutInSeconds(30)
@@ -65,8 +67,8 @@ SMARTmonitorBase::SMARTmonitorBase()
   mp_SMARTaccess = & m_SMARTaccess;
 #endif
   setDfltSMARTattrDef();
-  mp_configurationLoader = new tinyxml2::ConfigLoader(
-    (SMARTattrDefsType /*&*/) SMARTaccessBase::getSMARTattrDefs(), * this);
+//  mp_cfgLoader = new tinyxml2::ConfigLoader(
+//    (SMARTattrDefsType /*&*/) SMARTaccessBase::getSMARTattrDefs(), * this);
   //  InitializeLogger();
   
   //TODO
@@ -74,8 +76,8 @@ SMARTmonitorBase::SMARTmonitorBase()
 }
 
 SMARTmonitorBase::~SMARTmonitorBase() {
-  if( mp_configurationLoader )
-    delete mp_configurationLoader;
+//  if( mp_cfgLoader )
+//    delete mp_cfgLoader;
   if(m_cmdLineArgStrings )
     delete [] m_cmdLineArgStrings;
   if( m_ar_stdwstrCmdLineArgs)
@@ -85,6 +87,10 @@ SMARTmonitorBase::~SMARTmonitorBase() {
 //https://gcc.gnu.org/onlinedocs/cpp/Stringification.html#Stringification
 #define xstringify(s) stringify(s)
 #define stringify(s) #s
+
+///from https://stackoverflow.com/questions/14421656/is-there-widely-available-wide-character-variant-of-file
+#define makeWchar_concat(x) L##x
+#define makeWchar(x) makeWchar_concat(x)
 
 /** Rationale: even If the S.M.A.R.T. attribute definition configuration file is
  * missing parameter names are possible. */
@@ -703,10 +709,14 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeDirPath(
   {
     std::wstring stdwstrAbsoluteDirPath = stdwstrAbsoluteFilePath.substr(0,
       indexOfLastPathSepChar + 1);
-    fullConfigFilePathWithoutExtension = stdwstrAbsoluteDirPath + L"SMARTmonitor.";
+    fullConfigFilePathWithoutExtension = stdwstrAbsoluteDirPath
+      /* + L"SMARTmonitor."*/;
   }
 }
 
+/** adds configuration dir suffix to \param stdwstrCfgFilePathWoutExt
+ *  \param stdwstrCfgFilePathWoutExt
+ *   gets path from curr work dir if it is empty */
 void SMARTmonitorBase::ConstructConfigFilePath(
   std::wstring & stdwstrCfgFilePathWoutExt)
 {
@@ -752,7 +762,7 @@ void SMARTmonitorBase::ConstructConfigFilePath(
 //      stdwstrConfigPathWithoutExtension);
     
     stdwstrCfgFilePathWoutExt += PATH_SEPERATOR_WCHAR +
-      std::wstring(L"SMARTmonitor.");
+      std::wstring(L"config") + PATH_SEPERATOR_WCHAR;
   }
   //  else /** At least 1 program argument passed. */
   //  {
@@ -777,32 +787,54 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   LOGN("using config file path: \"" << stdwstrCfgFilePathWoutExt << "\"")
 }
 
-fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
+/** tries to load from 2 paths:
+*   -given path
+*   -path relative to curr work dir */
+bool SMARTmonitorBase::tryCfgFilePaths(
+  const wchar_t fileName[],
+  loadFuncType loadFunc
+  )
+{
   enum InitSMARTretCode initSMARTretCode = success;
 
 //TODO pass this folder via CMake argument so it is the same as Debian package
 // (via CPack) installation path
 #if defined( __linux__) && defined(buildService)
-  std::wstring stdwstrWorkDirWithCfgFilePrefix = L"/usr/local/SMARTmonitor";
+  std::wstring stdwstrWorkDirWithCfgFilePrefix =//L"/usr/local/SMARTmonitor";
+    makeWchar(resourcesFSpath);
 #else
   std::wstring stdwstrWorkDirWithCfgFilePrefix;
 #endif
   std::wstring origPath = stdwstrWorkDirWithCfgFilePrefix;
   ConstructConfigFilePath(stdwstrWorkDirWithCfgFilePrefix);
+  stdwstrWorkDirWithCfgFilePrefix += fileName;
+  
+  std::string stdstrFullConfigFilePath;
+  //TODO just for compilation
+  bool successfullyLoadedCfgFile = /*mp_cfgLoader.LoadSMARTCfg*/
+    (m_cfgLoader.*loadFunc)(& stdwstrWorkDirWithCfgFilePrefix, 
+      & stdstrFullConfigFilePath, NULL);
 
-  try {
-    //TODO just for compilation
-    bool successfullyLoadedCfgFile = mp_configurationLoader->
-      LoadSMARTparametersConfiguration(stdwstrWorkDirWithCfgFilePrefix);
+  if(! successfullyLoadedCfgFile)
+    if(origPath != L""){
+      stdwstrWorkDirWithCfgFilePrefix = L"";
+      successfullyLoadedCfgFile = /*mp_cfgLoader->LoadSMARTCfg*/
+        (m_cfgLoader.*loadFunc)(& stdwstrWorkDirWithCfgFilePrefix,
+          & stdstrFullConfigFilePath, NULL);
+    }
+  if(! successfullyLoadedCfgFile)
+    initSMARTretCode = readingConfigFileFailed;
+}
 
-    if(! successfullyLoadedCfgFile)
-      if(origPath != L""){
-        stdwstrWorkDirWithCfgFilePrefix = L"";
-        successfullyLoadedCfgFile = mp_configurationLoader->
-          LoadSMARTparametersConfiguration(stdwstrWorkDirWithCfgFilePrefix);
-      }
-    if(! successfullyLoadedCfgFile)
-      initSMARTretCode = readingConfigFileFailed;
+fastestUnsignedDataType SMARTmonitorBase::InitializeSMART(){
+  enum InitSMARTretCode initSMARTretCode = success;
+
+  try{
+    tryCfgFilePaths(L"en/SMARTattrDefs", & CfgLoaderType::readSMARTattrDefs);
+    tryCfgFilePaths(L"SMARTdataCarrierDefs", & CfgLoaderType::
+      ReadSMARTdataCarrierDefs);
+    tryCfgFilePaths(L"SMARTsrvConn", & CfgLoaderType::ReadSrvCnnctnCfg);
+    
     //    {
     //      //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));
     //      return false;

@@ -3,18 +3,18 @@
  * Created on 27. Dezember 2016, 20:14 */
 #include <stdlib.h>
 
-#include "ConfigLoader.hpp" //class tinyxml2::ConfigLoader
+#include "ConfigLoader.hpp"///this class's tinyxml2::ConfigLoader declaration
 ///FileSystem::GetAbsolutePathA(...)
 #include <FileSystem/File/GetAbsoluteFilePath.hpp>
 #include <Controller/character_string/ConvertStdStringToTypename.hpp>
-#include <tinyxml2.h>
+#include <tinyxml2.h>///class tinyxml2::XMLElement
 #include <SMARTmonitorBase.hpp>
 #include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 
 namespace tinyxml2
 {
 ConfigLoader::ConfigLoader(
-  SMARTmonitorBase::SMARTattrDefsType /*&*/ SMARTattrDefs,
+  SMARTmonitor::SMARTattrDefsType /*&*/ SMARTattrDefs,
   SMARTmonitorBase & r_userInterface)
   : ConfigurationLoaderBase(SMARTattrDefs, r_userInterface)
 {
@@ -27,34 +27,51 @@ ConfigLoader::ConfigLoader(
 ConfigLoader::~ConfigLoader() {
 }
 
-  /** Affects both client and server. */
-  tinyxml2::XMLElement * ConfigLoader::ReadNetworkConfig(
-    tinyxml2::XMLElement * p_tinyxml2XMLelement)
-  {
-    unsigned portNumber;
-    //TODO
-    /** Both client and server need to use the same port. */
-    p_tinyxml2XMLelement = p_tinyxml2XMLelement->
-      FirstChildElement("networkConnection");
-    if( p_tinyxml2XMLelement )
-    {
-      portNumber = p_tinyxml2XMLelement->IntAttribute("portNumber", 0);
-      if( portNumber != 0 )
-      {
-        m_r_SMARTmonitorBase.m_socketPortNumber = portNumber;
-        LOGN("setting port number to " << portNumber)
-      }
-      const char * p_chAttributeValue = p_tinyxml2XMLelement->Attribute("serviceHostName", 
-        /** Value: specify '0' in order to retrieve the value */ NULL);
-      if( p_chAttributeValue )
-      {
-        m_r_SMARTmonitorBase.m_stdstrServiceHostName = p_chAttributeValue;
-        LOGN("setting service host name to " << p_chAttributeValue)
-      }
-    }
-    return p_tinyxml2XMLelement;
+/** Affects both client and server.
+ *  \param p_tinyxml2XMLelement if NULL file @param *p_stdstrFullConfigFilePath
+ *   is openend*/
+bool ConfigLoader::ReadSrvCnnctnCfg(
+  std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix,
+  std::string * p_stdstrFullConfigFilePath,
+  tinyxml2::XMLElement * p_tinyxml2XMLele)
+{
+  unsigned portNumber;
+  tinyxml2::XMLDocument tinyXML2Doc;
+  if(p_tinyxml2XMLele == NULL){
+    p_tinyxml2XMLele = OpenConfigFile(
+      *p_stdwstrWorkingDirWithConfigFilePrefix, * p_stdstrFullConfigFilePath,
+      tinyXML2Doc);
   }
-  
+  if(! p_tinyxml2XMLele)
+    return false;
+  //TODO
+  /** Both client and server need to use the same port. */
+  p_tinyxml2XMLele = p_tinyxml2XMLele->FirstChildElement("networkConnection");
+  if(p_tinyxml2XMLele)
+  {
+    portNumber = p_tinyxml2XMLele->IntAttribute("portNumber", 0);
+    if( portNumber != 0 )
+    {
+      m_r_SMARTmonitorBase.m_socketPortNumber = portNumber;
+      LOGN("setting port number to " << portNumber)
+    }
+    else
+      return false;
+    const char * p_chAttrVal = p_tinyxml2XMLele->Attribute("serviceHostName",
+      /** Value: specify '0' in order to retrieve the value */ NULL);
+    if(p_chAttrVal)
+    {
+      m_r_SMARTmonitorBase.m_stdstrServiceHostName = p_chAttrVal;
+      LOGN("setting service host name to " << p_chAttrVal)
+    }
+    else
+      return false;
+  }
+  else
+    return false;
+  return true;
+}
+
 void ConfigLoader::GetSMARTattributesToObserve(
   const tinyxml2::XMLElement * p_tinyxml2XMLele)
 {
@@ -98,117 +115,161 @@ void ConfigLoader::GetSMARTattributesToObserve(
     m_r_SMARTmonitorBase.m_SMARTattrIDsToObs[SMARTattrIDtoObsIdx] = 0;
 }
 
-bool ConfigLoader::LoadSMARTparametersConfiguration(
-    //libconfig::Setting & root
-  const std::wstring & stdwstrWorkingDirWithConfigFilePrefix )
+/** \param p_stdwstrWorkingDirWithConfigFilePrefix needed when opening a file
+* \param p_stdstrFullConfigFilePath needed when getting the full file path
+* \param p_tinyxml2XMLele by passing this parameter either a file with multiple
+sections (server connection configuration, S.M.A.R.T. attribute definitions,...)
+* or with only 1 section can be read. If it has only 1 section then pass NULL
+*  to let it be opened. */
+bool ConfigLoader::readSMARTattrDefs(
+  std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix,
+  std::string * p_stdstrFullConfigFilePath,
+  tinyxml2::XMLElement * p_tinyxml2XMLelement
+  )
 {
-    std::string stdstrFullConfigFilePath;
-
-    /** IMPORTANT: Need to hold the XMLDocument object here (outside of call to 
-     *  OpenConfigFile) */
-    tinyxml2::XMLDocument tinyXML2Doc;
-    tinyxml2::XMLElement * p_tinyxml2XMLelement = OpenConfigFile(
-      stdwstrWorkingDirWithConfigFilePrefix, stdstrFullConfigFilePath,
+  tinyxml2::XMLDocument tinyXML2Doc;
+  if(p_tinyxml2XMLelement == NULL){
+    p_tinyxml2XMLelement = OpenConfigFile(
+      *p_stdwstrWorkingDirWithConfigFilePrefix, * p_stdstrFullConfigFilePath,
       tinyXML2Doc);
-    if( ! p_tinyxml2XMLelement )
-      return false;
-    
-    //const char * arch = p_tinyxml2XMLelement->Value();
-//    m_smartAttributesToObserve.clear();
-  SMARTattrDefAccss::clearSMARTattrDefs();
-
-      SMARTattrDef sMARTattrDef;
-        //libConfig.lookupValue("testImageFilePath", m_cfgData.testImageFilePath);
-
-      ReadNetworkConfig(p_tinyxml2XMLelement);
-  readModelAndFirmwareCfg(p_tinyxml2XMLelement);
-      GetSMARTattributesToObserve(p_tinyxml2XMLelement);
-
-      p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
-        "SMART_parameters");
-      if( ! p_tinyxml2XMLelement )
-      {
-        m_r_SMARTmonitorBase.ShowMessage("no \"SMART_parameters\" element in XML file");
-        return false;
-      }
-      p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
-        "SMART_parameter");
-      if( ! p_tinyxml2XMLelement )
-      {
-        m_r_SMARTmonitorBase.ShowMessage("no \"SMART_parameters\" element in XML file");
-        return false;
-      }
+  }
+  if(! p_tinyxml2XMLelement)
+    return false;
+  std::string xmlEleName = "SMART_parameters";
+  p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
+    xmlEleName.c_str() );
+  if( ! p_tinyxml2XMLelement )
+  {
+    m_r_SMARTmonitorBase.ShowMessage("no \"" + xmlEleName + "\" element in "
+      "XML file");
+    return false;
+  }
+  xmlEleName = "SMART_parameter";
+  p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
+    xmlEleName.c_str() );
+  if( ! p_tinyxml2XMLelement )
+  {
+    m_r_SMARTmonitorBase.ShowMessage("no \"" + xmlEleName + "\" element in "
+      "XML file");
+    return false;
+  }
 //      const int numCritical_SMART_parameters = p_tinyxml2XMLelement->.getLength();
 //      std::tstring std_tstr;
-      bool criticalSMARTattribute = false;
-      
+  bool criticalSMARTattribute = false;
+
 //      for(int SMARTparameterIndex = 0; SMARTparameterIndex
 //        < numCritical_SMART_parameters; ++ SMARTparameterIndex)
-      char * p_ch;
-      int sMARTattrID;
-      std::string std_strCritical;
-      std::string std_strAttribName, std_strAttribDetails;
-      do
-      {
-        sMARTattrID = p_tinyxml2XMLelement->IntAttribute("Id", 0);
-        if( sMARTattrID != 0 )
-        {
-          p_ch = (char *) p_tinyxml2XMLelement->Attribute("Name", 
-            /** Value: specify '0' in order to retrieve the value */ NULL);
-          if( p_ch)
-            std_strAttribName = p_ch;
+  char * p_ch;
+  int sMARTattrID;
+  ///Really clear all, even the default ones from SMARTmonBase?
+  SMARTattrDefAccss::clearSMARTattrDefs();
+  SMARTattrDef sMARTattrDef;
+  std::string std_strCritical;
+  std::string std_strAttribName, std_strAttribDetails;
+  do
+  {
+    sMARTattrID = p_tinyxml2XMLelement->IntAttribute("Id", 0);
+    if( sMARTattrID != 0 )
+    {
+      p_ch = (char *) p_tinyxml2XMLelement->Attribute("Name", 
+        /** Value: specify '0' in order to retrieve the value */ NULL);
+      if( p_ch)
+        std_strAttribName = p_ch;
 //            const bool successfullyLookedUpDetails = critical_SMART_parameter.
 //              lookupValue("Details", std_strAttribDetails);
-          p_ch = (char *) p_tinyxml2XMLelement->Attribute("Critical", 
-            /** Value: specify '0' in order to retrieve the value */ NULL);
-          criticalSMARTattribute = false;
-          if( p_ch )
-          {
-            std_strCritical = p_ch;
-            LOGN_DEBUG("found \"Critical\" attribute.Value is:" << 
-              std_strCritical )
-            if( std_strCritical == "yes" )
-              criticalSMARTattribute = true;
-          }
+      p_ch = (char *) p_tinyxml2XMLelement->Attribute("Critical", 
+        /** Value: specify '0' in order to retrieve the value */ NULL);
+      criticalSMARTattribute = false;
+      if( p_ch )
+      {
+        std_strCritical = p_ch;
+        LOGN_DEBUG("found \"Critical\" attribute.Value is:" << 
+          std_strCritical )
+        if( std_strCritical == "yes" )
+          criticalSMARTattribute = true;
+      }
 
-          sMARTattrDef.SetCritical(criticalSMARTattribute);
-          LOGN_DEBUG("Critical value for " << 
-            sMARTattrID << ":" << criticalSMARTattribute )
-          if( ! std_strAttribName.empty() )
-          {
-            sMARTattrDef.SetAttributeID(sMARTattrID);
+      sMARTattrDef.SetCritical(criticalSMARTattribute);
+      LOGN_DEBUG("Critical value for " << 
+        sMARTattrID << ":" << criticalSMARTattribute )
+      if( ! std_strAttribName.empty() )
+      {
+        sMARTattrDef.SetAttributeID(sMARTattrID);
 //            attributeNamesFromConfigFile.insert(std_strAttribName);
 //            std::set<std::string>::const_iterator citer =
 //              attributeNamesFromConfigFile.find(std_strAttribName);
 //            if( citer != attributeNamesFromConfigFile.end() )
-              //use pointer from member var instead of from stack.
-              sMARTattrDef.SetName(std_strAttribName.c_str() );
+        //use pointer from member var instead of from stack.
+        sMARTattrDef.SetName(std_strAttribName.c_str() );
 
         SMARTattrDefAccss::Add(sMARTattrDef);
-          LOGN_DEBUG( "using SMART entry at address " << 
-        SMARTattrDefAccss::getSMARTattrDef(sMARTattrID) )
-            LOGN("adding SMART ID" << sMARTattrID /*<< "to " 
-              << mp_smartAttributes*/)
-          }
-        }
-        else
-        {
-          std::ostringstream std_oss;
-          std_oss << "warning: no \"Id\" parameter provided for SMART "
-            "parameter in file \"" << stdstrFullConfigFilePath << "\"";
+        LOGN_DEBUG( "using SMART entry at address " << 
+          SMARTattrDefAccss::getSMARTattrDef(sMARTattrID) )
+        LOGN("adding SMART ID" << sMARTattrID /*<< "to " 
+          << mp_smartAttributes*/)
+      }
+    }
+    else
+    {
+      std::ostringstream std_oss;
+      std_oss << "warning: no \"Id\" parameter provided for SMART "
+        "parameter in file \"" << * p_stdstrFullConfigFilePath << "\"";
 //            << ":" << critical_SMART_parameter.getSourceLine();
-          m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
-        }
-        p_tinyxml2XMLelement = p_tinyxml2XMLelement->NextSiblingElement();
-      }while(p_tinyxml2XMLelement );
-    return true;
-  }
+      m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
+    }
+    p_tinyxml2XMLelement = p_tinyxml2XMLelement->NextSiblingElement();
+  }while(p_tinyxml2XMLelement );
+  return true;
+}
+
+/** \param tinyXML2Doc: Need to hold the XMLDocument object outside of call to 
+ *  OpenConfigFile */
+tinyxml2::XMLElement * ConfigLoader::openCfgFile(
+  const std::wstring & stdwstrWorkingDirWithConfigFilePrefix,
+  tinyxml2::XMLDocument & tinyXML2Doc)
+{
+  std::string stdstrFullConfigFilePath;
+
+  tinyxml2::XMLElement * p_tinyxml2XMLelement = OpenConfigFile(
+    stdwstrWorkingDirWithConfigFilePrefix, stdstrFullConfigFilePath,
+    tinyXML2Doc);
+  return p_tinyxml2XMLelement;
+}
+
+///read various configurations: conn., S.M.A.R.T. attr def.from a single file.
+bool ConfigLoader::LoadSMARTcfg(
+  const std::wstring & stdwstrWorkingDirWithConfigFilePrefix)
+{
+  tinyxml2::XMLDocument tinyXML2Doc;
+  tinyxml2::XMLElement * p_tinyxml2XMLelement = openCfgFile(
+    stdwstrWorkingDirWithConfigFilePrefix, tinyXML2Doc);
+
+//    m_smartAttributesToObserve.clear();
+
+  ReadSrvCnnctnCfg(NULL, NULL, p_tinyxml2XMLelement);
+  ReadSMARTdataCarrierDefs(NULL, NULL, p_tinyxml2XMLelement);
+  GetSMARTattributesToObserve(p_tinyxml2XMLelement);
+
+  readSMARTattrDefs(NULL, NULL, p_tinyxml2XMLelement);
+  return true;
+}
 
 /** Model and firmware for a HDD/SSD determine the S.M.A.R.T. parameter units .
  * : if the firmware changes for a model then the parameter unit may change. */
-void ConfigLoader::readModelAndFirmwareCfg(const tinyxml2::XMLElement *
-  const p_rootXMLele)
+bool ConfigLoader::ReadSMARTdataCarrierDefs(
+  std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix,
+  std::string * p_stdstrFullConfigFilePath,
+  tinyxml2::XMLElement * p_rootXMLele)
 {
+  tinyxml2::XMLDocument tinyXML2Doc;
+  if(p_rootXMLele == NULL){
+//    opencfgfile();
+    p_rootXMLele = OpenConfigFile(
+      *p_stdwstrWorkingDirWithConfigFilePrefix, * p_stdstrFullConfigFilePath,
+      tinyXML2Doc);
+  }
+  if(! p_rootXMLele)
+    return false;
   const tinyxml2::XMLElement * p_dataCarrierXMLele = p_rootXMLele->
     FirstChildElement("data_carrier");
   while(p_dataCarrierXMLele)
@@ -238,6 +299,7 @@ void ConfigLoader::readModelAndFirmwareCfg(const tinyxml2::XMLElement *
     }
     p_dataCarrierXMLele = p_dataCarrierXMLele->NextSiblingElement("data_carrier");
   }
+  return true;
 }
 
   void ConfigLoader::ReadServiceConnectionSettings(
@@ -255,9 +317,10 @@ void ConfigLoader::readModelAndFirmwareCfg(const tinyxml2::XMLElement *
     if( ! p_tinyxml2XMLelement )
       return;
     
-    ReadNetworkConfig(p_tinyxml2XMLelement);
+    ReadSrvCnnctnCfg(NULL, NULL, p_tinyxml2XMLelement);
   }
 
+  /** \return root element of the XML document. */
   tinyxml2::XMLElement * ConfigLoader::OpenConfigFile(
     const std::string & stdstrFullConfigFilePath,
     tinyxml2::XMLDocument & tinyXML2Doc)

@@ -42,9 +42,9 @@
 /** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
  *  to ‘char*’" when including the "xpm" file */
 GCC_DIAG_OFF(write-strings)
-#include "../S.M.A.R.T._OK.xpm"
-#include "../S.M.A.R.T._unknown.xpm"
-#include "../S.M.A.R.T._warning.xpm"
+#include "../icons/S.M.A.R.T._OK.xpm"
+#include "../icons/S.M.A.R.T._unknown.xpm"
+#include "../icons/S.M.A.R.T._warning.xpm"
 GCC_DIAG_ON(write-strings)
 #include "SetSMARTattrEvent.hpp"///class SetSMARTattrEvent
 #include "wxSMARTmonitorApp.hpp"
@@ -393,7 +393,7 @@ bool wxSMARTmonitorApp::OnInit()
     const fastestUnsignedDataType initSMARTresult = InitializeSMART();
     std::wstring stdwstrServiceConnectionConfigFile = 
       s_programOptionValues[serviceConnectionConfigFile];
-    mp_configurationLoader->ReadServiceConnectionSettings(
+    m_cfgLoader.ReadServiceConnectionSettings(
       stdwstrServiceConnectionConfigFile );
 
 //    ShowSMARTokIcon();
@@ -452,6 +452,13 @@ void wxSMARTmonitorApp::EnableSrvUIctrls(){
   gs_dialog->m_p_ConnectAndDisconnectButton->Enable(true);
 }
 
+inline void createIconFilePath(wxString & iconFilePath, const wxString &
+  iconFileName)
+{
+  iconFilePath += wxFILE_SEP_PATH + wxT("icons") + wxFILE_SEP_PATH +
+    iconFileName;
+}
+
 bool wxSMARTmonitorApp::GetIcon(
   wxIcon & icon,
   wxString iconFileName, 
@@ -473,17 +480,23 @@ bool wxSMARTmonitorApp::GetIcon(
   wxLogNull noDbgMsgs;///Disable wxWidgets (debug) messages when loading file.
 
   bool bIconFileSuccessfullyLoaded = false;
-  wxString iconFilePath;
+  wxString defaultIconFilePath;
 #ifdef __linux__
   ///Path after installing via deb package manager.
   //TODO maybe pass this path from cmake to also use in createDebPkg.cmake
-  iconFilePath = wxT("/usr/local/SMARTmonitor");
+  defaultIconFilePath = //wxT("/usr/local/SMARTmonitor");
+    /** Use a preprocessor macro in order to use the same value for creating
+     *  Debian package.
+     *  Pass "-DresourcesFSpath=STRING:>>resourcesFSpath<< when using CMake.
+     *  Needs preprocessor macro with name "resourcesFSpath".
+     * Get value for preprocessor macro and make wxT() literal of it. */
+    wxSTRINGIZE(resourcesFSpath);
 #else
-  iconFilePath = wxGetCwd();
+  defaultIconFilePath = wxGetCwd();
 #endif
-  iconFilePath += wxFILE_SEP_PATH + iconFileName;
+  createIconFilePath(defaultIconFilePath, iconFileName);
   bIconFileSuccessfullyLoaded = icon.LoadFile(
-    iconFilePath,
+    defaultIconFilePath,
     wxbitmapType);
   if(! bIconFileSuccessfullyLoaded)
   {
@@ -493,12 +506,14 @@ bool wxSMARTmonitorApp::GetIcon(
     std::wstring exeFilePath = m_commandLineArgs.GetProgramPath();
     std::wstring exeFileDir = exeFilePath.substr(0,
       exeFilePath.rfind(FileSystem::dirSeperatorCharW) +1);
-    wxString iconFilePath2 = getwxString_inline(exeFileDir) + iconFileName;
+    wxString iconFilePathFromExe = getwxString_inline(exeFileDir);
+    createIconFilePath(iconFilePathFromExe, iconFileName);
 
-    bIconFileSuccessfullyLoaded = icon.LoadFile(iconFilePath2, wxbitmapType);
+    bIconFileSuccessfullyLoaded = icon.LoadFile(iconFilePathFromExe, wxbitmapType);
     if(! bIconFileSuccessfullyLoaded){
       wxMessageBox( wxT("Loading icon file(s)\n-\"") +
-        iconFilePath + wxT("\"\n-\"") + iconFilePath2 + wxT("\"\n failed") );
+        defaultIconFilePath + wxT("\"\n-\"") + iconFilePathFromExe +
+        wxT("\"\n failed") );
       ///Loading a (custom) icon from file failed, so provide a pre-defined one.
       icon = wxIcon(inMemoryIcon);
     }

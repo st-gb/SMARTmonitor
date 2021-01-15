@@ -1,6 +1,6 @@
 <options>
 <networkConnection
-  portNumber="1000"
+  portNumber="2000"
   serviceHostName="localhost"
   retryWaitTimeInS="300"
 />
