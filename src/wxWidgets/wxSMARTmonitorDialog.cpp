@@ -256,6 +256,14 @@ void SMARTdialog::buildUI()
   sizerBtns->Add(new wxButton(this, wxID_EXIT, wxT("E&xit")), flags);
 
   p_sMARTinfoSizer->Add(sizerBtns, flags.Align(wxALIGN_CENTER_HORIZONTAL));
+  //TODO avoid "Gtk-CRITICAL **: 19:22:10.000: gtk_box_gadget_distribute: 
+  // assertion 'size >= 0' failed in GtkScrollbar"
+  /** https://gitlab.gnome.org/GNOME/gtk/-/issues/210
+   * "Hi all, as a workaround, and for anyone finding this bug report from a
+   * search engine, I added a set_size_request(100, 200) call to my
+   * Gtk.ScrolledWindow() and the warnings disappeared. I originally added the
+   * set_size_request to a widget contained in the ScrolledWindow, and that
+   * worked too." */
   m_p_wxMessageTextCtrl = new wxTextCtrl(this, wxID_ANY, wxT(""), 
     wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE );
   m_p_wxMessageTextCtrl->SetEditable(false);
