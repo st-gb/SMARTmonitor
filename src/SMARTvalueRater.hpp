@@ -6,6 +6,8 @@
 #define SMARTVALUERATER_HPP
 
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
+#include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
+
 //TODO encapsulate in own namespace?
 enum SMARTvalueRating{noCriticalValue,SMARTvalueOK,SMARTvalueWarning,unknown};
 

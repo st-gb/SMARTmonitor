@@ -36,7 +36,6 @@ public:
   //SMARTaccess_type & m_SMARTaccess;
   //static const wxString appName;
   TaskBarIcon * m_taskBarIcon;
-  static fastestUnsignedDataType s_GUIthreadID;
   std::map<fastestUnsignedDataType,const SMARTuniqueID *> m_evtID2SMARTuniqueID;
   wxSMARTmonitorApp();
   virtual
@@ -46,7 +45,7 @@ public:
   void AfterConnectToServer(int connectResult);
   void BeforeConnectToServer() {};
   void BeforeWait();
-  void ChangeState(enum serverConnectionState newState);
+  void ChangeConnectionState(enum serverConnectionState newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
   void DisableSrvUIctrls();
@@ -72,6 +71,7 @@ public:
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
     const enum SMARTvalueRating, void * data);
+  void SetCurrentAction(enum CurrentAction currAction);
   void SetGetDirectSMARTvals();
   void SetGetSMARTvalsMode(const enum GetSMARTvalsMode);
   void ShowConnectionState(const char * const pch, int timeOut);
@@ -89,9 +89,11 @@ public:
   void ReBuildUserInterface();
   
   DECLARE_EVENT_TABLE()
-  void OnAfterConnectToServer(wxCommandEvent & );
+  void OnAfterConnectToServer(wxCommandEvent &);
+  void OnChangeState(wxCommandEvent &);
   void OnCnnctToSrvr(wxCommandEvent &);
   void OnShowMessage(wxCommandEvent & event);
+  void OnShowCurrentAction(wxCommandEvent &);
   void OnStartServiceConnectionCountDown(wxCommandEvent & event);
 };
 

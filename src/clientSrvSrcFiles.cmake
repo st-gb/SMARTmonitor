@@ -11,6 +11,11 @@ endif()
 #getAbsPath(${TINYXML2_ROOT_PATH} "${SMARTmonSrcDir}/../../../tinyxml2-master")
 message("TINYXML2_ROOT_PATH: ${TINYXML2_ROOT_PATH}")
 
+if(DEFINED resourcesFSpath)
+  message("resourcesFSpath defined")
+  set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DresourcesFSpath=${resourcesFSpath}")
+endif()
+
 #Source files needed for both client/GUI and server builds.
 if(DEFINED multithread)
   message("multithread defined")

@@ -1,4 +1,4 @@
-/** Author: sg
+/** Author: Stefan Gebauer, M.Sc. Comp. Sc.
  * Created on 17. November 2016, 13:05 */
 
 ///Standard C/C++ header files:
@@ -49,8 +49,11 @@ std::wstring SMARTmonitorBase::s_programOptionValues[beyondLastProgramOptionName
 //}
 
 SMARTmonitorBase::SMARTmonitorBase()
-  : m_socketPortNumber(1000),
-    mp_configurationLoader(NULL),
+  ///Use port number > well-known ports (1024) for less privileges.
+  : m_socketPortNumber(2000),
+//    mp_cfgLoader(NULL),
+    m_cfgLoader((SMARTmonitor::SMARTattrDefsType /*&*/) SMARTaccessBase::
+      getSMARTattrDefs(), *this),
     m_cmdLineArgStrings(NULL),
     m_ar_stdwstrCmdLineArgs(NULL),
   m_timeOutInSeconds(30)
@@ -64,8 +67,8 @@ SMARTmonitorBase::SMARTmonitorBase()
   mp_SMARTaccess = & m_SMARTaccess;
 #endif
   setDfltSMARTattrDef();
-  mp_configurationLoader = new tinyxml2::ConfigLoader(
-    (SMARTattrDefsType /*&*/) SMARTaccessBase::getSMARTattrDefs(), * this);
+//  mp_cfgLoader = new tinyxml2::ConfigLoader(
+//    (SMARTattrDefsType /*&*/) SMARTaccessBase::getSMARTattrDefs(), * this);
   //  InitializeLogger();
   
   //TODO
@@ -73,8 +76,8 @@ SMARTmonitorBase::SMARTmonitorBase()
 }
 
 SMARTmonitorBase::~SMARTmonitorBase() {
-  if( mp_configurationLoader )
-    delete mp_configurationLoader;
+//  if( mp_cfgLoader )
+//    delete mp_cfgLoader;
   if(m_cmdLineArgStrings )
     delete [] m_cmdLineArgStrings;
   if( m_ar_stdwstrCmdLineArgs)
@@ -85,19 +88,53 @@ SMARTmonitorBase::~SMARTmonitorBase() {
 #define xstringify(s) stringify(s)
 #define stringify(s) #s
 
+///from https://stackoverflow.com/questions/14421656/is-there-widely-available-wide-character-variant-of-file
+#define makeWchar_concat(x) L##x
+#define makeWchar(x) makeWchar_concat(x)
+
+/** Rationale: even If the S.M.A.R.T. attribute definition configuration file is
+ * missing parameter names are possible. */
 void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(1, "Read Error Rate");
   SMARTattrDefAccss::Set(2, "Throughput Performance");
   SMARTattrDefAccss::Set(3, "Spin-Up Time");
   SMARTattrDefAccss::Set(4, "Start/Stop Count");
   SMARTattrDefAccss::Set(5, "Reallocated Sectors Count");
+  SMARTattrDefAccss::Set(6, "Read Channel Margin");
   SMARTattrDefAccss::Set(7, "Seek Error Rate");
   SMARTattrDefAccss::Set(8, "Seek Time Performances");
   SMARTattrDefAccss::Set(9, "Power-On Time");
   SMARTattrDefAccss::Set(10, "Spin Retry Count");
   SMARTattrDefAccss::Set(11, "Recalibration Retries or Calibration Retry Count");
   SMARTattrDefAccss::Set(12, "Power Cycle Count");
+  
+  SMARTattrDefAccss::Set(100, "Data Erased");
+  
+  SMARTattrDefAccss::Set(168, "SATA Physical Error Count");
+  SMARTattrDefAccss::Set(169, "Bad Block Count");
+  
+  SMARTattrDefAccss::Set(171, "Program Fail Count");
+  SMARTattrDefAccss::Set(172, "SSD Erase Fail Count");
+  
+  SMARTattrDefAccss::Set(174, "Unexpected Power Loss Count");
+  SMARTattrDefAccss::Set(175, "Power Loss Protection Failure");
+  SMARTattrDefAccss::Set(176, "Erase Fail Count");
+  SMARTattrDefAccss::Set(177, "Wear Range Delta");
+  SMARTattrDefAccss::Set(178, "Used Reserved Block Count (Chip)");
+  SMARTattrDefAccss::Set(179, "Used Reserved Block Count Total");
+  SMARTattrDefAccss::Set(180, "Unused Reserved Block Count Total");
+  SMARTattrDefAccss::Set(181, "Program Fail Count");
+  SMARTattrDefAccss::Set(182, "Erase Fail Count");
+  SMARTattrDefAccss::Set(183, "Runtime Bad Blocks");
+  SMARTattrDefAccss::Set(184, "End to End Error");
+  
+  SMARTattrDefAccss::Set(187, "Reported Uncorrectable Errors");
+  SMARTattrDefAccss::Set(188, "Command Timeout");
+  SMARTattrDefAccss::Set(189, "High Fly Writes");
   SMARTattrDefAccss::Set(190, "Temperature Difference or Airflow Temperature");
+  SMARTattrDefAccss::Set(191, "G-sense Error Rate");
+  SMARTattrDefAccss::Set(192, "Power-off/Emergency Retract Count");
+  SMARTattrDefAccss::Set(193, "Load(/Unload) Cycle Count");
   SMARTattrDefAccss::Set(194, "Temperature Celsius");
   SMARTattrDefAccss::Set(195, "Hardware ECC Recovered");
   SMARTattrDefAccss::Set(196, "Reallocation Event Count");
@@ -106,6 +143,25 @@ void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(199, "UltraDMA CRC Error Count");
   SMARTattrDefAccss::Set(200, "Multi-Zone Error Rate or Write Error Rate");
   SMARTattrDefAccss::Set(201, "Soft Read Error Rate or TA Counter Detected");
+  
+  SMARTattrDefAccss::Set(204, "Soft ECC Correction");
+  
+  SMARTattrDefAccss::Set(212, "Shock During Write");
+  
+  SMARTattrDefAccss::Set(220, "Disk Shift");
+ 
+  SMARTattrDefAccss::Set(223, "Load/Unload Retry Count");
+  
+  SMARTattrDefAccss::Set(234, "Average erase count AND Maximum Erase Count");
+  SMARTattrDefAccss::Set(235, "Good Block Count AND System(Free) Block Count");
+  
+  SMARTattrDefAccss::Set(240, "Head Flying Hours/Transfer Error Rate");
+  SMARTattrDefAccss::Set(241, "Total Data Written");
+  SMARTattrDefAccss::Set(242, "Total Data Read");
+  
+  SMARTattrDefAccss::Set(250, "Read Error Retry Rate");
+  
+  SMARTattrDefAccss::Set(254, "Free Fall Protection");
 }
 
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
@@ -486,6 +542,40 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 }
 #endif
 
+inline void SMARTmonitorBase::WaitForSignalOrTimeout(
+  const fastestUnsignedDataType ms)
+{
+  LOGN_DEBUG("begin--" << ms << "ms")
+  I_Condition::state st = waitOrSignalEvt.WaitForSignalOrTimeoutInMs(ms);
+/*#ifdef __linux__
+  timespec ts{numberOfSecondsToWaitBetweenSMARTquery,
+    numberOfMilliSecondsToWaitBetweenSMARTquery * 1000000};
+    
+  pthread_cond_timedwait(&cond, &mutex, &ts);
+#endif*/
+  LOGN_DEBUG("end--return value of WaitForSignalOrTimeoutInMs:" << st)
+}
+
+inline void SMARTmonitorBase::WaitForTimeout(
+  fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery,
+  const fastestUnsignedDataType numberOfMilliSecondsToWaitBetweenSMARTquery)
+{
+  numberOfSecondsToWaitBetweenSMARTquery =
+    numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
+  while (numberOfSecondsToWaitBetweenSMARTquery-- &&
+          SMARTmonitorBase::s_updateSMARTvalues) {
+    /**If this program ends it needs max. the sleep time to terminate.
+    * The lower the argument for sleep the more responsive this 
+    * program gets.
+    * Alternatives (needn't wait the whole time):
+    * -WaitForSingleObjectEx(...) for MS Windows API
+    * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
+    sleep(1);///http://linux.die.net/man/3/sleep
+  }
+  //Sleep in microseconds (1/1000th of a millisecond))
+  usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
+}
+
 ///Function that can be used by clients and service.
 ///It shouldn't be called from the UI thread because getting S.M.A.R.T. infos
 /// needs some milliseconds->blocks the UI in this time.
@@ -512,7 +602,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
     
     const unsigned numberOfMilliSecondsToWaitBetweenSMARTquery =
       SMARTmonitorBase::GetNumberOfMilliSecondsToWaitBetweenSMARTquery();
-    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;    
+    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery;
       
     GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType 
       p_getSMARTvaluesFunction = 
@@ -533,20 +623,11 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
         LOGN_ERROR("get S.M.A.R.T. values function returned non-0")
         break;
       }
-      numberOfSecondsToWaitBetweenSMARTquery =
-        numberOfMilliSecondsToWaitBetweenSMARTquery / 1000;
-      while (numberOfSecondsToWaitBetweenSMARTquery-- &&
-              SMARTmonitorBase::s_updateSMARTvalues) {
-        /**If this program ends it needs max. the sleep time to terminate.
-        * The lower the argument for sleep the more responsive this 
-        * program gets.
-        * Alternatives (needn't wait the whole time):
-        * -WaitForSingleObject(...) for MS Windows API
-        * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
-        sleep(1);///http://linux.die.net/man/3/sleep
-      }
-      //Sleep in microseconds (1/1000th of a millisecond))
-      usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
+      /*p_SMARTmonitorBase->WaitForTimeout(
+        numberOfSecondsToWaitBetweenSMARTquery,
+        numberOfMilliSecondsToWaitBetweenSMARTquery);*/
+      p_SMARTmonitorBase->WaitForSignalOrTimeout(
+        numberOfMilliSecondsToWaitBetweenSMARTquery);
     } while (SMARTmonitorBase::s_updateSMARTvalues);
 //    if(SMARTmonitorBase::s_updateSMARTvalues)
       /** The SMARTmonitor object may have already been destroyed if 
@@ -628,10 +709,14 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeDirPath(
   {
     std::wstring stdwstrAbsoluteDirPath = stdwstrAbsoluteFilePath.substr(0,
       indexOfLastPathSepChar + 1);
-    fullConfigFilePathWithoutExtension = stdwstrAbsoluteDirPath + L"SMARTmonitor.";
+    fullConfigFilePathWithoutExtension = stdwstrAbsoluteDirPath
+      /* + L"SMARTmonitor."*/;
   }
 }
 
+/** adds configuration dir suffix to \param stdwstrCfgFilePathWoutExt
+ *  \param stdwstrCfgFilePathWoutExt
+ *   gets path from curr work dir if it is empty */
 void SMARTmonitorBase::ConstructConfigFilePath(
   std::wstring & stdwstrCfgFilePathWoutExt)
 {
@@ -677,7 +762,7 @@ void SMARTmonitorBase::ConstructConfigFilePath(
 //      stdwstrConfigPathWithoutExtension);
     
     stdwstrCfgFilePathWoutExt += PATH_SEPERATOR_WCHAR +
-      std::wstring(L"SMARTmonitor.");
+      std::wstring(L"config") + PATH_SEPERATOR_WCHAR;
   }
   //  else /** At least 1 program argument passed. */
   //  {
@@ -702,32 +787,54 @@ void SMARTmonitorBase::ConstructConfigFilePath(
   LOGN("using config file path: \"" << stdwstrCfgFilePathWoutExt << "\"")
 }
 
-fastestUnsignedDataType SMARTmonitorBase::InitializeSMART() {
+/** tries to load from 2 paths:
+*   -given path
+*   -path relative to curr work dir */
+bool SMARTmonitorBase::tryCfgFilePaths(
+  const wchar_t fileName[],
+  loadFuncType loadFunc
+  )
+{
   enum InitSMARTretCode initSMARTretCode = success;
 
 //TODO pass this folder via CMake argument so it is the same as Debian package
 // (via CPack) installation path
 #if defined( __linux__) && defined(buildService)
-  std::wstring stdwstrWorkDirWithCfgFilePrefix = L"/usr/local/SMARTmonitor";
+  std::wstring stdwstrWorkDirWithCfgFilePrefix =//L"/usr/local/SMARTmonitor";
+    makeWchar(resourcesFSpath);
 #else
   std::wstring stdwstrWorkDirWithCfgFilePrefix;
 #endif
   std::wstring origPath = stdwstrWorkDirWithCfgFilePrefix;
   ConstructConfigFilePath(stdwstrWorkDirWithCfgFilePrefix);
+  stdwstrWorkDirWithCfgFilePrefix += fileName;
+  
+  std::string stdstrFullConfigFilePath;
+  //TODO just for compilation
+  bool successfullyLoadedCfgFile = /*mp_cfgLoader.LoadSMARTCfg*/
+    (m_cfgLoader.*loadFunc)(& stdwstrWorkDirWithCfgFilePrefix, 
+      & stdstrFullConfigFilePath, NULL);
 
-  try {
-    //TODO just for compilation
-    bool successfullyLoadedCfgFile = mp_configurationLoader->
-      LoadSMARTparametersConfiguration(stdwstrWorkDirWithCfgFilePrefix);
+  if(! successfullyLoadedCfgFile)
+    if(origPath != L""){
+      stdwstrWorkDirWithCfgFilePrefix = L"";
+      successfullyLoadedCfgFile = /*mp_cfgLoader->LoadSMARTCfg*/
+        (m_cfgLoader.*loadFunc)(& stdwstrWorkDirWithCfgFilePrefix,
+          & stdstrFullConfigFilePath, NULL);
+    }
+  if(! successfullyLoadedCfgFile)
+    initSMARTretCode = readingConfigFileFailed;
+}
 
-    if(! successfullyLoadedCfgFile)
-      if(origPath != L""){
-        stdwstrWorkDirWithCfgFilePrefix = L"";
-        successfullyLoadedCfgFile = mp_configurationLoader->
-          LoadSMARTparametersConfiguration(stdwstrWorkDirWithCfgFilePrefix);
-      }
-    if(! successfullyLoadedCfgFile)
-      initSMARTretCode = readingConfigFileFailed;
+fastestUnsignedDataType SMARTmonitorBase::InitializeSMART(){
+  enum InitSMARTretCode initSMARTretCode = success;
+
+  try{
+    tryCfgFilePaths(L"en/SMARTattrDefs", & CfgLoaderType::readSMARTattrDefs);
+    tryCfgFilePaths(L"SMARTdataCarrierDefs", & CfgLoaderType::
+      ReadSMARTdataCarrierDefs);
+    tryCfgFilePaths(L"SMARTsrvConn", & CfgLoaderType::ReadSrvCnnctnCfg);
+    
     //    {
     //      //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));
     //      return false;

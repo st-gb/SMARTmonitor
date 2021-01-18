@@ -32,7 +32,9 @@ namespace wxWidgets
     column.SetId(ColumnIndices::SMART_ID);
     column.SetText( _("ID") );
     //TODO calculate width needed for 3 digits ("255" is the highest SMART ID)
-    column.SetWidth(textControlFont.GetPixelSize().x * 4);
+    //TODO is 0 under Windows.
+    const int letterWidth = textControlFont.GetPixelSize().x;
+    column.SetWidth(letterWidth * 4);
     InsertColumn(ColumnIndices::SMART_ID, column);
 
     column.SetId(ColumnIndices::SMARTparameterName);

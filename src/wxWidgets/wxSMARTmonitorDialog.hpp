@@ -56,6 +56,7 @@ public:
     m_p_directSMARTaccesBtn->SetToolTip(cause);
   }
   void SetStatus(const wxString &);
+  void ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction);
   void StartAsyncDrctUpd8Thread();
   void EndAllThreadsAndCloseAllOtherTopLevelWindows();
   void UpdateSMARTvaluesUI();
@@ -75,6 +76,7 @@ protected:
   void OnExit(wxCommandEvent& event);
   void OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event));
   void OnConnectToServer(wxCommandEvent& WXUNUSED(event));
+  void OnReBuildUI(wxCommandEvent &);
   void OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event);
   void OnCloseWindow(wxCloseEvent& event);
   void OnTimer(wxTimerEvent& event);
@@ -87,6 +89,6 @@ protected:
   DECLARE_EVENT_TABLE()
 };
 
-DECLARE_LOCAL_EVENT_TYPE(UpdateSMARTparameterValuesInGUIEventType, wxNewEventType())
+DECLARE_LOCAL_EVENT_TYPE(UpdateSMARTparamValsInGUIevtType, wxNewEventType())
  
 #endif /* WXSMARTMONITORDIALOG_HPP_ */

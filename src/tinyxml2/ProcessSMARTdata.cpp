@@ -328,8 +328,9 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
       sMARTuniqueID.supportedSMART_IDs[arrIdx] = 0;///Mark last item
 
     //sMARTuniqueID.setSupportedSMART_IDs(suppSMARTattrNamesAndIDs);
-    sMARTuniqueID.SetSMART_IDsToRead(suppSMARTattrNamesAndIDs,
-      m_SMARTattrIDsToObs);
+//    sMARTuniqueID.SetSMART_IDsToRead(suppSMARTattrNamesAndIDs,
+//      m_SMARTattrIDsToObs);
+
     //TODO Uncomment. Causes not to display the current SMART data at least if
     // data from service.
 #ifdef _DEBUG

@@ -11,7 +11,7 @@
 #include <stddef.h> // size_t in <atasmart.h>
 #include <set> //class std::set
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN
-#include <SMARTmonitorBase.hpp>///SMARTmonitorBase::SMARTattrDefType
+#include <attributes/SMARTattrDefsType.hpp>///SMARTmonitor::SMARTattrDefsType
 
 /** Forward declaration. */
 class SMARTmonitorBase;
@@ -22,10 +22,10 @@ protected:
   SMARTmonitorBase & m_r_SMARTmonitorBase;
 public:
 //  std::set<SMARTentry> & m_smartAttributesToObserve;
-  SMARTmonitorBase::SMARTattrDefsType * mp_SMARTattrDefs;
+  SMARTmonitor::SMARTattrDefsType * mp_SMARTattrDefs;
 
   ConfigurationLoaderBase(/*const*/
-    SMARTmonitorBase::SMARTattrDefsType & SMARTattrDefs,
+    SMARTmonitor::SMARTattrDefsType & SMARTattrDefs,
     SMARTmonitorBase & r_SMARTmonitorBase
     )
 //      m_smartAttributesToObserve(smartAttributesToObserve)
@@ -38,7 +38,7 @@ public:
   virtual ~ConfigurationLoaderBase() {}
   
   virtual void ReadServiceConnectionSettings(const std::wstring & ) {};
-  virtual bool LoadSMARTparametersConfiguration(const std::wstring & ) { 
+  virtual bool LoadSMARTcfg(const std::wstring & ) { 
     return false; };
 };
 

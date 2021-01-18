@@ -42,10 +42,11 @@
 /** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
  *  to ‘char*’" when including the "xpm" file */
 GCC_DIAG_OFF(write-strings)
-#include "../S.M.A.R.T._OK.xpm"
-#include "../S.M.A.R.T._unknown.xpm"
-#include "../S.M.A.R.T._warning.xpm"
+#include "../icons/S.M.A.R.T._OK.xpm"
+#include "../icons/S.M.A.R.T._unknown.xpm"
+#include "../icons/S.M.A.R.T._warning.xpm"
 GCC_DIAG_ON(write-strings)
+#include "SetSMARTattrEvent.hpp"///class SetSMARTattrEvent
 #include "wxSMARTmonitorApp.hpp"
 #include "ConnectToServerDialog.hpp"
 #include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
@@ -58,7 +59,6 @@ GCC_DIAG_ON(write-strings)
 /*static*/ SMARTdialog * gs_dialog = NULL;
 
 /** definitions of static class members. */
-fastestUnsignedDataType wxSMARTmonitorApp::s_GUIthreadID;
 wxIcon wxSMARTmonitorApp::s_SMARTokIcon;
 wxIcon wxSMARTmonitorApp::s_SMARTstatusUnknownIcon;
 wxIcon wxSMARTmonitorApp::s_SMARTwarningIcon;
@@ -66,17 +66,23 @@ wxIcon wxSMARTmonitorApp::s_SMARTwarningIcon;
 //from https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case
 //const wxEventType AfterConnectToServerEventType = wxNewEventType();
 DEFINE_LOCAL_EVENT_TYPE(AfterConnectToServerEventType)
+DEFINE_LOCAL_EVENT_TYPE(ChangeStateEvtType)
 DEFINE_LOCAL_EVENT_TYPE(CnnctToSrvrEvtType)
+DEFINE_LOCAL_EVENT_TYPE(ShowCurrentActionEventType)
 DEFINE_LOCAL_EVENT_TYPE(ShowMessageEventType)
 DEFINE_LOCAL_EVENT_TYPE(StartServiceConnectionCountDownEventType)
 DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
 
 BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
-  EVT_COMMAND(wxID_ANY, AfterConnectToServerEventType, wxSMARTmonitorApp::OnAfterConnectToServer)
+  EVT_COMMAND(wxID_ANY, AfterConnectToServerEventType, wxSMARTmonitorApp::
+    OnAfterConnectToServer)
+  EVT_COMMAND(wxID_ANY, ChangeStateEvtType, wxSMARTmonitorApp::OnChangeState)
   EVT_COMMAND(wxID_ANY, CnnctToSrvrEvtType, wxSMARTmonitorApp::OnCnnctToSrvr)
   EVT_COMMAND(wxID_ANY, ShowMessageEventType, wxSMARTmonitorApp::OnShowMessage)
   EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
     OnStartCntDown)
+  EVT_COMMAND(wxID_ANY, ShowCurrentActionEventType, wxSMARTmonitorApp::
+    OnShowCurrentAction)
   EVT_COMMAND(wxID_ANY, StartServiceConnectionCountDownEventType, 
     wxSMARTmonitorApp::OnStartServiceConnectionCountDown)
   EVT_TIMER(TIMER_ID, wxSMARTmonitorApp ::OnTimer)
@@ -94,7 +100,7 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
   , m_p_cnnctToSrvDlg(NULL)
   , m_wxtimer(this, TIMER_ID)
 {
-  s_GUIthreadID = OperatingSystem::GetCurrentThreadNumber();
+  s_UIthreadID = OperatingSystem::GetCurrentThreadNumber();
 #ifdef multithread
   I_Thread::SetCurrentThreadName("UI");
 #endif
@@ -150,7 +156,7 @@ void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
 void wxSMARTmonitorApp::StartServiceConnectionCountDown(
   const fastestUnsignedDataType countDownInSeconds)
 {
-  if(OperatingSystem::GetCurrentThreadNumber() == s_GUIthreadID )
+  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
   {
     m_serviceConnectionCountDownInSeconds = countDownInSeconds;
     m_wxtimer.Start(1000);
@@ -199,7 +205,16 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
       m_p_cnnctToSrvDlg = NULL;
     }
 //    SuccessfullyConnectedToClient();
-    /*if( !*/ GetSMARTvaluesAndUpdateUI(); //)
+#if execGetSMARTvalsAndUpd8UIinUIthread
+    GetSMARTvaluesAndUpdateUI();
+#else
+    /*m_GetSMARTvalsAndUpd8UIthread*/m_updateSMARTparameterValuesThread.start(
+      GetSMARTvaluesAndUpdateUIthreadFn,
+      /** Need to upcast to class SMARTmonitorClient else the pointer casted to
+       * class SMARTmonitorClient from "void *" parameter in SMARTmonitorClient
+       * ::GetSMARTvaluesAndUpdateUIthreadFn is wrong. */
+      (SMARTmonitorClient *)this);
+#endif
 //      StartServiceConnectionCountDown(countDownInSeconds);
     gs_dialog->EnableServerInteractingControls(connectResult);
   }
@@ -216,6 +231,11 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 //    m_wxtimer.StartOnce(countDownInSeconds * 1000);
     StartServiceConnectionCountDown(countDownInSeconds);
   }
+}
+
+void wxSMARTmonitorApp::OnChangeState(wxCommandEvent & commandEvent)
+{
+  ChangeConnectionState((enum serverConnectionState) commandEvent.GetInt());
 }
 
 void wxSMARTmonitorApp::OnCnnctToSrvr(wxCommandEvent & commandEvent)
@@ -241,14 +261,22 @@ void wxSMARTmonitorApp::BeforeWait()
   /** This function is usually called from a non-GUI thread. So we have to send
    *  an event to let the GUI update happen in the UI thread to avoid a program 
    * crash. */
-  wxCommandEvent UpdateSMARTvaluesEvent( UpdateSMARTparameterValuesInGUIEventType );
+  wxCommandEvent UpdateSMARTvaluesEvent( UpdateSMARTparamValsInGUIevtType );
   wxPostEvent(gs_dialog, UpdateSMARTvaluesEvent);
 }
 
-void wxSMARTmonitorApp::ChangeState(enum serverConnectionState newState)
+void wxSMARTmonitorApp::ChangeConnectionState(enum serverConnectionState newState)
 {
   //TODO ensure to/must be called in GUI thread
-  gs_dialog->SetState(newState);
+  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+    gs_dialog->SetState(newState);
+  else{
+    /** Create event To execute UI operations in UI thread.
+     * https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case */
+    wxCommandEvent changeStateEvent(ChangeStateEvtType);
+    changeStateEvent.SetInt(newState);
+    wxPostEvent(this, changeStateEvent);
+  }
 }
 
 void wxSMARTmonitorApp::GetTextFromUser(
@@ -365,7 +393,7 @@ bool wxSMARTmonitorApp::OnInit()
     const fastestUnsignedDataType initSMARTresult = InitializeSMART();
     std::wstring stdwstrServiceConnectionConfigFile = 
       s_programOptionValues[serviceConnectionConfigFile];
-    mp_configurationLoader->ReadServiceConnectionSettings(
+    m_cfgLoader.ReadServiceConnectionSettings(
       stdwstrServiceConnectionConfigFile );
 
 //    ShowSMARTokIcon();
@@ -391,8 +419,9 @@ bool wxSMARTmonitorApp::OnInit()
 #endif
     if(drctSMARTaccess == false)
       if(initSMARTresult == accessToSMARTdenied)
-        gs_dialog->disableDrctSMARTaccss(wxT("access to SMART denied (maybe due"
-          "to insufficient rights)"));
+        gs_dialog->disableDrctSMARTaccss(wxT("access to SMART denied\n"
+          "(maybe due to insufficient rights\n"
+          "--start as administrator to enable)"));
       else
         gs_dialog->disableDrctSMARTaccss(wxT("no built-in direct SMART access"));
 //    else if( result == SMARTaccessBase::noSingleSMARTdevice )
@@ -423,6 +452,13 @@ void wxSMARTmonitorApp::EnableSrvUIctrls(){
   gs_dialog->m_p_ConnectAndDisconnectButton->Enable(true);
 }
 
+inline void createIconFilePath(wxString & iconFilePath, const wxString &
+  iconFileName)
+{
+  iconFilePath += wxFILE_SEP_PATH + wxT("icons") + wxFILE_SEP_PATH +
+    iconFileName;
+}
+
 bool wxSMARTmonitorApp::GetIcon(
   wxIcon & icon,
   wxString iconFileName, 
@@ -444,17 +480,23 @@ bool wxSMARTmonitorApp::GetIcon(
   wxLogNull noDbgMsgs;///Disable wxWidgets (debug) messages when loading file.
 
   bool bIconFileSuccessfullyLoaded = false;
-  wxString iconFilePath;
+  wxString defaultIconFilePath;
 #ifdef __linux__
   ///Path after installing via deb package manager.
   //TODO maybe pass this path from cmake to also use in createDebPkg.cmake
-  iconFilePath = wxT("/usr/local/SMARTmonitor");
+  defaultIconFilePath = //wxT("/usr/local/SMARTmonitor");
+    /** Use a preprocessor macro in order to use the same value for creating
+     *  Debian package.
+     *  Pass "-DresourcesFSpath=STRING:>>resourcesFSpath<< when using CMake.
+     *  Needs preprocessor macro with name "resourcesFSpath".
+     * Get value for preprocessor macro and make wxT() literal of it. */
+    wxSTRINGIZE(resourcesFSpath);
 #else
-  iconFilePath = wxGetCwd();
+  defaultIconFilePath = wxGetCwd();
 #endif
-  iconFilePath += wxFILE_SEP_PATH + iconFileName;
+  createIconFilePath(defaultIconFilePath, iconFileName);
   bIconFileSuccessfullyLoaded = icon.LoadFile(
-    iconFilePath,
+    defaultIconFilePath,
     wxbitmapType);
   if(! bIconFileSuccessfullyLoaded)
   {
@@ -464,12 +506,14 @@ bool wxSMARTmonitorApp::GetIcon(
     std::wstring exeFilePath = m_commandLineArgs.GetProgramPath();
     std::wstring exeFileDir = exeFilePath.substr(0,
       exeFilePath.rfind(FileSystem::dirSeperatorCharW) +1);
-    wxString iconFilePath2 = getwxString_inline(exeFileDir) + iconFileName;
+    wxString iconFilePathFromExe = getwxString_inline(exeFileDir);
+    createIconFilePath(iconFilePathFromExe, iconFileName);
 
-    bIconFileSuccessfullyLoaded = icon.LoadFile(iconFilePath2, wxbitmapType);
+    bIconFileSuccessfullyLoaded = icon.LoadFile(iconFilePathFromExe, wxbitmapType);
     if(! bIconFileSuccessfullyLoaded){
       wxMessageBox( wxT("Loading icon file(s)\n-\"") +
-        iconFilePath + wxT("\"\n-\"") + iconFilePath2 + wxT("\"\n failed") );
+        defaultIconFilePath + wxT("\"\n-\"") + iconFilePathFromExe +
+        wxT("\"\n failed") );
       ///Loading a (custom) icon from file failed, so provide a pre-defined one.
       icon = wxIcon(inMemoryIcon);
     }
@@ -509,6 +553,20 @@ void wxSMARTmonitorApp::SetAttribute(
   //should avoid 2 times a pointer dereference -> performs better or in 
   //SMARTmonitorDialog as param. "sMARTuniqueID" needs to be taken into account
   
+  if(OperatingSystem::GetCurrentThreadNumber() != s_UIthreadID){
+    SMARTattrs _SMARTattrs(
+      sMARTuniqueID,
+      SMARTattributeID,
+      columnIndex,
+      std_strValue,
+      sMARTvalueRating,
+      data//,
+      //SetSMARTattrEventType
+      );
+    SetSMARTattrEvent event(_SMARTattrs);
+    wxPostEvent(this, event);
+  }
+  else{
   wxWidgets::SMARTtableListCtrl * wxSMARTtableListCtrl;
   if(data == NULL){
     PerDataCarrierPanel * perDataCarrierPanel = gs_dialog->
@@ -522,6 +580,7 @@ void wxSMARTmonitorApp::SetAttribute(
     columnIndex /** column #/ index */,
     wxstrValue,
     sMARTvalueRating);
+  }
 }
 
 void wxSMARTmonitorApp::SetGetDirectSMARTvals()
@@ -548,7 +607,7 @@ void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress,
 {
 #ifdef _DEBUG
   int currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
-  if( currentThreadNumber = s_GUIthreadID )
+  if(currentThreadNumber = s_UIthreadID)
     ;
 #endif
 //  m_p_cnnctToSrvDlg = new ConnectToServerDialog(
@@ -570,6 +629,25 @@ void wxSMARTmonitorApp::ShwCnnctToSrvrDlg(const std::string & srvAddr){
       m_timeOutInSeconds,
       m_socketFileDesc);
     m_p_cnnctToSrvDlg->Show();
+  }
+}
+
+void wxSMARTmonitorApp::OnShowCurrentAction(wxCommandEvent & evt)
+{
+  const enum CurrentAction currAction = (enum CurrentAction) evt.GetInt();
+  gs_dialog->ShowCurrentAction(currAction);
+}
+
+void wxSMARTmonitorApp::SetCurrentAction(enum CurrentAction currAction)
+{
+  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+    gs_dialog->ShowCurrentAction(currAction);
+  else{
+    /** To execute in UI thread.
+     * https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case */
+    wxCommandEvent ShowCurrentActionEvent(ShowCurrentActionEventType);
+    ShowCurrentActionEvent.SetInt(currAction);
+    wxPostEvent(this, ShowCurrentActionEvent);
   }
 }
 
@@ -597,7 +675,7 @@ void wxSMARTmonitorApp::ShowMessage(
   unsigned currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
   /** Only call UI functions in UI thread, else gets SIGABORT error when calling
    *  "wxMessageBox(...)" . */
-  if( currentThreadNumber == s_GUIthreadID )
+  if(currentThreadNumber == s_UIthreadID)
   {
     wxString wxstrMessage = wxWidgets::GetwxString_Inline(message);
     gs_dialog->ShowMessage(wxstrMessage, msgType);
@@ -618,7 +696,7 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
   unsigned currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
   /** Only call UI functions in UI thread, else gets SIGABORT error when calling
    *  "wxMessageBox(...)" . */
-  if( currentThreadNumber == s_GUIthreadID )
+  if( currentThreadNumber == s_UIthreadID )
   {
     wxString wxstrMessage = wxWidgets::GetwxString_Inline(str);
 //    wxMessageBox(wxstrMessage, m_appName );

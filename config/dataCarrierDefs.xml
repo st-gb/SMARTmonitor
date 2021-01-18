@@ -1,0 +1,21 @@
+<!-- also add WEAROUT attributes for SSDs!
+ compare "Raw Read Error Rate" and recovered ECC read error: if "=": no problem
+ "Details" description from "https://en.wikipedia.org/wiki/S.M.A.R.T.",
+ last change: 24 November 2016, at 08:03. -->
+
+<options>
+
+<!-- -->
+<data_carrier model="HFS256G39TND-N210A" firmware="30001P10">  
+ <SMART paramID="9" unit="1h15s"/>
+ <SMART paramID="241" unit="1GB"/>
+ <SMART paramID="242" unit="1GB"/>
+</data_carrier>
+<data_carrier model="_Samsung SSD 860 EVO M.2 500GB" firmware="RVT24B6Q">  
+ <SMART paramID="9" unit="ca.1h2s"/>
+ <SMART paramID="241" unit="512B"/>
+ <SMART paramID="242" unit="512B"/>
+</data_carrier>
+
+</options>
+

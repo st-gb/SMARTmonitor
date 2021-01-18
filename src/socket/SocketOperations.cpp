@@ -61,6 +61,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
   // SMARTuniqueIDsAndValues?
   int rdFrmScktRslt;
   unsigned numBytesRead;
+  SetCurrentAction(readNumBytesForSMARTdata);
   ///Value is 0 if connect to server for the 2nd call of this function.
   ///Value is garbage if connect to server in another thread for the 2nd call 
   /// of this function.
@@ -82,6 +83,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
     int numBinRead = 0;
     ioctl(m_socketFileDesc, FIONREAD, &numBinRead);
 #endif
+    SetCurrentAction(readSMARTvaluesXMLdata);
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
     rdFrmScktRslt = readFromSocket2(m_socketFileDesc,
@@ -337,15 +339,17 @@ DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
     int i = sigfillset(&sigmask);
     pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
 
+    SMARTmonitorClient * p_SMARTmonitorClient = p_socketConnectThreadFuncParams
+      ->p_SMARTmonitorClient;
     /** Because returning from connect(...) may take some (see its last
      * parameter) seconds->show timeout in UI.*/
-    p_socketConnectThreadFuncParams->p_SMARTmonitorClient->startCnnctCountDown();
+    p_SMARTmonitorClient->startCnnctCountDown();
+    p_SMARTmonitorClient->SetCurrentAction(SMARTmonitorClient::cnnctToSrv);
     cnnctRslt = connect(p_socketConnectThreadFuncParams->socketFileDesc,
       (struct sockaddr *) & p_socketConnectThreadFuncParams->srvAddr,
       sizeof(p_socketConnectThreadFuncParams->srvAddr) );
     pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
-    p_socketConnectThreadFuncParams->p_SMARTmonitorClient->
-      AfterConnectToServer(cnnctRslt);
+    p_SMARTmonitorClient->AfterConnectToServer(cnnctRslt);
     delete p_socketConnectThreadFuncParams;
   }
   return cnnctRslt;
@@ -385,7 +389,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
     connectThread.start(SocketConnectThreadFunc, p_socketCnnctThrdFnParams);
     BeforeConnectToServer();
   }
-  else
+  else///sychronous connect to server
 #endif
 #endif
   /** http://man7.org/linux/man-pages/man2/connect.2.html :

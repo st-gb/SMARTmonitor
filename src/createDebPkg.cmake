@@ -15,26 +15,48 @@ message("Executable name:" ${EXE_NAME})
 message("CPU archictecture:" ${CMAKE_SYSTEM_PROCESSOR})
 #Define distribution via "-DDistri=>name<"
 message("Packaging for Linux distribution:" ${Distri})
-set(CPACK_PACKAGE_NAME ${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR}_${Distri})
+set(CPACK_PACKAGE_NAME
+  ${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR}_${Distri}_${CMAKE_BUILD_TYPE})
 message("Debian package name:" ${CPACK_PACKAGE_NAME})
 install(TARGETS ${EXE_NAME}#target name
   #required
   RUNTIME DESTINATION local/bin # -> extracted into "/usr/local/bin"
     #${CMAKE_INSTALL_BINDIR}
   )
+if(DEFINED resourcesFSpath )
+  message("resourcesFSpath defined")
+else()
+  message("resourcesFSpath NOT defined->using default value")
+  #Use /usr/share/SMARTmonitor
+  #See https://wiki.ubuntuusers.de/Verzeichnisstruktur/
+  set(resourcesFSpath "/usr/share/SMARTmonitor")
+endif()
+message("resourcesFSpath: ${resourcesFSpath}")
+
+#TODO use CMake variable holding configuration file names for both C(++) source
+# code and here to keep it consistent? Separate names there via non-printable
+# character like \t or \n
+set(additionalFiles
+  ${resourcesFSpath}/config/en/SMARTattrDefs.xml
+  ${resourcesFSpath}/config/dataCarrierDefs.xml
+  )
 if(${EXE_TYPE} STREQUAL "wxGUI")
-  set(additionalFiles
-    ../SMARTmonitor.xml
-    ../S.M.A.R.T._OK.xpm
-    ../S.M.A.R.T._unknown.xpm
-    ../S.M.A.R.T._warning.xpm
-    )
+  if(WIN32)#use .ico files under Windows
+  else()
+    set(additionalFiles
+      ${additionalFiles}
+      ${resourcesFSpath}/icons/S.M.A.R.T._OK.xpm
+      ${resourcesFSpath}/icons/S.M.A.R.T._unknown.xpm
+      ${resourcesFSpath}/icons/S.M.A.R.T._warning.xpm
+      )
+  endif()
 else()#service
-  set(additionalFiles
-    ../SMARTmonitor.xml
-    ../Linux/systemd/install_service_systemd.sh
-    ../Linux/systemd/SMARTmon.service.skeleton
-    )
+  if(UNIX)
+    set(additionalFiles
+      ${resourcesFSpath}/Linux/systemd/install_service_systemd.sh
+      ${resourcesFSpath}/Linux/systemd/SMARTmon.service.skeleton
+      )
+  endif()
 endif()
 message("additional Debian package files:" ${additionalFiles})
 #https://stackoverflow.com/questions/5232555/how-to-add-files-to-debian-package-with-cpack
@@ -68,9 +90,10 @@ if(${EXE_TYPE} STREQUAL "wxGUI")
   if(${Distri} STREQUAL "Lubuntu")
     message("Adding dependent packages for Lubuntu")
     #Package name in Lubuntu is different from Ubuntu (additional "gtk3-").
-    set(libsDependendOn ${libsDependendOn} ", libwxgtk3.0-gtk3-0v5")
+    set(libsDependendOn "${libsDependendOn}, libwxgtk3.0-gtk3-0v5")
   else()
-    set(libsDependendOn ${libsDependendOn} ", libwxgtk3.0-0v5")
+    # Put CMake variables within "" else a semicolon (;) appears.
+    set(libsDependendOn "${libsDependendOn}, libwxgtk3.0-0v5")
   endif()
 endif()
 message("Debian package depends on libraries:" ${libsDependendOn})

@@ -10,6 +10,7 @@ COMMON_SOURCECODE_ROOT_PATH=$2
 #So use an absolute path, as http://public.kitware.com/Bug/view.php?id=14294
 # proposes.
 otherCMakeArgs=$3
+echo "otherCMakeArgs:" $otherCMakeArgs
 
 #"-DdirectSMARTaccess":The service usually needs direct access to S.M.A.R.T.
 cmake \

@@ -33,6 +33,7 @@ private:
   fastestUnsignedDataType m_timeOutInSeconds;
   int m_connectToServerSocketFileDescriptor;
   wxStaticText * m_p_wxStaticTextTimeout;
+  wxStaticText * m_p_timeoutLabel;
   wxTextCtrl * m_p_srvAddrTxtCtrl;
   wxTextCtrl * m_p_portNoTxtCtrl;
   wxTextCtrl * m_p_timeoutInS_TxtCtrl;
@@ -42,6 +43,7 @@ private:
   void OnConnect(wxCommandEvent &);
   void OnCloseWindow(wxCloseEvent& event);
   void OnStartCntDown(wxCommandEvent &);
+  inline void showTimeoutInTitle();
   void OnTimer(wxTimerEvent& event);
   
   DECLARE_EVENT_TABLE()

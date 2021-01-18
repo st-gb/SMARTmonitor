@@ -11,6 +11,9 @@
 
 ///common_sourcecode repository header files:
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchType
+///typedef nativeEvent_type
+#include <OperatingSystem/multithread/nativeEvent_type.hpp>
+///typedef nativeThread_type
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
 ///struct CommandLineOption
@@ -21,7 +24,15 @@
 #include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <SMARTvalueProcessorBase.hpp> //
-#include <UserInterface/UserInterface.hpp> //base class UserInterface
+#include <UserInterface/UserInterface.hpp>///base class UserInterface
+
+#include <tinyxml2/ConfigLoader.hpp>///tinyxml2::ConfigLoader, loaderParamType
+typedef tinyxml2::ConfigLoader CfgLoaderType;
+
+typedef bool (CfgLoaderType::*loadFuncType)(
+  std::wstring * stdwstrWorkingDirWithConfigFilePrefix,
+  std::string * stdstrFullConfigFilePath,
+  loaderParamType);
 
 #if directSMARTaccess
   #include <SMARTaccType.hpp>///typedef SMARTaccess_type
@@ -65,7 +76,6 @@ public:
   ///attr=attribute Def=definition Cont=container
   typedef std::/*set<SMARTattrDef>*/ map<unsigned,SMARTattrDef> 
     SMARTattrDefContType;
-  typedef SMARTattrDef * SMARTattrDefsType;
   typedef const SMARTattrDefContType constSMARTattrDefContType;
   typedef SMARTattrDefContType::const_iterator 
     SMARTattrContConstIterType;
@@ -76,6 +86,7 @@ public:
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
   bool asynCnnct = false;
+  nativeEvent_type waitOrSignalEvt;
 public:
   SMARTmonitorBase();
   //template<typename charType>
@@ -140,6 +151,9 @@ public:
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
   virtual void ShowMessage(const char * const msg) const;
+  virtual void ShowMessage(const std::string & str) const{
+    ShowMessage(str.c_str() );
+  }
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
   virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const;
@@ -160,6 +174,7 @@ public:
       getSMARTvaluesFunctionType
     );
 #endif
+  bool tryCfgFilePaths(const wchar_t fileName[], loadFuncType);
   fastestUnsignedDataType Upd8SMARTvalsDrctlyThreadSafe();
   virtual void BeforeWait() { }
   virtual void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult) { }
@@ -204,6 +219,11 @@ public:
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
   
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
+  inline void WaitForSignalOrTimeout(
+    const fastestUnsignedDataType numberOfMilliSecondsToWaitBetweenSMARTquery);
+  inline void WaitForTimeout(
+    fastestUnsignedDataType numberOfSecondsToWaitBetweenSMARTquery,
+    const fastestUnsignedDataType numberOfMilliSecondsToWaitBetweenSMARTquery);
 protected:
   static unsigned s_numberOfMilliSecondsToWaitBetweenSMARTquery;
   const wchar_t ** m_cmdLineArgStrings;
@@ -211,7 +231,7 @@ protected:
   /** Must persist the OnInit() method because the strings are referred from
    *  libATAsmart's SMART access class. So create the config loader on heap.*/
 //  libConfig::ConfigurationLoader configurationLoader;
-  ConfigurationLoaderBase * mp_configurationLoader;
+  CfgLoaderType m_cfgLoader;
   CommandLineArgs</*charType*/ wchar_t> m_commandLineArgs;
 #ifdef multithread
   nativeThread_type m_updateSMARTparameterValuesThread;

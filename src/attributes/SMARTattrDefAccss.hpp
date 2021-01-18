@@ -29,6 +29,11 @@ static void Add(const SMARTattrDef & sMARTattrDef)
 {
   SMARTattrDefs[sMARTattrDef.GetAttributeID()] = sMARTattrDef;
 }
+static void Set(const fastestUnsignedDataType attrID, const char attrName [])
+{
+  SMARTattrDef sMARTattrDef(attrID, attrName);
+  SMARTattrDefs[attrID] = sMARTattrDef;
+}
 
 static void clearSMARTattrDefs()
 {
