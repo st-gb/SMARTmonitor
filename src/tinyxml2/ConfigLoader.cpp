@@ -42,6 +42,8 @@ bool ConfigLoader::ReadSrvCnnctnCfg(
       *p_stdwstrWorkingDirWithConfigFilePrefix, * p_stdstrFullConfigFilePath,
       tinyXML2Doc);
   }
+  tinyxml2::XMLElement * p_rootOfSrvConnctnCfg = p_tinyxml2XMLele;
+  ///"read server connection" section root XML element, e.g. "options"
   if(! p_tinyxml2XMLele)
     return false;
   //TODO
@@ -69,6 +71,7 @@ bool ConfigLoader::ReadSrvCnnctnCfg(
   }
   else
     return false;
+  GetSMARTattributesToObserve(p_rootOfSrvConnctnCfg);
   return true;
 }
 
@@ -133,9 +136,11 @@ bool ConfigLoader::readSMARTattrDefs(
       *p_stdwstrWorkingDirWithConfigFilePrefix, * p_stdstrFullConfigFilePath,
       tinyXML2Doc);
   }
+  /** "read S.M.A.R.T. attribute definitions" section root XML element, e.g.
+   * "options" */
   if(! p_tinyxml2XMLelement)
     return false;
-  std::string xmlEleName = "SMART_parameters";
+  std::string xmlEleName = "SMART_parameter";
   p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
     xmlEleName.c_str() );
   if( ! p_tinyxml2XMLelement )

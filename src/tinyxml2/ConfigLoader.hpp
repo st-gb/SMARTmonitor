@@ -21,7 +21,7 @@ class ConfigLoader : public ConfigurationLoaderBase
 {
   public:
     ConfigLoader(
-      SMARTmonitorBase::SMARTattrDefsType /*&*/ SMARTattrDefs,
+      SMARTmonitor::SMARTattrDefsType /*&*/ SMARTattrDefs,
       SMARTmonitorBase & r_userInterface);
     ConfigLoader(const ConfigLoader& orig);
     virtual ~ConfigLoader();

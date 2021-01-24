@@ -455,8 +455,9 @@ void wxSMARTmonitorApp::EnableSrvUIctrls(){
 inline void createIconFilePath(wxString & iconFilePath, const wxString &
   iconFileName)
 {
-  iconFilePath += wxFILE_SEP_PATH + wxT("icons") + wxFILE_SEP_PATH +
-    iconFileName;
+  if(iconFilePath.size() > 0 && iconFilePath.Last() != wxFILE_SEP_PATH)
+    iconFilePath += wxFILE_SEP_PATH;
+  iconFilePath += wxString(wxT("icons") ) + wxFILE_SEP_PATH + iconFileName;
 }
 
 bool wxSMARTmonitorApp::GetIcon(
