@@ -28,31 +28,11 @@ echo "Using \"$svcExecName\" as executable name for SMART monitor service"
 cp $dirPathOfThisScript/SMARTmon.service.skeleton\
  $dirPathOfThisScript/SMARTmon.service
 
-replace()
-{
-strToReplace=$1
-replaceBy=$2
-echo "String to replace:" \"$strToReplace\"
+#https://stackoverflow.com/questions/10822790/can-i-call-a-function-of-a-shell-script-from-another-shell-script
+source ../replaceTextBy_sed.sh
 
-#https://stackoverflow.com/questions/13373984/how-to-replace-a-variable-in-shell-script-string
-#https://unix.stackexchange.com/questions/211834/slash-and-backslash-in-sed
-#https://stackoverflow.com/questions/2369314/why-does-sed-require-3-backslashes-for-a-regular-backslash
-#TODO Make paths like ".." absolute in order to work.
-#https://stackoverflow.com/questions/4175264/how-to-retrieve-absolute-path-given-relative
-escapedReplaceBy=`echo $replaceBy | sed 's,/,\\\/,g'`
-echo "sed-escaped string for \"$replaceBy\":
- $escapedReplaceBy"
-sedReplaceStr="s/$strToReplace/$escapedReplaceBy/g"
-echo "sed replace string for \"$strToReplace\":
- $sedReplaceStr"
-
-#Following has to be executed in the directory of the .skeleton file?
-#TODO Only replace if it is not within a comment
-sed -i $sedReplaceStr $dirPathOfThisScript/SMARTmon.service
-}
-
-replace "SMARTmonWorkDir" $(realpath "$SMARTmonWorkDir")
-replace "svcExecName" "$svcExecName"
+replace "SMARTmonWorkDir" $(realpath "$SMARTmonWorkDir") $dirPathOfThisScript/SMARTmon.service
+replace "svcExecName" "$svcExecName" $dirPathOfThisScript/SMARTmon.service
 
 echo "Copying SMARTmon.service to /etc/systemd/system/"
 cp $dirPathOfThisScript/SMARTmon.service /etc/systemd/system/

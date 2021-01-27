@@ -18,9 +18,12 @@ message("Packaging for Linux distribution:" ${Distri})
 set(CPACK_PACKAGE_NAME
   ${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR}_${Distri}_${CMAKE_BUILD_TYPE})
 message("Debian package name:" ${CPACK_PACKAGE_NAME})
+#Automatically prefixed with "/usr" -> extracted into "/usr/local/bin"
+set(exeInstallDir "local/bin")
 install(TARGETS ${EXE_NAME}#target name
   #required
-  RUNTIME DESTINATION local/bin # -> extracted into "/usr/local/bin"
+  RUNTIME DESTINATION #local/bin # -> extracted into "/usr/local/bin"
+    ${exeInstallDir}
     #${CMAKE_INSTALL_BINDIR}
   )
 if(DEFINED resourcesFSpath )
@@ -31,40 +34,57 @@ else()
   #See https://wiki.ubuntuusers.de/Verzeichnisstruktur/
   set(resourcesFSpath "/usr/share/SMARTmonitor")
 endif()
-message("resourcesFSpath: ${resourcesFSpath}")
+message("resourcesFSpath (pass -DresourcesFSpath=\">path<\" to CMake): ${resourcesFSpath}")
+
+set(localResourcesFSpath ".."
+  #${CMAKE_CURRENT_SOURCE_DIR}
+  )
+
+include(createOSmenuItem.cmake)
 
 #TODO use CMake variable holding configuration file names for both C(++) source
 # code and here to keep it consistent? Separate names there via non-printable
 # character like \t or \n
 set(additionalFiles
-  ${resourcesFSpath}/config/en/SMARTattrDefs.xml
-  ${resourcesFSpath}/config/dataCarrierDefs.xml
+  ${localResourcesFSpath}/config/en/SMARTattrDefs.xml
+  ${localResourcesFSpath}/config/dataCarrierDefs.xml
+  ${localResourcesFSpath}/config/SMARTsrvCnnctn.xml
   )
+message("additional Debian package files:" ${additionalFiles})
+#https://stackoverflow.com/questions/5232555/how-to-add-files-to-debian-package-with-cpack
+INSTALL(FILES ${additionalFiles} #required
+  DESTINATION ${resourcesFSpath}/config )
 if(${EXE_TYPE} STREQUAL "wxGUI")
   if(WIN32)#use .ico files under Windows
   else()
     set(additionalFiles
-      ${additionalFiles}
-      ${resourcesFSpath}/icons/S.M.A.R.T._OK.xpm
-      ${resourcesFSpath}/icons/S.M.A.R.T._unknown.xpm
-      ${resourcesFSpath}/icons/S.M.A.R.T._warning.xpm
+      ${localResourcesFSpath}/icons/S.M.A.R.T._OK.xpm
+      ${localResourcesFSpath}/icons/S.M.A.R.T._unknown.xpm
+      ${localResourcesFSpath}/icons/S.M.A.R.T._warning.xpm
       )
+    INSTALL(FILES ${additionalFiles} #required
+      DESTINATION ${resourcesFSpath}/icons )
   endif()
 else()#service
   if(UNIX)
     set(additionalFiles
-      ${resourcesFSpath}/Linux/systemd/install_service_systemd.sh
-      ${resourcesFSpath}/Linux/systemd/SMARTmon.service.skeleton
+      ${localResourcesFSpath}/Linux/systemd/install_service_systemd.sh
+      ${localResourcesFSpath}/Linux/systemd/SMARTmon.service.skeleton
       )
+    INSTALL(FILES ${additionalFiles} #required
+      DESTINATION ${resourcesFSpath}/Linux/systemd )
   endif()
 endif()
-message("additional Debian package files:" ${additionalFiles})
-#https://stackoverflow.com/questions/5232555/how-to-add-files-to-debian-package-with-cpack
-INSTALL(FILES ${additionalFiles}
-  #required
-  DESTINATION local/SMARTmonitor # -> extracted into "/usr/local/SMARTmonitor"
-    #${CMAKE_INSTALL_BINDIR}
-  )
+
+#wenn install scheitert, verweisen auf /var/log
+# text-datei, wie man das auf der Kommandozeile installiert und mit GUI/GDebi
+#  sudo dpkg -i ${CPACK_PACKAGE_NAME}.deb.
+# echo "return of dpkg:" $? 
+#  1 or 2: error
+# wenn ~ "Versuch, »/usr/local/SMARTmonitor/S.M.A.R.T._OK.xpm« zu überschreiben, welches auch in Paket smartmonitor 1.0.0 ist":
+#  -> "apt-cache search smartmonitor"
+#   dpkg --remove smartmonitor
+
 SET(CPACK_GENERATOR "DEB")
 #https://gitlab.kitware.com/cmake/community/-/wikis/doc/cpack/Component-Install-With-CPack#building-binary-installers-with-cpack
 set(CPACK_PACKAGE_VERSION "1.0.0")

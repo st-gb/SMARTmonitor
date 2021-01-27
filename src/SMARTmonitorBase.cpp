@@ -833,7 +833,7 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART(){
     tryCfgFilePaths(L"en/SMARTattrDefs.", & CfgLoaderType::readSMARTattrDefs);
     tryCfgFilePaths(L"SMARTdataCarrierDefs.", & CfgLoaderType::
       ReadSMARTdataCarrierDefs);
-    tryCfgFilePaths(L"SMARTsrvConn.", & CfgLoaderType::ReadSrvCnnctnCfg);
+    tryCfgFilePaths(L"SMARTsrvCnnctn.", & CfgLoaderType::ReadSrvCnnctnCfg);
     
     //    {
     //      //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));

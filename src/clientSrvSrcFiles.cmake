@@ -105,7 +105,7 @@ set(SOURCE_FILE_PATHS
 if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     #https://github.com/google/sanitizers/wiki/AddressSanitizer
-    set(CMAKE_CXX_FLAGS
+    set(CMAKE_CXX_FLAGS # "-fsanitize=address" links to libasan.so
       "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
     add_definitions(-fsanitize=address -fno-omit-frame-pointer)
   endif()

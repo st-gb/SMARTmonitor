@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Exec=exePath
+Name=S.M.A.R.T. monitor by it-gebauer.de
+GenericName=S.M.A.R.T. monitor
+Type=Application
+Terminal=false
+StartupNotify=false
+Type=Application
+Icon=iconPath
+Categories=system
