@@ -40,8 +40,6 @@ set(localResourcesFSpath ".."
   #${CMAKE_CURRENT_SOURCE_DIR}
   )
 
-include(createOSmenuItem.cmake)
-
 #TODO use CMake variable holding configuration file names for both C(++) source
 # code and here to keep it consistent? Separate names there via non-printable
 # character like \t or \n
@@ -57,6 +55,7 @@ INSTALL(FILES ${additionalFiles} #required
 if(${EXE_TYPE} STREQUAL "wxGUI")
   if(WIN32)#use .ico files under Windows
   else()
+    include(createOSmenuItem.cmake)
     set(additionalFiles
       ${localResourcesFSpath}/icons/S.M.A.R.T._OK.xpm
       ${localResourcesFSpath}/icons/S.M.A.R.T._unknown.xpm
@@ -67,12 +66,17 @@ if(${EXE_TYPE} STREQUAL "wxGUI")
   endif()
 else()#service
   if(UNIX)
+    include(createServiceFile.cmake)
+    INSTALL(FILES ${localResourcesFSpath}/Linux/systemd/SMARTmon.service
+      DESTINATION /etc/systemd/system/ )
+
     set(additionalFiles
-      ${localResourcesFSpath}/Linux/systemd/install_service_systemd.sh
+      ${localResourcesFSpath}/Linux/systemd/create_.service_file.sh
+      #${localResourcesFSpath}/Linux/systemd/install_service_systemd.sh
       ${localResourcesFSpath}/Linux/systemd/SMARTmon.service.skeleton
       )
     INSTALL(FILES ${additionalFiles} #required
-      DESTINATION ${resourcesFSpath}/Linux/systemd )
+      DESTINATION ${resourcesFSpath}/systemd )
   endif()
 endif()
 

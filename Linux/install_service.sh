@@ -58,6 +58,6 @@ fi;
 # /etc/init/>>service<<.conf
 
 if [ $SYSTEMINITDAEMON = "systemd" ]; then
-  ../Linux/install_service_systemd.sh
+  ../Linux/systemd/install_service_default_parameters.sh
 fi;
 
