@@ -15,17 +15,52 @@ message("Executable name:" ${EXE_NAME})
 message("CPU archictecture:" ${CMAKE_SYSTEM_PROCESSOR})
 #Define distribution via "-DDistri=>name<"
 message("Packaging for Linux distribution:" ${Distri})
-set(CPACK_PACKAGE_NAME
-  ${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR}_${Distri}_${CMAKE_BUILD_TYPE})
-message("Debian package name:" ${CPACK_PACKAGE_NAME})
+
 #Automatically prefixed with "/usr" -> extracted into "/usr/local/bin"
-set(exeInstallDir "local/bin")
-install(TARGETS ${EXE_NAME}#target name
-  #required
-  RUNTIME DESTINATION #local/bin # -> extracted into "/usr/local/bin"
-    ${exeInstallDir}
-    #${CMAKE_INSTALL_BINDIR}
+set(exeInstallDir "local/bin"
+  #https://cmake.org/cmake/help/v3.0/module/GNUInstallDirs.html
+  #${CMAKE_INSTALL_BINDIR}
   )
+
+include(createExeName.cmake)
+
+function(addExeToPkg exeType)
+  message("addExeToPkg--${exeType}")
+  createExeName(${exeType})
+  set(includedExes ${includedExes} ${exeType} PARENT_SCOPE)
+#  list(APPEND includedExes ${exeType} PARENT_SCOPE)
+#  message("includedExes: ${includedExes}")
+message("addExeToPkg--copy ${EXE_NAME} to ${exeInstallDir}")
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../${EXE_NAME}#target name
+  #required
+  DESTINATION #local/bin # -> extracted into "/usr/local/bin"
+    ${exeInstallDir}
+  )
+endfunction()
+
+if(${EXE_TYPE} STREQUAL "debPkg")
+  addExeToPkg("wxGUI")
+  addExeToPkg("UNIX_service")
+  message("includedExes: ${includedExes}")
+
+  #from https://stackoverflow.com/questions/17666003/cmake-output-a-list-with-delimiters
+  string(REPLACE ";" "," exeTypes "${includedExes}")
+#  foreach(includedExe IN ${includedExes})
+#    message("includedExe: " ${includedExe})
+#    set(CPACK_PACKAGE_NAME ${CPACK_PACKAGE_NAME}${includedExe},)
+#  endforeach()
+set(CPACK_PACKAGE_NAME
+  ${PROJECT_NAME}_${exeTypes})
+  set(CPACK_PACKAGE_NAME ${CPACK_PACKAGE_NAME}_${CMAKE_SYSTEM_PROCESSOR}_${Distri}_${CMAKE_BUILD_TYPE})
+else(${EXE_TYPE} STREQUAL "debPkg")
+  set(CPACK_PACKAGE_NAME
+    ${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR}_${Distri}_${CMAKE_BUILD_TYPE})
+  install(TARGETS ${EXE_NAME}#target name #required
+    RUNTIME DESTINATION ${exeInstallDir}
+    )
+endif()
+message("Debian package name:" ${CPACK_PACKAGE_NAME})
+
 if(DEFINED resourcesFSpath )
   message("resourcesFSpath defined")
 else()
@@ -52,7 +87,18 @@ message("additional Debian package files:" ${additionalFiles})
 #https://stackoverflow.com/questions/5232555/how-to-add-files-to-debian-package-with-cpack
 INSTALL(FILES ${additionalFiles} #required
   DESTINATION ${resourcesFSpath}/config )
-if(${EXE_TYPE} STREQUAL "wxGUI")
+message("EXE_TYPE before additional files: ${EXE_TYPE}")
+if(${EXE_TYPE} STREQUAL "wxGUI" OR ${EXE_TYPE} STREQUAL "debPkg")
+  set(addGUIfiles TRUE)
+  message("Should add GUI files")
+endif()
+if(${EXE_TYPE} STREQUAL "UNIX_service" OR ${EXE_TYPE} STREQUAL "debPkg")
+  set(addLinuxSvcFiles TRUE)
+  message("Should add UNIX_service files")
+endif()
+if(${addGUIfiles})
+  #Following command has to be done for "createOSmenuItem.cmake"
+  createExeName("wxGUI")
   if(WIN32)#use .ico files under Windows
   else()
     include(createOSmenuItem.cmake)
@@ -64,20 +110,25 @@ if(${EXE_TYPE} STREQUAL "wxGUI")
     INSTALL(FILES ${additionalFiles} #required
       DESTINATION ${resourcesFSpath}/icons )
   endif()
-else()#service
-  if(UNIX)
+endif()
+if(${addLinuxSvcFiles})
+  #Following command has to be done for "createServiceFile.cmake"
+  createExeName("UNIX_service")
+  message("adding UNIX_service files")
+#  if(UNIX)# UNIX not defined if EXE_TYPE="debPkg"?
+#    message("UNIX defined")
     include(createServiceFile.cmake)
     INSTALL(FILES ${localResourcesFSpath}/Linux/systemd/SMARTmon.service
       DESTINATION /etc/systemd/system/ )
 
     set(additionalFiles
       ${localResourcesFSpath}/Linux/systemd/create_.service_file.sh
-      #${localResourcesFSpath}/Linux/systemd/install_service_systemd.sh
+      ${localResourcesFSpath}/Linux/systemd/start_service_systemd.sh
       ${localResourcesFSpath}/Linux/systemd/SMARTmon.service.skeleton
       )
     INSTALL(FILES ${additionalFiles} #required
       DESTINATION ${resourcesFSpath}/systemd )
-  endif()
+#  endif()
 endif()
 
 #wenn install scheitert, verweisen auf /var/log

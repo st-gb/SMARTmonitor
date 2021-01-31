@@ -124,27 +124,9 @@ add_definitions(${CXX_DEFINITIONS})
 
 #target_link_libraries(${LIBRARIES})
 
-if( ${EXE_TYPE} STREQUAL "wxGUI")
-  set(EXE_NAME wx${PROJECT_NAME}_GUI)
-  set(SOURCE_FILE_PATHS 
-    ${SOURCE_FILE_PATHS}
-    #${TINYXML2_ROOT_PATH}/tinyxml2.cpp
-    )
-  #set( LIBRARIES ${LIBRARIES} tinyxml2 )
-endif( ${EXE_TYPE} STREQUAL "wxGUI" )
-
-if( ${EXE_TYPE} STREQUAL "ncursesClient")
-  set(EXE_NAME ${PROJECT_NAME}_client_ncurses)
-endif( ${EXE_TYPE} STREQUAL "ncursesClient" )
-
-if( ${EXE_TYPE} STREQUAL "UNIX_service")
-  set(EXE_NAME ${PROJECT_NAME}_service)
-endif()
-
-set(EXE_NAME ${EXE_NAME}_${CMAKE_BUILD_TYPE})
-set(EXE_NAME_WOUT_EXT ${EXE_NAME})
-include(${cmnSrcDir}/CMake/addExeFileExt.cmake)
-addExeFileExt(EXE_NAME)
+if(NOT ${EXE_TYPE} STREQUAL "debPkg")
+include(createExeName.cmake)
+createExeName(${EXE_TYPE})
 
 add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
 
@@ -159,7 +141,9 @@ message("CXX flags: ${CMAKE_CXX_FLAGS}")
 message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
 message("CMAKE_EXE_LINKER_FLAGS: \"${CMAKE_EXE_LINKER_FLAGS}\"")
 
-target_link_libraries(${EXE_NAME} ${LIBRARIES})
+
+  target_link_libraries(${EXE_NAME} ${LIBRARIES})
+endif()
 
 if(cre8SrcArchive)
   include(${CmnSrc}/CMake/cr8srcArchive.cmake)
