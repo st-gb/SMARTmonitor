@@ -35,6 +35,12 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../${EXE_NAME}#target name
   #required
   DESTINATION #local/bin # -> extracted into "/usr/local/bin"
     ${exeInstallDir}
+  #Needs execute permissions for all groups in order to also execute as
+  # non-root.
+  #https://cmake.org/cmake/help/latest/command/install.html
+  #"default given permissions OWNER_WRITE, OWNER_READ, GROUP_READ, and
+  # WORLD_READ if no PERMISSIONS argument is given."
+  PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
   )
 endfunction()
 
@@ -44,7 +50,13 @@ if(${EXE_TYPE} STREQUAL "debPkg")
   message("includedExes: ${includedExes}")
 
   #from https://stackoverflow.com/questions/17666003/cmake-output-a-list-with-delimiters
-  string(REPLACE ";" "," exeTypes "${includedExes}")
+  # "," not possible: dpkg: "error processing archive 
+  # /media/sg/devel1/SourceCodeManagement/wxSMARTmonitor/src/SMARTmonitor_wxGUI,
+  # UNIX_service_x86_64_Lubuntu_Release-1.0.0-Linux.deb (--install):
+  # parsing file '/var/lib/dpkg/tmp.ci/control' near line 1:
+  # invalid package name (character ',' not allowed (only letters, digits and
+  # characters '-+._'))"
+  string(REPLACE ";" "+" exeTypes "${includedExes}")
 #  foreach(includedExe IN ${includedExes})
 #    message("includedExe: " ${includedExe})
 #    set(CPACK_PACKAGE_NAME ${CPACK_PACKAGE_NAME}${includedExe},)
@@ -127,7 +139,12 @@ if(${addLinuxSvcFiles})
       ${localResourcesFSpath}/Linux/systemd/SMARTmon.service.skeleton
       )
     INSTALL(FILES ${additionalFiles} #required
-      DESTINATION ${resourcesFSpath}/systemd )
+      DESTINATION ${resourcesFSpath}/systemd
+      #https://cmake.org/cmake/help/latest/command/install.html
+      #"default given permissions OWNER_WRITE, OWNER_READ, GROUP_READ, and
+      # WORLD_READ if no PERMISSIONS argument is given."
+      #Shell scripts need execute permissions.
+      PERMISSIONS OWNER_READ OWNER_EXECUTE)
 #  endif()
 endif()
 
