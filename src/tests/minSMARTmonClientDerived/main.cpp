@@ -36,6 +36,6 @@ int main (int argc, char** argv)
   SMARTmonClient.OutputUsage();
   SMARTmonClient.m_stdstrServiceHostName = "localhost";
   SMARTmonClient.InitializeSMART();
-  SMARTmonClient.ConnectToServerAndGetSMARTvalues();
+  SMARTmonClient.CnnctToSrvAndGetSMARTvals();
   return 0;
 }

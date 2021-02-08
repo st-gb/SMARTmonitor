@@ -43,7 +43,7 @@ GCC_DIAG_ON(write-strings)
 SMARTvalueRater SMARTmonitorClient::s_SMARTvalueRater;
 
 SMARTmonitorClient::SMARTmonitorClient() 
-  : m_serviceConnectionCountDownInSeconds(60)
+  : m_srvCnnctnCntDownInSec(60)
 #ifdef _DEBUG
   , GetSMARTvalsAndUpd8UIthreadID(0)
 #endif
@@ -198,7 +198,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 
 /** Called e.g. when server address was given via program options/
  *  as command line argument */
-void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues(const bool asyncCnnctToSvc)
+void SMARTmonitorClient::CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc)
 {
   LOGN_DEBUG("begin")
 #ifdef directSMARTaccess
@@ -213,6 +213,13 @@ void SMARTmonitorClient::ConnectToServerAndGetSMARTvalues(const bool asyncCnnctT
 //  BeforeConnectToServer();
   const fastestUnsignedDataType connectToServerResult = ConnectToServer(
     m_stdstrServiceHostName.c_str(), asyncCnnctToSvc);
+  if(connectToServerResult == OperatingSystem::BSD::sockets::getHostByNameFailed
+     + /*OperatingSystem::BSD::sockets::*/gethostbynameUnknownHost){
+    std::ostringstream oss;
+    oss << "\"" << m_stdstrServiceHostName.c_str() << "\" not found in host "
+      "DataBase";
+    ShowMessage(oss.str() );
+  }
   if(! asyncCnnctToSvc)
   {
 //    AfterConnectToServer(connectToServerResult);
@@ -225,10 +232,15 @@ void SMARTmonitorClient::ConnectToServer() {
    *   to a service). */
   EndUpdateUIthread();
 #endif
-//  std::string stdstrServerAddress;
-  //GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
-  ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
-
+  switch(m_srvrCnnctnState){
+   case unconnectedFromService :
+  //  std::string stdstrServerAddress;
+    //GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
+    ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
+   case connectedToService :
+//     TODO setUI(connectedToService);
+    ;
+  }
 //  SetServiceAddress(m_stdstrServerAddress);
 //  BeforeConnectToServer();
 //  ConnectToServerAndGetSMARTvalues();

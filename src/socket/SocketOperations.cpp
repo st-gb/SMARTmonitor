@@ -13,7 +13,6 @@
 #ifdef __linux__
 #include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
 #endif
-#include <OperatingSystem/BSD/socket/prepCnnctToSrv.h>///prepCnnctToSrv(...)
 #include <OperatingSystem/BSD/socket/socketTimeout.h>///getSocketTimeout(...)
 
 using namespace OperatingSystem::BSD::sockets;
@@ -88,6 +87,7 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
      *  "On error, -1 is returned, and errno is set appropriately." */
     rdFrmScktRslt = readFromSocket2(m_socketFileDesc,
       SMARTdataXML, numBytesToRead, & numBytesRead);
+    SetCurrentAction(hasReadSMARTvaluesXMLdata);
     //TODO often numBytesRead < numBytesToRead if this function is called from 
     //  "UpdateSMARTparameterValuesThreadFunc"
     if(numBytesRead < numBytesToRead) {
@@ -147,6 +147,7 @@ struct SocketConnectThreadFuncParams
   struct sockaddr_in srvAddr;
   SMARTmonitorClient * p_SMARTmonitorClient;
   fastestUnsignedDataType connectTimeoutInSeconds;
+  int errNo;
   void AfterConnectToServer()
   {
 //    p_SMARTmonitorClient->CloseServerConnectStatusUI();
@@ -160,8 +161,11 @@ int ConnectToSocketNonBlocking(
   int socketFileDescriptor, 
   struct sockaddr_in & serv_addr, 
   long int connectTimeoutInSeconds,
-  SMARTmonitorClient * p_smartMonClient)
+  SMARTmonitorClient * p_smartMonClient,
+  int & errNo
+  )
 {
+  errNo = -1;
   /** from http://www.linuxquestions.org/questions/programming-9/why-does-connect-block-for-a-long-time-708647/ */
 //  fcntl(socketFD, F_SETFL, curflags | O_NONBLOCK);
   //http://stackoverflow.com/questions/29598508/how-to-get-out-from-a-tcp-blocking-connect-call
@@ -228,12 +232,14 @@ int ConnectToSocketNonBlocking(
 //      int errorNumber = errno;
       if(result > 0) /** > 0 ready file descriptors */
       {
+        result = 0;
 //        FD_ISSET()
         //http://pubs.opengroup.org/onlinepubs/7908799/xns/getsockopt.html
         // "This option stores an int value."
         int iSO_ERROR;
         socklen_t optlen;
         /** http://man7.org/linux/man-pages/man2/connect.2.html :
+         * section "ERRORS" , "EINPROGRESS" :
           "After select(2) indicates writability, use getsockopt(2) to read the
            SO_ERROR option at level SOL_SOCKET to determine whether
            connect() completed successfully (SO_ERROR is zero)" */
@@ -244,6 +250,9 @@ int ConnectToSocketNonBlocking(
           socketFileDescriptor, 
           SOL_SOCKET /*int level*/,
           ///"This option stores an int value in the optval argument. "
+          /** https://pubs.opengroup.org/onlinepubs/007908799/xns/getsockopt.html :
+           * SO_ERROR : "Reports information about error status and clears it.
+           * This option stores an int value." */
           SO_RCVBUF, //SO_ERROR, //int optname
           & iSO_ERROR //void *optval
           , & optlen //socklen_t *optlen
@@ -261,20 +270,36 @@ int ConnectToSocketNonBlocking(
           //TODO result was success even if the server/service is not running
           /** Change back to blocking mode. */
           result = fcntl(socketFileDescriptor, F_SETFL, flags);
+          errNo = 0;
         }
-        else
+        else{
           close(socketFileDescriptor);
+          result = -1;
+       }
 //          result = iSO_ERROR;
       }
+      /** https://man7.org/linux/man-pages/man2/select.2.html : "The return
+       * value may be zero if the timeout expired before any file descriptors
+       * became ready." */
       else if(result == 0) // time out occurred
       {
-//        result = errno;
         close(socketFileDescriptor);
+        errno = ETIMEDOUT;
+        result = -1;
       }
-      else
+      else///return value of "select" = -1
       {
-          // error
+        /** https://linux.die.net/man/2/select :
+         *[...]On error, -1 is returned, and errno is set appropriately [...]"*/
+        result = errno;
+//        enum connStep = select;
+        errNo = errno;
       }
+    }
+    else{/// errno not EINPORGRESS
+      errNo = errno;
+//     connStep = connect;
+      result = -1;
     }
   }
   return result;
@@ -299,24 +324,25 @@ DWORD SocketConnectThreadFunc(void * p_v)
       p_socketConnectThreadFuncParams->socketFileDesc,
       p_socketConnectThreadFuncParams->srvAddr,
       p_socketConnectThreadFuncParams->connectTimeoutInSeconds,
-      p_socketConnectThreadFuncParams->p_SMARTmonitorClient
+      p_socketConnectThreadFuncParams->p_SMARTmonitorClient,
+      p_socketConnectThreadFuncParams->errNo
       );
   
-    if( connectResult < 0)
+    if(/*connectResult < 0*/ errNo != 0)
     {
 //      HandleConnectionError(hostName);
 //      return errorConnectingToService;
       /**Close the socket here because so it is done for all user interfaces.*/
       close(p_socketConnectThreadFuncParams->socketFileDesc);
     }
-    else if( connectResult == 0)
+    else/*if(connectResult == 0)*/
     {
       LOGN("successfully connected")
       p_socketConnectThreadFuncParams->p_SMARTmonitorClient->ShowMessage(
         "successfully connected to service", UserInterface::MessageType::success);
     }
-    p_socketConnectThreadFuncParams->p_SMARTmonitorClient->
-      AfterConnectToServer(connectResult);
+    p_socketConnectThreadFuncParams->p_SMARTmonitorClient->AfterConnectToServer(
+      /*connectResult*/p_socketConnectThreadFuncParams->errNo);
     delete p_socketConnectThreadFuncParams;
     return connectResult;
   }
@@ -345,11 +371,17 @@ DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
      * parameter) seconds->show timeout in UI.*/
     p_SMARTmonitorClient->startCnnctCountDown();
     p_SMARTmonitorClient->SetCurrentAction(SMARTmonitorClient::cnnctToSrv);
+    /** https://linux.die.net/man/3/connect :"Upon successful completion,
+     * connect() shall return 0; otherwise, -1 shall be returned and errno set
+     * to indicate the error." */
     cnnctRslt = connect(p_socketConnectThreadFuncParams->socketFileDesc,
       (struct sockaddr *) & p_socketConnectThreadFuncParams->srvAddr,
       sizeof(p_socketConnectThreadFuncParams->srvAddr) );
+//    if(cnnctRslt == -1){
+      int errNo = errno;
+//    }
     pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
-    p_SMARTmonitorClient->AfterConnectToServer(cnnctRslt);
+    p_SMARTmonitorClient->AfterConnectToServer(/*cnnctRslt*/errNo);
     delete p_socketConnectThreadFuncParams;
   }
   return cnnctRslt;
@@ -404,7 +436,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
 //  close(m_socketFileDesc);
 //  connectThread.WaitForTermination();
   //bzero(buffer,256);
-  return unconnectedFromService;
+  return /*unconnectedFromService*/ prepCnnctToSrvRslt;
 }
 
 void SMARTmonitorClient::AfterGetSMARTvaluesLoop(int getSMARTvaluesResult)
@@ -416,19 +448,22 @@ void SMARTmonitorClient::AfterGetSMARTvaluesLoop(int getSMARTvaluesResult)
   }
 }
 
-void SMARTmonitorClient::HandleConnectionError(const char * hostName)
+/**@param connectResult the errno from calling "connect" (blocking connect)/
+ * "select" (non-blocking connect) */
+void SMARTmonitorClient::HandleConnectionError(const char * hostName,
+  const int connectResult)
 {
   //TODO: show error via user interface
   //Message("")
   std::ostringstream oss;
-  oss << "error connecting to S.M.A.R.T. values service " << 
-    m_stdstrServiceHostName << ",port:" << m_socketPortNumber << "\n";
+  oss << "error connecting to S.M.A.R.T. values server at \"" << 
+    m_stdstrServiceHostName << "\", port " << m_socketPortNumber << ":";
   //TODO the following is Linux-specific and should be OS-independent
   //see http://man7.org/linux/man-pages/man2/connect.2.html
   //TODO errno must come from connect(...), no other function call inbetween
   //TODO use error description from common_sourcecode/.../BSD/socket
   //BlockingCnnct::getoPossibleCause
-  switch(errno)
+  switch(/*errno*/ connectResult)
   {
     //see http://man7.org/linux/man-pages/man2/connect.2.html
     case ECONNREFUSED :
@@ -442,9 +477,10 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName)
       break;
     default :
     {
-      int errorCode = OperatingSystem::GetLastErrorCode();
+//      const int errorCode = OperatingSystem::GetLastErrorCode();
 #ifdef __linux__
-      oss << OperatingSystem::EnglishMessageFromErrorCode(errorCode);
+      oss << OperatingSystem::EnglishMessageFromErrorCode(connectResult) <<
+        " (OS error code: " << /*errorCode*/connectResult << ")";
 #endif
     }
     break;

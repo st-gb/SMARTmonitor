@@ -157,6 +157,12 @@ void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
     ShowMessage(str, UserInterface::MessageType::info);
     }
     break;
+   case SMARTmonitorClient::hasReadSMARTvaluesXMLdata:
+    {
+    wxString str(wxT("finished reading S.M.A.R.T. data") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
   }
 }
 
@@ -278,7 +284,8 @@ void SMARTdialog::buildUI()
 
   wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
   sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
-  m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT, wxT("&Connect") );
+  m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT,
+    wxT("&Connect...") );
   #ifdef directSMARTaccess
     //TODO only add if sufficient access rights: if(directSMARTaccessAvailable)
     m_p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,

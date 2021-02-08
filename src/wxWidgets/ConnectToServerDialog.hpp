@@ -24,11 +24,13 @@ public:
     const int cnnctToSrvSocketFileDesc);
   static wxString title;
   virtual ~ConnectToServerDialog();
-  enum IDs {TIMER_ID = 0, connect};
+  enum IDs {cnnctnTimeoutTimerID = 0, cnnctnAttmptTimerID, connect};
   void End();
-  void EndTimer(){ m_timer.Stop(); SetTitle(title); }
-  wxTimer m_timer;
-  void ReStartTimer(){m_timeOutInSeconds = 30; m_timer.Start();}
+  void EndCnnctnTimeoutTimer();
+  wxTimer m_cnnctnTimeoutTimer;
+  wxTimer m_cnnctnAttmptTimer;
+  void ReStartTimer(){m_timeOutInSeconds = 30; m_cnnctnTimeoutTimer.Start();}
+  void StartSrvCnnctnAttmptCntDown(const int timeOutInSec = -1);
 private:
   fastestUnsignedDataType m_timeOutInSeconds;
   int m_connectToServerSocketFileDescriptor;
@@ -37,14 +39,16 @@ private:
   wxTextCtrl * m_p_srvAddrTxtCtrl;
   wxTextCtrl * m_p_portNoTxtCtrl;
   wxTextCtrl * m_p_timeoutInS_TxtCtrl;
+  wxTextCtrl * m_p_cnnctnAttmptTxtCtrl;
   void buildUI();
-  void StartTimer(){m_timer.Start();}
+  void StartTimer(){m_cnnctnTimeoutTimer.Start();}
   void OnCancel(wxCommandEvent& event);
   void OnConnect(wxCommandEvent &);
   void OnCloseWindow(wxCloseEvent& event);
   void OnStartCntDown(wxCommandEvent &);
   inline void showTimeoutInTitle();
   void OnTimer(wxTimerEvent& event);
+  void OnCnnctnAttmptTimer(wxTimerEvent &);
   
   DECLARE_EVENT_TABLE()
 };

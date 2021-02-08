@@ -142,15 +142,16 @@ void wxSMARTmonitorApp::OnStartCntDown(wxCommandEvent & event){
   if(! m_p_cnnctToSrvDlg){
     ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
   }
-  if(m_p_cnnctToSrvDlg)
-    m_p_cnnctToSrvDlg->m_timer.Start(1000);
+  else
+    m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown();
 }
 
 void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
   wxCommandEvent & event)
 {
-  m_serviceConnectionCountDownInSeconds = event.GetInt();
-  m_wxtimer.Start(1000);
+//  m_wxtimer.Start(1000);
+  if(m_p_cnnctToSrvDlg)
+    m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(event.GetInt() );
 }
 
 void wxSMARTmonitorApp::StartServiceConnectionCountDown(
@@ -158,12 +159,14 @@ void wxSMARTmonitorApp::StartServiceConnectionCountDown(
 {
   if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
   {
-    m_serviceConnectionCountDownInSeconds = countDownInSeconds;
-    m_wxtimer.Start(1000);
+//    m_wxtimer.Start(1000);
+    if(m_p_cnnctToSrvDlg)
+      m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(countDownInSeconds);
   }
   else
   {
-    wxCommandEvent startServiceConnectionCountDown( StartServiceConnectionCountDownEventType );
+    wxCommandEvent startServiceConnectionCountDown(
+      StartServiceConnectionCountDownEventType);
     startServiceConnectionCountDown.SetInt(countDownInSeconds);
     wxPostEvent(this, startServiceConnectionCountDown);
   }
@@ -193,10 +196,15 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(
  * interface thread.*/
 void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 {
+  ///May be "errno" from calling "connect" or "select"
   int connectResult = commandEvent.GetInt();
+  if(connectResult == 0)
+    m_srvrCnnctnState = connectedToService;
+  else
+    m_srvrCnnctnState = unconnectedFromService;
   //TODO The following could go into a "AfterCnnctToSrvInUIthread" function
   // usable by all subclasses of SMARTmonitorClient.
-  if( connectResult == connectedToService)
+  if( connectResult == /*connectedToService*/ 0)
   {
 //    connectedToSrv();
     if(m_p_cnnctToSrvDlg)
@@ -223,13 +231,12 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
     /** If not closing the socket then socket file descriptor number increases?*/
     close(m_socketFileDesc);
     if(m_p_cnnctToSrvDlg)
-      m_p_cnnctToSrvDlg->EndTimer();
+      m_p_cnnctToSrvDlg->EndCnnctnTimeoutTimer();
     gs_dialog->EnableServerInteractingControls(connectResult);
-    HandleConnectionError("");
-    fastestUnsignedDataType countDownInSeconds = 60;
+    HandleConnectionError("", connectResult);
 //    gs_dialog->StartCountDown(countDownInSeconds);
 //    m_wxtimer.StartOnce(countDownInSeconds * 1000);
-    StartServiceConnectionCountDown(countDownInSeconds);
+    StartServiceConnectionCountDown(m_srvCnnctnCntDownInSec);
   }
 }
 
@@ -240,7 +247,7 @@ void wxSMARTmonitorApp::OnChangeState(wxCommandEvent & commandEvent)
 
 void wxSMARTmonitorApp::OnCnnctToSrvr(wxCommandEvent & commandEvent)
 {
-  ConnectToServerAndGetSMARTvalues(asynCnnct);
+  CnnctToSrvAndGetSMARTvals(asynCnnct);
 }
 
 /** Should only be called from the UI thread?!, else program crash? */
@@ -322,14 +329,14 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
 //  if( m_serverConnectionState = connectedToService)
 //  else
   wxString wxstrServiceHostName = m_stdstrServiceHostName;
-  if( m_serviceConnectionCountDownInSeconds --)
+  if(m_srvCnnctnCntDownInSec --)
   {
     /** Create title as local variable for easier debugging. */
     wxString status = wxString::Format(
       wxT("conn. attempt to \"%s\",port %u in %u s"),
       wxstrServiceHostName.c_str(), 
       m_socketPortNumber, 
-      m_serviceConnectionCountDownInSeconds);
+      m_srvCnnctnCntDownInSec);
     gs_dialog->SetStatus(status);
   }
   else
@@ -341,7 +348,7 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
       m_socketPortNumber);
     gs_dialog->SetStatus(status);
     m_wxtimer.Stop();
-    ConnectToServerAndGetSMARTvalues(asynCnnct);
+    CnnctToSrvAndGetSMARTvals(asynCnnct);
     if(m_p_cnnctToSrvDlg)
       m_p_cnnctToSrvDlg->ReStartTimer();
   }
@@ -646,9 +653,11 @@ void wxSMARTmonitorApp::SetCurrentAction(enum CurrentAction currAction)
   else{
     /** To execute in UI thread.
      * https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case */
-    wxCommandEvent ShowCurrentActionEvent(ShowCurrentActionEventType);
-    ShowCurrentActionEvent.SetInt(currAction);
-    wxPostEvent(this, ShowCurrentActionEvent);
+    wxCommandEvent showCurrentActionEvent(ShowCurrentActionEventType);
+    showCurrentActionEvent.SetInt(currAction);
+    //TODO set thread ID, if blocking or non-blocking connect and show this in UI
+    // showCurrentActionEvent.SetClientData SetClientObject
+    wxPostEvent(this, showCurrentActionEvent);
   }
 }
 

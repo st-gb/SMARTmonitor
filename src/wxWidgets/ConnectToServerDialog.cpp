@@ -19,7 +19,8 @@ extern SMARTdialog * gs_dialog;
 //DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
 
 BEGIN_EVENT_TABLE(ConnectToServerDialog, wxDialog)
-  EVT_TIMER(TIMER_ID, ConnectToServerDialog::OnTimer)
+  EVT_TIMER(cnnctnTimeoutTimerID, ConnectToServerDialog::OnTimer)
+  EVT_TIMER(cnnctnAttmptTimerID, ConnectToServerDialog::OnCnnctnAttmptTimer)
   EVT_CLOSE(ConnectToServerDialog::OnCloseWindow)
   EVT_BUTTON(wxID_CANCEL, ConnectToServerDialog::OnCancel)
   EVT_BUTTON(connect, ConnectToServerDialog::OnConnect)
@@ -30,10 +31,13 @@ END_EVENT_TABLE()
 wxString ConnectToServerDialog::title =
   wxT("connect to S.M.A.R.T. values server/service");
 
-inline wxString GetTimeOutLabelText(const fastestUnsignedDataType timeOutInSeconds)
+inline wxString GetTimeOutLabelText(
+  const fastestUnsignedDataType timeOutInSeconds,
+  const wxChar str [])
 {
-  return //wxString::Format(/*%u*//*,timeOutInSeconds*/);
-    wxT("seconds until connection timeout:");
+  return wxString::Format(wxT("seconds until %s:")
+    /*%u*//*,timeOutInSeconds);*/
+    /*+*/, str /* + " timeout:"*/);
 }
 
 inline void addToHorizSizer(
@@ -58,7 +62,8 @@ ConnectToServerDialog::ConnectToServerDialog(
       /*wxDefaultSize*/wxSize(550,200),
       /**For "close dialog" button.*/wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
     )
-  , m_timer(this, TIMER_ID)
+  , m_cnnctnTimeoutTimer(this, cnnctnTimeoutTimerID)
+  , m_cnnctnAttmptTimer(this, cnnctnAttmptTimerID)
   , m_timeOutInSeconds(timeOutInSeconds)
   , m_connectToServerSocketFileDescriptor(connectToServerSocketFileDescriptor)
 {
@@ -90,8 +95,15 @@ void ConnectToServerDialog::buildUI(){
   m_p_timeoutInS_TxtCtrl = new wxTextCtrl(this, wxID_ANY,
     wxString::Format(wxT("%u"), m_timeOutInSeconds) );
   m_p_wxStaticTextTimeout = new wxStaticText(this, wxID_ANY,
-    GetTimeOutLabelText(m_timeOutInSeconds) );
+    GetTimeOutLabelText(m_timeOutInSeconds, wxT("connection timeout")) );
   addToHorizSizer(sizerTop, m_p_wxStaticTextTimeout, m_p_timeoutInS_TxtCtrl);
+
+  m_p_cnnctnAttmptTxtCtrl = new wxTextCtrl(this, wxID_ANY,
+    wxString::Format(wxT("%u"), wxGetApp().
+    m_srvCnnctnCntDownInSec) );
+  wxStaticText * p_cnnctnAttmptTxt = new wxStaticText(this, wxID_ANY,
+    GetTimeOutLabelText(m_timeOutInSeconds, wxT("connection attempt") ) );
+  addToHorizSizer(sizerTop, p_cnnctnAttmptTxt, m_p_cnnctnAttmptTxtCtrl);
 
   m_p_timeoutLabel = new wxStaticText(this, wxID_ANY, wxT("current state:"));
   sizerTop->Add(m_p_timeoutLabel);
@@ -119,13 +131,21 @@ void ConnectToServerDialog::End(){
   /** http://docs.wxwidgets.org/3.0/classwx_window.html#a6bf0c5be864544d9ce0560087667b7fc
    *  wxWindow::Close : "To guarantee that the window will be destroyed, call
    *  wxWindow::Destroy instead" */
-  m_timer.Stop();
+  m_cnnctnTimeoutTimer.Stop();
+  m_cnnctnAttmptTimer.Stop();
   if( IsModal() )
     EndModal(0);
   else
     const bool successfullyDestroyed = Destroy();
   wxGetApp().EnableSrvUIctrls();
   wxGetApp().m_p_cnnctToSrvDlg = NULL;
+}
+
+void ConnectToServerDialog::EndCnnctnTimeoutTimer()
+{
+  m_cnnctnTimeoutTimer.Stop();
+  m_p_timeoutLabel->SetLabel(wxT(""));
+  SetTitle(title);
 }
 
 static void sigHandler(int signo){}
@@ -147,6 +167,13 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
     wxMessageBox(wxT("error converting timeout character string to integer") );
     convFailed = true;
   }
+  p_timeoutInS = (unsigned long *) & wxGetApp().
+    m_srvCnnctnCntDownInSec;
+  if(! m_p_cnnctnAttmptTxtCtrl->GetValue().ToULong(p_timeoutInS) ){
+    wxMessageBox(wxT("error converting timeout attempt character string to "
+      "integer") );
+    convFailed = true;
+  }
   if(convFailed)
     wxMessageBox(wxT("not connecting to server because character string "
       "conversion failed.") );
@@ -155,7 +182,7 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
     ///https://en.wikipedia.org/wiki/C_signal_handling
     ///Needed, else program exits when calling raise(SIGUSR1).
     signal(SIGUSR1, sigHandler);
-    wxGetApp().ConnectToServerAndGetSMARTvalues(wxGetApp().isAsyncCnnct() );
+    wxGetApp().CnnctToSrvAndGetSMARTvals(wxGetApp().isAsyncCnnct() );
   }
   /** Stop timer and close this dialog in "SMARTmonitorClient::
    * AfterCcnnectToServer" (in a derived class) */
@@ -170,7 +197,7 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
   ///https://www.thegeekstuff.com/2011/02/send-signal-to-process/
   /*kill(getpid(), SIGUSR1);*/
   raise(SIGUSR1);///This cancels the waiting in "select(...)".
-  EndTimer();
+  EndCnnctnTimeoutTimer();
   wxGetApp().EndWaitTillCnnctTimer();
 }
 
@@ -180,7 +207,7 @@ void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)
 }
 
 void ConnectToServerDialog::OnStartCntDown(wxCommandEvent & event){
-  m_timer.Start(1000);
+  m_cnnctnTimeoutTimer.Start(1000);
 }
 
 inline void ConnectToServerDialog::showTimeoutInTitle(){
@@ -200,14 +227,37 @@ void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
     m_timeOutInSeconds --;
 //    showTimoutInTitle();
     m_p_timeoutLabel->SetLabel(wxString::Format(
-      wxT("connection timeout in ca. %us"), m_timeOutInSeconds) );
+      wxT("connection TIMEOUT in ca. %us"), m_timeOutInSeconds) );
   }
   else{
-    m_timer.Stop();
+    m_cnnctnTimeoutTimer.Stop();
     SetTitle(title);
   }
 }
 
+void ConnectToServerDialog::OnCnnctnAttmptTimer(wxTimerEvent& event)
+{
+  if( m_timeOutInSeconds > 0)
+  {
+    m_timeOutInSeconds --;
+    m_p_timeoutLabel->SetLabel(wxString::Format(
+      wxT("connection ATTEMPT in ca. %us"), m_timeOutInSeconds) );
+  }
+  else
+    m_cnnctnAttmptTimer.Stop();
+}
+
 ConnectToServerDialog::~ConnectToServerDialog() {
-  m_timer.Stop();
+  m_cnnctnTimeoutTimer.Stop();
+}
+
+void ConnectToServerDialog::StartSrvCnnctnAttmptCntDown(const int timeOutInSec)
+{
+  if(timeOutInSec == -1)///Use default timeOut
+    m_timeOutInSeconds = wxGetApp().m_srvCnnctnCntDownInSec;
+  else
+   m_timeOutInSeconds = timeOutInSec;
+  m_p_timeoutLabel->SetLabel(wxString::Format(
+    wxT("connection ATTEMPT in ca. %u s"), m_timeOutInSeconds) );
+  m_cnnctnAttmptTimer.Start(1000);
 }

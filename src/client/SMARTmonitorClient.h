@@ -8,8 +8,10 @@
 #include "../SMARTmonitorBase.hpp"
 
 ///Stefan Gebauer's common_sourcecode repository header files:
+#include <OperatingSystem/BSD/socket/prepCnnctToSrv.h>///prepCnnctToSrv(...)
 #include <OperatingSystem/multithread/nativeThreadType.hpp>///nativeThread_type
 
+///This repository's files:
 #include <UserInterface/columnIndices.hpp>
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater
 #include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
@@ -26,7 +28,8 @@ public:
     readNumBytesForSuppSMART_IDs,
     readSuppSMART_IDsXMLdata,
     readNumBytesForSMARTdata,
-    readSMARTvaluesXMLdata
+    readSMARTvaluesXMLdata,
+    hasReadSMARTvaluesXMLdata
   };
 
   SMARTmonitorClient();
@@ -53,8 +56,9 @@ public:
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
   
+  enum serverConnectionState m_srvrCnnctnState = unconnectedFromService;
   int m_socketFileDesc;
-  fastestUnsignedDataType m_serviceConnectionCountDownInSeconds;
+  fastestUnsignedDataType m_srvCnnctnCntDownInSec;
   fastestUnsignedDataType m_serverConnectionState;
   
   void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult);
@@ -67,12 +71,12 @@ public:
   /// be ensured to run in UI thread via events etc..)
   ///Can be used to hide a "connect to server" window.
   virtual void AfterConnectToServer(int connectResult) { };
-  void HandleConnectionError(const char * hostName);
+  void HandleConnectionError(const char * hostName, const int connectResult);
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
     fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
   virtual void ChangeConnectionState(enum serverConnectionState newState){}
-  void ConnectToServerAndGetSMARTvalues(const bool asyncCnnctToSvc);
+  void CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc);
   void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
