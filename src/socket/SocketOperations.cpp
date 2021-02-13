@@ -14,6 +14,8 @@
 #include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
 #endif
 #include <OperatingSystem/BSD/socket/socketTimeout.h>///getSocketTimeout(...)
+///OperatingSystem::BSD::sockets::NonBlckingIsCnnctd(...)
+#include <OperatingSystem/BSD/socket/NonBlockingConnect.h>
 
 using namespace OperatingSystem::BSD::sockets;
 
@@ -174,6 +176,7 @@ int ConnectToSocketNonBlocking(
   int flags = fcntl(socketFileDescriptor, F_GETFL, 0);
   fcntl(socketFileDescriptor, F_SETFL, flags | O_NONBLOCK);
 
+  p_smartMonClient->SetCurrentAction(SMARTmonitorClient::nonBlckCnnctToSrv);
   /** http://man7.org/linux/man-pages/man2/connect.2.html :
    *  "If the connection or binding succeeds, zero is returned. On error,
    *  -1 is returned, and errno is set appropriately." */
@@ -202,7 +205,7 @@ int ConnectToSocketNonBlocking(
 
       /** Because returning from select(...) may take some (see its last
        * parameter) seconds->show timeout in UI.*/
-      p_smartMonClient->startCnnctCountDown();
+      p_smartMonClient->startSrvCnnctCntDown();
       /** https://linux.die.net/man/2/select :
        * "On success, select() and pselect() return the number of file
        * descriptors contained in the three returned descriptor sets (that is,
@@ -211,7 +214,7 @@ int ConnectToSocketNonBlocking(
        * happens. On error, -1 is returned, and errno is set appropriately; the
        * sets and timeout become undefined, so do not rely on their contents
        * after an error." */
-      result = 
+      const int selectRslt = 
         /** https://linux.die.net/man/2/select :
           * "waiting until one or more of the file descriptors become
           * "ready" for some class of I/O operation (e.g., input possible)."*/
@@ -230,9 +233,9 @@ int ConnectToSocketNonBlocking(
        * when the connection was successful. */
       pthread_sigmask(SIG_SETMASK, &origmask, NULL);
 //      int errorNumber = errno;
-      if(result > 0) /** > 0 ready file descriptors */
+      if(selectRslt > 0) /** > 0 ready file descriptors */
       {
-        result = 0;
+//        result = 0;
 //        FD_ISSET()
         //http://pubs.opengroup.org/onlinepubs/7908799/xns/getsockopt.html
         // "This option stores an int value."
@@ -246,45 +249,50 @@ int ConnectToSocketNonBlocking(
         
         /** http://man7.org/linux/man-pages/man2/setsockopt.2.html
          * " On success, zero is returned for the standard options." */
-        result = getsockopt(//optval for SO_RCVBUF size is 16 if was connected
+        /// optval for SO_RCVBUF size is 16 if was connected
+        /*result =*/ int getsockoptRslt = getsockopt(
           socketFileDescriptor, 
           SOL_SOCKET /*int level*/,
           ///"This option stores an int value in the optval argument. "
           /** https://pubs.opengroup.org/onlinepubs/007908799/xns/getsockopt.html :
            * SO_ERROR : "Reports information about error status and clears it.
            * This option stores an int value." */
-          SO_RCVBUF, //SO_ERROR, //int optname
+          /*SO_RCVBUF,*/ SO_ERROR, //int optname
           & iSO_ERROR //void *optval
           , & optlen //socklen_t *optlen
           );
+        int getpeernameErrNo;
+        const bool isConnected = OperatingSystem::BSD::sockets::
+          NonBlckingIsCnnctd(socketFileDescriptor, getpeernameErrNo);
         const int isSet =FD_ISSET(socketFileDescriptor,& readFileDescriptorSet);
-        if(/*isSet*/ iSO_ERROR > 0){
+//        if(/*isSet*/ iSO_ERROR > 0){
           /*close(socketFileDescriptor);
           result = -1;*/
-        }
+//        }
         /** Result is sometimes 0 even if not connected(e.g.if 2nd time
          *  connection attempt with that socket FD?)? */
-        else if(result == 0 && iSO_ERROR == 0)
+        /*else*/ if(isConnected && getsockoptRslt == 0 && selectRslt > 0 &&
+          iSO_ERROR == 0)
         {
           LOGN_INFO("successfully connected to " << serv_addr.sin_addr.s_addr )
           //TODO result was success even if the server/service is not running
           /** Change back to blocking mode. */
-          result = fcntl(socketFileDescriptor, F_SETFL, flags);
+          /*result =*/ fcntl(socketFileDescriptor, F_SETFL, flags);
           errNo = 0;
         }
         else{
           close(socketFileDescriptor);
-          result = -1;
+          errNo = getpeernameErrNo;
        }
 //          result = iSO_ERROR;
       }
       /** https://man7.org/linux/man-pages/man2/select.2.html : "The return
        * value may be zero if the timeout expired before any file descriptors
        * became ready." */
-      else if(result == 0) // time out occurred
+      else if(selectRslt == 0) // time out occurred
       {
         close(socketFileDescriptor);
-        errno = ETIMEDOUT;
+        errNo = ETIMEDOUT;
         result = -1;
       }
       else///return value of "select" = -1
@@ -328,7 +336,7 @@ DWORD SocketConnectThreadFunc(void * p_v)
       p_socketConnectThreadFuncParams->errNo
       );
   
-    if(/*connectResult < 0*/ errNo != 0)
+    if(/*connectResult < 0*/ p_socketConnectThreadFuncParams->errNo != 0)
     {
 //      HandleConnectionError(hostName);
 //      return errorConnectingToService;
@@ -369,7 +377,7 @@ DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
       ->p_SMARTmonitorClient;
     /** Because returning from connect(...) may take some (see its last
      * parameter) seconds->show timeout in UI.*/
-    p_SMARTmonitorClient->startCnnctCountDown();
+    p_SMARTmonitorClient->startSrvCnnctCntDown();
     p_SMARTmonitorClient->SetCurrentAction(SMARTmonitorClient::cnnctToSrv);
     /** https://linux.die.net/man/3/connect :"Upon successful completion,
      * connect() shall return 0; otherwise, -1 shall be returned and errno set
@@ -444,7 +452,7 @@ void SMARTmonitorClient::AfterGetSMARTvaluesLoop(int getSMARTvaluesResult)
   close(m_socketFileDesc);
   if(getSMARTvaluesResult != 0)
   {
-    StartServiceConnectionCountDown(60);
+    StartSrvCnnctnAttmptCntDown(60);
   }
 }
 
@@ -467,12 +475,13 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName,
   {
     //see http://man7.org/linux/man-pages/man2/connect.2.html
     case ECONNREFUSED :
-      oss << "No process listening on the remote address \"" << //hostName 
-        m_stdstrServiceHostName
-        << "\", port:" << m_socketPortNumber;
+      oss << "No process listening on the remote address";
       break;
+    case ETIMEDOUT :
+      oss << "connection timed out";
+     break;
     case EBADFD :///https://man7.org/linux/man-pages/man2/connect.2.html
-      oss << "The socket file descriptor #" << m_socketPortNumber <<
+      oss << "The socket file descriptor #" << m_socketFileDesc <<
         " is not a valid open file descriptor.";
       break;
     default :

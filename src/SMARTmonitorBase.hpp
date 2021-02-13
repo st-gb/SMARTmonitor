@@ -85,7 +85,7 @@ public:
   ModelAndFirmwareTuplesType m_modelAndFirmwareTuples;
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
-  bool asynCnnct = false;
+  bool asynCnnct = true;
   nativeEvent_type waitOrSignalEvt;
 public:
   SMARTmonitorBase();
@@ -118,7 +118,7 @@ protected:
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
 public:
   nativeThread_type connectThread;
-  virtual void startCnnctCountDown(){};
+  virtual void startSrvCnnctCntDown(){};
   fastestUnsignedDataType m_timeOutInSeconds;
   std::wstring GetProgramOptionValue(const /*enum programOptionNames*/
     fastestUnsignedDataType programOptionName) {

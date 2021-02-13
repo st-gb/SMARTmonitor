@@ -63,7 +63,7 @@ public:
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTstatusUnknownIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
-  void OnStartCntDown(wxCommandEvent &);
+  void OnStartSrvCnnctnCntDown(wxCommandEvent &);
   void SetAttribute(
     const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
@@ -82,10 +82,13 @@ public:
   wxIcon ShowSMARTstatusUnknownIcon();
   wxIcon ShowSMARTwarningIcon();
   void ShowIcon(const wxIcon & icon, const wxString & message );
-  void startCnnctCountDown();
   void ShowStateAccordingToSMARTvalues(const SMARTvalueRating
     entireSMARTvalRating);
-  void StartServiceConnectionCountDown(const fastestUnsignedDataType);
+  ///Timeout/interval before attempting to connect to server.
+  void startSrvCnnctCntDown();
+  /** timeout for non-blocking connect. After timeout elapses the select(...)
+   * function returns. */
+  void StartSrvCnnctnAttmptCntDown(const fastestUnsignedDataType);
   void ReBuildUserInterface();
   
   DECLARE_EVENT_TABLE()

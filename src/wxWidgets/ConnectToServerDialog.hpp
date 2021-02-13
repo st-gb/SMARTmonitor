@@ -26,10 +26,12 @@ public:
   virtual ~ConnectToServerDialog();
   enum IDs {cnnctnTimeoutTimerID = 0, cnnctnAttmptTimerID, connect};
   void End();
+  void EndCnnctnAttemptTimer();
   void EndCnnctnTimeoutTimer();
   wxTimer m_cnnctnTimeoutTimer;
   wxTimer m_cnnctnAttmptTimer;
   void ReStartTimer(){m_timeOutInSeconds = 30; m_cnnctnTimeoutTimer.Start();}
+  void StartSrvCnnctnCntDown(const int timeOutInSec = -1);
   void StartSrvCnnctnAttmptCntDown(const int timeOutInSec = -1);
 private:
   fastestUnsignedDataType m_timeOutInSeconds;

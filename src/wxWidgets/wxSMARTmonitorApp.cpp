@@ -80,7 +80,7 @@ BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
   EVT_COMMAND(wxID_ANY, CnnctToSrvrEvtType, wxSMARTmonitorApp::OnCnnctToSrvr)
   EVT_COMMAND(wxID_ANY, ShowMessageEventType, wxSMARTmonitorApp::OnShowMessage)
   EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
-    OnStartCntDown)
+    OnStartSrvCnnctnCntDown)
   EVT_COMMAND(wxID_ANY, ShowCurrentActionEventType, wxSMARTmonitorApp::
     OnShowCurrentAction)
   EVT_COMMAND(wxID_ANY, StartServiceConnectionCountDownEventType, 
@@ -136,14 +136,16 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 #endif
 }
 
-void wxSMARTmonitorApp::OnStartCntDown(wxCommandEvent & event){
+void wxSMARTmonitorApp::OnStartSrvCnnctnCntDown(wxCommandEvent & event){
   ///Only needs to be done in case connect dialog is not already shown.
   wxGetApp().DisableSrvUIctrls();
   if(! m_p_cnnctToSrvDlg){
     ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
   }
-  else
-    m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown();
+  else{
+    m_p_cnnctToSrvDlg->EndCnnctnAttemptTimer();
+    m_p_cnnctToSrvDlg->StartSrvCnnctnCntDown();
+  }
 }
 
 void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
@@ -154,7 +156,7 @@ void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
     m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(event.GetInt() );
 }
 
-void wxSMARTmonitorApp::StartServiceConnectionCountDown(
+void wxSMARTmonitorApp::StartSrvCnnctnAttmptCntDown(
   const fastestUnsignedDataType countDownInSeconds)
 {
   if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
@@ -236,7 +238,7 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
     HandleConnectionError("", connectResult);
 //    gs_dialog->StartCountDown(countDownInSeconds);
 //    m_wxtimer.StartOnce(countDownInSeconds * 1000);
-    StartServiceConnectionCountDown(m_srvCnnctnCntDownInSec);
+    StartSrvCnnctnAttmptCntDown(m_srvCnnctnCntDownInSec);
   }
 }
 
@@ -350,7 +352,7 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
     m_wxtimer.Stop();
     CnnctToSrvAndGetSMARTvals(asynCnnct);
     if(m_p_cnnctToSrvDlg)
-      m_p_cnnctToSrvDlg->ReStartTimer();
+      m_p_cnnctToSrvDlg->StartSrvCnnctnCntDown();
   }
 }
 
@@ -661,7 +663,7 @@ void wxSMARTmonitorApp::SetCurrentAction(enum CurrentAction currAction)
   }
 }
 
-void wxSMARTmonitorApp::startCnnctCountDown()
+void wxSMARTmonitorApp::startSrvCnnctCntDown()
 {
 //  if(m_p_cnnctToSrvDlg){
     wxCommandEvent wxcommand_event(StartCnnctCntDownEvtType);
@@ -741,8 +743,8 @@ void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 
 wxIcon wxSMARTmonitorApp::ShowSMARTokIcon()
 {
-  ShowIcon(s_SMARTokIcon, wxT("values for (all) (critical) S.M.A.R.T. "
-    "parameters are in a safe range") );
+  ShowIcon(s_SMARTokIcon, wxT("values for (all) processed (critical) S.M.A.R.T."
+    " parameters are in a safe range") );
   return s_SMARTokIcon;
 }
 
@@ -754,7 +756,7 @@ wxIcon wxSMARTmonitorApp::ShowSMARTstatusUnknownIcon()
 
 wxIcon wxSMARTmonitorApp::ShowSMARTwarningIcon()
 {
-  ShowIcon(s_SMARTwarningIcon, wxT("value for at least 1 (critical) S.M.A.R.T. "
-    "parameter is not in a safe range") );
+  ShowIcon(s_SMARTwarningIcon, wxT("value for at least 1 processed (critical) "
+    "S.M.A.R.T. parameter is not in a safe range") );
   return s_SMARTwarningIcon;
 }

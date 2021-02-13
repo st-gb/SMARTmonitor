@@ -141,6 +141,13 @@ void ConnectToServerDialog::End(){
   wxGetApp().m_p_cnnctToSrvDlg = NULL;
 }
 
+void ConnectToServerDialog::EndCnnctnAttemptTimer()
+{
+  m_cnnctnAttmptTimer.Stop();
+  m_p_timeoutLabel->SetLabel(wxT(""));
+  SetTitle(title);
+}
+
 void ConnectToServerDialog::EndCnnctnTimeoutTimer()
 {
   m_cnnctnTimeoutTimer.Stop();
@@ -182,6 +189,7 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
     ///https://en.wikipedia.org/wiki/C_signal_handling
     ///Needed, else program exits when calling raise(SIGUSR1).
     signal(SIGUSR1, sigHandler);
+    EndCnnctnAttemptTimer();
     wxGetApp().CnnctToSrvAndGetSMARTvals(wxGetApp().isAsyncCnnct() );
   }
   /** Stop timer and close this dialog in "SMARTmonitorClient::
@@ -196,6 +204,7 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
 //  Close(true);
   ///https://www.thegeekstuff.com/2011/02/send-signal-to-process/
   /*kill(getpid(), SIGUSR1);*/
+  //TODO crashes here
   raise(SIGUSR1);///This cancels the waiting in "select(...)".
   EndCnnctnTimeoutTimer();
   wxGetApp().EndWaitTillCnnctTimer();
@@ -239,24 +248,41 @@ void ConnectToServerDialog::OnCnnctnAttmptTimer(wxTimerEvent& event)
 {
   if( m_timeOutInSeconds > 0)
   {
+    wxString label = wxString::Format(
+      wxT("connection ATTEMPT in ca. %us"), m_timeOutInSeconds);
+    m_p_timeoutLabel->SetLabel(label);
     m_timeOutInSeconds --;
-    m_p_timeoutLabel->SetLabel(wxString::Format(
-      wxT("connection ATTEMPT in ca. %us"), m_timeOutInSeconds) );
   }
-  else
+  else{
     m_cnnctnAttmptTimer.Stop();
+    wxGetApp().CnnctToSrvAndGetSMARTvals(wxGetApp().isAsyncCnnct() );
+    StartSrvCnnctnCntDown();
+  }
 }
 
 ConnectToServerDialog::~ConnectToServerDialog() {
   m_cnnctnTimeoutTimer.Stop();
 }
 
-void ConnectToServerDialog::StartSrvCnnctnAttmptCntDown(const int timeOutInSec)
+/**Timeout for "connect(...)" (blocking) or select(...) (non-blocking) function/
+ * for TCP handshake */
+void ConnectToServerDialog::StartSrvCnnctnCntDown(const int timeOutInSec)
 {
   if(timeOutInSec == -1)///Use default timeOut
     m_timeOutInSeconds = wxGetApp().m_srvCnnctnCntDownInSec;
   else
    m_timeOutInSeconds = timeOutInSec;
+  m_p_timeoutLabel->SetLabel(wxString::Format(
+    wxT("connection TIMEOUT in ca. %u s"), m_timeOutInSeconds) );
+  m_cnnctnTimeoutTimer.Start(1000);
+}
+
+void ConnectToServerDialog::StartSrvCnnctnAttmptCntDown(const int timeOutInSec)
+{
+  if(timeOutInSec == -1)///Use default timeOut
+    m_timeOutInSeconds = wxGetApp().m_timeOutInSeconds;
+  else
+    m_timeOutInSeconds = timeOutInSec;
   m_p_timeoutLabel->SetLabel(wxString::Format(
     wxT("connection ATTEMPT in ca. %u s"), m_timeOutInSeconds) );
   m_cnnctnAttmptTimer.Start(1000);

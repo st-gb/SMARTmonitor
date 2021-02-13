@@ -136,7 +136,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
      * "close() returns zero on success." */
     result = close(m_socketFileDesc);
     //TODO use variable m_serviceConnectionCountDownInSeconds as parameter
-    StartServiceConnectionCountDown(60);
+    StartSrvCnnctnAttmptCntDown(60);
     return;
   }
   LOGN("SMART unique ID and values container:" << &sMARTuniqueIDandValues)
@@ -191,7 +191,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
      *  next socket(...) call?! */
     close(m_socketFileDesc);
     //TODO use variable m_serviceConnectionCountDownInSeconds as parameter
-    StartServiceConnectionCountDown(60);
+    StartSrvCnnctnAttmptCntDown(60);
   }
   LOGN_DEBUG("end")
 }

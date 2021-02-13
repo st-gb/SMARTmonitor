@@ -25,6 +25,7 @@ public:
   enum CurrentAction
   {
     cnnctToSrv,
+    nonBlckCnnctToSrv,///Non-blocking "connect" (via "select") mode
     readNumBytesForSuppSMART_IDs,
     readSuppSMART_IDsXMLdata,
     readNumBytesForSMARTdata,
@@ -104,7 +105,7 @@ public:
   }
   void SetSMARTattribIDandNameLabel();
   virtual void ShwCnnctToSrvrDlg(const std::string &){};
-  virtual void StartServiceConnectionCountDown(
+  virtual void StartSrvCnnctnAttmptCntDown(
     const fastestUnsignedDataType countDownInSeconds) {}
   /** Operations that only need to be done once after connection to the service
       is established. 

@@ -129,10 +129,15 @@ void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
   switch(currAction){//TODO ability to show in different languages
    case SMARTmonitorClient::cnnctToSrv :
     {
-    wxString str(wxT("connecting to server") );
+    wxString str(wxT("blocking connecting to server") );
     ShowMessage(str, UserInterface::MessageType::info);
     }
     break;
+   case SMARTmonitorClient::nonBlckCnnctToSrv :
+    {
+    wxString str(wxT("NON-blocking connecting to server") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
    case SMARTmonitorClient::readNumBytesForSuppSMART_IDs:
     {
     wxString str(wxT("reading number of bytes for supported S.M.A.R.T. IDs") );
