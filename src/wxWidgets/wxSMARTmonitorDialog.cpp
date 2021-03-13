@@ -2,6 +2,15 @@
  *  Created on: 26.11.2013
  *  Author: Stefan Gebauer, M.Sc. Comp. Sc. */
 
+///This repository's files:
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include "PerDataCarrierPanel.hpp"///class PerDataCarrierPanel
+#include "wxSMARTmonitorDialog.hpp"
+#include "wxSMARTmonitorApp.hpp" //wxGetApp()
+#include "wxSMARTmonitorTaskBarIcon.hpp"
+#include <wxWidgets/SupportedSMARTIDsDialog.hpp>///class
+
 ///wxWidgets files:
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
@@ -13,13 +22,6 @@
 #ifndef WX_PRECOMP
     #include "wx/wx.h"
 #endif
-
-///This repository's files:
-#include "PerDataCarrierPanel.hpp"///class PerDataCarrierPanel
-#include "wxSMARTmonitorDialog.hpp"
-#include "wxSMARTmonitorApp.hpp" //wxGetApp()
-#include "wxSMARTmonitorTaskBarIcon.hpp"
-#include <wxWidgets/SupportedSMARTIDsDialog.hpp>///class
 
 ///Stefan Gebauer's common_sourcecode repository:
 #include <compiler/GCC/enable_disable_warning.h>
@@ -255,7 +257,9 @@ SMARTdialog::SMARTdialog(
 //  , m_SMARTvalueProcessor( (wxWidgets::wxSMARTvalueProcessor &) SMARTvalueProcessor)
 //  , m_SMARTaccess(SMARTvalueProcessor.getSMARTaccess() )
   , m_wxCloseMutex()
+  #ifdef directSMARTaccess
   , m_p_directSMARTaccesBtn(NULL)
+  #endif
   //, m_wxCloseCondition(m_wxCloseMutex)
 {
   /** Must create the wxCondition on heap. When it was a member of this class 

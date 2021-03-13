@@ -2,8 +2,11 @@
  * Author: Stefan Gebauer, M.Sc.Comp.Sc.
  * Created on 6. Juni 2017, 18:22 */
 
-#include "ConnectToServerDialog.hpp"
+///This repository's files:
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
 #include "wxSMARTmonitorApp.hpp"///wxGetApp()
+#include "ConnectToServerDialog.hpp"
 
 ///wxWidgets include files:
 #include <wx/button.h>///class wxButton
@@ -11,7 +14,12 @@
 #include <wx/sizer.h>///class wxBoxSizer
 #include <wx/stattext.h>///class wxStaticText
 
+///S. Gebauer's common_sourcecode files:
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+///OperatingSystem::BSD::socket::interruptSelect(...)
+#include <OperatingSystem/BSD/socket/interruptSelect.h>
+
+#include <signal.h>///SIGUSR1
 
 #include "wxSMARTmonitorDialog.hpp"
 extern SMARTdialog * gs_dialog;
@@ -19,6 +27,7 @@ extern SMARTdialog * gs_dialog;
 //DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
 
 BEGIN_EVENT_TABLE(ConnectToServerDialog, wxDialog)
+  EVT_TEXT(srvAddrTxtCtl, ConnectToServerDialog::OnSrvAddrChange)
   EVT_TIMER(cnnctnTimeoutTimerID, ConnectToServerDialog::OnTimer)
   EVT_TIMER(cnnctnAttmptTimerID, ConnectToServerDialog::OnCnnctnAttmptTimer)
   EVT_CLOSE(ConnectToServerDialog::OnCloseWindow)
@@ -78,7 +87,7 @@ void ConnectToServerDialog::buildUI(){
 //    wxstrServerAddress, servicePortNumber));
   wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
 
-  m_p_srvAddrTxtCtrl = new wxTextCtrl(this, wxID_ANY, wxGetApp().
+  m_p_srvAddrTxtCtrl = new wxTextCtrl(this, srvAddrTxtCtl, wxGetApp().
     m_stdstrServiceHostName);
   wxStaticText * p_srvAddrLabel = new wxStaticText(this, wxID_ANY,
     wxT("server IPv4 address/host name:") );
@@ -186,11 +195,25 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
       "conversion failed.") );
   else{
     wxGetApp().m_p_cnnctToSrvDlg = this;
+    
+#ifdef __linux__ //SIGUSR1 not available in MinGW
     ///https://en.wikipedia.org/wiki/C_signal_handling
     ///Needed, else program exits when calling raise(SIGUSR1).
     signal(SIGUSR1, sigHandler);
+#endif
     EndCnnctnAttemptTimer();
-    wxGetApp().CnnctToSrvAndGetSMARTvals(wxGetApp().isAsyncCnnct() );
+    const fastestUnsignedDataType cnnctToSrvrRslt = wxGetApp().
+      CnnctToSrvAndGetSMARTvals(wxGetApp().isAsyncCnnct() );
+    if(cnnctToSrvrRslt == OperatingSystem::BSD::sockets::getHostByNameFailed
+     + /*OperatingSystem::BSD::sockets::*/gethostbynameUnknownHost)
+    {
+      m_p_srvAddrTxtCtrl->SetBackgroundColour(*wxRED);
+      m_p_srvAddrTxtCtrl->SetToolTip(wxT("unknown host name") );
+      std::ostringstream oss;
+      oss << "\"" << wxGetApp().m_stdstrServiceHostName.c_str() << 
+        "\" not found in host DataBase";
+      wxGetApp().ShowMessage(oss.str().c_str() );
+    }
   }
   /** Stop timer and close this dialog in "SMARTmonitorClient::
    * AfterCcnnectToServer" (in a derived class) */
@@ -204,8 +227,16 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
 //  Close(true);
   ///https://www.thegeekstuff.com/2011/02/send-signal-to-process/
   /*kill(getpid(), SIGUSR1);*/
-  //TODO crashes here
-  raise(SIGUSR1);///This cancels the waiting in "select(...)".
+  
+  //TODO crashes here (Linux)
+#ifdef __linux__
+  int i = SIGUSR1;
+  OperatingSystem::BSD::sockets::interruptSelect(i);
+#endif
+#ifdef _WIN32
+  void * p = wxGetApp().connectThread.GetThreadHandle();
+  OperatingSystem::BSD::sockets::interruptSelect(p);
+#endif
   EndCnnctnTimeoutTimer();
   wxGetApp().EndWaitTillCnnctTimer();
 }
@@ -213,6 +244,11 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
 void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)
 {
   End();
+}
+
+void ConnectToServerDialog::OnSrvAddrChange(wxCommandEvent & evt){
+  m_p_srvAddrTxtCtrl->SetBackgroundColour(*wxWHITE);
+  m_p_srvAddrTxtCtrl->SetToolTip(wxT("") );
 }
 
 void ConnectToServerDialog::OnStartCntDown(wxCommandEvent & event){

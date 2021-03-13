@@ -1,11 +1,17 @@
 /** SupportedSMARTIDsDialog.cpp
  *  Created on: 29.10.2016
  *  Author:Stefan Gebauer, M.Sc.Comp.Sc.*/
+
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include <wxWidgets/SupportedSMARTIDsDialog.hpp>
+
+///wxWidgets library header files:
 #include <wx/button.h>///class wxButton
 #include <wx/listctrl.h> //class wxListCtrl
 #include <wx/sizer.h> // class wxBoxSizer
 #include <wx/defs.h> //wxID_ANY
-#include <wxWidgets/SupportedSMARTIDsDialog.hpp>
+
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include "wxSMARTmonitorApp.hpp" //wxGetApp()

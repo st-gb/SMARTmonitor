@@ -198,7 +198,8 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 
 /** Called e.g. when server address was given via program options/
  *  as command line argument */
-void SMARTmonitorClient::CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc)
+fastestUnsignedDataType SMARTmonitorClient::CnnctToSrvAndGetSMARTvals(
+  const bool asyncCnnctToSvc)
 {
   LOGN_DEBUG("begin")
 #ifdef directSMARTaccess
@@ -213,17 +214,11 @@ void SMARTmonitorClient::CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc)
 //  BeforeConnectToServer();
   const fastestUnsignedDataType connectToServerResult = ConnectToServer(
     m_stdstrServiceHostName.c_str(), asyncCnnctToSvc);
-  if(connectToServerResult == OperatingSystem::BSD::sockets::getHostByNameFailed
-     + /*OperatingSystem::BSD::sockets::*/gethostbynameUnknownHost){
-    std::ostringstream oss;
-    oss << "\"" << m_stdstrServiceHostName.c_str() << "\" not found in host "
-      "DataBase";
-    ShowMessage(oss.str() );
-  }
   if(! asyncCnnctToSvc)
   {
 //    AfterConnectToServer(connectToServerResult);
   }
+  return connectToServerResult;
 }
 
 void SMARTmonitorClient::ConnectToServer() {

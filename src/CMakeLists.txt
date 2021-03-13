@@ -137,8 +137,9 @@ endif (DEFINED WXWIDGETS)
 
 message("EXE_NAME: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")
 
-message("CXX flags: ${CMAKE_CXX_FLAGS}")
-message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
+message("CMAKE CXX flags: \"${CMAKE_CXX_FLAGS}\"")
+message("CMAKE_CXX_FLAGS_DEBUG: \"${CMAKE_CXX_FLAGS_DEBUG}\"")
+message("CFLAGS: ${CFLAGS} CXXFLAGS: ${CXXFLAGS} LDFLAGS: ${LDFLAGS}")
 message("CMAKE_EXE_LINKER_FLAGS: \"${CMAKE_EXE_LINKER_FLAGS}\"")
 
 
@@ -164,3 +165,6 @@ include(${cmnSrcDir}/CMake/writeItemsToFile.cmake)
 Set(srcFilePathsFileName ${EXE_TYPE}_source_file_paths.txt)
 #For debugging purposes
 #write1ItemPerLneToFile(${EXE_TYPE}_source_file_paths.txt "${SOURCE_FILE_PATHS}")
+message("If you didn't explicitely set some of the variables, then they may\
+come from a previous call to cmake. If you don't want these settings, delete \
+\"CMakeCache.txt\"")

@@ -1,12 +1,11 @@
-/*
- * wxSMARTmonitorTaskBarIcon.cpp
- *
+/** wxSMARTmonitorTaskBarIcon.cpp
  *  Created on: 26.11.2013
- *      Author: mr.sys
- */
+ *  Author: Stefan Gebauer, M.Sc. Comp.Sc. */
 
-#include "wxSMARTmonitorTaskBarIcon.hpp" //class wxSMARTmonitorTaskBarIcon
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
 #include "wxSMARTmonitorApp.hpp"
+#include "wxSMARTmonitorTaskBarIcon.hpp" //class wxSMARTmonitorTaskBarIcon
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
 

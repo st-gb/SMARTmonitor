@@ -5,6 +5,11 @@
 #ifndef WXSMARTMONITORAPP_HPP_
 #define WXSMARTMONITORAPP_HPP_
 
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include <client/SMARTmonitorClient.h>///base class SMARTmonitorClient
+
+///wxWidgets header files:
 #include <wx/app.h> //Base class wxApp
 #include <wx/dialog.h> //class wxDialog
 #include <wx/icon.h> //class wxIcon
@@ -12,7 +17,7 @@
 
 //#include "wxSMARTmonitorTaskBarIcon.hpp"
 //#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase
-#include <client/SMARTmonitorClient.h> //base class SMARTmonitorClient
+
 //#include <libATA_SMART/SMARTaccess.hpp>
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
 #include "wxSMARTmonitorDialog.hpp"///class SMARTdialog

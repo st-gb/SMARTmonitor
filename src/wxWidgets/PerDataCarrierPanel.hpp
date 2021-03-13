@@ -1,12 +1,15 @@
 #pragma once///Include guard
 
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include "SMARTtableListCtrl.hpp"///class wxWidgets::SMARTtableListCtrl
+
 ///wxWidgets header files:
 #include <wx/button.h>///class wxButton
 #include <wx/listctrl.h>///class wxListCtrl
 #include <wx/panel.h>///class wxPanel
 #include <wx/sizer.h>///class wxSizer
 
-#include "SMARTtableListCtrl.hpp"///class wxWidgets::SMARTtableListCtrl
 
 ///from Stefan Gebauer's "common_sourcecode" repository :
 ///wxWidgets::GetwxString_Inline(...)

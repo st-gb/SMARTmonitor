@@ -5,13 +5,18 @@
 #ifndef WXWIDGETS_SUPPORTEDSMARTIDSDIALOG_HPP_
 #define WXWIDGETS_SUPPORTEDSMARTIDSDIALOG_HPP_
 
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include <client/SMARTmonitorClient.h> //class SMARTmonitorClient
+
+///wxWidgets library header files:
 #include <wx/dialog.h> //base class wxDialog
+
 ///Standard C/C++ includes
 #include <vector>///class std::vector
 
-///This repo
+///This repository's files:
 #include <attributes/SMARTattributeNameAndID.hpp>
-#include <client/SMARTmonitorClient.h> //class SMARTmonitorClient
 #include "SMARTtableListCtrl.hpp"///class wxWidgets::SMARTtableListCtrl
 
 ///Forward declarations (faster than #include):
@@ -36,7 +41,7 @@ public:
   enum columnIndices { COL_IDX_SMART_ID = 0 , COL_IDX_SMARTparameterName};
   
   void create2ColListCtrl();
-  void cr8ListCtrl();
+  inline void cr8ListCtrl();
   wxSizer * CreateGUI(const SMARTuniqueID & dataCarrierID);
   void FillGUI(SMARTuniqueID &, SMARTmonitorClient &, const bool create);
   void SetTitleFromDataCarrierID(const SMARTuniqueID & dataCarrierID);

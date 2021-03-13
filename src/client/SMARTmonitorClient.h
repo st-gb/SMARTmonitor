@@ -5,13 +5,14 @@
 #ifndef SMARTMONITORCLIENT_H
 #define SMARTMONITORCLIENT_H
 
-#include "../SMARTmonitorBase.hpp"
-
 ///Stefan Gebauer's common_sourcecode repository header files:
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
 #include <OperatingSystem/BSD/socket/prepCnnctToSrv.h>///prepCnnctToSrv(...)
 #include <OperatingSystem/multithread/nativeThreadType.hpp>///nativeThread_type
 
 ///This repository's files:
+#include "../SMARTmonitorBase.hpp"
 #include <UserInterface/columnIndices.hpp>
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater
 #include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
@@ -77,7 +78,7 @@ public:
   void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
     fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
   virtual void ChangeConnectionState(enum serverConnectionState newState){}
-  void CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc);
+  fastestUnsignedDataType CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc);
   void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
