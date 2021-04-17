@@ -138,7 +138,7 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 
 void wxSMARTmonitorApp::OnStartSrvCnnctnCntDown(wxCommandEvent & event){
   ///Only needs to be done in case connect dialog is not already shown.
-  wxGetApp().DisableSrvUIctrls();
+//  wxGetApp().DisableSrvUIctrls();
   if(! m_p_cnnctToSrvDlg){
     ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
   }
@@ -162,8 +162,13 @@ void wxSMARTmonitorApp::StartSrvCnnctnAttmptCntDown(
   if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
   {
 //    m_wxtimer.Start(1000);
-    if(m_p_cnnctToSrvDlg)
-      m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(countDownInSeconds);
+    /**E.g. if connection established before and afterwards transmission error.
+     * then a "connect to server" dialog is not already shown.*/
+    if(! m_p_cnnctToSrvDlg){
+      ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
+      setUI(connectToSrv);
+    }
+    m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(countDownInSeconds);
   }
   else
   {
@@ -201,9 +206,9 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
   ///May be "errno" from calling "connect" or "select"
   int connectResult = commandEvent.GetInt();
   if(connectResult == 0)
-    m_srvrCnnctnState = connectedToService;
+    m_srvrCnnctnState = cnnctdToSrv;
   else
-    m_srvrCnnctnState = unconnectedFromService;
+    m_srvrCnnctnState = uncnnctdToSrv;
   //TODO The following could go into a "AfterCnnctToSrvInUIthread" function
   // usable by all subclasses of SMARTmonitorClient.
   if( connectResult == /*connectedToService*/ 0)
@@ -214,6 +219,7 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
       m_p_cnnctToSrvDlg->End();///Only close connect dialog if connected
       m_p_cnnctToSrvDlg = NULL;
     }
+    wxGetApp().setUI(SMARTmonitorClient::cnnctdToSrv);
 //    SuccessfullyConnectedToClient();
 #if execGetSMARTvalsAndUpd8UIinUIthread
     GetSMARTvaluesAndUpdateUI();
@@ -226,15 +232,17 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
       (SMARTmonitorClient *)this);
 #endif
 //      StartServiceConnectionCountDown(countDownInSeconds);
-    gs_dialog->EnableServerInteractingControls(connectResult);
+//    gs_dialog->setUI(connectResult);
   }
   else
   {
     /** If not closing the socket then socket file descriptor number increases?*/
     close(m_socketFileDesc);
     if(m_p_cnnctToSrvDlg)
+    /**This function is also called if a connect to server/TCP handshake failed.
+     * so cancel the connection timeout timer.*/
       m_p_cnnctToSrvDlg->EndCnnctnTimeoutTimer();
-    gs_dialog->EnableServerInteractingControls(connectResult);
+//    wxGetApp().setUI(uncnnctdToSrv);
     HandleConnectionError("", connectResult);
 //    gs_dialog->StartCountDown(countDownInSeconds);
 //    m_wxtimer.StartOnce(countDownInSeconds * 1000);
@@ -455,10 +463,14 @@ bool wxSMARTmonitorApp::OnInit()
 
 void wxSMARTmonitorApp::DisableSrvUIctrls(){
   gs_dialog->m_p_ConnectAndDisconnectButton->Enable(false);
+  if(m_p_cnnctToSrvDlg)
+    m_p_cnnctToSrvDlg->DisableConnect();
 }
 
-void wxSMARTmonitorApp::EnableSrvUIctrls(){
-  gs_dialog->m_p_ConnectAndDisconnectButton->Enable(true);
+//#define resourcesFSpath "/usr/share/SMARTmonitor"
+
+void wxSMARTmonitorApp::UnCnnctdToSrvUIctrls(){
+  gs_dialog->UnCnnctdToSrvUIctrls();
 }
 
 inline void createIconFilePath(wxString & iconFilePath, const wxString &
@@ -612,6 +624,26 @@ void wxSMARTmonitorApp::SetGetSMARTvalsMode(const enum GetSMARTvalsMode mode)
   }
 }
 
+/** @param srvCnnctnState the User Interface (UI controls and dialogs) to set.*/
+void wxSMARTmonitorApp::setUI(const enum serverConnectionState srvCnnctnState)
+{
+  switch(srvCnnctnState){
+   case SMARTmonitorClient::cnnctdToSrv:
+    gs_dialog->setUI(srvCnnctnState);
+    break;
+   case SMARTmonitorClient::connectToSrv:
+     ///Disable because "connect to server" dialog is shown in "ConnectToServer"
+     gs_dialog->DisableCnnctAndDiscnnctBtn();
+    break;
+   case SMARTmonitorClient::uncnnctdToSrv :
+    if(wxGetApp().m_p_cnnctToSrvDlg)
+      wxGetApp().m_p_cnnctToSrvDlg->EnableCnnctBtn();
+    else///Enable "Connect..." button if connect to server dialog is not shown.
+      gs_dialog->UnCnnctdToSrvUIctrls();
+    break;
+  }
+}
+
 void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress, 
   int connectTimeOutInSeconds)
 {
@@ -731,8 +763,10 @@ void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 
   if( serviceLocation == wxT("") )
     serviceLocation = wxT("direct SMART access");
-  wxString tooltip = wxString::Format( wxT("for %s:\n%s"), 
-    serviceLocation, message );
+  /** Port number is relevant as e.g. with port forwarding done in a router
+   * multiple computers/hosts may be addressable. */
+  wxString tooltip = wxString::Format( wxT("for %s, port %u:\n%s"), 
+    serviceLocation, m_socketPortNumber, message );
   
   if(m_taskBarIcon///May be NULL if wxTaskBarIcon::IsAvailable() returns false
     && ! m_taskBarIcon->SetIcon(icon, tooltip) )

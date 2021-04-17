@@ -164,6 +164,13 @@ void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(254, "Free Fall Protection");
 }
 
+void SMARTmonitorBase::sigHandler(int signo){}
+void SMARTmonitorBase::registerSignalHandler(){
+  ///https://en.wikipedia.org/wiki/C_signal_handling
+  ///Needed, else program exits when calling raise(SIGUSR1).
+  signal(SIGUSR1, sigHandler);
+}
+
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
   /** IMPORTANT: creating the arrays can't be done in the constructor of this
     class as "argc" is "0" there. So do this from or after "OnInit()" */

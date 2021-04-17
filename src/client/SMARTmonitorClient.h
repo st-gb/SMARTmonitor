@@ -52,12 +52,12 @@ public:
     dataCarrierIDandSMARTidsContainer;
   static SMARTvalueRater s_SMARTvalueRater;
   
-  enum serverConnectionState {connectedToService, unconnectedFromService,
+  enum serverConnectionState {cnnctdToSrv, uncnnctdToSrv, connectToSrv,
     /**to diplay the (local) time of last S.M.A.R.T. value update*/ valUpd8};
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
   
-  enum serverConnectionState m_srvrCnnctnState = unconnectedFromService;
+  enum serverConnectionState m_srvrCnnctnState = uncnnctdToSrv;
   int m_socketFileDesc;
   fastestUnsignedDataType m_srvCnnctnCntDownInSec;
   fastestUnsignedDataType m_serverConnectionState;
@@ -76,6 +76,11 @@ public:
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
     fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
+  /**Called
+   * -after a transmission error
+   * -after connection to server established
+   * -update of (only) S.M.A.R.T. values
+   * -if a user canceled the connection via User Interface */
   virtual void ChangeConnectionState(enum serverConnectionState newState){}
   void CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc);
   void ConnectToServer();
@@ -116,6 +121,7 @@ public:
   }
   void setIDandLabel(const SMARTuniqueID &,
     const fastestUnsignedDataType SMARTattrID, void * data);
+  virtual void setUI(const enum serverConnectionState) = 0;
   enum SMARTvalueRating upd8rawAndH_andTime(
     const fastestUnsignedDataType SMARTattrID,
     const SMARTuniqueIDandValues &, void * data);

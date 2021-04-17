@@ -47,7 +47,15 @@ inline void addToHorizSizer(
 {
   wxSizer * const srvAddrSizer = new wxBoxSizer(wxHORIZONTAL);
   srvAddrSizer->Add(p_leftWnd, 0, wxALIGN_CENTER_VERTICAL, 0);
-  srvAddrSizer->Add(p_rightWnd, 0, 0, 0);
+  srvAddrSizer->Add(p_rightWnd,
+    /** https://docs.wxwidgets.org/3.0/classwx_sizer.html#a4e2122f2749261473c21cb192d00709f :
+     * "it is used in wxBoxSizer to indicate if a child of a sizer can change 
+     *  its size in the main orientation of the wxBoxSizer - where 0 stands for
+     *  not changeable and a value of more than zero is interpreted relative to
+     * the value of other children of the same wxBoxSizer. "*/
+    1,
+    ///"The item will be expanded to fill the space assigned to the item."
+    /*0*/wxEXPAND, 0);
   p_sizer->Add(srvAddrSizer);
 }
 
@@ -67,6 +75,11 @@ ConnectToServerDialog::ConnectToServerDialog(
   , m_timeOutInSeconds(timeOutInSeconds)
   , m_connectToServerSocketFileDescriptor(connectToServerSocketFileDescriptor)
 {
+  /** Already register the signal handler for asynchronous connect via select()
+   * here because one may press "cancel"->OnCancel() -> "raise(SIGUSR1)" without
+   * calling SMARTmonitorClient::ConnectToServer -> registerSignalHandler()
+   * before. */
+  wxGetApp().registerSignalHandler();
   buildUI();
 }
 
@@ -80,6 +93,10 @@ void ConnectToServerDialog::buildUI(){
 
   m_p_srvAddrTxtCtrl = new wxTextCtrl(this, wxID_ANY, wxGetApp().
     m_stdstrServiceHostName);
+#ifdef __linux__
+  m_p_srvAddrTxtCtrl->SetToolTip(wxT("for valid host names see file /etc/hosts")
+    );
+#endif
   wxStaticText * p_srvAddrLabel = new wxStaticText(this, wxID_ANY,
     wxT("server IPv4 address/host name:") );
   addToHorizSizer(sizerTop, p_srvAddrLabel, m_p_srvAddrTxtCtrl);
@@ -94,6 +111,8 @@ void ConnectToServerDialog::buildUI(){
 
   m_p_timeoutInS_TxtCtrl = new wxTextCtrl(this, wxID_ANY,
     wxString::Format(wxT("%u"), m_timeOutInSeconds) );
+  m_p_timeoutInS_TxtCtrl->SetToolTip(wxT("try TCP handshake with server until "
+    "this timeout until elapses") );
   m_p_wxStaticTextTimeout = new wxStaticText(this, wxID_ANY,
     GetTimeOutLabelText(m_timeOutInSeconds, wxT("connection timeout")) );
   addToHorizSizer(sizerTop, m_p_wxStaticTextTimeout, m_p_timeoutInS_TxtCtrl);
@@ -108,10 +127,10 @@ void ConnectToServerDialog::buildUI(){
   m_p_timeoutLabel = new wxStaticText(this, wxID_ANY, wxT("current state:"));
   sizerTop->Add(m_p_timeoutLabel);
 
-  wxButton * p_wxCnnctBtn = new wxButton(this, connect, wxT("connect"));
+  m_p_wxCnnctBtn = new wxButton(this, connect, wxT("connect"));
   wxButton * p_wxCancelButton = new wxButton(this, wxID_CANCEL, wxT("cancel"));
   wxSizer * const actionSizer = new wxBoxSizer(wxHORIZONTAL);
-  actionSizer->Add(p_wxCnnctBtn, 0, 0, 0);
+  actionSizer->Add(m_p_wxCnnctBtn, 0, 0, 0);
   actionSizer->Add(p_wxCancelButton, 0, 0, 0);
   sizerTop->Add(actionSizer);
 
@@ -126,6 +145,9 @@ void ConnectToServerDialog::buildUI(){
   Centre();
 }
 
+/** Called:
+ *  -after successfully connecting to server
+ *  -when closing this dialog by hand. */
 void ConnectToServerDialog::End(){
 //  delete this;
   /** http://docs.wxwidgets.org/3.0/classwx_window.html#a6bf0c5be864544d9ce0560087667b7fc
@@ -137,7 +159,6 @@ void ConnectToServerDialog::End(){
     EndModal(0);
   else
     const bool successfullyDestroyed = Destroy();
-  wxGetApp().EnableSrvUIctrls();
   wxGetApp().m_p_cnnctToSrvDlg = NULL;
 }
 
@@ -154,8 +175,6 @@ void ConnectToServerDialog::EndCnnctnTimeoutTimer()
   m_p_timeoutLabel->SetLabel(wxT(""));
   SetTitle(title);
 }
-
-static void sigHandler(int signo){}
 
 void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
 //  m_timer.Start(1000);///1 second interval
@@ -186,10 +205,9 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
       "conversion failed.") );
   else{
     wxGetApp().m_p_cnnctToSrvDlg = this;
-    ///https://en.wikipedia.org/wiki/C_signal_handling
-    ///Needed, else program exits when calling raise(SIGUSR1).
-    signal(SIGUSR1, sigHandler);
+    //TODO end connection (attempt) thread before?
     EndCnnctnAttemptTimer();
+    EndCnnctnTimeoutTimer();
     wxGetApp().CnnctToSrvAndGetSMARTvals(wxGetApp().isAsyncCnnct() );
   }
   /** Stop timer and close this dialog in "SMARTmonitorClient::
@@ -206,8 +224,10 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
   /*kill(getpid(), SIGUSR1);*/
   //TODO crashes here
   raise(SIGUSR1);///This cancels the waiting in "select(...)".
+  ///Each one of both timers may be currently running.
   EndCnnctnTimeoutTimer();
-  wxGetApp().EndWaitTillCnnctTimer();
+  EndCnnctnAttemptTimer();
+//  wxGetApp().EndWaitTillCnnctTimer();
 }
 
 void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)
@@ -240,7 +260,12 @@ void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
   }
   else{
     m_cnnctnTimeoutTimer.Stop();
-    SetTitle(title);
+//    raise(SIGUSR1);
+//    StartSrvCnnctnAttmptCntDown();
+
+    /** Default title does not need to be set if immediately after a stop a next
+     *  timer starts.*/
+//    SetTitle(title);
   }
 }
 

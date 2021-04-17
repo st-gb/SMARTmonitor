@@ -1,10 +1,11 @@
-/** File:   ConnectToServerDialog.hpp
- * Author: sg
+/** File: ConnectToServerDialog.hpp
+ * Author: Stefan Gebauer, M.Sc. Comp.Sc.
  * Created on 6. Juni 2017, 18:22 */
 
 #ifndef CONNECTTOSERVERDIALOG_HPP
 #define CONNECTTOSERVERDIALOG_HPP
 
+#include <wx/button.h>///class wxButton
 #include <wx/dialog.h> /** base class wxDialog */
 #include <wx/timer.h> //class wxTimer
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
@@ -25,6 +26,8 @@ public:
   static wxString title;
   virtual ~ConnectToServerDialog();
   enum IDs {cnnctnTimeoutTimerID = 0, cnnctnAttmptTimerID, connect};
+  void DisableConnect(){ m_p_wxCnnctBtn->Disable(); }
+  void EnableCnnctBtn(){ m_p_wxCnnctBtn->Enable(); }
   void End();
   void EndCnnctnAttemptTimer();
   void EndCnnctnTimeoutTimer();
@@ -42,6 +45,7 @@ private:
   wxTextCtrl * m_p_portNoTxtCtrl;
   wxTextCtrl * m_p_timeoutInS_TxtCtrl;
   wxTextCtrl * m_p_cnnctnAttmptTxtCtrl;
+  wxButton * m_p_wxCnnctBtn;
   void buildUI();
   void StartTimer(){m_cnnctnTimeoutTimer.Start();}
   void OnCancel(wxCommandEvent& event);

@@ -95,6 +95,9 @@ public:
     }*/
   virtual ~SMARTmonitorBase();
   
+  static void sigHandler(int signo);
+  static void registerSignalHandler();
+
   static void setDfltSMARTattrDef();
   /** Needs to persist over the call to 
    *  ::UpdateSMARTparameterValuesThreadFunc(...) so making it a member 

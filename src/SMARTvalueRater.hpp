@@ -26,6 +26,7 @@ public:
     case ReadErrorRate:
     case ReallocSectorsCnt:
     case SpinUpRetryCnt:
+    case RecalibRetriesOrCalibrRetryCnt:
     case SSDprogFailCnt:
     case SSDeraseFailCnt:
     case PwrLossProtectionFailure:
@@ -39,6 +40,8 @@ public:
     case CurrPendSecCnt:
     case UncorrSecCnt:
     case UDMA_CRCerrorCnt:
+    case MultiZoneErrorRate:
+    case SoftReadErrorRateOrTACnterDetected:
     case ShockDuringWrite:
     case FreeFallEvtCnt:
       if(realCircaValue == 0)

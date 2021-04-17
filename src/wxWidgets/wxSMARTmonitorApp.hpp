@@ -49,7 +49,7 @@ public:
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
   void DisableSrvUIctrls();
-  void EnableSrvUIctrls();
+  void UnCnnctdToSrvUIctrls();
   void EndWaitTillCnnctTimer(){
     m_wxtimer.Stop();//stop connect timer in main window
     gs_dialog->SetTitle(GetAppDisplayName() );
@@ -74,6 +74,7 @@ public:
   void SetCurrentAction(enum CurrentAction currAction);
   void SetGetDirectSMARTvals();
   void SetGetSMARTvalsMode(const enum GetSMARTvalsMode);
+  void setUI(const enum serverConnectionState);
   void ShowConnectionState(const char * const pch, int timeOut);
   void ShwCnnctToSrvrDlg(const std::string &);
   void ShowMessage(const char * const ) const;

@@ -49,6 +49,9 @@ public:
   virtual ~SMARTdialog();
   
   void buildUI();
+  void UnCnnctdToSrvUIctrls();
+  void DisableCnnctAndDiscnnctBtn(){
+    m_p_ConnectAndDisconnectButton->Enable(false); }
   void EnableShowSupportedSMART_IDs();
   void CreatePerDiskUIctrls(wxSizer * p_sizer);
   void disableDrctSMARTaccss(const wxString & cause){
@@ -64,7 +67,7 @@ public:
   void SetSMARTdriveID(const SMARTuniqueID &);
   void SetState(enum SMARTmonitorClient::serverConnectionState newState);
   void ReBuildUserInterface();
-  void EnableServerInteractingControls(int );
+  void setUI(const enum SMARTmonitorClient::serverConnectionState);
   void InformAboutTerminationOfUpdateThread();
   void ShowText(/*const char * const*/ wxString & );
   void ShowMessage(
@@ -72,10 +75,11 @@ public:
     enum UserInterface::MessageType::messageTypes msgType);
 protected:
   void OnAbout(wxCommandEvent& event);
+  void OnDrctSMARTaccss(wxCommandEvent &);
   void OnOK(wxCommandEvent& event);
   void OnExit(wxCommandEvent& event);
   void OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event));
-  void OnConnectToServer(wxCommandEvent& WXUNUSED(event));
+  void OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event));
   void OnReBuildUI(wxCommandEvent &);
   void OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event);
   void OnCloseWindow(wxCloseEvent& event);

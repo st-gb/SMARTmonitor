@@ -85,7 +85,7 @@ void SMARTmonitorClient::EndUpdateUIthread()
     ///Enable get S.M.A.R.T. values loop.
     AtomicExchange( (long *) & s_updateSMARTvalues, 1);
     AtomicExchange( (long *) & GetSMARTvalsAndUpd8UIthreadID, 0);
-    ChangeConnectionState(unconnectedFromService);
+    ChangeConnectionState(uncnnctdToSrv);
   }
 }
 #endif
@@ -122,8 +122,8 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
   SMARTuniqueIDsAndValues.clear();
   /** Before calling this function the connection should be established. */
   //TODO possibly move this line to after successfull connection.
-  m_serverConnectionState = connectedToService;
-  ChangeConnectionState(connectedToService);
+  m_serverConnectionState = cnnctdToSrv;
+  ChangeConnectionState(cnnctdToSrv);
   //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
   std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues = 
     SMARTuniqueIDsAndValues;
@@ -216,8 +216,8 @@ void SMARTmonitorClient::CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc)
   if(connectToServerResult == OperatingSystem::BSD::sockets::getHostByNameFailed
      + /*OperatingSystem::BSD::sockets::*/gethostbynameUnknownHost){
     std::ostringstream oss;
-    oss << "\"" << m_stdstrServiceHostName.c_str() << "\" not found in host "
-      "DataBase";
+    oss << "Error connecting to server \"" << m_stdstrServiceHostName.c_str()
+      << "\": not found in host DataBase";
     ShowMessage(oss.str() );
   }
   if(! asyncCnnctToSvc)
@@ -233,13 +233,12 @@ void SMARTmonitorClient::ConnectToServer() {
   EndUpdateUIthread();
 #endif
   switch(m_srvrCnnctnState){
-   case unconnectedFromService :
-  //  std::string stdstrServerAddress;
-    //GetTextFromUser("input SMART values server address", m_stdstrServiceHostName);
+   case uncnnctdToSrv :
     ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
-   case connectedToService :
-//     TODO setUI(connectedToService);
-    ;
+    break;
+   case cnnctdToSrv :
+    setUI(cnnctdToSrv);
+    break;
   }
 //  SetServiceAddress(m_stdstrServerAddress);
 //  BeforeConnectToServer();
@@ -274,7 +273,6 @@ void SMARTmonitorClient::HandleTransmissionError(
         break;
     }
   }
-  stdoss << "OS error #:" << errno << "\n";
   switch(transmissionError)
   {
     case numBytesToReceive :
@@ -289,12 +287,16 @@ void SMARTmonitorClient::HandleTransmissionError(
       break;
   }
   if( errorMessageForErrno )
-    stdoss << " for socket file descriptor #" << m_socketFileDesc << ":\n" << errorMessageForErrno;
+    stdoss << " for socket file descriptor #" << m_socketFileDesc << ":\n" <<
+      "OS error #:" << errno << "(" << errorMessageForErrno << ")";
   LOGN_ERROR(stdoss.str() );
   ShowMessage(stdoss.str().c_str(), MessageType::error);
   //TODO set connection status of the user interface to "network errors"/"unconnected"
-  m_serverConnectionState = connectedToService;
-  ChangeConnectionState(unconnectedFromService);
+  m_serverConnectionState = uncnnctdToSrv;
+  ChangeConnectionState(uncnnctdToSrv);
+  ///Try to connect again after timeout elapses.
+  //TODO test
+  StartSrvCnnctnAttmptCntDown(-1);
   //TODO close socket, set status (also in UI) to unconnected
 }
 
@@ -616,16 +618,27 @@ inline void useDeterminedUnits(
          3600000ULL;
        std_ossUnit << "~h?";
        break;
+     case SMARTattributeNames::SpinUpTime:
+       std_ossUnit << "ms?";
+      break;
      default:
       numForHumanReadableFormat = SMARTrawVal;
       switch(SMARTattrID)
       {
-      case SMARTattributeNames::ReallocSectorsCnt:
-      case SMARTattributeNames::PwrCycleCnt:
-      case SMARTattributeNames::ReallocEvtCnt:
-      case SMARTattributeNames::UncorrSecCnt:
-      case SMARTattributeNames::UDMA_CRCerrorCnt:
+      case SMARTattributeNames::StrtStpCnt:///S.M.A.R.T. parameter ID 4
+      case SMARTattributeNames::ReallocSectorsCnt:///S.M.A.R.T. parameter ID 5
+      case SMARTattributeNames::SpinUpRetryCnt:///S.M.A.R.T. parameter ID 10
+      ///S.M.A.R.T. parameter ID 11
+      case SMARTattributeNames::RecalibRetriesOrCalibrRetryCnt:
+      case SMARTattributeNames::PwrCycleCnt:///S.M.A.R.T. parameter ID 12
+      case SMARTattributeNames::ReallocEvtCnt:///S.M.A.R.T. parameter ID 196
+      case SMARTattributeNames::CurrPendSecCnt:///S.M.A.R.T. parameter ID 197
+      case SMARTattributeNames::UncorrSecCnt:///S.M.A.R.T. parameter ID 198
+      case SMARTattributeNames::UDMA_CRCerrorCnt:///S.M.A.R.T. parameter ID 199
       case SMARTattributeNames::FreeFallEvtCnt:
+      case SMARTattributeNames::MultiZoneErrorRate:///S.M.A.R.T. param ID 200
+      ///S.M.A.R.T. param ID 201
+      case SMARTattributeNames::SoftReadErrorRateOrTACnterDetected:
         std_ossUnit << "#?";
         break;
       case SMARTattributeNames::TotalDataWritten:
