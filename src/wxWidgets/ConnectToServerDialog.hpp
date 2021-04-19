@@ -25,7 +25,7 @@ public:
     const int cnnctToSrvSocketFileDesc);
   static wxString title;
   virtual ~ConnectToServerDialog();
-  enum IDs {cnnctnTimeoutTimerID = 0, cnnctnAttmptTimerID, connect};
+  enum IDs {cnnctnTimeoutTimerID = 0, cnnctnAttmptTimerID, connect, srvAddrTxtCtl};
   void DisableConnect(){ m_p_wxCnnctBtn->Disable(); }
   void EnableCnnctBtn(){ m_p_wxCnnctBtn->Enable(); }
   void End();
@@ -51,6 +51,7 @@ private:
   void OnCancel(wxCommandEvent& event);
   void OnConnect(wxCommandEvent &);
   void OnCloseWindow(wxCloseEvent& event);
+  void OnSrvAddrChange(wxCommandEvent &);
   void OnStartCntDown(wxCommandEvent &);
   inline void showTimeoutInTitle();
   void OnTimer(wxTimerEvent& event);

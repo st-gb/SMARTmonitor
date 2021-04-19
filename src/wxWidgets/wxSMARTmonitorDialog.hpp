@@ -55,8 +55,13 @@ public:
   void EnableShowSupportedSMART_IDs();
   void CreatePerDiskUIctrls(wxSizer * p_sizer);
   void disableDrctSMARTaccss(const wxString & cause){
-    m_p_directSMARTaccesBtn->Disable();
-    m_p_directSMARTaccesBtn->SetToolTip(cause);
+  #ifdef directSMARTaccess
+    ///Is NULL if directSMARTaccess is not build into
+    if(m_p_directSMARTaccesBtn){
+      m_p_directSMARTaccesBtn->Disable();
+      m_p_directSMARTaccesBtn->SetToolTip(cause);
+    }
+  #endif
   }
   void SetStatus(const wxString &);
   void ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction);

@@ -3,6 +3,10 @@
  *  Author:Stefan Gebauer, M. Sc. Comp. Sc.
  *  adapted from the wxWidgets "tbtest" sample  */
 
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include "wxSMARTmonitorApp.hpp"
+
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
 
@@ -47,7 +51,6 @@ GCC_DIAG_OFF(write-strings)
 #include "../icons/S.M.A.R.T._warning.xpm"
 GCC_DIAG_ON(write-strings)
 #include "SetSMARTattrEvent.hpp"///class SetSMARTattrEvent
-#include "wxSMARTmonitorApp.hpp"
 #include "ConnectToServerDialog.hpp"
 #include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
 //#include "libConfig/ConfigurationLoader.hpp"

@@ -7,6 +7,8 @@
 
 //#include "SocketOperations.h"
 #include <client/SMARTmonitorClient.h>
+
+///Stefan Gebauer's common_sourcecode repository files:
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 #include "OperatingSystem/GetLastErrorCode.hpp" //OperatingSystem::GetLastErrorCode()
@@ -14,9 +16,14 @@
 #include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
 #endif
 #include <OperatingSystem/BSD/socket/socketTimeout.h>///getSocketTimeout(...)
+///setNonBlockingSocket(...), setBlockingSocket(...)
+#include <OperatingSystem/BSD/socket/setBlockingMode.h>
+///isNonBlckngCnnctRtrnCode()
+#include <OperatingSystem/BSD/socket/isNonBlckngCnnctRtrnCode.h>
 ///OperatingSystem::BSD::sockets::NonBlckingIsCnnctd(...)
 #include <OperatingSystem/BSD/socket/NonBlockingConnect.h>
 
+///https://docs.microsoft.com/de-de/windows/win32/winsock/porting-socket-applications-to-winsock
 using namespace OperatingSystem::BSD::sockets;
 
 fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
@@ -156,7 +163,7 @@ struct SocketConnectThreadFuncParams
   }
 };
 
-#ifdef __linux__
+//#ifdef __linux__
 ///\return -1 if connection failed.
 ///Non-Blocking is an alternative option to set a self-defined connect timeout.
 int ConnectToSocketNonBlocking(
@@ -169,13 +176,12 @@ int ConnectToSocketNonBlocking(
   )
 {
   errNo = -1;
-  /** from http://www.linuxquestions.org/questions/programming-9/why-does-connect-block-for-a-long-time-708647/ */
-//  fcntl(socketFD, F_SETFL, curflags | O_NONBLOCK);
+    
+  /** Make non-blocking because see
+   * http://www.linuxquestions.org/questions/programming-9/why-does-connect-block-for-a-long-time-708647/ */
   //http://stackoverflow.com/questions/29598508/how-to-get-out-from-a-tcp-blocking-connect-call
   //https://stackoverflow.com/questions/17769964/linux-sockets-non-blocking-connect
-  ///see https://www.cs.odu.edu/~cs779/spring10/lectures/nonblockingIO.html
-  int flags = fcntl(socketFileDescriptor, F_GETFL, 0);
-  fcntl(socketFileDescriptor, F_SETFL, flags | O_NONBLOCK);
+  setNonBlockingSocket(socketFileDescriptor);
 
   p_smartMonClient->SetCurrentAction(SMARTmonitorClient::nonBlckCnnctToSrv);
   /** http://man7.org/linux/man-pages/man2/connect.2.html :
@@ -183,19 +189,21 @@ int ConnectToSocketNonBlocking(
    *  -1 is returned, and errno is set appropriately." */
   int result = connect(socketFileDescriptor, (struct sockaddr *) & serv_addr,
     sizeof(serv_addr) );
-  if(result == -1)/// -1 for non-blocking sockets
+  if(result == -1)///connect(...) returns -1 for non-blocking sockets
   {
-    if(errno == EINPROGRESS) /** For non-blocking _BSD_ sockets */
+    if(OperatingSystem::BSD::sockets::isNonBlckngCnnctRtrnCode() )
     {
 //      fd_set wfd;
       fd_set readFileDescriptorSet;
       FD_ZERO(&readFileDescriptorSet);
+     ///https://docs.microsoft.com/de-de/windows/win32/winsock/select-and-fd---2
       FD_SET(socketFileDescriptor, &readFileDescriptorSet);
 
       struct timeval socketConnectTimeout;
       socketConnectTimeout.tv_sec = connectTimeoutInSeconds;
       socketConnectTimeout.tv_usec = 0;
 
+#ifdef __linux__
       ///from https://linux.die.net/man/2/pselect , section "Description"
       sigset_t origmask, sigmask;
       /** https://www.gnu.org/software/libc/manual/html_node/Signal-Sets.html
@@ -203,6 +211,7 @@ int ConnectToSocketNonBlocking(
        * a signal. */
       int i = sigfillset(&sigmask);
       pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
+#endif
 
       /** Because returning from select(...) may take some (see its last
        * parameter) seconds->show timeout in UI.*/
@@ -219,6 +228,7 @@ int ConnectToSocketNonBlocking(
         /** https://linux.die.net/man/2/select :
           * "waiting until one or more of the file descriptors become
           * "ready" for some class of I/O operation (e.g., input possible)."*/
+///https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-select
         select(/** "This argument should be set to the highest-numbered
         * file descriptor in any of the three sets, plus 1.  The indicated
         * file descriptors in each set are checked, up to this limit
@@ -230,6 +240,7 @@ int ConnectToSocketNonBlocking(
         /**write file descriptors*/NULL,
         /**except file descriptors*/NULL,
         &socketConnectTimeout);
+      //TODO: evaluate errno/call WSAGetLastError() after calling select(...)?
       /** File Descriptor. set included 1st param val of select() after select(...)
        * when the connection was successful. */
       pthread_sigmask(SIG_SETMASK, &origmask, NULL);
@@ -247,7 +258,7 @@ int ConnectToSocketNonBlocking(
           "After select(2) indicates writability, use getsockopt(2) to read the
            SO_ERROR option at level SOL_SOCKET to determine whether
            connect() completed successfully (SO_ERROR is zero)" */
-        
+#ifdef __linux__
         /** http://man7.org/linux/man-pages/man2/setsockopt.2.html
          * " On success, zero is returned for the standard options." */
         /// optval for SO_RCVBUF size is 16 if was connected
@@ -259,9 +270,10 @@ int ConnectToSocketNonBlocking(
            * SO_ERROR : "Reports information about error status and clears it.
            * This option stores an int value." */
           /*SO_RCVBUF,*/ SO_ERROR, //int optname
-          & iSO_ERROR //void *optval
+          & iSO_ERROR///POSIX: void *optval Windows Socket API: char * optval
           , & optlen //socklen_t *optlen
           );
+#endif
         int getpeernameErrNo;
         const bool isConnected = OperatingSystem::BSD::sockets::
           NonBlckingIsCnnctd(socketFileDescriptor, getpeernameErrNo);
@@ -272,13 +284,13 @@ int ConnectToSocketNonBlocking(
 //        }
         /** Result is sometimes 0 even if not connected(e.g.if 2nd time
          *  connection attempt with that socket FD?)? */
-        /*else*/ if(isConnected && getsockoptRslt == 0 && selectRslt > 0 &&
+        /*else*/ if(isConnected /*&& getsockoptRslt == 0*/ && selectRslt > 0 &&
           iSO_ERROR == 0)
         {
           LOGN_INFO("successfully connected to " << serv_addr.sin_addr.s_addr )
           //TODO result was success even if the server/service is not running
           /** Change back to blocking mode. */
-          /*result =*/ fcntl(socketFileDescriptor, F_SETFL, flags);
+          setBlockingSocket(socketFileDescriptor);
           errNo = 0;
         }
         else{
@@ -313,6 +325,7 @@ int ConnectToSocketNonBlocking(
   }
   return result;
 }
+//#endif///#ifdef __linux__
 
 DWORD SocketConnectThreadFunc(void * p_v)
 {
@@ -357,7 +370,6 @@ DWORD SocketConnectThreadFunc(void * p_v)
   }
   return -1;
 }
-#endif///#ifdef __linux__
 
 DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
 {
@@ -366,6 +378,7 @@ DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
     (SocketConnectThreadFuncParams *) p_v;
   if( p_socketConnectThreadFuncParams)
   {
+#ifdef __linux__ ///Works under Linux
     ///from https://linux.die.net/man/2/pselect , section "Description"
     sigset_t origmask, sigmask;
     /** https://www.gnu.org/software/libc/manual/html_node/Signal-Sets.html
@@ -373,7 +386,7 @@ DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
      * a signal. */
     int i = sigfillset(&sigmask);
     pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
-
+#endif
     SMARTmonitorClient * p_SMARTmonitorClient = p_socketConnectThreadFuncParams
       ->p_SMARTmonitorClient;
     /** Because returning from connect(...) may take some (see its last
@@ -392,7 +405,9 @@ DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
 //    if(cnnctRslt == -1){
       int errNo = errno;
 //    }
+#ifdef __linux__ ///Works under Linux
     pthread_sigmask(SIG_SETMASK, &sigmask, &origmask);
+#endif
     p_SMARTmonitorClient->AfterConnectToServer(/*cnnctRslt*/errNo);
     delete p_socketConnectThreadFuncParams;
   }
@@ -423,7 +438,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
 //  {
 //  }
 #ifdef multithread
-#ifdef __linux__
+//#ifdef __linux__
   SocketConnectThreadFuncParams * p_socketCnnctThrdFnParams = new 
     SocketConnectThreadFuncParams {m_socketFileDesc, srvAddr, this,
       (fastestUnsignedDataType)cnnctTimeoutInS };
@@ -435,7 +450,7 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
     BeforeConnectToServer();
   }
   else///sychronous connect to server
-#endif
+//#endif
 #endif
   /** http://man7.org/linux/man-pages/man2/connect.2.html :
       "If the connection or binding succeeds, zero is returned." */
@@ -485,10 +500,12 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName,
     case ETIMEDOUT :
       oss << "connection timed out";
      break;
+#ifdef __linux__ ///EBADFD does not exist in MinGW
     case EBADFD :///https://man7.org/linux/man-pages/man2/connect.2.html
       oss << "The socket file descriptor #" << m_socketFileDesc <<
         " is not a valid open file descriptor.";
       break;
+#endif
     default :
     {
 //      const int errorCode = OperatingSystem::GetLastErrorCode();

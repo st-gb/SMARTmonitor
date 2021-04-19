@@ -430,7 +430,7 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
   std::wstring fullConfigFilePathWithoutExtension;
   //    //wxstrThisExecutablesFilePath
   //    wxString fileNameWithoutExtension;
-  const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(_T("."));
+  const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(L".");
   //const char ps = PATH_SEPERATOR_CHAR;
   std::wstring stdwstrPathSeperatorChar = GetStdWstring(std::string(
     PATH_SEPERATOR_CHAR_STRING));
