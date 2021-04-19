@@ -36,7 +36,8 @@ set( CXX_DEFINITIONS ${CXX_DEFINITIONS}
   -DUNICODE
 )
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")#-g3 -gdwarf-2
+  #https://gcc.gnu.org/onlinedocs/gcc/Debugging-Options.html
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g3 -gdwarf-2")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -gdwarf-2")
 endif()

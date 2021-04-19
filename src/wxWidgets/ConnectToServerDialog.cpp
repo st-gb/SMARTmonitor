@@ -224,6 +224,7 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
   /*kill(getpid(), SIGUSR1);*/
   //TODO crashes here
   raise(SIGUSR1);///This cancels the waiting in "select(...)".
+//  wxGetApp().UnCnnctdToSrvUIctrls();
   ///Each one of both timers may be currently running.
   EndCnnctnTimeoutTimer();
   EndCnnctnAttemptTimer();
@@ -257,6 +258,7 @@ void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
 //    showTimoutInTitle();
     m_p_timeoutLabel->SetLabel(wxString::Format(
       wxT("connection TIMEOUT in ca. %us"), m_timeOutInSeconds) );
+    //TODO break connect() by interrupting?
   }
   else{
     m_cnnctnTimeoutTimer.Stop();

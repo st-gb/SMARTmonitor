@@ -112,11 +112,20 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
   else
   {
 //  std::string fnName = compiler::GetCurrFnName();
+    //TODO if unprivileged (non-root) access and after countdown to connect to
+    // (with localhost configuration file) server this happens
     ShowMessage("a thread already started GetSMARTvaluesAndUpdateUI",
       UserInterface::MessageType::error);
     return;
   }
 #endif
+  //TODO memory fence (synchronize for multiple ("GUI" and "get S.M.A.R.T. info)
+  // for access to SMARTuniqueIDsAndValues?
+//  std::atomic_thread_fence(std::memory_order_relaxed);
+  //asm volatile (“” : : : “memory”)
+//  asm volatile ("mfence" ::: "memory");
+//  memory_barrier();
+//  waitOrSignalEvt.WaitForSignalOrTimeoutInMs(1);
   /** Avoid using old values for unit etc. after reconnecting (to another
    *  server) */
   SMARTuniqueIDsAndValues.clear();
@@ -135,6 +144,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     /** http://man7.org/linux/man-pages/man2/close.2.html :
      * "close() returns zero on success." */
     result = close(m_socketFileDesc);
+//    SetState(unconnected);//TODO
     //TODO use variable m_serviceConnectionCountDownInSeconds as parameter
     StartSrvCnnctnAttmptCntDown(60);
     return;
@@ -159,6 +169,9 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
       if(sMARTuniqueID.noSMARTattrsToRead() )
         ( (SMARTuniqueIDandValues &) *iter).
           setSMART_IDsToReadFromSuccSMARTrawValUpd8();
+//      else
+        //TODO call SMARTuniqueID.SetSMART_IDsToRead() ?
+      	// because else old values are used of connecting to another server
     }
     SetSMARTattributesToObserve(sMARTuniqueIDandValues);
 //      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
@@ -167,7 +180,8 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
     /** Show the state (SMART OK or warning) for the 1st time 
      *  (in the user interface). E.g. show the icon and message belonging. 
      *  Afterwards this method is only called if "s_atLeast1CriticalNonNullValue" changes.*/
-    ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
+    //TODO re-enable thread-safe? (ensure executed in GUI thread)
+//    ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
     m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
       & SMARTmonitorBase::GetSMARTattrValsFromSrv;
 #ifdef multithread
@@ -245,6 +259,7 @@ void SMARTmonitorClient::ConnectToServer() {
 //  ConnectToServerAndGetSMARTvalues();
 }
 
+//TODO move to socket/SocketOperations.cpp?
 void SMARTmonitorClient::HandleTransmissionError( 
   enum SMARTmonitorClient::TransmissionError transmissionError,
   const fastestUnsignedDataType numBread,

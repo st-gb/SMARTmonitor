@@ -160,6 +160,7 @@ struct SocketConnectThreadFuncParams
 ///\return -1 if connection failed.
 ///Non-Blocking is an alternative option to set a self-defined connect timeout.
 int ConnectToSocketNonBlocking(
+//  SocketConnectThreadFuncParams & socketConnectThreadFuncParams
   int socketFileDescriptor, 
   struct sockaddr_in & serv_addr, 
   long int connectTimeoutInSeconds,
@@ -377,6 +378,9 @@ DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
       ->p_SMARTmonitorClient;
     /** Because returning from connect(...) may take some (see its last
      * parameter) seconds->show timeout in UI.*/
+    //TODO does not stop connecting after timeout elapses
+    //TODO does not change state from unknown after connection was lost and
+    // successful reconnect
     p_SMARTmonitorClient->startSrvCnnctCntDown();
     p_SMARTmonitorClient->SetCurrentAction(SMARTmonitorClient::cnnctToSrv);
     /** https://linux.die.net/man/3/connect :"Upon successful completion,
@@ -471,7 +475,7 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName,
   //see http://man7.org/linux/man-pages/man2/connect.2.html
   //TODO errno must come from connect(...), no other function call inbetween
   //TODO use error description from common_sourcecode/.../BSD/socket
-  //BlockingCnnct::getoPossibleCause
+  //BlockingCnnct::getPossibleCause
   switch(/*errno*/ connectResult)
   {
     //see http://man7.org/linux/man-pages/man2/connect.2.html

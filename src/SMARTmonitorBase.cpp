@@ -200,7 +200,8 @@ std::wstring GetExeFileName(const wchar_t * const ar_wchFullProgramPath) {
 /** \brief adds S.M.A.R.T. attributes to observe from all successfully retrieved
  *  S.M.A.R.T. values from all data carriers to get S.M.A.R.T. values from.*/
 void SMARTmonitorBase::SetSMARTattributesToObserve(
-  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDandValuesContainer){
+  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDandValuesContainer)
+{
   //  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
   //    wxGetApp().mp_SMARTaccess->getSMARTattributesToObserve();
   //TODO add SMART attribute IDs to SMARTattributesToObserve

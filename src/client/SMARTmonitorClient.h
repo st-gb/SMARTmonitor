@@ -36,9 +36,9 @@ public:
   SMARTmonitorClient();
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
-#ifdef _DEBUG
+//#ifdef _DEBUG
   DWORD GetSMARTvalsAndUpd8UIthreadID /*= 0*/;
-#endif
+//#endif
   ///To check whether we need to run UI operations in another thread or not.
   static fastestUnsignedDataType s_UIthreadID;
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];

@@ -156,6 +156,7 @@ void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
     m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(event.GetInt() );
 }
 
+///Called from GUI or non-GUI thread.
 void wxSMARTmonitorApp::StartSrvCnnctnAttmptCntDown(
   const fastestUnsignedDataType countDownInSeconds)
 {
@@ -341,6 +342,8 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
   wxString wxstrServiceHostName = m_stdstrServiceHostName;
   if(m_srvCnnctnCntDownInSec --)
   {
+    /** Better show this in connect to server dialog because this is seen better
+     *  there.*/
     /** Create title as local variable for easier debugging. */
     wxString status = wxString::Format(
       wxT("conn. attempt to \"%s\",port %u in %u s"),
@@ -778,13 +781,16 @@ void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 wxIcon wxSMARTmonitorApp::ShowSMARTokIcon()
 {
   ShowIcon(s_SMARTokIcon, wxT("values for (all) processed (critical) S.M.A.R.T."
-    " parameters are in a safe range") );
+    " parameters "
+    //TODO display all data carriers (model, firmware, serial number) here?
+    "are in a safe range") );
   return s_SMARTokIcon;
 }
 
 wxIcon wxSMARTmonitorApp::ShowSMARTstatusUnknownIcon()
 {
-  ShowIcon(s_SMARTstatusUnknownIcon, wxT("unknown S.M.A.R.T. status") );
+  ShowIcon(s_SMARTstatusUnknownIcon, wxT("unknown (current) S.M.A.R.T. status")
+    );
   return s_SMARTstatusUnknownIcon;
 }
 

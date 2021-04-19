@@ -414,6 +414,8 @@ void SMARTdialog::OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event))
   }
 }
 
+/** @param serverConnectionState the current? state
+ *  e.g. if transmission error then state us "unconnected" */
 void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
   newState)
 {
@@ -435,10 +437,14 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
       
       std::string timeString = UserInterface::GetTimeAsString(
         timeOfLastSMARTvaluesUpdate);
-      wxstrTitle += wxString::Format( wxT("--last update:%s from %s--unconnected"),
+      //TODO don't show "from" if direct values?
+      wxstrTitle += wxString::Format(
+        wxT("--last update at %s from %s--unconnected"),
         wxWidgets::GetwxString_Inline(timeString.c_str()), 
         wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.c_str() ) );
-      wxGetApp().UnCnnctdToSrvUIctrls();
+      /** Not needed to set the unconnected UI because this is done in
+       * "StartSrvCnnctnAttmptCntDown" */
+//      wxGetApp().UnCnnctdToSrvUIctrls();
       SetTitle(wxstrTitle);
     }
       wxGetApp().ShowSMARTstatusUnknownIcon();
