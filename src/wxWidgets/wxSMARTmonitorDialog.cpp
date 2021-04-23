@@ -412,7 +412,9 @@ void SMARTdialog::OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event))
    case SMARTmonitorClient::cnnctdToSrv:
     ///Cancel connection:
     /** Closing the socket causes the server connect thread to break/finish */
-    close(wxGetApp().m_socketPortNumber);
+    //close(wxGetApp().m_socketPortNumber);
+    wxGetApp().EndUpdateUIthread();
+    //TODO set m_srvrCnnctnState to "uncnnctdToSrv"
     wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
     break;
   }

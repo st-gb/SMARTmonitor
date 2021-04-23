@@ -289,8 +289,10 @@ void wxSMARTmonitorApp::BeforeWait()
 void wxSMARTmonitorApp::ChangeConnectionState(enum serverConnectionState newState)
 {
   //TODO ensure to/must be called in GUI thread
-  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID){
     gs_dialog->SetState(newState);
+    m_srvrCnnctnState = newState;
+  }
   else{
     /** Create event To execute UI operations in UI thread.
      * https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case */

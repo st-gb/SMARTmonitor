@@ -100,8 +100,11 @@ void ConnectToServerDialog::buildUI(){
 //    wxstrServerAddress, servicePortNumber));
   wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
 
-  m_p_srvAddrTxtCtrl = new wxTextCtrl(this, srvAddrTxtCtl, wxGetApp().
-    m_stdstrServiceHostName);
+  /** wxTextCtrl c+'tor with text caused (indirect) call of "OnSrvAddrChange"
+   *  because of event -> program crash because wxTextCtrl object is NULL */
+  m_p_srvAddrTxtCtrl = new wxTextCtrl(this, srvAddrTxtCtl);
+  m_p_srvAddrTxtCtrl->SetValue(wxWidgets::GetwxString_Inline(wxGetApp().
+    m_stdstrServiceHostName.c_str() ) );
 #ifdef __linux__
   m_p_srvAddrTxtCtrl->SetToolTip(wxT("for valid host names see file /etc/hosts")
     );
@@ -218,7 +221,7 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
 #ifdef __linux__ //SIGUSR1 not available in MinGW
     ///https://en.wikipedia.org/wiki/C_signal_handling
     ///Needed, else program exits when calling raise(SIGUSR1).
-    signal(SIGUSR1, sigHandler);
+    signal(SIGUSR1, SMARTmonitorBase::sigHandler);
 #endif
     //TODO end connection (attempt) thread before?
     EndCnnctnAttemptTimer();
@@ -253,7 +256,10 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
 #ifdef __linux__
   int i = SIGUSR1;
   ///This cancels the waiting in "select(...)".
-  OperatingSystem::BSD::sockets::interruptSelect(i);
+  OperatingSystem::BSD::sockets::interruptSelect(
+    /** Avoid g++ "error: invalid conversion from ´int´ to ´void*´
+     * [-fpermissive]" by explicit casting */
+    (void *) i);
 #endif
 #ifdef _WIN32
   void * p = wxGetApp().connectThread.GetThreadHandle();
