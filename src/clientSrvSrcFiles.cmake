@@ -4,6 +4,10 @@
 
 include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
 
+if(UNIX)
+  #Linux (e.g. Lubuntu) has tinyxml2 in its package manager
+  #"apt-get install libtinyxml"
+endif()
 if(TINYXML2_ROOT_PATH STREQUAL "")
   set(TINYXML2_ROOT_PATH ${SMARTmonSrcDir}/../../../tinyxml2-master )
 endif()

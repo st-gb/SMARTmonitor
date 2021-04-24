@@ -56,7 +56,7 @@ SMARTmonitorBase::SMARTmonitorBase()
       getSMARTattrDefs(), *this),
     m_cmdLineArgStrings(NULL),
     m_ar_stdwstrCmdLineArgs(NULL),
-  m_timeOutInSeconds(30)
+  m_cnnctTimeOutInSec(30)
 #ifdef directSMARTaccess
   , m_SMARTaccess(SMARTuniqueIDsAndValues)
 #endif

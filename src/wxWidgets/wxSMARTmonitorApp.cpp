@@ -676,7 +676,7 @@ void wxSMARTmonitorApp::ShwCnnctToSrvrDlg(const std::string & srvAddr){
       ///Alternative: pass (pointer to) _this_ object and assign in dialog c'tor
       m_stdstrServiceHostName.c_str(),
       m_socketPortNumber,
-      m_timeOutInSeconds,
+      m_cnnctTimeOutInSec,
       m_socketFileDesc);
     m_p_cnnctToSrvDlg->Show();
   }

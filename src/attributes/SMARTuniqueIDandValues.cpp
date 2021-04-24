@@ -178,7 +178,12 @@ bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
       numBitsToShift = s_sizeOfLongIntInBytes * i * 8;
       liRawSMARTattrValue = m_rawValue[i]; //>> numBitsToShift;
       rawValueCheckSum ^= liRawSMARTattrValue;
-      rawValue |= liRawSMARTattrValue;
+      rawValue |=
+        /** Must be unsigned before assigning/copying to "rawValue"/uint64_t.
+         *  Else this happened: two's complement/value wrap happened when value
+         *  > ~ 2^"size of data type in bit"/2 -> very large number when
+         * interpreted as unsigned (and shifted left afterwards). */
+        (unsigned long int) liRawSMARTattrValue;
       rawValue <<= numBitsToShift;
       LOGN_DEBUG("SMART raw value part (" 
         << s_sizeOfLongIntInBytes << "B) #" << 

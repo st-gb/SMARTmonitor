@@ -122,7 +122,7 @@ protected:
 public:
   nativeThread_type connectThread;
   virtual void startSrvCnnctCntDown(){};
-  fastestUnsignedDataType m_timeOutInSeconds;
+  fastestUnsignedDataType m_cnnctTimeOutInSec;
   std::wstring GetProgramOptionValue(const /*enum programOptionNames*/
     fastestUnsignedDataType programOptionName) {
 //    const wchar_t * programOptionValue = L"";

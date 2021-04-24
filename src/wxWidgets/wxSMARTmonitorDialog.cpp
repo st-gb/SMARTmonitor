@@ -141,6 +141,7 @@ void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
     wxString str(wxT("NON-blocking connecting to server") );
     ShowMessage(str, UserInterface::MessageType::info);
     }
+    break;
    case SMARTmonitorClient::readNumBytesForSuppSMART_IDs:
     {
     wxString str(wxT("reading number of bytes for supported S.M.A.R.T. IDs") );

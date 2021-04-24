@@ -47,6 +47,7 @@ private:
   wxTextCtrl * m_p_cnnctnAttmptTxtCtrl;
   wxButton * m_p_wxCnnctBtn;
   void buildUI();
+  void cancelCnnctnOrCnnctnAttmpt();
   void StartTimer(){m_cnnctnTimeoutTimer.Start();}
   void OnCancel(wxCommandEvent& event);
   void OnConnect(wxCommandEvent &);

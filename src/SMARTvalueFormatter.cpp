@@ -17,7 +17,13 @@ SMARTvalueFormatter::~SMARTvalueFormatter() {
 }
 
 /** See https://en.wikipedia.org/wiki/Unit_prefix */
-char unitPrefixes [] = {' ', 'k', 'M', 'G', 'T', 'P'};
+/** 6 B for a SMART value->max. value is 2^(6*8)=2^48~=2,8*10^14
+ * but together with a unit the value may get larger: e.g. 1 MB as unit for
+ * "total data written" and the max value for the 6 B S.M.A.R.T. value.
+ * So use max value of uint64 for the max. unit prefix.
+ *  2^(8*8)=2^64~=1,8*10^19 -> max. SI unit prefix is E[xa] with 10^18 as
+ *  the max. value can be output as ~ 18E[...] */
+char unitPrefixes [] = {' ', 'k', 'M', 'G', 'T', 'P', 'E'};
 
 char calcUnitPrefixFactorAndRemainder(
   uint64_t & remainder, 

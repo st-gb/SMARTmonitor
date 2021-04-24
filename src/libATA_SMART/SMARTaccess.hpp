@@ -12,7 +12,7 @@
 ///#defines numSMART_FWbytes, numSMARTmodelBytes, numSMART_SNbytes
 #include <hardware/dataCarrier/ATA3Std.h>
 
-#ifdef __linux__
+#if defined(__linux__) && defined(directSMARTaccess)
   #include <stddef.h>///size_t in "<atasmart.h>"
   #include <atasmart.h>///struct SkSmartAttributeParsedData
 #endif

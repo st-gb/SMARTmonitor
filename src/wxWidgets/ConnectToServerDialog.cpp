@@ -172,6 +172,7 @@ void ConnectToServerDialog::End(){
   else
     const bool successfullyDestroyed = Destroy();
   wxGetApp().m_p_cnnctToSrvDlg = NULL;
+  //TODO: wxGetApp().setUI(unconnected);///Enable "Connect" button
 }
 
 void ConnectToServerDialog::EndCnnctnAttemptTimer()
@@ -200,7 +201,7 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
     convFailed = true;
   }
   unsigned long * p_timeoutInS = (unsigned long *) & wxGetApp().
-    m_timeOutInSeconds;
+    m_cnnctTimeOutInSec;
   if(! m_p_timeoutInS_TxtCtrl->GetValue().ToULong(p_timeoutInS) ){
     wxMessageBox(wxT("error converting timeout character string to integer") );
     convFailed = true;
@@ -223,9 +224,9 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
     ///Needed, else program exits when calling raise(SIGUSR1).
     signal(SIGUSR1, SMARTmonitorBase::sigHandler);
 #endif
-    //TODO end connection (attempt) thread before?
-    EndCnnctnAttemptTimer();
-    EndCnnctnTimeoutTimer();
+    //TODO wait until connection (attempt) ends first.
+    cancelCnnctnOrCnnctnAttmpt();
+    
     const fastestUnsignedDataType cnnctToSrvrRslt = wxGetApp().
       CnnctToSrvAndGetSMARTvals(wxGetApp().isAsyncCnnct() );
     if(cnnctToSrvrRslt == OperatingSystem::BSD::sockets::getHostByNameFailed
@@ -243,15 +244,8 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
    * AfterCcnnectToServer" (in a derived class) */
 }
 
-void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
+inline void interruptSocketSelect()
 {
-//  m_timer.Stop();
-  /** Closing the socket causes the server connect thread to break/finish */
-  close(m_connectToServerSocketFileDescriptor);
-//  Close(true);
-  ///https://www.thegeekstuff.com/2011/02/send-signal-to-process/
-  /*kill(getpid(), SIGUSR1);*/
-  
   //TODO crashes here (Linux)
 #ifdef __linux__
   int i = SIGUSR1;
@@ -266,10 +260,28 @@ void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
   ///This cancels the waiting in "select(...)".
   OperatingSystem::BSD::sockets::interruptSelect(p);
 #endif
+}
+
+void ConnectToServerDialog::cancelCnnctnOrCnnctnAttmpt()
+{
+//  m_timer.Stop();
+  /** Closing the socket causes the server connect thread to break/finish */
+  close(m_connectToServerSocketFileDescriptor);
+//  Close(true);
+  ///https://www.thegeekstuff.com/2011/02/send-signal-to-process/
+  /*kill(getpid(), SIGUSR1);*/
+  
+  ///May be currently waiting with a timeout or indefinitely in select(...).
+  interruptSocketSelect();
   ///Each one of both timers may be currently running.
   EndCnnctnTimeoutTimer();
   EndCnnctnAttemptTimer();
 //  wxGetApp().EndWaitTillCnnctTimer();
+}
+
+void ConnectToServerDialog::OnCancel(wxCommandEvent& event)
+{
+  cancelCnnctnOrCnnctnAttmpt();
 }
 
 void ConnectToServerDialog::OnCloseWindow(wxCloseEvent& event)
@@ -303,7 +315,10 @@ void ConnectToServerDialog::OnTimer(wxTimerEvent& event)
     m_timeOutInSeconds --;
 //    showTimoutInTitle();
     m_p_timeoutLabel->SetLabel(wxString::Format(
-      wxT("connection TIMEOUT in ca. %us"), m_timeOutInSeconds) );
+      wxT("connection TIMEOUT in ca. %us"), m_timeOutInSeconds
+      //TODO maybe test if reading the timeval struct passed to "select(...)"
+      // can be displayed here:
+      /*wxGetApp().currCnnctTimeout.tv_sec*/ ) );
     //TODO break connect() by interrupting?
   }
   else{
@@ -342,9 +357,19 @@ ConnectToServerDialog::~ConnectToServerDialog() {
 void ConnectToServerDialog::StartSrvCnnctnCntDown(const int timeOutInSec)
 {
   if(timeOutInSec == -1)///Use default timeOut
-    m_timeOutInSeconds = wxGetApp().m_srvCnnctnCntDownInSec;
+  {
+    unsigned long * p_timeoutInS = (unsigned long *) & wxGetApp().
+      m_cnnctTimeOutInSec;
+    if(! m_p_timeoutInS_TxtCtrl->GetValue().ToULong(p_timeoutInS) ){
+      wxMessageBox(wxT("error converting timeout character string to integer") );
+      m_timeOutInSeconds = wxGetApp().m_cnnctTimeOutInSec;
+    }
+    else
+      m_timeOutInSeconds = * p_timeoutInS;
+  }
   else
-   m_timeOutInSeconds = timeOutInSec;
+    m_timeOutInSeconds = timeOutInSec;
+  
   m_p_timeoutLabel->SetLabel(wxString::Format(
     wxT("connection TIMEOUT in ca. %u s"), m_timeOutInSeconds) );
   m_cnnctnTimeoutTimer.Start(1000);
@@ -353,7 +378,17 @@ void ConnectToServerDialog::StartSrvCnnctnCntDown(const int timeOutInSec)
 void ConnectToServerDialog::StartSrvCnnctnAttmptCntDown(const int timeOutInSec)
 {
   if(timeOutInSec == -1)///Use default timeOut
-    m_timeOutInSeconds = wxGetApp().m_timeOutInSeconds;
+  {
+    unsigned long * p_timeoutInS = (unsigned long *) & wxGetApp().
+      m_srvCnnctnCntDownInSec;
+    if(! m_p_cnnctnAttmptTxtCtrl->GetValue().ToULong(p_timeoutInS) ){
+      wxMessageBox(wxT("error converting timeout attempt character string to "
+        "integer") );
+      m_timeOutInSeconds = wxGetApp().m_srvCnnctnCntDownInSec;
+    }
+    else
+      m_timeOutInSeconds = * p_timeoutInS;
+  }
   else
     m_timeOutInSeconds = timeOutInSec;
   m_p_timeoutLabel->SetLabel(wxString::Format(
