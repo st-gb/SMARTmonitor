@@ -110,6 +110,17 @@ the User Interface (wxGUI, command line etc.).
     ../create/create_wxGUI_Linux_debug.sh "Unix Makefiles"
     make -j `nproc`
     ```
+  - Arch Linux
+
+    Command line to install it:
+
+    ```
+    pacman -S wxgtk-common
+    pacman -S wxgtk2
+    ```
+
+    wxgtk2: for findWixwidgets.cmake, although not shown with "pacman -Ql wxgtk2" 
+    wxgtk-common: header files, wxbase .so files
 
 ### Makefiles
 

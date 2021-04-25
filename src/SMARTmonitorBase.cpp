@@ -832,6 +832,7 @@ bool SMARTmonitorBase::tryCfgFilePaths(
     }
   if(! successfullyLoadedCfgFile)
     initSMARTretCode = readingConfigFileFailed;
+  return successfullyLoadedCfgFile;
 }
 
 fastestUnsignedDataType SMARTmonitorBase::InitializeSMART(){
