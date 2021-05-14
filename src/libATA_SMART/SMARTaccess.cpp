@@ -333,9 +333,24 @@ enum SMARTaccessBase::retCodes SMARTaccess::readSMARTforDevice(
 
     /** "sk_disk_open" allocates an p_skDisk and assigns pointer to it.
      *  (must be freed by caller later)*/
+    errno = 0;///Set to 0 to detect errors in sk_disk_open(...)
+    ///https://github.com/Rupan/libatasmart/blob/master/atasmart.c
     int i = sk_disk_open(device, /* SkDisk **_d*/ & p_skDisk);
     if( i == -1)
-      LOGN_ERROR("error opening device \"" << device << "\"")
+    {
+      //TODO fails often-> too many error messages
+      //Solution?: only check if device plugged in:
+      // https://unix.stackexchange.com/questions/315216/ubuntu-16-04-how-can-i-detect-a-device-independent-usb-insert-event
+      // Get event with "udevadm monitor" on console
+      // https://askubuntu.com/questions/1175856/how-can-i-run-a-command-when-a-usb-device-is-dis-connected
+      // programmatically: via "libudev-dev" ? udev_monitor[...] (livbudev.h)
+      //  udev_queue
+      // https://github.com/gentoo/eudev/blob/master/src/udev/udevadm-monitor.c
+      // static int adm_monitor(struct udev *udev, int argc, char *argv[])
+      if(errno > 0)///sk_disk_open(...) sets "errno" on error
+        LOGN_ERROR("error opening device \"" << device << "\" OS error code:"
+          << errno << " error:" << strerror(errno) )
+    }
     else
     {
       LOGN_DEBUG("successfully opened device " << device)

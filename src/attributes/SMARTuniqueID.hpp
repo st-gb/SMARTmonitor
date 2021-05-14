@@ -284,18 +284,35 @@ struct SMARTuniqueID {
             ///Starke Schwankungen/Ausreißer erkennen.
             schwankung = (double) unit / (double) lowerUnitBound[SMARTattrID];
 #endif
+            if(schwankung < 0.5 || schwankung > 1.5)
+              LOGN_ERROR("heavy fluctation of S.M.A.R.T. ID " << SMARTattrID
+                << " :" << schwankung <<
+                " current unit:" << unit <<
+                " previous lower unit:" << lowerUnitBound[SMARTattrID] )
             lowerUnitBound[SMARTattrID] = unit;
           }
           else if(unit > upperUnitBound[SMARTattrID]){
 #ifdef _DEBUG
+            /** Upper value for unit once was too high: 42G 861M 394k 142 for
+             *  S.M.A.R.T. ID 241 (total data written) */
             ///Starke Schwankungen/Ausreißer erkennen.
             schwankung = (double) unit / (double) upperUnitBound[SMARTattrID];
 #endif
+            if(schwankung < 0.5 || schwankung > 1.5)
+              LOGN_ERROR("heavy fluctation of S.M.A.R.T. ID " << SMARTattrID
+                << " :" << schwankung <<
+                " current unit:" << unit <<
+                " previous upper unit:" << upperUnitBound[SMARTattrID] )
             upperUnitBound[SMARTattrID] = unit;
           }
 #ifdef _DEBUG
-          if(schwankung < 0.5 || schwankung > 1.5)
-            LOGN_ERROR("starke Schwankung")
+/** Errorneous?:
+ * For attr. ID 241 : got 1570076356 / 998854983 ~= 1,57  other metric value (#
+ * bytes written since OS start) was correct 94597623808 other metric diff was
+ * 40821985280, SMART value diff was 26 */
+//          logFluctuation(schwankung, SMARTattrID, lowerUnitBound[SMARTattrID]);
+          /*if(schwankung < 0.5 || schwankung > 1.5)
+            LOGN_ERROR("starke Schwankung") */
 #endif
           /** Can be shown in user interface to give an info when the SMART raw
            *  value increments next time. For this calculate:

@@ -31,10 +31,16 @@ dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 AtomicExchType SMARTmonitorBase::s_updateSMARTvalues = 1;
 extern const char FileSystem::dirSeperatorChar;
+
+///Is filled with log levels.
+std::string SMARTmonitorBase::s_strAllLogLevels;
+
 CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"logfilefolder", "<absolute or relative log file FOLDER>, e.g. \"/run/\" "
     "for writing log files to tmpfs/RAM drives"},
-  {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. \"server.xml"},
+  {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. "
+    "\"server.xml"},
+  {"loglevel", NULL},
   {""}
 };
 
@@ -73,6 +79,11 @@ SMARTmonitorBase::SMARTmonitorBase()
   
   //TODO
 //  s_programOptionName2handler.insert(std::make_pair(L",));
+  
+  LogLevel::getAllLogLevels(s_strAllLogLevels);
+  s_strAllLogLevels = "1 of [" + s_strAllLogLevels + "]";
+  s_commandLineOptions[logLvlIdx].possibleOptionValue = s_strAllLogLevels.
+    c_str();
 }
 
 SMARTmonitorBase::~SMARTmonitorBase() {
@@ -380,7 +391,13 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
         HandleLogFileFolderProgramOption(cmdLineOptionValue);
       }
       else if (cmdLineOptionName == L"loglevel")
-        g_logger.SetLogLevel(GetStdString_Inline(cmdLineOptionValue) );
+        try{
+          g_logger.SetLogLevel(GetStdString_Inline(cmdLineOptionValue) );
+        }catch(NS_NodeTrie::NotInContainerException & exc){
+          std::wcerr << cmdLineOptionValue << L" not a valid log level" <<
+            std::endl;
+          showUsage = true;
+        }
     }
     if(atLeast1UnknwonCmdLineOption)
       showUsage = true;
@@ -407,10 +424,12 @@ bool SMARTmonitorBase::InitializeLogger() {
   }
   else///May be specified on command line/in configuration file
     m_stdstrLogFilePath += "_log.txt";
+  ///Only change if not set yet.
+  if(g_logger.GetLogLevel() == LogLevel::beyondLastLogMessageType)
 #ifdef _DEBUG
-  g_logger.SetLogLevel("debug"/*LogLevel::debug*/);
+    g_logger.SetLogLevel("debug"/*LogLevel::debug*/);
 #else
-  g_logger.SetLogLevel("warning"/*LogLevel::warning*/);
+    g_logger.SetLogLevel("warning"/*LogLevel::warning*/);
 #endif
   try {
     success = g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel:://debug

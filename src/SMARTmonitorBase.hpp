@@ -87,6 +87,7 @@ protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
   bool asynCnnct = true;
   nativeEvent_type waitOrSignalEvt;
+  static std::string s_strAllLogLevels;
 public:
   SMARTmonitorBase();
   //template<typename charType>
@@ -113,6 +114,7 @@ public:
     /** This is used for service clients (i.e. TUIs/GUIs) to specify the 
      *  service address etc.*/
     serviceConnectionConfigFile,
+    logLvlIdx,
     beyondLastProgramOptionName};
 protected:
   /** This array is usually filled from:
