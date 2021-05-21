@@ -9,6 +9,9 @@
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 #include <stdint.h> //uint64_t
 
+///Forward declaration
+class ModelAndFirmware;
+
 /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes: 
  * Current temperature of SMART ID 194 (Device Temperature) is in the lowmost 2
  * bytes.*/
@@ -22,7 +25,8 @@ public:
   static std::string FormatHumanReadable(
     fastestUnsignedDataType SMARTattributeID, 
     const uint64_t & SMARTrawValue,
-    const bool unitKnown);
+    const bool unitKnown,
+    const ModelAndFirmware *);
   static std::string GetDegCfromCurr(const uint64_t & SMARTrawValue);
   static std::string GetDegCfromCurrMinMax(const uint64_t & SMARTrawValue);
   static std::string GetDegCfrom_mK(const uint64_t & SMARTrawValue);

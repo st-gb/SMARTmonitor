@@ -2,10 +2,15 @@
  * Author: Stefan Gebauer, M.Sc.Comp.Sc./Informatik (TU Berlin)
  * Created on 2. Januar 2017, 23:13 */
 
+/** Files from Stefan Gebauer's common_sourcecode repository: */
+///convertToStdString(...)
+#include <Controller/character_string/convertFromAndToStdString.hpp>
+#include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
+#include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN[...](...)
+
 #include "SMARTvalueFormatter.hpp"
-#include <preprocessor_macros/logging_preprocessor_macros.h>
-#include <hardware/dataCarrier/SMARTattributeNames.h>
 #include <UserInterface/UserInterface.hpp>///UserInterface::FormatTime(...)
+#include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 
 SMARTvalueFormatter::SMARTvalueFormatter() {
 }
@@ -126,11 +131,13 @@ std::string SMARTvalueFormatter::GetNumberWithSIprefix(const uint64_t & SMARTraw
 }
 
 /** Make this method into a distinct class So it can be used by tests with
- *  only a little payload (code bloat) */
+ *  only a little payload (code bloat)
+ * \param SMARTval may be raw value or real (ca.) value */
 std::string SMARTvalueFormatter::FormatHumanReadable(
-  fastestUnsignedDataType SMARTattributeID,
-  const uint64_t & SMARTrawVal,
-  const bool unitKnown)
+  const fastestUnsignedDataType SMARTattributeID,
+  const uint64_t & SMARTval,
+  const bool unitKnown,
+  const ModelAndFirmware * p_modelAndFirmware)
 {
   switch (SMARTattributeID)
   {
@@ -144,7 +151,7 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
 //      return GetTimeFrom_ms(SMARTrawVal);
       std::string timeFmt;
       //return GetTimeFrom_h(SMARTrawVal);
-      UserInterface::FormatTime(SMARTrawVal, timeFmt);
+      UserInterface::FormatTime(SMARTval, timeFmt);
       return timeFmt;
     }
     case SMARTattributeNames::TempDiffOrAirflowTemp:
@@ -156,21 +163,30 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
     /** http://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      *  : "Lowest byte of the raw value contains the exact temperature value (
      *   Celsius degrees)."*/
-      return SMARTvalueFormatter::GetDegCfromCurr(SMARTrawVal);
+      return SMARTvalueFormatter::GetDegCfromCurr(SMARTval);
 
     case SMARTattributeNames::DevTemp :
 //     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
-      return GetDegCfromCurrMinMax(SMARTrawVal);
+      return GetDegCfromCurrMinMax(SMARTval);
     case SMARTattributeNames::TotalDataWritten:
     case SMARTattributeNames::TotalDataRead:{
-      std::string numWithSIprefix = GetNumberWithSIprefix(SMARTrawVal);
+      std::string numWithSIprefix = GetNumberWithSIprefix(SMARTval);
       if(unitKnown)
         numWithSIprefix += "B";///Only append "B" if unit is known!
+      if(p_modelAndFirmware){
+        const unsigned maxTeraBytesWritten = p_modelAndFirmware->
+          GetMaxTeraBytesWritten();
+        if(maxTeraBytesWritten > 0){
+          const double percent = (double) SMARTval / (double)
+            maxTeraBytesWritten / 10000000000.0 /** 1 tera / 100 */;
+          numWithSIprefix += " " + convertToStdString(percent) + "%";
+        }
+      }
       return numWithSIprefix;
     }
     default:
     {
-      return GetNumberWithSIprefix(SMARTrawVal);
+      return GetNumberWithSIprefix(SMARTval);
     }
 //      break;
   }

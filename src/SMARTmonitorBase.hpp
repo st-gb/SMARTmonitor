@@ -30,6 +30,7 @@
 typedef tinyxml2::ConfigLoader CfgLoaderType;
 
 typedef bool (CfgLoaderType::*loadFuncType)(
+  std::string & errorMsg,///Reference param. must be before default arguments
   std::wstring * stdwstrWorkingDirWithConfigFilePrefix,
   std::string * stdstrFullConfigFilePath,
   loaderParamType);
@@ -222,6 +223,7 @@ public:
     );
   std::wstring GetCommandOptionName(std::wstring & cmdLineArg);
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
+  const ModelAndFirmware * getDataCarrierAttrDefs(const SMARTuniqueID &) const;
   
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
   inline void WaitForSignalOrTimeout(

@@ -119,6 +119,17 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
   return 0;
 }
 
+void SMARTdialog::RemovePerDataCarrierPanels()
+{
+  for(SMARTuniqueID2perDataCarrierPanelType::iterator iter =
+    m_SMARTuniqueID2perDataCarrierPanel.begin() ; iter !=
+    m_SMARTuniqueID2perDataCarrierPanel.end(); iter++)
+  {
+    iter->second->Destroy();//free UI control resources
+  }
+  m_SMARTuniqueID2perDataCarrierPanel.clear();
+}
+
 void SMARTdialog::SetStatus(const wxString & status)
 {
   /** Create title as local variable for easier debugging. */
@@ -358,14 +369,24 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
   static const wxChar * const message
     = _T("a tool to monitor (CRITICAL) S.M.A.R.T. parameters\n"
     "\nsee http://en.wikipedia.org/wiki/S.M.A.R.T."
-    "\n(C) 2013-" __DATE__ 
+    "\n(C) 2013-" __DATE__
     "\nby Stefan Gebauer, M.Sc. Comp. Science, Berlin, Germany");
+
+  wxString buildID = wxT("\nC++ compiler: \"");
+    buildID += wxSTRINGIZE(CXX_COMPILER);
+    buildID += " ";
+    buildID += wxSTRINGIZE(CXX_COMPILER_VERSION);
+    buildID += "\"\nC++ flags: \"";
+    buildID += wxSTRINGIZE(CXX_FLAGS);
+    buildID += "\"\nbuild type: ";
+    buildID += wxSTRINGIZE(BUILD_TYPE);
 
   std::string currWorkDir;
   OperatingSystem::GetCurrentWorkingDirA_inl(currWorkDir);
   
   ///Current working directory is relevant for reading configuration files.
-  wxString aboutString = message + wxString("\n\ncurrent working directory:\n")
+  wxString aboutString = message + wxString("\n") + buildID
+    + wxString("\n\ncurrent working directory:\n")
     + wxWidgets::GetwxString_Inline(currWorkDir);
   
 //#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
@@ -411,6 +432,7 @@ void SMARTdialog::OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event))
     wxGetApp().ConnectToServer();
     break;
    case SMARTmonitorClient::cnnctdToSrv:
+   case SMARTmonitorClient::valUpd8:///Is also connected when value update.
     ///Cancel connection:
     /** Closing the socket causes the server connect thread to break/finish */
     //close(wxGetApp().m_socketPortNumber);

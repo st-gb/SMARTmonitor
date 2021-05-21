@@ -217,6 +217,9 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
   // usable by all subclasses of SMARTmonitorClient.
   if( connectResult == /*connectedToService*/ 0)
   {
+    /** Because may contaín unneccesary S.M.A.R.T. unique IDs (e.g. from
+     *  previous server).*/
+    gs_dialog->RemovePerDataCarrierPanels();
 //    connectedToSrv();
     if(m_p_cnnctToSrvDlg)
     {
@@ -416,10 +419,17 @@ bool wxSMARTmonitorApp::OnInit()
 //      return false;
 //    }
     const fastestUnsignedDataType initSMARTresult = InitializeSMART();
+    /**Ensure read config error message is shown (and not overwritten by another
+     * message)*/
+    if(initSMARTresult != readingConfigFileFailed)
+    {
     std::wstring stdwstrServiceConnectionConfigFile = 
       s_programOptionValues[serviceConnectionConfigFile];
+    std::string errorMsg;
     m_cfgLoader.ReadServiceConnectionSettings(
-      stdwstrServiceConnectionConfigFile );
+      stdwstrServiceConnectionConfigFile, errorMsg);
+    if(errorMsg != "")
+      ShowMessage(errorMsg.c_str () );
 
 //    ShowSMARTokIcon();
     ShowSMARTstatusUnknownIcon();
@@ -451,6 +461,7 @@ bool wxSMARTmonitorApp::OnInit()
         gs_dialog->disableDrctSMARTaccss(wxT("no built-in direct SMART access"));
 //    else if( result == SMARTaccessBase::noSingleSMARTdevice )
 //      return false;
+    }
   }
   /** Thrown by mp_configurationLoader->LoadConfiguration(..:) */
   catch(const FileException & fe) 

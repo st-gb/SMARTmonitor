@@ -91,7 +91,6 @@ set(localResourcesFSpath ".."
 # code and here to keep it consistent? Separate names there via non-printable
 # character like \t or \n
 set(additionalFiles
-  ${localResourcesFSpath}/config/en/SMARTattrDefs.xml
   ${localResourcesFSpath}/config/dataCarrierDefs.xml
   ${localResourcesFSpath}/config/SMARTsrvCnnctn.xml
   )
@@ -99,6 +98,13 @@ message("additional Debian package files:" ${additionalFiles})
 #https://stackoverflow.com/questions/5232555/how-to-add-files-to-debian-package-with-cpack
 INSTALL(FILES ${additionalFiles} #required
   DESTINATION ${resourcesFSpath}/config )
+
+set(additionalFiles
+  ${localResourcesFSpath}/config/en/SMARTattrDefs.xml
+  )
+INSTALL(FILES ${additionalFiles} #required
+  DESTINATION ${resourcesFSpath}/config/en )
+
 message("EXE_TYPE before additional files: ${EXE_TYPE}")
 if(${EXE_TYPE} STREQUAL "wxGUI" OR ${EXE_TYPE} STREQUAL "debPkg")
   set(addGUIfiles TRUE)

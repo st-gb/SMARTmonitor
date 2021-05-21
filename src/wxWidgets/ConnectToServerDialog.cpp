@@ -172,7 +172,8 @@ void ConnectToServerDialog::End(){
   else
     const bool successfullyDestroyed = Destroy();
   wxGetApp().m_p_cnnctToSrvDlg = NULL;
-  //TODO: wxGetApp().setUI(unconnected);///Enable "Connect" button
+  ///To enable "Connect" button in main dialog.
+  wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
 }
 
 void ConnectToServerDialog::EndCnnctnAttemptTimer()

@@ -6,12 +6,16 @@
 <options>
 
 <!-- -->
-<data_carrier model="HFS256G39TND-N210A" firmware="30001P10">  
+<data_carrier model="HFS256G39TND-N210A" firmware="30001P10">
  <SMART paramID="9" unit="1h15s"/>
  <SMART paramID="241" unit="1GB"/>
  <SMART paramID="242" unit="1GB"/>
 </data_carrier>
-<data_carrier model="_Samsung SSD 860 EVO M.2 500GB" firmware="RVT24B6Q">  
+
+<!-- https://www.samsung.com/semiconductor/global.semi.static/SAMSUNG_SSD_Limited_Warranty_German.pdf 
+  : "300 TB TBW" -->
+<data_carrier model="Samsung SSD 860 EVO M.2 500GB" firmware="RVT24B6Q"
+ maxTeraBytesWritten="300">
  <SMART paramID="9" unit="ca.1h2s"/>
  <SMART paramID="241" unit="512B"/>
  <SMART paramID="242" unit="512B"/>

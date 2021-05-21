@@ -380,7 +380,7 @@ void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
   LOGN_DEBUG("end")
 }
 
-///param data: For supported S.M.A.R.T. IDs dialog list cotrol
+///\param data: For supported S.M.A.R.T. IDs dialog list control
 void SMARTmonitorClient::setIDandLabel(
   const SMARTuniqueID & sMARTuniqueID,
   const fastestUnsignedDataType SMARTattrID,
@@ -467,6 +467,9 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
       getSMARTuniqueID();
     LOGN("SMART unique ID and values object " << &(*SMARTuniqueIDandValuesIter) )
     
+    const ModelAndFirmware * p_currModelAndFirmware = getDataCarrierAttrDefs(
+      sMARTuniqueID);
+
     const fastestUnsignedDataType * SMART_IDsToRd = sMARTuniqueID.
       m_SMART_IDsToRd;
     /** Loop over attribute IDs to observe */ //TODO if list is empty nothing is updated
@@ -480,12 +483,16 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
         *SMARTuniqueIDandValuesIter;
 #endif
       sMARTvalueRating = upd8rawAndH_andTime(SMARTattrID,
-        *SMARTuniqueIDandValuesIter, NULL);
+        *SMARTuniqueIDandValuesIter, NULL, p_currModelAndFirmware);
       if(sMARTvalueRating == SMARTvalueWarning)
         entireSMARTvalRating = SMARTvalueWarning;
     }
   }
-  ChangeConnectionState(valUpd8);
+  /** After hitting "Disconnect" some more values updates may arrive here.
+   * In this case don't change the state to let the state at "disconnected" to
+   * be able to connect again. */
+  if(m_updateSMARTparameterValuesThread.IsRunning() )///Only if not cancelled.
+    ChangeConnectionState(valUpd8);
   /** ^= state changed. */
   if(s_atLeast1CriticalNonNullValue != entireSMARTvalRating)
   {
@@ -565,21 +572,26 @@ inline void useDeterminedUnits(
   double & lowerUnitLimit,
   double & upperLimit,
   std::ostringstream & std_ossUnit,
-  std::ostringstream & std_ossUnitAccuracy,
-  std::string & stdstrHumanReadableRawVal
+  std::ostringstream & std_ossUnitAccuracy,/// unit accuracy as "from - to"
+  std::string & stdstrHumanReadableRawVal,
+  const ModelAndFirmware * p_currModelAndFirmware
   )
 {
-  const long int highestBit = mostSignificantBit(unit);
-  if(unit & ~highestBit)///If unit is determined <=> > 0 after bit removed
+  const SMARTuniqueID::unitDataType bitMaskForHighestBit =
+    GetBitMaskForMostSignificantBit(unit);
+  const SMARTuniqueID::unitDataType unMaskedUnit = SMARTuniqueID::
+    GetUnMaskedValue(unit, bitMaskForHighestBit);
+  if(unMaskedUnit)///If unit is determined <=> > 0 after bit removed
   {
     lowerUnitLimit = (double) sMARTuniqueID.lowerUnitBound[SMARTattrID];
-    if(unit & highestBit ){///If highmost bit set/>=
+    if(unit & bitMaskForHighestBit){///If highmost bit set / ">="
       std_ossUnit << ">=~";
-      unit &= ~highestBit;///Without highmost bit
+      unit = unMaskedUnit;///Without highmost bit
       stdstrHumanReadableRawVal = ">=~";
       if(lowerUnitLimit != 0.0)/** Lower unit bound set*/{
         std::string humanReadableAccuracy = SMARTvalueFormatter::
-          FormatHumanReadable(SMARTattrID, lowerUnitLimit, true);
+          //TODO also show percentage of TBW if upper unit bound is unknown?
+          FormatHumanReadable(SMARTattrID, lowerUnitLimit, true, NULL);
         std_ossUnitAccuracy << ">=~" << humanReadableAccuracy;
         ///Value can get high: 16230×3618000 = 58720140000
         realCircaValue = SMARTrawVal * (uint64_t) lowerUnitLimit;
@@ -598,17 +610,18 @@ inline void useDeterminedUnits(
         accuracy = lowerUnitLimit / upperLimit;
     }
     std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID,unit,
-      true);
+      true, NULL);
 
     stdstrHumanReadableRawVal += SMARTvalueFormatter::
-      FormatHumanReadable(SMARTattrID, realCircaValue, true);
+      FormatHumanReadable(SMARTattrID, realCircaValue, true,
+        p_currModelAndFirmware);
     if(accuracy != 0.0){
       std::string humanReadableAccuracy = SMARTvalueFormatter::
-        FormatHumanReadable(SMARTattrID, lowerUnitLimit, true);
+        FormatHumanReadable(SMARTattrID, lowerUnitLimit, true, NULL);
       std_ossUnitAccuracy << " " << std::fixed << humanReadableAccuracy <<
         "-";/** "..." */
       humanReadableAccuracy = SMARTvalueFormatter::FormatHumanReadable(
-        SMARTattrID, upperLimit, true);
+        SMARTattrID, upperLimit, true, NULL);
       std_ossUnitAccuracy << std::fixed << /* "]" */ humanReadableAccuracy;
     }
   }
@@ -630,6 +643,7 @@ inline void useDeterminedUnits(
        break;
      case SMARTattributeNames::SpinUpTime:
        std_ossUnit << "ms?";
+       numForHumanReadableFormat = SMARTrawVal;
       break;
      default:
       numForHumanReadableFormat = SMARTrawVal;
@@ -661,14 +675,17 @@ inline void useDeterminedUnits(
       realCircaValue = SMARTrawVal;
     }
     stdstrHumanReadableRawVal = SMARTvalueFormatter::
-      FormatHumanReadable(SMARTattrID, numForHumanReadableFormat, false);
+      FormatHumanReadable(SMARTattrID, numForHumanReadableFormat, false, NULL);
   }
 }
 
+/** \param data e.g. a list control. A "void" pointer (alternative: subclassung)
+ * to enable different UI control classes .*/
 enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
   const fastestUnsignedDataType SMARTattrID,
   const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
-  void * data)
+  void * data,
+  const ModelAndFirmware * p_modelAndFirmware)
 {
   LOGN_DEBUG("begin--S.M.A.R.T. attribute ID:" << SMARTattrID)
   enum SMARTvalueRating sMARTvalueRating;
@@ -705,26 +722,18 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
     double accuracy = 0.0;
     double lowerUnitLimit = 0.0, upperLimit;
     std::string stdstrUnit;
-    //TODO Derive SMARTuniqueID from ModelAndFirmware then this is not needed.
-    ModelAndFirmware thisModelAndFirmware(sMARTuniqueID.m_modelName,
-      sMARTuniqueID.m_firmWareName);
-    ModelAndFirmwareTuplesType::iterator iter = m_modelAndFirmwareTuples.find(
-      thisModelAndFirmware);
-#ifdef _DEBUG
-    int num = m_modelAndFirmwareTuples.count(thisModelAndFirmware);
-#endif
-    const bool entryFound = iter != m_modelAndFirmwareTuples.end();
     bool useDeterminedUnit = true;
-    if(entryFound){
-      const ModelAndFirmware & thisModelAndFirmware = *iter;
-      stdstrUnit = thisModelAndFirmware.getParamUnit(SMARTattrID);
+    if(p_modelAndFirmware)
+    {
+      stdstrUnit = p_modelAndFirmware->getParamUnit(SMARTattrID);
       if( stdstrUnit != "" )
       {
         if(! getRealValue(stdstrUnit, SMARTrawVal, realCircaValue) ){
-          std_ossUnit << iter->getParamUnit(SMARTattrID);
+          std_ossUnit << p_modelAndFirmware->getParamUnit(SMARTattrID);
           useDeterminedUnit = false;
           stdstrHumanReadableRawVal += SMARTvalueFormatter::
-            FormatHumanReadable(SMARTattrID, realCircaValue, true);
+            FormatHumanReadable(SMARTattrID, realCircaValue, true,
+              p_modelAndFirmware);
         }
       }
     }
@@ -734,7 +743,8 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
         accuracy,
         lowerUnitLimit, upperLimit,
         std_ossUnit, std_ossUnitAccuracy,
-        stdstrHumanReadableRawVal);
+        stdstrHumanReadableRawVal,
+        p_modelAndFirmware);
     std::ostringstream std_ossRawSMARTval;
     switch(SMARTattrID)
     {
@@ -764,7 +774,7 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
       //std::numeric_limits<>::min();
 //          SMARTattributeID &= 2 << (numSMARTattributeIDbits - 1)
     sMARTvalueRating = s_SMARTvalueRater.GetSMARTvalueRating(SMARTattrID,
-      SMARTuniqueIDandVals, realCircaValue);
+      SMARTuniqueIDandVals, realCircaValue, p_modelAndFirmware);
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,

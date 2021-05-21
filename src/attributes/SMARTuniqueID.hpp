@@ -27,9 +27,10 @@
 ///Does not need so many items? # supported SMART attributes = 30?
 #define numItems (numDifferentSMART_IDs+1)
 ///Could also make it inline functions for type safety?
-#define mostSignificantBit(value) (1L << (sizeof(value)*8-1) )
+#define GetBitMaskForMostSignificantBit(value) (1L << (sizeof(value)*8-1) )
 #define removeBits(value, bits) (value & ~bits)
-#define setGreaterBit(value) (value |= mostSignificantBit(value) );/// ">" in UI
+/// Should be output to ">" (in User Interface)
+#define setGreaterBit(value) (value |= GetBitMaskForMostSignificantBit(value) );
 
 /** Same structure as SkIdentifyParsedData in Linux' "atasmart.h" */
 struct SMARTuniqueID {
@@ -97,6 +98,18 @@ struct SMARTuniqueID {
 #endif
   ~SMARTuniqueID();
 
+  ///Remove the bits that don't belong to the value but have a special meaning.
+  template <typename dataType> static dataType GetUnMaskedValue(const dataType
+    t){
+    ///Value bitwise ANDed with inverted most significant bit
+    return t & ~GetBitMaskForMostSignificantBit(t);
+  }
+  ///Remove the bits that don't belong to the value but have a special meaning.
+  template <typename dataType> static dataType GetUnMaskedValue(const dataType t
+    ,const dataType bitMaskForMostSignificantBit){
+    ///Value bitwise ANDed with inverted most significant bit
+    return t & ~bitMaskForMostSignificantBit;
+  }
   const fastestUnsignedDataType * getSupportedSMART_IDs() const{
     return supportedSMART_IDs;
   }
@@ -195,6 +208,7 @@ struct SMARTuniqueID {
     switch(state[SMARTattrID])//TODO take value overflow into account
     {
       case getMinUnit:
+      ///Member value has (initial) high value->not set yet in this function
       if(otherVal < m_otherMetricVal[SMARTattrID])
       {
         m_otherMetricVal[SMARTattrID] = otherVal;
@@ -283,12 +297,12 @@ struct SMARTuniqueID {
 #ifdef _DEBUG
             ///Starke Schwankungen/Ausreißer erkennen.
             schwankung = (double) unit / (double) lowerUnitBound[SMARTattrID];
-#endif
             if(schwankung < 0.5 || schwankung > 1.5)
               LOGN_ERROR("heavy fluctation of S.M.A.R.T. ID " << SMARTattrID
                 << " :" << schwankung <<
                 " current unit:" << unit <<
                 " previous lower unit:" << lowerUnitBound[SMARTattrID] )
+#endif
             lowerUnitBound[SMARTattrID] = unit;
           }
           else if(unit > upperUnitBound[SMARTattrID]){
@@ -297,12 +311,12 @@ struct SMARTuniqueID {
              *  S.M.A.R.T. ID 241 (total data written) */
             ///Starke Schwankungen/Ausreißer erkennen.
             schwankung = (double) unit / (double) upperUnitBound[SMARTattrID];
-#endif
             if(schwankung < 0.5 || schwankung > 1.5)
               LOGN_ERROR("heavy fluctation of S.M.A.R.T. ID " << SMARTattrID
                 << " :" << schwankung <<
                 " current unit:" << unit <<
                 " previous upper unit:" << upperUnitBound[SMARTattrID] )
+#endif
             upperUnitBound[SMARTattrID] = unit;
           }
 #ifdef _DEBUG

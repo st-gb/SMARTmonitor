@@ -426,7 +426,8 @@ void SMARTmonitorService::BeforeWait()
           << fTimeInS;
         SMARTuniqueID::unitDataType unit = SMARTuniqueID.units[SMARTattrID];
         if(unit != 0){
-          SMARTuniqueID::unitDataType MSB = mostSignificantBit(unit);
+          SMARTuniqueID::unitDataType MSB = GetBitMaskForMostSignificantBit(
+            unit);
           if(unit & MSB){
             unit = removeBits(unit, MSB);
             oss << "\" unit=\">" << unit;

@@ -242,7 +242,7 @@ void SMARTmonitorBase::OutputUsage() {
      "<command line option NAME> <command line option VALUE>):\n"
     "-or as 1 command line argument:<command line option NAME>=<command line "
      "option VALUE>\n\n"
-    "avaiable options:\n";
+    "available options:\n";
   for (fastestUnsignedDataType index = 0;
     s_commandLineOptions[index].optionName[0] != '\0'; ++index) {
     CommandLineOption & commandLineOption = s_commandLineOptions[index];
@@ -335,6 +335,26 @@ std::wstring SMARTmonitorBase::GetCommandOptionValue(//const wchar_t * const str
   return std::wstring();
 }
 
+const ModelAndFirmware * SMARTmonitorBase::getDataCarrierAttrDefs(
+  const SMARTuniqueID & sMARTuniqueID) const
+{
+  //TODO Derive SMARTuniqueID from ModelAndFirmware then this is not needed.
+  ModelAndFirmware thisModelAndFirmware(sMARTuniqueID.m_modelName,
+    sMARTuniqueID.m_firmWareName);
+#ifdef _DEBUG
+  int num = m_modelAndFirmwareTuples.count(thisModelAndFirmware);
+#endif
+  SMARTmonitorBase::ModelAndFirmwareTuplesType::iterator iter =
+    m_modelAndFirmwareTuples.find(thisModelAndFirmware);
+  const bool entryFound = iter != m_modelAndFirmwareTuples.end();
+  const ModelAndFirmware * p_currModelAndFirmware;
+  if(entryFound)
+    p_currModelAndFirmware = &*iter;
+  else
+    p_currModelAndFirmware = NULL;
+  return p_currModelAndFirmware;
+}
+
 //TODO
 /** This function should be the program option name -> handler function mapping.*/
 void SMARTmonitorBase::HandleLogFileFolderProgramOption(
@@ -394,8 +414,8 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
         try{
           g_logger.SetLogLevel(GetStdString_Inline(cmdLineOptionValue) );
         }catch(NS_NodeTrie::NotInContainerException & exc){
-          std::wcerr << cmdLineOptionValue << L" not a valid log level" <<
-            std::endl;
+          std::wcerr << L"\"" << cmdLineOptionValue << L"\" is not a valid log "
+            "level" << std::endl;
           showUsage = true;
         }
     }
@@ -826,9 +846,10 @@ bool SMARTmonitorBase::tryCfgFilePaths(
 
 //TODO pass this folder via CMake argument so it is the same as Debian package
 // (via CPack) installation path
-#if defined( __linux__) && defined(buildService)
+///The GUI and its ressources may also be installed to the "/usr" directory.
+#if defined( __linux__)// && defined(buildService)
   std::wstring stdwstrWorkDirWithCfgFilePrefix =//L"/usr/local/SMARTmonitor";
-    makeWchar(resourcesFSpath);
+    makeWchar(xstringify(resourcesFSpath));
 #else
   std::wstring stdwstrWorkDirWithCfgFilePrefix;
 #endif
@@ -837,20 +858,27 @@ bool SMARTmonitorBase::tryCfgFilePaths(
   stdwstrWorkDirWithCfgFilePrefix += fileName;
   
   std::string stdstrFullConfigFilePath;
+  std::string errorMsgFile1, errorMsgFile2;
   //TODO just for compilation
   bool successfullyLoadedCfgFile = /*mp_cfgLoader.LoadSMARTCfg*/
-    (m_cfgLoader.*loadFunc)(& stdwstrWorkDirWithCfgFilePrefix, 
+    (m_cfgLoader.*loadFunc)(errorMsgFile1, & stdwstrWorkDirWithCfgFilePrefix, 
       & stdstrFullConfigFilePath, NULL);
 
   if(! successfullyLoadedCfgFile)
-    if(origPath != L""){
+    if(origPath != L""){///-> use current working directory
       stdwstrWorkDirWithCfgFilePrefix = L"";
+      ConstructConfigFilePath(stdwstrWorkDirWithCfgFilePrefix);
+      //std::wstring(L"config/")
+      stdwstrWorkDirWithCfgFilePrefix += fileName;
       successfullyLoadedCfgFile = /*mp_cfgLoader->LoadSMARTCfg*/
-        (m_cfgLoader.*loadFunc)(& stdwstrWorkDirWithCfgFilePrefix,
-          & stdstrFullConfigFilePath, NULL);
+        (m_cfgLoader.*loadFunc)(errorMsgFile2, & stdwstrWorkDirWithCfgFilePrefix
+          ,& stdstrFullConfigFilePath, NULL);
     }
-  if(! successfullyLoadedCfgFile)
+  if(! successfullyLoadedCfgFile){
+    const std::string errorMsg = errorMsgFile1 + "\n" + errorMsgFile2;
     initSMARTretCode = readingConfigFileFailed;
+    ShowMessage(errorMsg.c_str(), UserInterface::MessageType::warning);
+  }
   return successfullyLoadedCfgFile;
 }
 
@@ -858,10 +886,15 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART(){
   enum InitSMARTretCode initSMARTretCode = success;
 
   try{
-    tryCfgFilePaths(L"en/SMARTattrDefs.", & CfgLoaderType::readSMARTattrDefs);
-    tryCfgFilePaths(L"SMARTdataCarrierDefs.", & CfgLoaderType::
-      ReadSMARTdataCarrierDefs);
-    tryCfgFilePaths(L"SMARTsrvCnnctn.", & CfgLoaderType::ReadSrvCnnctnCfg);
+    if(! tryCfgFilePaths(L"en/SMARTattrDefs.", & CfgLoaderType::
+      readSMARTattrDefs) )
+      return readingConfigFileFailed;
+    if(! tryCfgFilePaths(L"dataCarrierDefs.", & CfgLoaderType::
+      ReadSMARTdataCarrierDefs) )
+      return readingConfigFileFailed;
+    if(! tryCfgFilePaths(L"SMARTsrvCnnctn.", & CfgLoaderType::ReadSrvCnnctnCfg)
+      )
+      return readingConfigFileFailed;
     
     //    {
     //      //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));

@@ -117,6 +117,15 @@ if(DEFINED SMARTmonClientDerived)#define for all clients
   include(client/SMARTmonClientDerived.cmake)
 endif()
 
+message("adding preproc macro \"-DCXX_FLAGS=${CMAKE_CXX_FLAGS}\"")
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_FLAGS=\"${CMAKE_CXX_FLAGS}\"")
+
+message("adding preproc macro \"-DCOMPILER=${CMAKE_CXX_COMPILER_ID}\"")
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_COMPILER=${CMAKE_CXX_COMPILER_ID}")
+
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}")
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DBUILD_TYPE=${CMAKE_BUILD_TYPE}")
+
 add_definitions(${CXX_DEFINITIONS})
 #add_library(${LIBRARIES} )
 #specify which libraries an executable target links against.
