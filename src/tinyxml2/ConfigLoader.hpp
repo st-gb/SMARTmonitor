@@ -21,7 +21,7 @@ class ConfigLoader : public ConfigurationLoaderBase
 {
   public:
     ConfigLoader(
-      SMARTmonitorBase::SMARTattrDefsType /*&*/ SMARTattrDefs,
+      SMARTmonitor::SMARTattrDefsType /*&*/ SMARTattrDefs,
       SMARTmonitorBase & r_userInterface);
     ConfigLoader(const ConfigLoader& orig);
     virtual ~ConfigLoader();
@@ -33,28 +33,34 @@ class ConfigLoader : public ConfigurationLoaderBase
   tinyxml2::XMLElement * openCfgFile(
     const std::wstring & stdwstrWorkingDirWithConfigFilePrefix,
     tinyxml2::XMLDocument & tinyXML2Doc);
-    tinyxml2::XMLElement * OpenConfigFile(
-      const std::wstring & configFilePathWithoutFileExtension,
-      std::string & stdstrFullConfigFilePath,
-      tinyxml2::XMLDocument & tinyXML2Doc);
-    tinyxml2::XMLElement * OpenConfigFile(
-      const std::string & stdstrFullConfigFilePath,
-      tinyxml2::XMLDocument & tinyXML2Doc);
+  tinyxml2::XMLElement * OpenConfigFile(
+    const std::wstring & configFilePathWithoutFileExtension,
+    std::string & stdstrFullConfigFilePath,
+    tinyxml2::XMLDocument & tinyXML2Doc,
+    std::string & errorMsg);
+  tinyxml2::XMLElement * OpenConfigFile(
+    const std::string & stdstrFullConfigFilePath,
+    tinyxml2::XMLDocument & tinyXML2Doc,
+    std::string & errorMsg);
   bool ReadSrvCnnctnCfg(
+    std::string & errorMsg,///Reference param. must be before default arguments
     std::wstring * stdwstrWorkingDirWithConfigFilePrefix = NULL,
     std::string * stdstrFullConfigFilePath = NULL,
     tinyxml2::XMLElement * p_tinyxml2XMLele = NULL
     );
   bool readSMARTattrDefs(
+    std::string & errorMsg,///Reference param. must be before default arguments
     std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix = NULL,
     std::string * p_stdstrFullConfigFilePath = NULL,
     tinyxml2::XMLElement * p_tinyxml2XMLele = NULL
     );
   bool ReadSMARTdataCarrierDefs(
+    std::string & errorMsg,///Reference param. must be before default arguments
     std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix = NULL,
     std::string * p_stdstrFullConfigFilePath = NULL,
     tinyxml2::XMLElement * p_tinyxml2XMLele = NULL);
-    void ReadServiceConnectionSettings(const std::wstring & );
+  void ReadServiceConnectionSettings(const std::wstring &, std::string &
+    errorMsg);
   private:
 
 };

@@ -4,6 +4,10 @@
 
 include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
 
+if(UNIX)
+  #Linux (e.g. Lubuntu) has tinyxml2 in its package manager
+  #"apt-get install libtinyxml"
+endif()
 if(TINYXML2_ROOT_PATH STREQUAL "")
   set(TINYXML2_ROOT_PATH ${SMARTmonSrcDir}/../../../tinyxml2-master )
 endif()
@@ -36,7 +40,8 @@ set( CXX_DEFINITIONS ${CXX_DEFINITIONS}
   -DUNICODE
 )
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")#-g3 -gdwarf-2
+  #https://gcc.gnu.org/onlinedocs/gcc/Debugging-Options.html
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g3 -gdwarf-2")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -gdwarf-2")
 endif()
@@ -56,6 +61,14 @@ if(UNIX)
 endif()
 if(WIN32)#https://cmake.org/cmake/help/v3.0/variable/WIN32.html
   message("WIN32 defined")
+  #To avoid a lot of warnings like " warning: 'virtual void
+  # wxWindowBase::SetInitialBestSize(const wxSize&)' is deprecated: use
+  # SetInitialSize() instead. [-Wdeprecated-declarations]"
+  # when using MinGW.
+  # https://stackoverflow.com/questions/48092812/warning-virtual-void-wxwindowbasesetinitialbasesizeconst-wxsize-is-depre
+  # "This is a known issue for MinGW GCC compiler version < 5.3 (related to "assert" implementation)."
+  add_definitions(-Wdeprecated-declarations)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wdeprecated-declarations")
   include(${SMARTmonSrcDir}/Windows/Windows.cmake)
 endif()
 
@@ -104,10 +117,15 @@ set(SOURCE_FILE_PATHS
 
 if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if(UNIX)#Address sanitizer/ "asan" library only available in Linux?
+    #On Windows: "x86_64-w64-mingw32/bin/ld.exe: cannot find -lasan"
     #https://github.com/google/sanitizers/wiki/AddressSanitizer
-    set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
-    add_definitions(-fsanitize=address -fno-omit-frame-pointer)
+    set(CMAKE_CXX_FLAGS # "-fsanitize=address" links to libasan.so
+      "${CMAKE_CXX_FLAGS} -fsanitize=address")
+    add_definitions(-fsanitize=address)
+    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+    add_definitions(-fno-omit-frame-pointer)
   endif()
 endif()
 

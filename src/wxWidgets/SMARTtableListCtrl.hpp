@@ -1,12 +1,22 @@
 /* SMARTtableListCtrl.hpp
- *  Created on: 10.03.2015
- *      Author: Stefan Gebauer, M.Sc. Comp.Sc. */
+ * Created on: 10.03.2015
+ * Author: Stefan Gebauer, M.Sc. Comp.Sc. */
 #ifndef WXWIDGETS_SMARTTABLELISTCTRL_HPP_
 #define WXWIDGETS_SMARTTABLELISTCTRL_HPP_
 
-#include <wx/listctrl.h> //Base class wxListCtrl
+///Files from _this_ repository:
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+///enum SMARTmonitorClient::SMARTvalueRating
+#include <client/SMARTmonitorClient.h>
+
+///wxWidgets library header files:
+/** (needs package "libwxgtk<<version>>-dev", "libwxbase<<version>>-dbg" under
+ * Linux?) */
+#include <wx/listctrl.h>///Base class wxListCtrl
+
+///Stefan Gebauer's "common_sourcecode" repository:
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
-#include <client/SMARTmonitorClient.h>//enum SMARTmonitorClient::SMARTvalueRating
 
 //enum SMARTmonitorClient::SMARTvalueRating;
 

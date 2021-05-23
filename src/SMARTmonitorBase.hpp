@@ -30,6 +30,7 @@
 typedef tinyxml2::ConfigLoader CfgLoaderType;
 
 typedef bool (CfgLoaderType::*loadFuncType)(
+  std::string & errorMsg,///Reference param. must be before default arguments
   std::wstring * stdwstrWorkingDirWithConfigFilePrefix,
   std::string * stdstrFullConfigFilePath,
   loaderParamType);
@@ -85,8 +86,9 @@ public:
   ModelAndFirmwareTuplesType m_modelAndFirmwareTuples;
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
-  bool asynCnnct = false;
+  bool asynCnnct = true;
   nativeEvent_type waitOrSignalEvt;
+  static std::string s_strAllLogLevels;
 public:
   SMARTmonitorBase();
   //template<typename charType>
@@ -95,6 +97,9 @@ public:
     }*/
   virtual ~SMARTmonitorBase();
   
+  static void sigHandler(int signo);
+  static void registerSignalHandler();
+
   static void setDfltSMARTattrDef();
   /** Needs to persist over the call to 
    *  ::UpdateSMARTparameterValuesThreadFunc(...) so making it a member 
@@ -110,6 +115,7 @@ public:
     /** This is used for service clients (i.e. TUIs/GUIs) to specify the 
      *  service address etc.*/
     serviceConnectionConfigFile,
+    logLvlIdx,
     beyondLastProgramOptionName};
 protected:
   /** This array is usually filled from:
@@ -118,8 +124,8 @@ protected:
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
 public:
   nativeThread_type connectThread;
-  virtual void startCnnctCountDown(){};
-  fastestUnsignedDataType m_timeOutInSeconds;
+  virtual void startSrvCnnctCntDown(){};
+  fastestUnsignedDataType m_cnnctTimeOutInSec;
   std::wstring GetProgramOptionValue(const /*enum programOptionNames*/
     fastestUnsignedDataType programOptionName) {
 //    const wchar_t * programOptionValue = L"";
@@ -217,6 +223,7 @@ public:
     );
   std::wstring GetCommandOptionName(std::wstring & cmdLineArg);
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
+  const ModelAndFirmware * getDataCarrierAttrDefs(const SMARTuniqueID &) const;
   
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
   inline void WaitForSignalOrTimeout(

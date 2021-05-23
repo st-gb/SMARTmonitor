@@ -2,6 +2,15 @@
  *  Created on: 26.11.2013
  *  Author: Stefan Gebauer, M.Sc. Comp. Sc. */
 
+///This repository's files:
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include "PerDataCarrierPanel.hpp"///class PerDataCarrierPanel
+#include "wxSMARTmonitorDialog.hpp"
+#include "wxSMARTmonitorApp.hpp" //wxGetApp()
+#include "wxSMARTmonitorTaskBarIcon.hpp"
+#include <wxWidgets/SupportedSMARTIDsDialog.hpp>///class
+
 ///wxWidgets files:
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
@@ -13,13 +22,6 @@
 #ifndef WX_PRECOMP
     #include "wx/wx.h"
 #endif
-
-///This repository's files:
-#include "PerDataCarrierPanel.hpp"///class PerDataCarrierPanel
-#include "wxSMARTmonitorDialog.hpp"
-#include "wxSMARTmonitorApp.hpp" //wxGetApp()
-#include "wxSMARTmonitorTaskBarIcon.hpp"
-#include <wxWidgets/SupportedSMARTIDsDialog.hpp>///class
 
 ///Stefan Gebauer's common_sourcecode repository:
 #include <compiler/GCC/enable_disable_warning.h>
@@ -50,15 +52,16 @@ DEFINE_LOCAL_EVENT_TYPE(ReBuildUIeventType)
 //wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
 //    EVT_TIMER(TIMER_ID, SMARTdialog::OnTimer)
-    EVT_BUTTON(wxID_ABOUT, SMARTdialog::OnAbout)
-    EVT_BUTTON(wxID_OK, SMARTdialog::OnOK)
-    EVT_BUTTON(wxID_EXIT, SMARTdialog::OnExit)
-    EVT_BUTTON(showSupportedSMART_IDs, SMARTdialog::OnShowSupportedSMART_IDs)
-    EVT_BUTTON(CONNECT, SMARTdialog::OnConnectToServer)
-    EVT_CLOSE(SMARTdialog::OnCloseWindow)
-    EVT_COMMAND(wxID_ANY, UpdateSMARTparamValsInGUIevtType,
-      SMARTdialog::OnUpdateSMARTparameterValuesInGUI)
-    EVT_COMMAND(wxID_ANY, ReBuildUIeventType, SMARTdialog::OnReBuildUI)
+  EVT_BUTTON(wxID_ABOUT, SMARTdialog::OnAbout)
+  EVT_BUTTON(directSMARTdata, SMARTdialog::OnDrctSMARTaccss)
+  EVT_BUTTON(wxID_OK, SMARTdialog::OnOK)
+  EVT_BUTTON(wxID_EXIT, SMARTdialog::OnExit)
+  EVT_BUTTON(showSupportedSMART_IDs, SMARTdialog::OnShowSupportedSMART_IDs)
+  EVT_BUTTON(CONNECT, SMARTdialog::OnCnnctToSrvOrDiscnnct)
+  EVT_CLOSE(SMARTdialog::OnCloseWindow)
+  EVT_COMMAND(wxID_ANY, UpdateSMARTparamValsInGUIevtType,
+    SMARTdialog::OnUpdateSMARTparameterValuesInGUI)
+  EVT_COMMAND(wxID_ANY, ReBuildUIeventType, SMARTdialog::OnReBuildUI)
 END_EVENT_TABLE()
 
 //TODO delete this function? Because UpdateSMARTparameterValuesThreadFunc is 
@@ -116,6 +119,17 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
   return 0;
 }
 
+void SMARTdialog::RemovePerDataCarrierPanels()
+{
+  for(SMARTuniqueID2perDataCarrierPanelType::iterator iter =
+    m_SMARTuniqueID2perDataCarrierPanel.begin() ; iter !=
+    m_SMARTuniqueID2perDataCarrierPanel.end(); iter++)
+  {
+    iter->second->Destroy();//free UI control resources
+  }
+  m_SMARTuniqueID2perDataCarrierPanel.clear();
+}
+
 void SMARTdialog::SetStatus(const wxString & status)
 {
   /** Create title as local variable for easier debugging. */
@@ -129,7 +143,13 @@ void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
   switch(currAction){//TODO ability to show in different languages
    case SMARTmonitorClient::cnnctToSrv :
     {
-    wxString str(wxT("connecting to server") );
+    wxString str(wxT("blocking connecting to server") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::nonBlckCnnctToSrv :
+    {
+    wxString str(wxT("NON-blocking connecting to server") );
     ShowMessage(str, UserInterface::MessageType::info);
     }
     break;
@@ -157,7 +177,18 @@ void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
     ShowMessage(str, UserInterface::MessageType::info);
     }
     break;
+   case SMARTmonitorClient::hasReadSMARTvaluesXMLdata:
+    {
+    wxString str(wxT("finished reading S.M.A.R.T. data") );
+    ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
   }
+}
+
+void SMARTdialog::UnCnnctdToSrvUIctrls(){
+  m_p_ConnectAndDisconnectButton->SetLabel(wxT("Connect...") );
+  m_p_ConnectAndDisconnectButton->Enable(true);
 }
 
 void SMARTdialog::EnableShowSupportedSMART_IDs()
@@ -170,13 +201,18 @@ void SMARTdialog::EnableShowSupportedSMART_IDs()
   }
 }
 
-void SMARTdialog::EnableServerInteractingControls(int n)
+/**Call this function if/directly after:
+ * -connection to server established */
+void SMARTdialog::setUI(const enum SMARTmonitorClient::serverConnectionState
+  srvCnnctnState)
 {
-//  if( n != 0)
-//    m_p_ConnectAndDisconnectButton->SetLabelText(wxT("&Disconnect") );
-  m_p_ConnectAndDisconnectButton->Enable();
-
-  EnableShowSupportedSMART_IDs();
+  switch(srvCnnctnState){
+   case SMARTmonitorClient::cnnctdToSrv:
+    m_p_ConnectAndDisconnectButton->SetLabelText(wxT("Disconnect") );
+    m_p_ConnectAndDisconnectButton->Enable();
+    EnableShowSupportedSMART_IDs();
+    break;
+  }
 }
 
 void SMARTdialog::InformAboutTerminationOfUpdateThread()
@@ -244,7 +280,9 @@ SMARTdialog::SMARTdialog(
 //  , m_SMARTvalueProcessor( (wxWidgets::wxSMARTvalueProcessor &) SMARTvalueProcessor)
 //  , m_SMARTaccess(SMARTvalueProcessor.getSMARTaccess() )
   , m_wxCloseMutex()
+  #ifdef directSMARTaccess
   , m_p_directSMARTaccesBtn(NULL)
+  #endif
   //, m_wxCloseCondition(m_wxCloseMutex)
 {
   /** Must create the wxCondition on heap. When it was a member of this class 
@@ -278,7 +316,8 @@ void SMARTdialog::buildUI()
 
   wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
   sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
-  m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT, wxT("&Connect") );
+  m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT,
+    wxT("&Connect...") );
   #ifdef directSMARTaccess
     //TODO only add if sufficient access rights: if(directSMARTaccessAvailable)
     m_p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,
@@ -338,14 +377,24 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
   static const wxChar * const message
     = _T("a tool to monitor (CRITICAL) S.M.A.R.T. parameters\n"
     "\nsee http://en.wikipedia.org/wiki/S.M.A.R.T."
-    "\n(C) 2013-" __DATE__ 
+    "\n(C) 2013-" __DATE__
     "\nby Stefan Gebauer, M.Sc. Comp. Science, Berlin, Germany");
+
+  wxString buildID = wxT("\nC++ compiler: \"");
+    buildID += wxSTRINGIZE(CXX_COMPILER);
+    buildID += " ";
+    buildID += wxSTRINGIZE(CXX_COMPILER_VERSION);
+    buildID += "\"\nC++ flags: \"";
+    buildID += wxSTRINGIZE(CXX_FLAGS);
+    buildID += "\"\nbuild type: ";
+    buildID += wxSTRINGIZE(BUILD_TYPE);
 
   std::string currWorkDir;
   OperatingSystem::GetCurrentWorkingDirA_inl(currWorkDir);
   
   ///Current working directory is relevant for reading configuration files.
-  wxString aboutString = message + wxString("\n\ncurrent working directory:\n")
+  wxString aboutString = message + wxString("\n") + buildID
+    + wxString("\n\ncurrent working directory:\n")
     + wxWidgets::GetwxString_Inline(currWorkDir);
   
 //#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
@@ -354,6 +403,14 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
 //#else // !__WXMSW__
   wxMessageBox(aboutString, title, wxICON_INFORMATION | wxOK, this);
 //#endif // __WXMSW__/!__WXMSW__
+}
+
+void SMARTdialog::OnDrctSMARTaccss(wxCommandEvent &)
+{
+//  __uid_t UID = geteuid();
+//  LOGN_ERROR("current UID:" << UID)
+//  if(UID != 0)
+//    seteuid(0);
 }
 
 void SMARTdialog::OnOK(wxCommandEvent& WXUNUSED(event))
@@ -367,15 +424,35 @@ void SMARTdialog::OnExit(wxCommandEvent& WXUNUSED(event))
   Close(true);
 }
 
-void SMARTdialog::OnConnectToServer(wxCommandEvent& WXUNUSED(event))
+///Called when pressing the "Connect..." / "disconnect" button
+void SMARTdialog::OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event))
 {
 //  if( m_p_ConnectAndDisconnectButton->GetLabelText(wxT("&Disconnect") );
   //TODO or more general: disable all service interacting buttons
-  wxGetApp().DisableSrvUIctrls();
-  //TODO Cancel connection countdown if attempt before failed.
-  wxGetApp().ConnectToServer();
+ 
+  ///Handle depending on the current connection state.
+  switch(wxGetApp().m_srvrCnnctnState)
+  {
+   case SMARTmonitorClient::uncnnctdToSrv:
+    ///Disable "Connect.." button as the connect to server" dialog is shown now.
+    wxGetApp().setUI(SMARTmonitorClient::connectToSrv);
+    ///Currently unconnected->show "connect to server" dialog
+    wxGetApp().ConnectToServer();
+    break;
+   case SMARTmonitorClient::cnnctdToSrv:
+   case SMARTmonitorClient::valUpd8:///Is also connected when value update.
+    ///Cancel connection:
+    /** Closing the socket causes the server connect thread to break/finish */
+    //close(wxGetApp().m_socketPortNumber);
+    wxGetApp().EndUpdateUIthread();
+    //TODO set m_srvrCnnctnState to "uncnnctdToSrv"
+    wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
+    break;
+  }
 }
 
+/** @param serverConnectionState the current? state
+ *  e.g. if transmission error then state us "unconnected" */
 void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
   newState)
 {
@@ -385,10 +462,10 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
       SetTitle(wxGetApp().GetTitleInclDataSrc() + wxT("--last update:") +
         wxNow() );
      break;
-    case SMARTmonitorClient::connectedToService :
+    case SMARTmonitorClient::cnnctdToSrv :
       SetTitle(wxGetApp().GetTitleInclDataSrc() );
       break;
-    case SMARTmonitorClient::unconnectedFromService :
+    case SMARTmonitorClient::uncnnctdToSrv :
     {
       wxGetApp().GetSMARTvalsAndUpd8UIthreadID = 0;
       wxString wxstrTitle = wxGetApp().GetAppName();
@@ -397,9 +474,14 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
       
       std::string timeString = UserInterface::GetTimeAsString(
         timeOfLastSMARTvaluesUpdate);
-      wxstrTitle += wxString::Format( wxT("--last update:%s from %s--unconnected"),
+      //TODO don't show "from" if direct values?
+      wxstrTitle += wxString::Format(
+        wxT("--last update at %s from %s--unconnected"),
         wxWidgets::GetwxString_Inline(timeString.c_str()), 
         wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.c_str() ) );
+      /** Not needed to set the unconnected UI because this is done in
+       * "StartSrvCnnctnAttmptCntDown" */
+//      wxGetApp().UnCnnctdToSrvUIctrls();
       SetTitle(wxstrTitle);
     }
       wxGetApp().ShowSMARTstatusUnknownIcon();

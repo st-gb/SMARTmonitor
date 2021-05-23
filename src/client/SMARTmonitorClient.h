@@ -5,11 +5,14 @@
 #ifndef SMARTMONITORCLIENT_H
 #define SMARTMONITORCLIENT_H
 
-#include "../SMARTmonitorBase.hpp"
-
 ///Stefan Gebauer's common_sourcecode repository header files:
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include <OperatingSystem/BSD/socket/prepCnnctToSrv.h>///prepCnnctToSrv(...)
 #include <OperatingSystem/multithread/nativeThreadType.hpp>///nativeThread_type
 
+///This repository's files:
+#include "../SMARTmonitorBase.hpp"
 #include <UserInterface/columnIndices.hpp>
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater
 #include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
@@ -23,18 +26,20 @@ public:
   enum CurrentAction
   {
     cnnctToSrv,
+    nonBlckCnnctToSrv,///Non-blocking "connect" (via "select") mode
     readNumBytesForSuppSMART_IDs,
     readSuppSMART_IDsXMLdata,
     readNumBytesForSMARTdata,
-    readSMARTvaluesXMLdata
+    readSMARTvaluesXMLdata,
+    hasReadSMARTvaluesXMLdata
   };
 
   SMARTmonitorClient();
   SMARTmonitorClient(const SMARTmonitorClient& orig);
   virtual ~SMARTmonitorClient();
-#ifdef _DEBUG
+//#ifdef _DEBUG
   DWORD GetSMARTvalsAndUpd8UIthreadID /*= 0*/;
-#endif
+//#endif
   ///To check whether we need to run UI operations in another thread or not.
   static fastestUnsignedDataType s_UIthreadID;
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
@@ -48,13 +53,14 @@ public:
     dataCarrierIDandSMARTidsContainer;
   static SMARTvalueRater s_SMARTvalueRater;
   
-  enum serverConnectionState {connectedToService, unconnectedFromService,
+  enum serverConnectionState {cnnctdToSrv, uncnnctdToSrv, connectToSrv,
     /**to diplay the (local) time of last S.M.A.R.T. value update*/ valUpd8};
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
   
+  enum serverConnectionState m_srvrCnnctnState = uncnnctdToSrv;
   int m_socketFileDesc;
-  fastestUnsignedDataType m_serviceConnectionCountDownInSeconds;
+  fastestUnsignedDataType m_srvCnnctnCntDownInSec;
   fastestUnsignedDataType m_serverConnectionState;
   
   void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult);
@@ -67,12 +73,17 @@ public:
   /// be ensured to run in UI thread via events etc..)
   ///Can be used to hide a "connect to server" window.
   virtual void AfterConnectToServer(int connectResult) { };
-  void HandleConnectionError(const char * hostName);
+  void HandleConnectionError(const char * hostName, const int connectResult);
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
     fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
+  /**Called
+   * -after a transmission error
+   * -after connection to server established
+   * -update of (only) S.M.A.R.T. values
+   * -if a user canceled the connection via User Interface */
   virtual void ChangeConnectionState(enum serverConnectionState newState){}
-  void ConnectToServerAndGetSMARTvalues(const bool asyncCnnctToSvc);
+  fastestUnsignedDataType CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc);
   void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
@@ -100,7 +111,7 @@ public:
   }
   void SetSMARTattribIDandNameLabel();
   virtual void ShwCnnctToSrvrDlg(const std::string &){};
-  virtual void StartServiceConnectionCountDown(
+  virtual void StartSrvCnnctnAttmptCntDown(
     const fastestUnsignedDataType countDownInSeconds) {}
   /** Operations that only need to be done once after connection to the service
       is established. 
@@ -111,9 +122,12 @@ public:
   }
   void setIDandLabel(const SMARTuniqueID &,
     const fastestUnsignedDataType SMARTattrID, void * data);
+  virtual void setUI(const enum serverConnectionState) = 0;
   enum SMARTvalueRating upd8rawAndH_andTime(
     const fastestUnsignedDataType SMARTattrID,
-    const SMARTuniqueIDandValues &, void * data);
+    const SMARTuniqueIDandValues &,
+    void * data,
+    const ModelAndFirmware *);
   inline void UpdateTimeOfSMARTvalueRetrieval(
     const SMARTuniqueID &,
     const fastestUnsignedDataType SMARTattributeID,

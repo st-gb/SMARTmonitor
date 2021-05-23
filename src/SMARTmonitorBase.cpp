@@ -31,10 +31,16 @@ dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 AtomicExchType SMARTmonitorBase::s_updateSMARTvalues = 1;
 extern const char FileSystem::dirSeperatorChar;
+
+///Is filled with log levels.
+std::string SMARTmonitorBase::s_strAllLogLevels;
+
 CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"logfilefolder", "<absolute or relative log file FOLDER>, e.g. \"/run/\" "
     "for writing log files to tmpfs/RAM drives"},
-  {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. \"server.xml"},
+  {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. "
+    "\"server.xml"},
+  {"loglevel", NULL},
   {""}
 };
 
@@ -56,7 +62,7 @@ SMARTmonitorBase::SMARTmonitorBase()
       getSMARTattrDefs(), *this),
     m_cmdLineArgStrings(NULL),
     m_ar_stdwstrCmdLineArgs(NULL),
-  m_timeOutInSeconds(30)
+  m_cnnctTimeOutInSec(30)
 #ifdef directSMARTaccess
   , m_SMARTaccess(SMARTuniqueIDsAndValues)
 #endif
@@ -73,6 +79,11 @@ SMARTmonitorBase::SMARTmonitorBase()
   
   //TODO
 //  s_programOptionName2handler.insert(std::make_pair(L",));
+  
+  LogLevel::getAllLogLevels(s_strAllLogLevels);
+  s_strAllLogLevels = "1 of [" + s_strAllLogLevels + "]";
+  s_commandLineOptions[logLvlIdx].possibleOptionValue = s_strAllLogLevels.
+    c_str();
 }
 
 SMARTmonitorBase::~SMARTmonitorBase() {
@@ -164,6 +175,13 @@ void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(254, "Free Fall Protection");
 }
 
+void SMARTmonitorBase::sigHandler(int signo){}
+void SMARTmonitorBase::registerSignalHandler(){
+  ///https://en.wikipedia.org/wiki/C_signal_handling
+  ///Needed, else program exits when calling raise(SIGUSR1).
+  signal(SIGUSR1, sigHandler);
+}
+
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
   /** IMPORTANT: creating the arrays can't be done in the constructor of this
     class as "argc" is "0" there. So do this from or after "OnInit()" */
@@ -193,7 +211,8 @@ std::wstring GetExeFileName(const wchar_t * const ar_wchFullProgramPath) {
 /** \brief adds S.M.A.R.T. attributes to observe from all successfully retrieved
  *  S.M.A.R.T. values from all data carriers to get S.M.A.R.T. values from.*/
 void SMARTmonitorBase::SetSMARTattributesToObserve(
-  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDandValuesContainer){
+  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDandValuesContainer)
+{
   //  const std::set<SkSmartAttributeParsedData> & SMARTattributesToObserve =
   //    wxGetApp().mp_SMARTaccess->getSMARTattributesToObserve();
   //TODO add SMART attribute IDs to SMARTattributesToObserve
@@ -223,7 +242,7 @@ void SMARTmonitorBase::OutputUsage() {
      "<command line option NAME> <command line option VALUE>):\n"
     "-or as 1 command line argument:<command line option NAME>=<command line "
      "option VALUE>\n\n"
-    "avaiable options:\n";
+    "available options:\n";
   for (fastestUnsignedDataType index = 0;
     s_commandLineOptions[index].optionName[0] != '\0'; ++index) {
     CommandLineOption & commandLineOption = s_commandLineOptions[index];
@@ -316,6 +335,26 @@ std::wstring SMARTmonitorBase::GetCommandOptionValue(//const wchar_t * const str
   return std::wstring();
 }
 
+const ModelAndFirmware * SMARTmonitorBase::getDataCarrierAttrDefs(
+  const SMARTuniqueID & sMARTuniqueID) const
+{
+  //TODO Derive SMARTuniqueID from ModelAndFirmware then this is not needed.
+  ModelAndFirmware thisModelAndFirmware(sMARTuniqueID.m_modelName,
+    sMARTuniqueID.m_firmWareName);
+#ifdef _DEBUG
+  int num = m_modelAndFirmwareTuples.count(thisModelAndFirmware);
+#endif
+  SMARTmonitorBase::ModelAndFirmwareTuplesType::iterator iter =
+    m_modelAndFirmwareTuples.find(thisModelAndFirmware);
+  const bool entryFound = iter != m_modelAndFirmwareTuples.end();
+  const ModelAndFirmware * p_currModelAndFirmware;
+  if(entryFound)
+    p_currModelAndFirmware = &*iter;
+  else
+    p_currModelAndFirmware = NULL;
+  return p_currModelAndFirmware;
+}
+
 //TODO
 /** This function should be the program option name -> handler function mapping.*/
 void SMARTmonitorBase::HandleLogFileFolderProgramOption(
@@ -372,7 +411,13 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
         HandleLogFileFolderProgramOption(cmdLineOptionValue);
       }
       else if (cmdLineOptionName == L"loglevel")
-        g_logger.SetLogLevel(GetStdString_Inline(cmdLineOptionValue) );
+        try{
+          g_logger.SetLogLevel(GetStdString_Inline(cmdLineOptionValue) );
+        }catch(NS_NodeTrie::NotInContainerException & exc){
+          std::wcerr << L"\"" << cmdLineOptionValue << L"\" is not a valid log "
+            "level" << std::endl;
+          showUsage = true;
+        }
     }
     if(atLeast1UnknwonCmdLineOption)
       showUsage = true;
@@ -399,10 +444,12 @@ bool SMARTmonitorBase::InitializeLogger() {
   }
   else///May be specified on command line/in configuration file
     m_stdstrLogFilePath += "_log.txt";
+  ///Only change if not set yet.
+  if(g_logger.GetLogLevel() == LogLevel::beyondLastLogMessageType)
 #ifdef _DEBUG
-  g_logger.SetLogLevel("debug"/*LogLevel::debug*/);
+    g_logger.SetLogLevel("debug"/*LogLevel::debug*/);
 #else
-  g_logger.SetLogLevel("warning"/*LogLevel::warning*/);
+    g_logger.SetLogLevel("warning"/*LogLevel::warning*/);
 #endif
   try {
     success = g_logger.OpenFileA(m_stdstrLogFilePath, "log4j", 4000, LogLevel:://debug
@@ -422,7 +469,7 @@ void SMARTmonitorBase::ConstructConfigFilePathFromExeFilePath(
   std::wstring fullConfigFilePathWithoutExtension;
   //    //wxstrThisExecutablesFilePath
   //    wxString fileNameWithoutExtension;
-  const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(_T("."));
+  const int indexOfLastDot = stdwstrAbsoluteFilePath.rfind(L".");
   //const char ps = PATH_SEPERATOR_CHAR;
   std::wstring stdwstrPathSeperatorChar = GetStdWstring(std::string(
     PATH_SEPERATOR_CHAR_STRING));
@@ -799,9 +846,10 @@ bool SMARTmonitorBase::tryCfgFilePaths(
 
 //TODO pass this folder via CMake argument so it is the same as Debian package
 // (via CPack) installation path
-#if defined( __linux__) && defined(buildService)
+///The GUI and its ressources may also be installed to the "/usr" directory.
+#if defined( __linux__)// && defined(buildService)
   std::wstring stdwstrWorkDirWithCfgFilePrefix =//L"/usr/local/SMARTmonitor";
-    makeWchar(resourcesFSpath);
+    makeWchar(xstringify(resourcesFSpath));
 #else
   std::wstring stdwstrWorkDirWithCfgFilePrefix;
 #endif
@@ -810,30 +858,43 @@ bool SMARTmonitorBase::tryCfgFilePaths(
   stdwstrWorkDirWithCfgFilePrefix += fileName;
   
   std::string stdstrFullConfigFilePath;
+  std::string errorMsgFile1, errorMsgFile2;
   //TODO just for compilation
   bool successfullyLoadedCfgFile = /*mp_cfgLoader.LoadSMARTCfg*/
-    (m_cfgLoader.*loadFunc)(& stdwstrWorkDirWithCfgFilePrefix, 
+    (m_cfgLoader.*loadFunc)(errorMsgFile1, & stdwstrWorkDirWithCfgFilePrefix, 
       & stdstrFullConfigFilePath, NULL);
 
   if(! successfullyLoadedCfgFile)
-    if(origPath != L""){
+    if(origPath != L""){///-> use current working directory
       stdwstrWorkDirWithCfgFilePrefix = L"";
+      ConstructConfigFilePath(stdwstrWorkDirWithCfgFilePrefix);
+      //std::wstring(L"config/")
+      stdwstrWorkDirWithCfgFilePrefix += fileName;
       successfullyLoadedCfgFile = /*mp_cfgLoader->LoadSMARTCfg*/
-        (m_cfgLoader.*loadFunc)(& stdwstrWorkDirWithCfgFilePrefix,
-          & stdstrFullConfigFilePath, NULL);
+        (m_cfgLoader.*loadFunc)(errorMsgFile2, & stdwstrWorkDirWithCfgFilePrefix
+          ,& stdstrFullConfigFilePath, NULL);
     }
-  if(! successfullyLoadedCfgFile)
+  if(! successfullyLoadedCfgFile){
+    const std::string errorMsg = errorMsgFile1 + "\n" + errorMsgFile2;
     initSMARTretCode = readingConfigFileFailed;
+    ShowMessage(errorMsg.c_str(), UserInterface::MessageType::warning);
+  }
+  return successfullyLoadedCfgFile;
 }
 
 fastestUnsignedDataType SMARTmonitorBase::InitializeSMART(){
   enum InitSMARTretCode initSMARTretCode = success;
 
   try{
-    tryCfgFilePaths(L"en/SMARTattrDefs", & CfgLoaderType::readSMARTattrDefs);
-    tryCfgFilePaths(L"SMARTdataCarrierDefs", & CfgLoaderType::
-      ReadSMARTdataCarrierDefs);
-    tryCfgFilePaths(L"SMARTsrvConn", & CfgLoaderType::ReadSrvCnnctnCfg);
+    if(! tryCfgFilePaths(L"en/SMARTattrDefs.", & CfgLoaderType::
+      readSMARTattrDefs) )
+      return readingConfigFileFailed;
+    if(! tryCfgFilePaths(L"dataCarrierDefs.", & CfgLoaderType::
+      ReadSMARTdataCarrierDefs) )
+      return readingConfigFileFailed;
+    if(! tryCfgFilePaths(L"SMARTsrvCnnctn.", & CfgLoaderType::ReadSrvCnnctnCfg)
+      )
+      return readingConfigFileFailed;
     
     //    {
     //      //wxMessageBox(wxT("failed reading config file \"") + workingDirWithConfigFilePrefix + wxT("\""));

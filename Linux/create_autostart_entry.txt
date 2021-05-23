@@ -1,0 +1,16 @@
+#https://askubuntu.com/questions/48321/how-do-i-start-applications-automatically-on-login
+
+create a text file with content:
+
+"[Desktop Entry]
+Name=SMARTmonitor wxGUI
+Terminal=false
+Exec=/usr/local/bin/wxSMARTmonitor_GUI_Release.elf svcConnConfFile=/media/sg/devel1/SourceCodeManagement/wxSMARTmonitor/config/FGsCore2Quad.xml 
+Type=Application
+Icon=/usr/share/SMARTmonitor/icons/S.M.A.R.T._OK.xpm
+Categories=Utility;"
+
+As file name use ".desktop" extension.
+
+Store/copy this file in/to "/etc/xdg/autostart"
+

@@ -5,6 +5,11 @@
 #ifndef WXSMARTMONITORAPP_HPP_
 #define WXSMARTMONITORAPP_HPP_
 
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include <client/SMARTmonitorClient.h>///base class SMARTmonitorClient
+
+///wxWidgets header files:
 #include <wx/app.h> //Base class wxApp
 #include <wx/dialog.h> //class wxDialog
 #include <wx/icon.h> //class wxIcon
@@ -12,7 +17,7 @@
 
 //#include "wxSMARTmonitorTaskBarIcon.hpp"
 //#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase
-#include <client/SMARTmonitorClient.h> //base class SMARTmonitorClient
+
 //#include <libATA_SMART/SMARTaccess.hpp>
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
 #include "wxSMARTmonitorDialog.hpp"///class SMARTdialog
@@ -49,7 +54,7 @@ public:
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
   void DisableSrvUIctrls();
-  void EnableSrvUIctrls();
+  void UnCnnctdToSrvUIctrls();
   void EndWaitTillCnnctTimer(){
     m_wxtimer.Stop();//stop connect timer in main window
     gs_dialog->SetTitle(GetAppDisplayName() );
@@ -63,7 +68,7 @@ public:
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTstatusUnknownIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
-  void OnStartCntDown(wxCommandEvent &);
+  void OnStartSrvCnnctnCntDown(wxCommandEvent &);
   void SetAttribute(
     const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
@@ -74,6 +79,7 @@ public:
   void SetCurrentAction(enum CurrentAction currAction);
   void SetGetDirectSMARTvals();
   void SetGetSMARTvalsMode(const enum GetSMARTvalsMode);
+  void setUI(const enum serverConnectionState);
   void ShowConnectionState(const char * const pch, int timeOut);
   void ShwCnnctToSrvrDlg(const std::string &);
   void ShowMessage(const char * const ) const;
@@ -82,10 +88,13 @@ public:
   wxIcon ShowSMARTstatusUnknownIcon();
   wxIcon ShowSMARTwarningIcon();
   void ShowIcon(const wxIcon & icon, const wxString & message );
-  void startCnnctCountDown();
   void ShowStateAccordingToSMARTvalues(const SMARTvalueRating
     entireSMARTvalRating);
-  void StartServiceConnectionCountDown(const fastestUnsignedDataType);
+  ///Timeout/interval before attempting to connect to server.
+  void startSrvCnnctCntDown();
+  /** timeout for non-blocking connect. After timeout elapses the select(...)
+   * function returns. */
+  void StartSrvCnnctnAttmptCntDown(const fastestUnsignedDataType);
   void ReBuildUserInterface();
   
   DECLARE_EVENT_TABLE()

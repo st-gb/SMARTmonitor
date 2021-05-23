@@ -27,9 +27,10 @@
 ///Does not need so many items? # supported SMART attributes = 30?
 #define numItems (numDifferentSMART_IDs+1)
 ///Could also make it inline functions for type safety?
-#define mostSignificantBit(value) (1L << (sizeof(value)*8-1) )
+#define GetBitMaskForMostSignificantBit(value) (1L << (sizeof(value)*8-1) )
 #define removeBits(value, bits) (value & ~bits)
-#define setGreaterBit(value) (value |= mostSignificantBit(value) );/// ">" in UI
+/// Should be output to ">" (in User Interface)
+#define setGreaterBit(value) (value |= GetBitMaskForMostSignificantBit(value) );
 
 /** Same structure as SkIdentifyParsedData in Linux' "atasmart.h" */
 struct SMARTuniqueID {
@@ -97,6 +98,18 @@ struct SMARTuniqueID {
 #endif
   ~SMARTuniqueID();
 
+  ///Remove the bits that don't belong to the value but have a special meaning.
+  template <typename dataType> static dataType GetUnMaskedValue(const dataType
+    t){
+    ///Value bitwise ANDed with inverted most significant bit
+    return t & ~GetBitMaskForMostSignificantBit(t);
+  }
+  ///Remove the bits that don't belong to the value but have a special meaning.
+  template <typename dataType> static dataType GetUnMaskedValue(const dataType t
+    ,const dataType bitMaskForMostSignificantBit){
+    ///Value bitwise ANDed with inverted most significant bit
+    return t & ~bitMaskForMostSignificantBit;
+  }
   const fastestUnsignedDataType * getSupportedSMART_IDs() const{
     return supportedSMART_IDs;
   }
@@ -195,6 +208,7 @@ struct SMARTuniqueID {
     switch(state[SMARTattrID])//TODO take value overflow into account
     {
       case getMinUnit:
+      ///Member value has (initial) high value->not set yet in this function
       if(otherVal < m_otherMetricVal[SMARTattrID])
       {
         m_otherMetricVal[SMARTattrID] = otherVal;
@@ -283,19 +297,36 @@ struct SMARTuniqueID {
 #ifdef _DEBUG
             ///Starke Schwankungen/Ausreißer erkennen.
             schwankung = (double) unit / (double) lowerUnitBound[SMARTattrID];
+            if(schwankung < 0.5 || schwankung > 1.5)
+              LOGN_ERROR("heavy fluctation of S.M.A.R.T. ID " << SMARTattrID
+                << " :" << schwankung <<
+                " current unit:" << unit <<
+                " previous lower unit:" << lowerUnitBound[SMARTattrID] )
 #endif
             lowerUnitBound[SMARTattrID] = unit;
           }
           else if(unit > upperUnitBound[SMARTattrID]){
 #ifdef _DEBUG
+            /** Upper value for unit once was too high: 42G 861M 394k 142 for
+             *  S.M.A.R.T. ID 241 (total data written) */
             ///Starke Schwankungen/Ausreißer erkennen.
             schwankung = (double) unit / (double) upperUnitBound[SMARTattrID];
+            if(schwankung < 0.5 || schwankung > 1.5)
+              LOGN_ERROR("heavy fluctation of S.M.A.R.T. ID " << SMARTattrID
+                << " :" << schwankung <<
+                " current unit:" << unit <<
+                " previous upper unit:" << upperUnitBound[SMARTattrID] )
 #endif
             upperUnitBound[SMARTattrID] = unit;
           }
 #ifdef _DEBUG
-          if(schwankung < 0.5 || schwankung > 1.5)
-            LOGN_ERROR("starke Schwankung")
+/** Errorneous?:
+ * For attr. ID 241 : got 1570076356 / 998854983 ~= 1,57  other metric value (#
+ * bytes written since OS start) was correct 94597623808 other metric diff was
+ * 40821985280, SMART value diff was 26 */
+//          logFluctuation(schwankung, SMARTattrID, lowerUnitBound[SMARTattrID]);
+          /*if(schwankung < 0.5 || schwankung > 1.5)
+            LOGN_ERROR("starke Schwankung") */
 #endif
           /** Can be shown in user interface to give an info when the SMART raw
            *  value increments next time. For this calculate:

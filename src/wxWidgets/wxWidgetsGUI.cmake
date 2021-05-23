@@ -37,21 +37,35 @@ endif( NOT DEFINED WXWIDGETS_SETUP_H_PATH )
 if( NOT DEFINED WXWIDGETS_INCLUDE_DIR )
   message("warning: WXWIDGETS_INCLUDE_DIR is NOT defined->compiling will fail"
    "on Linux it may be like: /usr/include/wx-2.8")
+else()
+  message("WXWIDGETS_INCLUDE_DIR defined: ${WXWIDGETS_INCLUDE_DIR}")
 endif( NOT DEFINED WXWIDGETS_INCLUDE_DIR )
   
 #include_directories( ${INCLUDE_DIRS} )
 
+if(WIN32)
+  #On Linux it is e.g. /usr/include
+  #Needed for Windows? Because findwxwidgets doesn't locate the include
+  # directory for the common (non-setup) header files.
+  set(SetwxPathsManually TRUE)
+endif()
+
+message("SetwxPathsManually: ${SetwxPathsManually}")
+if(SetwxPathsManually)
+  #Only add to "include directories" if manual setup
+  set(INCLUDE_DIRS
+    ${INCLUDE_DIRS}
+    ${WXWIDGETS_SETUP_H_PATH}
+    ${WXWIDGETS_INCLUDE_DIR}
+    )
+endif()
+
+message("SetwxVarsManually: ${SetwxVarsManually}")
 if(SetwxVarsManually)
 #Setting manually makes wxWidgets version changes difficult as the version is
 #part of the file name: "wx_baseu-3.0" 
 set( LIBRARIES
   ${LIBRARIES}
-  )
-#Only add to "include directories" if manual setup
-set(INCLUDE_DIRS
-  ${INCLUDE_DIRS}
-  ${WXWIDGETS_SETUP_H_PATH}
-  ${WXWIDGETS_INCLUDE_DIR}
   )
 
 if(WIN32)

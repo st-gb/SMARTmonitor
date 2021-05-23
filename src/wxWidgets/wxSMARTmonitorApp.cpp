@@ -3,6 +3,10 @@
  *  Author:Stefan Gebauer, M. Sc. Comp. Sc.
  *  adapted from the wxWidgets "tbtest" sample  */
 
+/** Include at 1st in Windows build to avoid:
+ * "#warning Please include winsock2.h before windows.h" */
+#include "wxSMARTmonitorApp.hpp"
+
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
 
@@ -47,7 +51,6 @@ GCC_DIAG_OFF(write-strings)
 #include "../icons/S.M.A.R.T._warning.xpm"
 GCC_DIAG_ON(write-strings)
 #include "SetSMARTattrEvent.hpp"///class SetSMARTattrEvent
-#include "wxSMARTmonitorApp.hpp"
 #include "ConnectToServerDialog.hpp"
 #include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
 //#include "libConfig/ConfigurationLoader.hpp"
@@ -80,7 +83,7 @@ BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
   EVT_COMMAND(wxID_ANY, CnnctToSrvrEvtType, wxSMARTmonitorApp::OnCnnctToSrvr)
   EVT_COMMAND(wxID_ANY, ShowMessageEventType, wxSMARTmonitorApp::OnShowMessage)
   EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
-    OnStartCntDown)
+    OnStartSrvCnnctnCntDown)
   EVT_COMMAND(wxID_ANY, ShowCurrentActionEventType, wxSMARTmonitorApp::
     OnShowCurrentAction)
   EVT_COMMAND(wxID_ANY, StartServiceConnectionCountDownEventType, 
@@ -136,34 +139,45 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
 #endif
 }
 
-void wxSMARTmonitorApp::OnStartCntDown(wxCommandEvent & event){
+void wxSMARTmonitorApp::OnStartSrvCnnctnCntDown(wxCommandEvent & event){
   ///Only needs to be done in case connect dialog is not already shown.
-  wxGetApp().DisableSrvUIctrls();
+//  wxGetApp().DisableSrvUIctrls();
   if(! m_p_cnnctToSrvDlg){
     ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
   }
-  if(m_p_cnnctToSrvDlg)
-    m_p_cnnctToSrvDlg->m_timer.Start(1000);
+  else{
+    m_p_cnnctToSrvDlg->EndCnnctnAttemptTimer();
+    m_p_cnnctToSrvDlg->StartSrvCnnctnCntDown();
+  }
 }
 
 void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
   wxCommandEvent & event)
 {
-  m_serviceConnectionCountDownInSeconds = event.GetInt();
-  m_wxtimer.Start(1000);
+//  m_wxtimer.Start(1000);
+  if(m_p_cnnctToSrvDlg)
+    m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(event.GetInt() );
 }
 
-void wxSMARTmonitorApp::StartServiceConnectionCountDown(
+///Called from GUI or non-GUI thread.
+void wxSMARTmonitorApp::StartSrvCnnctnAttmptCntDown(
   const fastestUnsignedDataType countDownInSeconds)
 {
   if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
   {
-    m_serviceConnectionCountDownInSeconds = countDownInSeconds;
-    m_wxtimer.Start(1000);
+//    m_wxtimer.Start(1000);
+    /**E.g. if connection established before and afterwards transmission error.
+     * then a "connect to server" dialog is not already shown.*/
+    if(! m_p_cnnctToSrvDlg){
+      ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
+      setUI(connectToSrv);
+    }
+    m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(countDownInSeconds);
   }
   else
   {
-    wxCommandEvent startServiceConnectionCountDown( StartServiceConnectionCountDownEventType );
+    wxCommandEvent startServiceConnectionCountDown(
+      StartServiceConnectionCountDownEventType);
     startServiceConnectionCountDown.SetInt(countDownInSeconds);
     wxPostEvent(this, startServiceConnectionCountDown);
   }
@@ -193,17 +207,26 @@ void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(
  * interface thread.*/
 void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
 {
+  ///May be "errno" from calling "connect" or "select"
   int connectResult = commandEvent.GetInt();
+  if(connectResult == 0)
+    m_srvrCnnctnState = cnnctdToSrv;
+  else
+    m_srvrCnnctnState = uncnnctdToSrv;
   //TODO The following could go into a "AfterCnnctToSrvInUIthread" function
   // usable by all subclasses of SMARTmonitorClient.
-  if( connectResult == connectedToService)
+  if( connectResult == /*connectedToService*/ 0)
   {
+    /** Because may contaín unneccesary S.M.A.R.T. unique IDs (e.g. from
+     *  previous server).*/
+    gs_dialog->RemovePerDataCarrierPanels();
 //    connectedToSrv();
     if(m_p_cnnctToSrvDlg)
     {
       m_p_cnnctToSrvDlg->End();///Only close connect dialog if connected
       m_p_cnnctToSrvDlg = NULL;
     }
+    wxGetApp().setUI(SMARTmonitorClient::cnnctdToSrv);
 //    SuccessfullyConnectedToClient();
 #if execGetSMARTvalsAndUpd8UIinUIthread
     GetSMARTvaluesAndUpdateUI();
@@ -216,20 +239,21 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
       (SMARTmonitorClient *)this);
 #endif
 //      StartServiceConnectionCountDown(countDownInSeconds);
-    gs_dialog->EnableServerInteractingControls(connectResult);
+//    gs_dialog->setUI(connectResult);
   }
   else
   {
     /** If not closing the socket then socket file descriptor number increases?*/
     close(m_socketFileDesc);
     if(m_p_cnnctToSrvDlg)
-      m_p_cnnctToSrvDlg->EndTimer();
-    gs_dialog->EnableServerInteractingControls(connectResult);
-    HandleConnectionError("");
-    fastestUnsignedDataType countDownInSeconds = 60;
+    /**This function is also called if a connect to server/TCP handshake failed.
+     * so cancel the connection timeout timer.*/
+      m_p_cnnctToSrvDlg->EndCnnctnTimeoutTimer();
+//    wxGetApp().setUI(uncnnctdToSrv);
+    HandleConnectionError("", connectResult);
 //    gs_dialog->StartCountDown(countDownInSeconds);
 //    m_wxtimer.StartOnce(countDownInSeconds * 1000);
-    StartServiceConnectionCountDown(countDownInSeconds);
+    StartSrvCnnctnAttmptCntDown(m_srvCnnctnCntDownInSec);
   }
 }
 
@@ -240,7 +264,7 @@ void wxSMARTmonitorApp::OnChangeState(wxCommandEvent & commandEvent)
 
 void wxSMARTmonitorApp::OnCnnctToSrvr(wxCommandEvent & commandEvent)
 {
-  ConnectToServerAndGetSMARTvalues(asynCnnct);
+  CnnctToSrvAndGetSMARTvals(asynCnnct);
 }
 
 /** Should only be called from the UI thread?!, else program crash? */
@@ -268,8 +292,10 @@ void wxSMARTmonitorApp::BeforeWait()
 void wxSMARTmonitorApp::ChangeConnectionState(enum serverConnectionState newState)
 {
   //TODO ensure to/must be called in GUI thread
-  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID){
     gs_dialog->SetState(newState);
+    m_srvrCnnctnState = newState;
+  }
   else{
     /** Create event To execute UI operations in UI thread.
      * https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case */
@@ -322,14 +348,16 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
 //  if( m_serverConnectionState = connectedToService)
 //  else
   wxString wxstrServiceHostName = m_stdstrServiceHostName;
-  if( m_serviceConnectionCountDownInSeconds --)
+  if(m_srvCnnctnCntDownInSec --)
   {
+    /** Better show this in connect to server dialog because this is seen better
+     *  there.*/
     /** Create title as local variable for easier debugging. */
     wxString status = wxString::Format(
       wxT("conn. attempt to \"%s\",port %u in %u s"),
       wxstrServiceHostName.c_str(), 
       m_socketPortNumber, 
-      m_serviceConnectionCountDownInSeconds);
+      m_srvCnnctnCntDownInSec);
     gs_dialog->SetStatus(status);
   }
   else
@@ -341,9 +369,9 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
       m_socketPortNumber);
     gs_dialog->SetStatus(status);
     m_wxtimer.Stop();
-    ConnectToServerAndGetSMARTvalues(asynCnnct);
+    CnnctToSrvAndGetSMARTvals(asynCnnct);
     if(m_p_cnnctToSrvDlg)
-      m_p_cnnctToSrvDlg->ReStartTimer();
+      m_p_cnnctToSrvDlg->StartSrvCnnctnCntDown();
   }
 }
 
@@ -391,10 +419,17 @@ bool wxSMARTmonitorApp::OnInit()
 //      return false;
 //    }
     const fastestUnsignedDataType initSMARTresult = InitializeSMART();
+    /**Ensure read config error message is shown (and not overwritten by another
+     * message)*/
+    if(initSMARTresult != readingConfigFileFailed)
+    {
     std::wstring stdwstrServiceConnectionConfigFile = 
       s_programOptionValues[serviceConnectionConfigFile];
+    std::string errorMsg;
     m_cfgLoader.ReadServiceConnectionSettings(
-      stdwstrServiceConnectionConfigFile );
+      stdwstrServiceConnectionConfigFile, errorMsg);
+    if(errorMsg != "")
+      ShowMessage(errorMsg.c_str () );
 
 //    ShowSMARTokIcon();
     ShowSMARTstatusUnknownIcon();
@@ -426,6 +461,7 @@ bool wxSMARTmonitorApp::OnInit()
         gs_dialog->disableDrctSMARTaccss(wxT("no built-in direct SMART access"));
 //    else if( result == SMARTaccessBase::noSingleSMARTdevice )
 //      return false;
+    }
   }
   /** Thrown by mp_configurationLoader->LoadConfiguration(..:) */
   catch(const FileException & fe) 
@@ -446,17 +482,22 @@ bool wxSMARTmonitorApp::OnInit()
 
 void wxSMARTmonitorApp::DisableSrvUIctrls(){
   gs_dialog->m_p_ConnectAndDisconnectButton->Enable(false);
+  if(m_p_cnnctToSrvDlg)
+    m_p_cnnctToSrvDlg->DisableConnect();
 }
 
-void wxSMARTmonitorApp::EnableSrvUIctrls(){
-  gs_dialog->m_p_ConnectAndDisconnectButton->Enable(true);
+//#define resourcesFSpath "/usr/share/SMARTmonitor"
+
+void wxSMARTmonitorApp::UnCnnctdToSrvUIctrls(){
+  gs_dialog->UnCnnctdToSrvUIctrls();
 }
 
 inline void createIconFilePath(wxString & iconFilePath, const wxString &
   iconFileName)
 {
-  iconFilePath += wxFILE_SEP_PATH + wxT("icons") + wxFILE_SEP_PATH +
-    iconFileName;
+  if(iconFilePath.size() > 0 && iconFilePath.Last() != wxFILE_SEP_PATH)
+    iconFilePath += wxFILE_SEP_PATH;
+  iconFilePath += wxString(wxT("icons") ) + wxFILE_SEP_PATH + iconFileName;
 }
 
 bool wxSMARTmonitorApp::GetIcon(
@@ -602,6 +643,26 @@ void wxSMARTmonitorApp::SetGetSMARTvalsMode(const enum GetSMARTvalsMode mode)
   }
 }
 
+/** @param srvCnnctnState the User Interface (UI controls and dialogs) to set.*/
+void wxSMARTmonitorApp::setUI(const enum serverConnectionState srvCnnctnState)
+{
+  switch(srvCnnctnState){
+   case SMARTmonitorClient::cnnctdToSrv:
+    gs_dialog->setUI(srvCnnctnState);
+    break;
+   case SMARTmonitorClient::connectToSrv:
+     ///Disable because "connect to server" dialog is shown in "ConnectToServer"
+     gs_dialog->DisableCnnctAndDiscnnctBtn();
+    break;
+   case SMARTmonitorClient::uncnnctdToSrv :
+    if(wxGetApp().m_p_cnnctToSrvDlg)
+      wxGetApp().m_p_cnnctToSrvDlg->EnableCnnctBtn();
+    else///Enable "Connect..." button if connect to server dialog is not shown.
+      gs_dialog->UnCnnctdToSrvUIctrls();
+    break;
+  }
+}
+
 void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress, 
   int connectTimeOutInSeconds)
 {
@@ -626,7 +687,7 @@ void wxSMARTmonitorApp::ShwCnnctToSrvrDlg(const std::string & srvAddr){
       ///Alternative: pass (pointer to) _this_ object and assign in dialog c'tor
       m_stdstrServiceHostName.c_str(),
       m_socketPortNumber,
-      m_timeOutInSeconds,
+      m_cnnctTimeOutInSec,
       m_socketFileDesc);
     m_p_cnnctToSrvDlg->Show();
   }
@@ -645,13 +706,15 @@ void wxSMARTmonitorApp::SetCurrentAction(enum CurrentAction currAction)
   else{
     /** To execute in UI thread.
      * https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case */
-    wxCommandEvent ShowCurrentActionEvent(ShowCurrentActionEventType);
-    ShowCurrentActionEvent.SetInt(currAction);
-    wxPostEvent(this, ShowCurrentActionEvent);
+    wxCommandEvent showCurrentActionEvent(ShowCurrentActionEventType);
+    showCurrentActionEvent.SetInt(currAction);
+    //TODO set thread ID, if blocking or non-blocking connect and show this in UI
+    // showCurrentActionEvent.SetClientData SetClientObject
+    wxPostEvent(this, showCurrentActionEvent);
   }
 }
 
-void wxSMARTmonitorApp::startCnnctCountDown()
+void wxSMARTmonitorApp::startSrvCnnctCntDown()
 {
 //  if(m_p_cnnctToSrvDlg){
     wxCommandEvent wxcommand_event(StartCnnctCntDownEvtType);
@@ -719,8 +782,10 @@ void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 
   if( serviceLocation == wxT("") )
     serviceLocation = wxT("direct SMART access");
-  wxString tooltip = wxString::Format( wxT("for %s:\n%s"), 
-    serviceLocation, message );
+  /** Port number is relevant as e.g. with port forwarding done in a router
+   * multiple computers/hosts may be addressable. */
+  wxString tooltip = wxString::Format( wxT("for %s, port %u:\n%s"), 
+    serviceLocation, m_socketPortNumber, message );
   
   if(m_taskBarIcon///May be NULL if wxTaskBarIcon::IsAvailable() returns false
     && ! m_taskBarIcon->SetIcon(icon, tooltip) )
@@ -731,20 +796,23 @@ void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 
 wxIcon wxSMARTmonitorApp::ShowSMARTokIcon()
 {
-  ShowIcon(s_SMARTokIcon, wxT("values for (all) (critical) S.M.A.R.T. "
-    "parameters are in a safe range") );
+  ShowIcon(s_SMARTokIcon, wxT("values for (all) processed (critical) S.M.A.R.T."
+    " parameters "
+    //TODO display all data carriers (model, firmware, serial number) here?
+    "are in a safe range") );
   return s_SMARTokIcon;
 }
 
 wxIcon wxSMARTmonitorApp::ShowSMARTstatusUnknownIcon()
 {
-  ShowIcon(s_SMARTstatusUnknownIcon, wxT("unknown S.M.A.R.T. status") );
+  ShowIcon(s_SMARTstatusUnknownIcon, wxT("unknown (current) S.M.A.R.T. status")
+    );
   return s_SMARTstatusUnknownIcon;
 }
 
 wxIcon wxSMARTmonitorApp::ShowSMARTwarningIcon()
 {
-  ShowIcon(s_SMARTwarningIcon, wxT("value for at least 1 (critical) S.M.A.R.T. "
-    "parameter is not in a safe range") );
+  ShowIcon(s_SMARTwarningIcon, wxT("value for at least 1 processed (critical) "
+    "S.M.A.R.T. parameter is not in a safe range") );
   return s_SMARTwarningIcon;
 }

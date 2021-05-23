@@ -1,12 +1,15 @@
 /* SMARTtableListCtrl.cpp
- *  Created on: 10.03.2015
- *      Author: mr.sys */
+ * Created on: 10.03.2015
+ * Author: Stefan Gebauer, M.Sc. Comp.Sc. */
 
-#include <wxWidgets/SMARTtableListCtrl.hpp> //This class.
+//This repository's header files:
+#include <wxWidgets/SMARTtableListCtrl.hpp>//This class.
 #include <UserInterface/columnIndices.hpp> //enum columnIndices
-#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 //wxGetApp().m_IDsOfSMARTattributesToObserve
 #include <wxWidgets/wxSMARTmonitorApp.hpp> 
+
+///"common_sourcecode" repository:
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 
 namespace wxWidgets
 {

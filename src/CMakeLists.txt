@@ -117,6 +117,15 @@ if(DEFINED SMARTmonClientDerived)#define for all clients
   include(client/SMARTmonClientDerived.cmake)
 endif()
 
+message("adding preproc macro \"-DCXX_FLAGS=${CMAKE_CXX_FLAGS}\"")
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_FLAGS=\"${CMAKE_CXX_FLAGS}\"")
+
+message("adding preproc macro \"-DCOMPILER=${CMAKE_CXX_COMPILER_ID}\"")
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_COMPILER=${CMAKE_CXX_COMPILER_ID}")
+
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}")
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DBUILD_TYPE=${CMAKE_BUILD_TYPE}")
+
 add_definitions(${CXX_DEFINITIONS})
 #add_library(${LIBRARIES} )
 #specify which libraries an executable target links against.
@@ -124,27 +133,9 @@ add_definitions(${CXX_DEFINITIONS})
 
 #target_link_libraries(${LIBRARIES})
 
-if( ${EXE_TYPE} STREQUAL "wxGUI")
-  set(EXE_NAME wx${PROJECT_NAME}_GUI)
-  set(SOURCE_FILE_PATHS 
-    ${SOURCE_FILE_PATHS}
-    #${TINYXML2_ROOT_PATH}/tinyxml2.cpp
-    )
-  #set( LIBRARIES ${LIBRARIES} tinyxml2 )
-endif( ${EXE_TYPE} STREQUAL "wxGUI" )
-
-if( ${EXE_TYPE} STREQUAL "ncursesClient")
-  set(EXE_NAME ${PROJECT_NAME}_client_ncurses)
-endif( ${EXE_TYPE} STREQUAL "ncursesClient" )
-
-if( ${EXE_TYPE} STREQUAL "UNIX_service")
-  set(EXE_NAME ${PROJECT_NAME}_service)
-endif()
-
-set(EXE_NAME ${EXE_NAME}_${CMAKE_BUILD_TYPE})
-set(EXE_NAME_WOUT_EXT ${EXE_NAME})
-include(${cmnSrcDir}/CMake/addExeFileExt.cmake)
-addExeFileExt(EXE_NAME)
+if(NOT ${EXE_TYPE} STREQUAL "debPkg")
+include(createExeName.cmake)
+createExeName(${EXE_TYPE})
 
 add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
 
@@ -155,11 +146,14 @@ endif (DEFINED WXWIDGETS)
 
 message("EXE_NAME: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")
 
-message("CXX flags: ${CMAKE_CXX_FLAGS}")
-message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
+message("CMAKE CXX flags: \"${CMAKE_CXX_FLAGS}\"")
+message("CMAKE_CXX_FLAGS_DEBUG: \"${CMAKE_CXX_FLAGS_DEBUG}\"")
+message("CFLAGS: ${CFLAGS} CXXFLAGS: ${CXXFLAGS} LDFLAGS: ${LDFLAGS}")
 message("CMAKE_EXE_LINKER_FLAGS: \"${CMAKE_EXE_LINKER_FLAGS}\"")
 
-target_link_libraries(${EXE_NAME} ${LIBRARIES})
+
+  target_link_libraries(${EXE_NAME} ${LIBRARIES})
+endif()
 
 if(cre8SrcArchive)
   include(${CmnSrc}/CMake/cr8srcArchive.cmake)
@@ -180,3 +174,6 @@ include(${cmnSrcDir}/CMake/writeItemsToFile.cmake)
 Set(srcFilePathsFileName ${EXE_TYPE}_source_file_paths.txt)
 #For debugging purposes
 #write1ItemPerLneToFile(${EXE_TYPE}_source_file_paths.txt "${SOURCE_FILE_PATHS}")
+message("If you didn't explicitely set some of the variables, then they may\
+come from a previous call to cmake. If you don't want these settings, delete \
+\"CMakeCache.txt\"")

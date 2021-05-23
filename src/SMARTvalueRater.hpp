@@ -5,7 +5,11 @@
 #ifndef SMARTVALUERATER_HPP
 #define SMARTVALUERATER_HPP
 
+///Files from Stefan Gebauer's "common_sourcecode" repository:
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
+
+///Files from SMARTmonitor repository:
+#include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 #include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
 
 //TODO encapsulate in own namespace?
@@ -16,16 +20,21 @@ using namespace SMARTattributeNames;///enum SMARTattributeNames
 class SMARTvalueRater
 {
 public:
+  /** Is called often: for every S.M.A.R.T. ID of every data carrier in an
+   *  interval (every x seconds) -> make as member function in header file (
+   *  implicitely inline). */
   enum SMARTvalueRating GetSMARTvalueRating(
     fastestUnsignedDataType SMARTattrID,
     const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
-    const uint64_t realCircaValue)
+    const uint64_t realCircaValue,
+    const ModelAndFirmware * p_modelAndFirmware)
   {
     switch( (enum SMARTattributeNames) SMARTattrID)
     {
     case ReadErrorRate:
     case ReallocSectorsCnt:
     case SpinUpRetryCnt:
+    case RecalibRetriesOrCalibrRetryCnt:
     case SSDprogFailCnt:
     case SSDeraseFailCnt:
     case PwrLossProtectionFailure:
@@ -39,6 +48,8 @@ public:
     case CurrPendSecCnt:
     case UncorrSecCnt:
     case UDMA_CRCerrorCnt:
+    case MultiZoneErrorRate:
+    case SoftReadErrorRateOrTACnterDetected:
     case ShockDuringWrite:
     case FreeFallEvtCnt:
       if(realCircaValue == 0)
@@ -46,6 +57,21 @@ public:
       else
         return SMARTvalueWarning;
       break;
+    case TotalDataWritten:
+      {
+        const ModelAndFirmware::remainingTotalDataWrittenType
+          remainingTotalDataWritten = p_modelAndFirmware->
+          getRemainingTotalDataWritten(realCircaValue);
+        if(remainingTotalDataWritten == ModelAndFirmware::
+          maxTeraBytesWrittenNotSet)
+          return unknown;
+        else{
+          if(remainingTotalDataWritten > 10000000000 )///> 10 GB left
+            return SMARTvalueOK;
+          else///< 10 GB to write left or max. TeraBytesWritten exceeded
+            return SMARTvalueWarning;
+        }
+    }
     case DevTemp:///temperatures for OK or warning depends on whether HDD or SSD
       /** https://de.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#%C3%9Cbliche_Parameter
        * :Only applies to HDDs?: "Über alle Alter gemittelt, sind Temperaturen
