@@ -73,7 +73,7 @@ DEFINE_LOCAL_EVENT_TYPE(ChangeStateEvtType)
 DEFINE_LOCAL_EVENT_TYPE(CnnctToSrvrEvtType)
 DEFINE_LOCAL_EVENT_TYPE(ShowCurrentActionEventType)
 DEFINE_LOCAL_EVENT_TYPE(ShowMessageEventType)
-DEFINE_LOCAL_EVENT_TYPE(StartServiceConnectionCountDownEventType)
+DEFINE_LOCAL_EVENT_TYPE(StartSrvCnnctnAttmptCntDownEvtType)
 DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
 
 BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
@@ -82,11 +82,11 @@ BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
   EVT_COMMAND(wxID_ANY, ChangeStateEvtType, wxSMARTmonitorApp::OnChangeState)
   EVT_COMMAND(wxID_ANY, CnnctToSrvrEvtType, wxSMARTmonitorApp::OnCnnctToSrvr)
   EVT_COMMAND(wxID_ANY, ShowMessageEventType, wxSMARTmonitorApp::OnShowMessage)
-  EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
-    OnStartSrvCnnctnCntDown)
   EVT_COMMAND(wxID_ANY, ShowCurrentActionEventType, wxSMARTmonitorApp::
     OnShowCurrentAction)
-  EVT_COMMAND(wxID_ANY, StartServiceConnectionCountDownEventType, 
+  EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
+    OnStartSrvCnnctnCntDown)
+  EVT_COMMAND(wxID_ANY, StartSrvCnnctnAttmptCntDownEvtType, 
     wxSMARTmonitorApp::OnStartServiceConnectionCountDown)
   EVT_TIMER(TIMER_ID, wxSMARTmonitorApp ::OnTimer)
 END_EVENT_TABLE()
@@ -154,9 +154,7 @@ void wxSMARTmonitorApp::OnStartSrvCnnctnCntDown(wxCommandEvent & event){
 void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
   wxCommandEvent & event)
 {
-//  m_wxtimer.Start(1000);
-  if(m_p_cnnctToSrvDlg)
-    m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(event.GetInt() );
+  StartSrvCnnctnAttmptCntDown(event.GetInt() );
 }
 
 ///Called from GUI or non-GUI thread.
@@ -177,7 +175,7 @@ void wxSMARTmonitorApp::StartSrvCnnctnAttmptCntDown(
   else
   {
     wxCommandEvent startServiceConnectionCountDown(
-      StartServiceConnectionCountDownEventType);
+      StartSrvCnnctnAttmptCntDownEvtType);
     startServiceConnectionCountDown.SetInt(countDownInSeconds);
     wxPostEvent(this, startServiceConnectionCountDown);
   }
