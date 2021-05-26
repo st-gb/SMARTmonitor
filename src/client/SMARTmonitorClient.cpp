@@ -696,8 +696,11 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
 //  SMARTattrDef * p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
 //    SMARTattrID);
 //  if(p_sMARTattrDef){
-    const SMARTvalue & sMARTvalue = SMARTuniqueIDandVals.m_SMARTvalues[
-      SMARTattrID];
+  const SMARTvalue & sMARTvalue = SMARTuniqueIDandVals.m_SMARTvalues[
+    SMARTattrID];
+  const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandVals.
+    getSMARTuniqueID();
+  if(sMARTvalue.m_successfullyReadSMARTrawValue){
   bool isConsistent = sMARTvalue.IsConsistent(SMARTrawVal);
 //      memory_barrier(); //TODO: not really necessary??
   int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
@@ -707,8 +710,6 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
    * S.M.A.R.T. values. */
   if(! sMARTvalue.GetRetrievalTime(upTimeOfRetrievalInMs) )
     upTimeOfRetrievalInMs = 0;
-  const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandVals.
-    getSMARTuniqueID();
   //memory_barrier(); //TODO: not really necessary??
   if( /*successfullyUpdatedSMART*/ isConsistent && upTimeOfRetrievalInMs)
   {
@@ -829,12 +830,14 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
       upTimeOfRetrievalInMs,
       data);
   }
-  if(upTimeOfRetrievalInMs == 0)
+  }///
+//  if(upTimeOfRetrievalInMs == 0)///0 means: "not read" / "not send by server"
+  else
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
       ColumnIndices::lastUpdate,
-      "error:uptime is 0",
+      /*"error:uptime is 0"*/"not read yet",
       sMARTvalueRating,
       data);
   	;

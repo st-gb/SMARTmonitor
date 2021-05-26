@@ -17,7 +17,7 @@
 <data_carrier model="Samsung SSD 860 EVO M.2 500GB" firmware="RVT24B6Q"
  maxTeraBytesWritten="300">
  <SMART paramID="9" unit="ca.1h2s"/>
- <SMART paramID="241" unit="512B"/>
+ <SMART paramID="241" unit="512B"/><!--determined via SMARTmonitor application-->
  <SMART paramID="242" unit="512B"/>
 </data_carrier>
 

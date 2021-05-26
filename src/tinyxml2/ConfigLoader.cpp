@@ -409,6 +409,9 @@ void ConfigLoader::ReadServiceConnectionSettings(
   
 /** Also needed for the service: if e.g. only critical SMART parameters 
  *  should be observed. */
+//TODO enable wide char string for file path and error message. Therefore open
+// the file via "tinyxml2::XMLDocument::LoadFile(FILE * p_file); open p_file via
+//  _wfopen_(...)
 tinyxml2::XMLElement * ConfigLoader::OpenConfigFile(
   const std::wstring & configFilePathWithoutFileExtension,
   std::string & stdstrFullConfigFilePath,

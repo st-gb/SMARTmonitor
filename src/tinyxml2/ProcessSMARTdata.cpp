@@ -322,7 +322,7 @@ void SMARTmonitorClient::GetSupportedSMARTattributesViaXML(
       const int number = ConvertStringToInt(p_lastComma);
       supportedSMARTattrIDs.insert(number);
       suppSMARTattrNamesAndIDs.insert(SMARTattributeNameAndID("", number) );
-      sMARTuniqueID.supportedSMART_IDs[arrIdx] = number;
+      sMARTuniqueID.supportedSMART_IDs[arrIdx++] = number;
     }
     if(arrIdx < numDifferentSMART_IDs)
       sMARTuniqueID.supportedSMART_IDs[arrIdx] = 0;///Mark last item
