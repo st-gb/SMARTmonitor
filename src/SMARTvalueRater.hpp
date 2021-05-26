@@ -59,6 +59,7 @@ public:
       break;
     case TotalDataWritten:
       {
+      if(p_modelAndFirmware){///may be NULL
         const ModelAndFirmware::remainingTotalDataWrittenType
           remainingTotalDataWritten = p_modelAndFirmware->
           getRemainingTotalDataWritten(realCircaValue);
@@ -71,6 +72,9 @@ public:
           else///< 10 GB to write left or max. TeraBytesWritten exceeded
             return SMARTvalueWarning;
         }
+      }
+      else
+        return unknown;
     }
     case DevTemp:///temperatures for OK or warning depends on whether HDD or SSD
       /** https://de.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#%C3%9Cbliche_Parameter

@@ -12,5 +12,5 @@ if [ $numCmdLineArgs -l 1 ]; then
 else
  bash $dirPathOfThisScript/create_wxGUI_Linux_debug.sh \
   "$CMakeBuildGenerator" \
-  "-Dmultithread=ON -DCMAKE_BUILD_TYPE=Debug -DdirectSMARTaccess=ON" \
+  "-Dmultithread=ON -DCMAKE_BUILD_TYPE=Debug -DdirectSMARTaccess=ON -DresourcesFSpath=/usr/share/SMARTmonitor"
 fi

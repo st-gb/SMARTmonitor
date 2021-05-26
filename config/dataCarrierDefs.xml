@@ -21,5 +21,11 @@
  <SMART paramID="242" unit="512B"/>
 </data_carrier>
 
+<!-- https://www.samsung.com/semiconductor/global.semi.static/Samsung_SSD_860_EVO_Data_Sheet_Rev1.pdf
+    : page 5: "300TB" -->
+<data_carrier model="Samsung SSD 860 EVO 500GB" firmware="RVT03B6Q"
+ maxTeraBytesWritten="300">
+</data_carrier>
+
 </options>
 
