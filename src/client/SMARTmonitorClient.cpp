@@ -94,6 +94,7 @@ DWORD SMARTmonitorClient::GetSMARTvaluesAndUpdateUIthreadFn(void * p)
 {
   SMARTmonitorClient * p_sMARTmonitorClient = (SMARTmonitorClient *)p;
   p_sMARTmonitorClient->GetSMARTvaluesAndUpdateUI();
+  return 0;
 }
 
 /** @brief Gets S.M.A.R.T. values and starts "get S.M.A.R.T. values" loop (in a
