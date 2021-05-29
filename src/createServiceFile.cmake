@@ -1,7 +1,9 @@
 message("Calling shell script from CMake: " ${resourcesFSpath} )
+set(FullExePath "/usr/${exeInstallDir}/${EXE_NAME}")
+
 set(cmdLine "../Linux/systemd/create_.service_file_with_default_parameters_script.sh \
 ${resourcesFSpath} \
-${EXE_NAME}")
+${FullExePath}")
 message("command line to exec:" ${cmdLine})
 #https://stackoverflow.com/questions/35072473/executing-bash-commands-from-a-cmake-file/42712713
 execute_process(
