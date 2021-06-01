@@ -97,12 +97,13 @@ include_directories(${INCLUDE_DIRS})
 include(${cmnSrcDir}/CMake/ShowMsg_CompLvl.cmake)
 showInclDirs(5)
 
-if( ${EXE_TYPE} STREQUAL "UNIX_service")
+if(${EXE_TYPE} STREQUAL "UNIX_service")
+  include(server/BSD_sockets.cmake)#sets "BSD_sockets_srcFiles"
   #set(directSMARTaccess TRUE)
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
     ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/daemon/daemon.cpp
-    ${PROJECT_SOURCE_DIR}/service/SMARTmonitorService.cpp
+    ${BSD_sockets_srcFiles}
     ${PROJECT_SOURCE_DIR}/service/service_main.cpp
   )
 endif(${EXE_TYPE} STREQUAL "UNIX_service")
