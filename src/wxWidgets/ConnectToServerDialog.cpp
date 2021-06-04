@@ -88,7 +88,7 @@ ConnectToServerDialog::ConnectToServerDialog(
    * here because one may press "cancel"->OnCancel() -> "raise(SIGUSR1)" without
    * calling SMARTmonitorClient::ConnectToServer -> registerSignalHandler()
    * before. */
-  wxGetApp().registerSignalHandler();
+  wxGetApp().regCancelSelectSigHandler();
   buildUI();
 }
 
@@ -215,11 +215,8 @@ void ConnectToServerDialog::OnConnect(wxCommandEvent & event){
   else{
     wxGetApp().m_p_cnnctToSrvDlg = this;
     
-#ifdef __linux__ //SIGUSR1 not available in MinGW
-    ///https://en.wikipedia.org/wiki/C_signal_handling
-    ///Needed, else program exits when calling raise(SIGUSR1).
-    signal(SIGUSR1, sigHandler);
-#endif
+  wxGetApp().regCancelSelectSigHandler();
+
     //TODO end connection (attempt) thread before?
     EndCnnctnAttemptTimer();
     EndCnnctnTimeoutTimer();
