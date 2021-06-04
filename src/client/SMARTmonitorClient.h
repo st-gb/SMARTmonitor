@@ -125,7 +125,9 @@ public:
   virtual void setUI(const enum serverConnectionState) = 0;
   enum SMARTvalueRating upd8rawAndH_andTime(
     const fastestUnsignedDataType SMARTattrID,
-    const SMARTuniqueIDandValues &, void * data);
+    const SMARTuniqueIDandValues &,
+    void * data,
+    const ModelAndFirmware *);
   inline void UpdateTimeOfSMARTvalueRetrieval(
     const SMARTuniqueID &,
     const fastestUnsignedDataType SMARTattributeID,

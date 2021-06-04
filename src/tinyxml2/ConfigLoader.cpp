@@ -29,8 +29,10 @@ ConfigLoader::~ConfigLoader() {
 
 /** Affects both client and server.
  *  \param p_tinyxml2XMLelement if NULL file @param *p_stdstrFullConfigFilePath
- *   is openend*/
+ *   is opened 
+ *  \return successfully read config file */
 bool ConfigLoader::ReadSrvCnnctnCfg(
+  std::string & errorMsg,
   std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix,
   std::string * p_stdstrFullConfigFilePath,
   tinyxml2::XMLElement * p_tinyxml2XMLele)
@@ -40,7 +42,8 @@ bool ConfigLoader::ReadSrvCnnctnCfg(
   if(p_tinyxml2XMLele == NULL){
     p_tinyxml2XMLele = OpenConfigFile(
       *p_stdwstrWorkingDirWithConfigFilePrefix, * p_stdstrFullConfigFilePath,
-      tinyXML2Doc);
+      tinyXML2Doc,
+      errorMsg);
   }
   tinyxml2::XMLElement * p_rootOfSrvConnctnCfg = p_tinyxml2XMLele;
   ///"read server connection" section root XML element, e.g. "options"
@@ -51,7 +54,8 @@ bool ConfigLoader::ReadSrvCnnctnCfg(
   p_tinyxml2XMLele = p_tinyxml2XMLele->FirstChildElement("networkConnection");
   if(p_tinyxml2XMLele)
   {
-    portNumber = p_tinyxml2XMLele->IntAttribute("portNumber", 0);
+    std::string XMLeleName = "portNumber";
+    portNumber = p_tinyxml2XMLele->IntAttribute(XMLeleName.c_str(), 0);
     if( portNumber != 0 )
     {
       m_r_SMARTmonitorBase.m_socketPortNumber = portNumber;
@@ -59,15 +63,19 @@ bool ConfigLoader::ReadSrvCnnctnCfg(
     }
     else
       return false;
-    const char * p_chAttrVal = p_tinyxml2XMLele->Attribute("serviceHostName",
+    XMLeleName = "serviceHostName";
+    const char * p_chAttrVal = p_tinyxml2XMLele->Attribute(XMLeleName.c_str(),
       /** Value: specify '0' in order to retrieve the value */ NULL);
     if(p_chAttrVal)
     {
       m_r_SMARTmonitorBase.m_stdstrServiceHostName = p_chAttrVal;
       LOGN("setting service host name to " << p_chAttrVal)
     }
-    else
+    else{
+      errorMsg = "no service  XML element \"" + XMLeleName + "\" in file \"" +
+        * p_stdstrFullConfigFilePath + "\"";
       return false;
+    }
   }
   else
     return false;
@@ -125,6 +133,7 @@ sections (server connection configuration, S.M.A.R.T. attribute definitions,...)
 * or with only 1 section can be read. If it has only 1 section then pass NULL
 *  to let it be opened. */
 bool ConfigLoader::readSMARTattrDefs(
+  std::string & errorMsg,
   std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix,
   std::string * p_stdstrFullConfigFilePath,
   tinyxml2::XMLElement * p_tinyxml2XMLelement
@@ -133,8 +142,10 @@ bool ConfigLoader::readSMARTattrDefs(
   tinyxml2::XMLDocument tinyXML2Doc;
   if(p_tinyxml2XMLelement == NULL){
     p_tinyxml2XMLelement = OpenConfigFile(
-      *p_stdwstrWorkingDirWithConfigFilePrefix, * p_stdstrFullConfigFilePath,
-      tinyXML2Doc);
+      *p_stdwstrWorkingDirWithConfigFilePrefix,
+      * p_stdstrFullConfigFilePath,
+      tinyXML2Doc,
+      errorMsg);
   }
   /** "read S.M.A.R.T. attribute definitions" section root XML element, e.g.
    * "options" */
@@ -145,17 +156,9 @@ bool ConfigLoader::readSMARTattrDefs(
     xmlEleName.c_str() );
   if( ! p_tinyxml2XMLelement )
   {
-    m_r_SMARTmonitorBase.ShowMessage("no \"" + xmlEleName + "\" element in "
-      "XML file");
-    return false;
-  }
-  xmlEleName = "SMART_parameter";
-  p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
-    xmlEleName.c_str() );
-  if( ! p_tinyxml2XMLelement )
-  {
-    m_r_SMARTmonitorBase.ShowMessage("no \"" + xmlEleName + "\" element in "
-      "XML file");
+    errorMsg = "no \"" + xmlEleName + "\" element in "
+      "XML file \"" + * p_stdstrFullConfigFilePath + "\"";
+//    m_r_SMARTmonitorBase.ShowMessage(errorMsg);
     return false;
   }
 //      const int numCritical_SMART_parameters = p_tinyxml2XMLelement->.getLength();
@@ -222,6 +225,8 @@ bool ConfigLoader::readSMARTattrDefs(
 //            << ":" << critical_SMART_parameter.getSourceLine();
       m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str() );
     }
+    /** Get next XML element with same name as in xmlEleName in same hierarchy
+     *  level.*/
     p_tinyxml2XMLelement = p_tinyxml2XMLelement->NextSiblingElement();
   }while(p_tinyxml2XMLelement );
   return true;
@@ -234,10 +239,11 @@ tinyxml2::XMLElement * ConfigLoader::openCfgFile(
   tinyxml2::XMLDocument & tinyXML2Doc)
 {
   std::string stdstrFullConfigFilePath;
+  std::string errorMsg;
 
   tinyxml2::XMLElement * p_tinyxml2XMLelement = OpenConfigFile(
     stdwstrWorkingDirWithConfigFilePrefix, stdstrFullConfigFilePath,
-    tinyXML2Doc);
+    tinyXML2Doc, errorMsg);
   return p_tinyxml2XMLelement;
 }
 
@@ -251,17 +257,21 @@ bool ConfigLoader::LoadSMARTcfg(
 
 //    m_smartAttributesToObserve.clear();
 
-  ReadSrvCnnctnCfg(NULL, NULL, p_tinyxml2XMLelement);
-  ReadSMARTdataCarrierDefs(NULL, NULL, p_tinyxml2XMLelement);
+  std::string errorMsg;
+  
+  ReadSrvCnnctnCfg(errorMsg, NULL, NULL, p_tinyxml2XMLelement);
+  ReadSMARTdataCarrierDefs(errorMsg, NULL, NULL, p_tinyxml2XMLelement);
   GetSMARTattributesToObserve(p_tinyxml2XMLelement);
 
-  readSMARTattrDefs(NULL, NULL, p_tinyxml2XMLelement);
+  readSMARTattrDefs(errorMsg, NULL, NULL, p_tinyxml2XMLelement);
   return true;
 }
 
 /** Model and firmware for a HDD/SSD determine the S.M.A.R.T. parameter units .
- * : if the firmware changes for a model then the parameter unit may change. */
+ * : if the firmware changes for a model then the parameter unit may change.
+ *  \param errorMsg store error message here in order to output later. */
 bool ConfigLoader::ReadSMARTdataCarrierDefs(
+  std::string & errorMsg,
   std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix,
   std::string * p_stdstrFullConfigFilePath,
   tinyxml2::XMLElement * p_rootXMLele)
@@ -271,7 +281,7 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
 //    opencfgfile();
     p_rootXMLele = OpenConfigFile(
       *p_stdwstrWorkingDirWithConfigFilePrefix, * p_stdstrFullConfigFilePath,
-      tinyXML2Doc);
+      tinyXML2Doc, errorMsg);
   }
   if(! p_rootXMLele)
     return false;
@@ -283,8 +293,13 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
     const char * p_chModel = p_dataCarrierXMLele->Attribute("model", NULL);
     const char * p_chFirmware = p_dataCarrierXMLele->Attribute("firmware",
       NULL);
+//    const char * p_maxTeraBytesWritten = p_dataCarrierXMLele->Attribute(
+//      "maxTeraBytesWritten", NULL);
+    const int maxTeraBytesWritten = p_dataCarrierXMLele->IntAttribute(
+      "maxTeraBytesWritten", -1);
     ModelAndFirmware modelAndFirmware;
     if(p_chModel && p_chFirmware){
+      modelAndFirmware.setMaxTeraBytesWritten(maxTeraBytesWritten);
       modelAndFirmware.Set(p_chModel, p_chFirmware);
       const tinyxml2::XMLElement * p_tinyxml2XMLelement;
       p_tinyxml2XMLelement = p_dataCarrierXMLele->FirstChildElement("SMART");
@@ -307,29 +322,33 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
   return true;
 }
 
-  void ConfigLoader::ReadServiceConnectionSettings(
-    const std::wstring & stdwstrWorkingDirWithConfigFilePrefix)
-  {
+void ConfigLoader::ReadServiceConnectionSettings(
+  const std::wstring & stdwstrWorkingDirWithConfigFilePrefix,
+  std::string & errorMsg)
+{
     if( stdwstrWorkingDirWithConfigFilePrefix.empty() )
       return;
     std::string stdstrFullConfigFilePath = GetStdString_Inline(stdwstrWorkingDirWithConfigFilePrefix);
     /** IMPORTANT: Need to hold the XMLDocument object here (outside of call to 
      *  OpenConfigFile) */
     tinyxml2::XMLDocument tinyXML2Doc;
-    tinyxml2::XMLElement * p_tinyxml2XMLelement = OpenConfigFile(
-      stdstrFullConfigFilePath,
-      tinyXML2Doc);
-    if( ! p_tinyxml2XMLelement )
-      return;
-    
-    ReadSrvCnnctnCfg(NULL, NULL, p_tinyxml2XMLelement);
+  tinyxml2::XMLElement * p_tinyxml2XMLelement = OpenConfigFile(
+    stdstrFullConfigFilePath,
+    tinyXML2Doc,
+    errorMsg);
+  if( ! p_tinyxml2XMLelement){
+    return;
   }
+  ReadSrvCnnctnCfg(errorMsg, NULL, NULL, p_tinyxml2XMLelement);
+}
 
-  /** \return root element of the XML document. */
-  tinyxml2::XMLElement * ConfigLoader::OpenConfigFile(
-    const std::string & stdstrFullConfigFilePath,
-    tinyxml2::XMLDocument & tinyXML2Doc)
-  {
+/** \param errorMsg may be output (in user interface)
+ *  \return root element of the XML document. */
+ tinyxml2::XMLElement * ConfigLoader::OpenConfigFile(
+  const std::string & stdstrFullConfigFilePath,
+  tinyxml2::XMLDocument & tinyXML2Doc,
+  std::string & errorMsg)
+{
     // Read the file. If there is an error, report it and exit.
     const tinyxml2::XMLError xmlResult = tinyXML2Doc.LoadFile(
       stdstrFullConfigFilePath.c_str() );
@@ -369,8 +388,9 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
       std_oss << ":\n" /*<< tinyXML2Doc.GetErrorStr1()
         << "\n"*/ << tinyXML2Doc./*GetErrorStr2()*/ErrorStr();
       LOGN_ERROR(std_oss.str() )
-      m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str(), UserInterface::
-        MessageType::warning);
+//      m_r_SMARTmonitorBase.ShowMessage(std_oss.str().c_str(), UserInterface::
+//        MessageType::warning);
+      errorMsg = std_oss.str();
       return NULL;
     }
     if( xmlResult > XML_ERROR_FILE_READ_ERROR && xmlResult < XML_ERROR_COUNT )
@@ -387,13 +407,17 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
     return p_tinyxml2XMLelement;
   }
   
-  /** Also needed for the service: if e.g. only critical SMART parameters 
-   *  should be observed. */
-  tinyxml2::XMLElement * ConfigLoader::OpenConfigFile(
-    const std::wstring & configFilePathWithoutFileExtension,
-    std::string & stdstrFullConfigFilePath,
-    tinyxml2::XMLDocument & tinyXML2Doc)
-  {
+/** Also needed for the service: if e.g. only critical SMART parameters 
+ *  should be observed. */
+//TODO enable wide char string for file path and error message. Therefore open
+// the file via "tinyxml2::XMLDocument::LoadFile(FILE * p_file); open p_file via
+//  _wfopen_(...)
+tinyxml2::XMLElement * ConfigLoader::OpenConfigFile(
+  const std::wstring & configFilePathWithoutFileExtension,
+  std::string & stdstrFullConfigFilePath,
+  tinyxml2::XMLDocument & tinyXML2Doc,
+  std::string & errorMsg)
+{
   //  if(IsDebuggerPresent()==FALSE)
 //      {
 //      }
@@ -401,7 +425,7 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
 
     stdstrFullConfigFilePath = GetStdString_Inline(fullConfigFilePath);
     
-    return OpenConfigFile(stdstrFullConfigFilePath, tinyXML2Doc);
+    return OpenConfigFile(stdstrFullConfigFilePath, tinyXML2Doc, errorMsg);
     //throw FileException(fullConfigFilePath.c_str() );
   }
 } //end namespace tinyxml2

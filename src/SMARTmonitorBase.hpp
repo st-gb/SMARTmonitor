@@ -30,6 +30,7 @@
 typedef tinyxml2::ConfigLoader CfgLoaderType;
 
 typedef bool (CfgLoaderType::*loadFuncType)(
+  std::string & errorMsg,///Reference param. must be before default arguments
   std::wstring * stdwstrWorkingDirWithConfigFilePrefix,
   std::string * stdstrFullConfigFilePath,
   loaderParamType);
@@ -87,6 +88,7 @@ protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
   bool asynCnnct = true;
   nativeEvent_type waitOrSignalEvt;
+  static std::string s_strAllLogLevels;
 public:
   SMARTmonitorBase();
   //template<typename charType>
@@ -113,6 +115,7 @@ public:
     /** This is used for service clients (i.e. TUIs/GUIs) to specify the 
      *  service address etc.*/
     serviceConnectionConfigFile,
+    logLvlIdx,
     beyondLastProgramOptionName};
 protected:
   /** This array is usually filled from:
@@ -122,7 +125,7 @@ protected:
 public:
   nativeThread_type connectThread;
   virtual void startSrvCnnctCntDown(){};
-  fastestUnsignedDataType m_timeOutInSeconds;
+  fastestUnsignedDataType m_cnnctTimeOutInSec;
   std::wstring GetProgramOptionValue(const /*enum programOptionNames*/
     fastestUnsignedDataType programOptionName) {
 //    const wchar_t * programOptionValue = L"";
@@ -220,6 +223,7 @@ public:
     );
   std::wstring GetCommandOptionName(std::wstring & cmdLineArg);
   std::wstring GetCommandOptionValue(/*const wchar_t * const str*/ unsigned);
+  const ModelAndFirmware * getDataCarrierAttrDefs(const SMARTuniqueID &) const;
   
   static dataCarrierID2devicePath_type s_dataCarrierID2devicePath;
   inline void WaitForSignalOrTimeout(

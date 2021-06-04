@@ -73,7 +73,7 @@ DEFINE_LOCAL_EVENT_TYPE(ChangeStateEvtType)
 DEFINE_LOCAL_EVENT_TYPE(CnnctToSrvrEvtType)
 DEFINE_LOCAL_EVENT_TYPE(ShowCurrentActionEventType)
 DEFINE_LOCAL_EVENT_TYPE(ShowMessageEventType)
-DEFINE_LOCAL_EVENT_TYPE(StartServiceConnectionCountDownEventType)
+DEFINE_LOCAL_EVENT_TYPE(StartSrvCnnctnAttmptCntDownEvtType)
 DEFINE_LOCAL_EVENT_TYPE(StartCnnctCntDownEvtType)
 
 BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
@@ -82,11 +82,11 @@ BEGIN_EVENT_TABLE(wxSMARTmonitorApp, wxApp)
   EVT_COMMAND(wxID_ANY, ChangeStateEvtType, wxSMARTmonitorApp::OnChangeState)
   EVT_COMMAND(wxID_ANY, CnnctToSrvrEvtType, wxSMARTmonitorApp::OnCnnctToSrvr)
   EVT_COMMAND(wxID_ANY, ShowMessageEventType, wxSMARTmonitorApp::OnShowMessage)
-  EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
-    OnStartSrvCnnctnCntDown)
   EVT_COMMAND(wxID_ANY, ShowCurrentActionEventType, wxSMARTmonitorApp::
     OnShowCurrentAction)
-  EVT_COMMAND(wxID_ANY, StartServiceConnectionCountDownEventType, 
+  EVT_COMMAND(wxID_ANY, StartCnnctCntDownEvtType, wxSMARTmonitorApp::
+    OnStartSrvCnnctnCntDown)
+  EVT_COMMAND(wxID_ANY, StartSrvCnnctnAttmptCntDownEvtType, 
     wxSMARTmonitorApp::OnStartServiceConnectionCountDown)
   EVT_TIMER(TIMER_ID, wxSMARTmonitorApp ::OnTimer)
 END_EVENT_TABLE()
@@ -154,9 +154,7 @@ void wxSMARTmonitorApp::OnStartSrvCnnctnCntDown(wxCommandEvent & event){
 void wxSMARTmonitorApp::OnStartServiceConnectionCountDown(
   wxCommandEvent & event)
 {
-//  m_wxtimer.Start(1000);
-  if(m_p_cnnctToSrvDlg)
-    m_p_cnnctToSrvDlg->StartSrvCnnctnAttmptCntDown(event.GetInt() );
+  StartSrvCnnctnAttmptCntDown(event.GetInt() );
 }
 
 ///Called from GUI or non-GUI thread.
@@ -177,7 +175,7 @@ void wxSMARTmonitorApp::StartSrvCnnctnAttmptCntDown(
   else
   {
     wxCommandEvent startServiceConnectionCountDown(
-      StartServiceConnectionCountDownEventType);
+      StartSrvCnnctnAttmptCntDownEvtType);
     startServiceConnectionCountDown.SetInt(countDownInSeconds);
     wxPostEvent(this, startServiceConnectionCountDown);
   }
@@ -217,6 +215,9 @@ void wxSMARTmonitorApp::OnAfterConnectToServer(wxCommandEvent & commandEvent)
   // usable by all subclasses of SMARTmonitorClient.
   if( connectResult == /*connectedToService*/ 0)
   {
+    /** Because may contaín unneccesary S.M.A.R.T. unique IDs (e.g. from
+     *  previous server).*/
+    gs_dialog->RemovePerDataCarrierPanels();
 //    connectedToSrv();
     if(m_p_cnnctToSrvDlg)
     {
@@ -289,8 +290,10 @@ void wxSMARTmonitorApp::BeforeWait()
 void wxSMARTmonitorApp::ChangeConnectionState(enum serverConnectionState newState)
 {
   //TODO ensure to/must be called in GUI thread
-  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID){
     gs_dialog->SetState(newState);
+    m_srvrCnnctnState = newState;
+  }
   else{
     /** Create event To execute UI operations in UI thread.
      * https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case */
@@ -414,10 +417,17 @@ bool wxSMARTmonitorApp::OnInit()
 //      return false;
 //    }
     const fastestUnsignedDataType initSMARTresult = InitializeSMART();
+    /**Ensure read config error message is shown (and not overwritten by another
+     * message)*/
+    if(initSMARTresult != readingConfigFileFailed)
+    {
     std::wstring stdwstrServiceConnectionConfigFile = 
       s_programOptionValues[serviceConnectionConfigFile];
+    std::string errorMsg;
     m_cfgLoader.ReadServiceConnectionSettings(
-      stdwstrServiceConnectionConfigFile );
+      stdwstrServiceConnectionConfigFile, errorMsg);
+    if(errorMsg != "")
+      ShowMessage(errorMsg.c_str () );
 
 //    ShowSMARTokIcon();
     ShowSMARTstatusUnknownIcon();
@@ -442,13 +452,15 @@ bool wxSMARTmonitorApp::OnInit()
 #endif
     if(drctSMARTaccess == false)
       if(initSMARTresult == accessToSMARTdenied)
-        gs_dialog->disableDrctSMARTaccss(wxT("access to SMART denied\n"
+        gs_dialog->disableDrctSMARTaccss(wxT("direct (without client/server)\n"
+          "access to S.M.A.R.T. denied\n"
           "(maybe due to insufficient rights\n"
           "--start as administrator to enable)"));
       else
         gs_dialog->disableDrctSMARTaccss(wxT("no built-in direct SMART access"));
 //    else if( result == SMARTaccessBase::noSingleSMARTdevice )
 //      return false;
+    }
   }
   /** Thrown by mp_configurationLoader->LoadConfiguration(..:) */
   catch(const FileException & fe) 
@@ -674,7 +686,7 @@ void wxSMARTmonitorApp::ShwCnnctToSrvrDlg(const std::string & srvAddr){
       ///Alternative: pass (pointer to) _this_ object and assign in dialog c'tor
       m_stdstrServiceHostName.c_str(),
       m_socketPortNumber,
-      m_timeOutInSeconds,
+      m_cnnctTimeOutInSec,
       m_socketFileDesc);
     m_p_cnnctToSrvDlg->Show();
   }

@@ -97,12 +97,13 @@ include_directories(${INCLUDE_DIRS})
 include(${cmnSrcDir}/CMake/ShowMsg_CompLvl.cmake)
 showInclDirs(5)
 
-if( ${EXE_TYPE} STREQUAL "UNIX_service")
+if(${EXE_TYPE} STREQUAL "UNIX_service")
+  include(server/BSD_sockets.cmake)#sets "BSD_sockets_srcFiles"
   #set(directSMARTaccess TRUE)
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
     ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/daemon/daemon.cpp
-    ${PROJECT_SOURCE_DIR}/service/SMARTmonitorService.cpp
+    ${BSD_sockets_srcFiles}
     ${PROJECT_SOURCE_DIR}/service/service_main.cpp
   )
 endif(${EXE_TYPE} STREQUAL "UNIX_service")
@@ -116,6 +117,15 @@ set(TinyXML2dir ../../tinyxml2-master)
 if(DEFINED SMARTmonClientDerived)#define for all clients
   include(client/SMARTmonClientDerived.cmake)
 endif()
+
+message("adding preproc macro \"-DCXX_FLAGS=${CMAKE_CXX_FLAGS}\"")
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_FLAGS=\"${CMAKE_CXX_FLAGS}\"")
+
+message("adding preproc macro \"-DCOMPILER=${CMAKE_CXX_COMPILER_ID}\"")
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_COMPILER=${CMAKE_CXX_COMPILER_ID}")
+
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}")
+set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DBUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 add_definitions(${CXX_DEFINITIONS})
 #add_library(${LIBRARIES} )

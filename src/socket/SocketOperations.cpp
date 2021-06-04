@@ -163,6 +163,38 @@ struct SocketConnectThreadFuncParams
   }
 };
 
+inline int getSocketError(const int socketFileDescriptor)
+{
+  /** http://man7.org/linux/man-pages/man2/connect.2.html :
+   *  section "ERRORS" , "EINPROGRESS" :
+   * "After select(2) indicates writability, use getsockopt(2) to read the
+   *  SO_ERROR option at level SOL_SOCKET to determine whether
+   *  connect() completed successfully (SO_ERROR is zero)" */
+#ifdef __linux__
+  /** http://pubs.opengroup.org/onlinepubs/7908799/xns/getsockopt.html
+   * "This option stores an int value." */
+  int iSO_ERROR;
+  socklen_t optlen = sizeof(int);
+  /** http://man7.org/linux/man-pages/man2/setsockopt.2.html
+   * " On success, zero is returned for the standard options." */
+  /// optval for SO_RCVBUF size is 16 if was connected
+  /*result =*/ int getsockoptRslt = getsockopt(
+    socketFileDescriptor,
+    SOL_SOCKET /*int level*/,
+    ///"This option stores an int value in the optval argument. "
+    /** https://pubs.opengroup.org/onlinepubs/007908799/xns/getsockopt.html
+     * SO_ERROR : "Reports information about error status and clears it.
+     * This option stores an int value." */
+    /*SO_RCVBUF,*/ SO_ERROR, //int optname
+    & iSO_ERROR///POSIX: void *optval Windows Socket API: char * optval
+    , & optlen //socklen_t *optlen
+    );
+  return iSO_ERROR;
+#else
+  return -1;
+#endif
+}
+
 //#ifdef __linux__
 ///\return -1 if connection failed.
 ///Non-Blocking is an alternative option to set a self-defined connect timeout.
@@ -199,6 +231,8 @@ int ConnectToSocketNonBlocking(
      ///https://docs.microsoft.com/de-de/windows/win32/winsock/select-and-fd---2
       FD_SET(socketFileDescriptor, &readFileDescriptorSet);
 
+      /** Values for members tv_sec and tv_usec change after/while executing
+       *  "select(...)" */
       struct timeval socketConnectTimeout;
       socketConnectTimeout.tv_sec = connectTimeoutInSeconds;
       socketConnectTimeout.tv_usec = 0;
@@ -249,34 +283,20 @@ int ConnectToSocketNonBlocking(
       {
 //        result = 0;
 //        FD_ISSET()
-        //http://pubs.opengroup.org/onlinepubs/7908799/xns/getsockopt.html
-        // "This option stores an int value."
-        int iSO_ERROR;
-        socklen_t optlen;
-        /** http://man7.org/linux/man-pages/man2/connect.2.html :
-         * section "ERRORS" , "EINPROGRESS" :
-          "After select(2) indicates writability, use getsockopt(2) to read the
-           SO_ERROR option at level SOL_SOCKET to determine whether
-           connect() completed successfully (SO_ERROR is zero)" */
-#ifdef __linux__
-        /** http://man7.org/linux/man-pages/man2/setsockopt.2.html
-         * " On success, zero is returned for the standard options." */
-        /// optval for SO_RCVBUF size is 16 if was connected
-        /*result =*/ int getsockoptRslt = getsockopt(
-          socketFileDescriptor, 
-          SOL_SOCKET /*int level*/,
-          ///"This option stores an int value in the optval argument. "
-          /** https://pubs.opengroup.org/onlinepubs/007908799/xns/getsockopt.html :
-           * SO_ERROR : "Reports information about error status and clears it.
-           * This option stores an int value." */
-          /*SO_RCVBUF,*/ SO_ERROR, //int optname
-          & iSO_ERROR///POSIX: void *optval Windows Socket API: char * optval
-          , & optlen //socklen_t *optlen
-          );
-#endif
+
+        int iSO_ERROR = getSocketError(socketFileDescriptor);
+
+        /** Change back to blocking mode. */
+//        setBlockingSocket(socketFileDescriptor);
+
         int getpeernameErrNo;
         const bool isConnected = OperatingSystem::BSD::sockets::
-          NonBlckingIsCnnctd(socketFileDescriptor, getpeernameErrNo);
+          NonBlckingIsCnnctd(
+            socketFileDescriptor,
+            *( (struct sockaddr *) & serv_addr),
+            sizeof(serv_addr),
+            getpeernameErrNo);
+        iSO_ERROR = getSocketError(socketFileDescriptor);
         const int isSet =FD_ISSET(socketFileDescriptor,& readFileDescriptorSet);
 //        if(/*isSet*/ iSO_ERROR > 0){
           /*close(socketFileDescriptor);
@@ -284,6 +304,8 @@ int ConnectToSocketNonBlocking(
 //        }
         /** Result is sometimes 0 even if not connected(e.g.if 2nd time
          *  connection attempt with that socket FD?)? */
+        /** In Lubuntu 16.04 Ubuntu 16.04.4 LTS:
+         *  select(...) returned 1 but "errno" was 115 after select(...) */
         /*else*/ if(isConnected /*&& getsockoptRslt == 0*/ && selectRslt > 0 &&
           iSO_ERROR == 0)
         {
@@ -295,7 +317,12 @@ int ConnectToSocketNonBlocking(
         }
         else{
           close(socketFileDescriptor);
-          errNo = getpeernameErrNo;
+          /** Error on Lubuntu 16.04 Ubuntu 16.04.4 LTS:
+           *  select(...) returned 1 but "errno" was 115 after select(...) */
+          if(iSO_ERROR != 0)
+            errNo = errno;
+          else
+            errNo = getpeernameErrNo;
        }
 //          result = iSO_ERROR;
       }
@@ -437,6 +464,10 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
 //  if( currentThreadNumber == s_UserInterfaceThreadID)
 //  {
 //  }
+  
+  //TODO prevent multiple connection(s) (attempts) at the same time?:
+  // CompareAndSwap(m_currCnnctnAttmpOrCnnctn, 1);
+  // currCnnctnAttmpOrCnnctnCritsec.Enter();
 #ifdef multithread
 //#ifdef __linux__
   SocketConnectThreadFuncParams * p_socketCnnctThrdFnParams = new 

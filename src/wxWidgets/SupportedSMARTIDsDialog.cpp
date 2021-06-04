@@ -165,9 +165,12 @@ void SupportedSMART_IDsDialog::FillGUI(
       m_pwxlistctrl->m_SMARTattribIDtoLineNumber[SMART_ID] = lineNumber;
       wxGetApp().setIDandLabel(sMARTuniqueID, SMART_ID, m_pwxlistctrl);
     }
-    if(p_sMARTuniqueIDandValues)
+    if(p_sMARTuniqueIDandValues){
+      const ModelAndFirmware * p_currModelAndFirmware = wxGetApp().
+        getDataCarrierAttrDefs(sMARTuniqueID);
       sMARTmonClient.upd8rawAndH_andTime(SMART_ID, *p_sMARTuniqueIDandValues,
-        m_pwxlistctrl);
+        m_pwxlistctrl, p_currModelAndFirmware);
+    }
   }
 }
 

@@ -10,5 +10,11 @@ CTestTestfile.cmake
 _CPack_Packages
 **~
 **/compile_commands.json
+#Debian package
 **/*.deb
+#Linux binary files
 **/*.elf
+#Filesystem in USErspace (e.g. NTFS) files
+**/.fuse_hidden*
+#log files
+*log?.txt

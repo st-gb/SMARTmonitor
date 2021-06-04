@@ -1,4 +1,4 @@
 dirPathOfThisScript=$(readlink -f $0)
 dirPathOfThisScript=$(dirname "$dirPathOfThisScript")
 
-$(dirname "$0")/create_.service_file.sh SMARTmonWorkDir fullExePath
+$dirPathOfThisScript/createDebPkg.sh "Release"

@@ -63,6 +63,7 @@ public:
     }
   #endif
   }
+  void RemovePerDataCarrierPanels();
   void SetStatus(const wxString &);
   void ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction);
   void StartAsyncDrctUpd8Thread();

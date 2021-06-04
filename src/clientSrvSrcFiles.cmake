@@ -4,6 +4,10 @@
 
 include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
 
+if(UNIX)
+  #Linux (e.g. Lubuntu) has tinyxml2 in its package manager
+  #"apt-get install libtinyxml"
+endif()
 if(TINYXML2_ROOT_PATH STREQUAL "")
   set(TINYXML2_ROOT_PATH ${SMARTmonSrcDir}/../../../tinyxml2-master )
 endif()
@@ -12,19 +16,19 @@ endif()
 message("TINYXML2_ROOT_PATH: ${TINYXML2_ROOT_PATH}")
 
 if(DEFINED resourcesFSpath)
-  message("resourcesFSpath defined")
+  message("resourcesFSpath defined:value${resourcesFSpath}")
   set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DresourcesFSpath=${resourcesFSpath}")
 endif()
 
 #Source files needed for both client/GUI and server builds.
 if(DEFINED multithread)
-  message("multithread defined")
+  message("multithread defined:value=${multithread}")
   set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -Dmultithread")
 else()
   message("multithread NOT defined")
 endif()
 if(DEFINED directSMARTaccess)
-  message("directSMARTaccess defined")
+  message("directSMARTaccess defined:value=${directSMARTaccess}")
   set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DdirectSMARTaccess")
 else()
   message("directSMARTaccess NOT defined")

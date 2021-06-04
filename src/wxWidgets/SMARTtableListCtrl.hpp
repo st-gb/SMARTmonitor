@@ -11,6 +11,8 @@
 #include <client/SMARTmonitorClient.h>
 
 ///wxWidgets library header files:
+/** (needs package "libwxgtk<<version>>-dev", "libwxbase<<version>>-dbg" under
+ * Linux?) */
 #include <wx/listctrl.h>///Base class wxListCtrl
 
 ///Stefan Gebauer's "common_sourcecode" repository:

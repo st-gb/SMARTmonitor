@@ -1,9 +1,9 @@
-///Standard C(++) header files:)
+///Standard C(++) header files:
 #include <fcntl.h>///fcntl(...)
 #include <iostream>///std::cout, std::cerr
 #include <string.h>///strerror(...)
 
-///Stefan Gebauer's common_sourcecode repository header files:
+/** Stefan Gebauer's common_sourcecode repository header files: */
 ///OperatingSystem::GetLastErrorCode(...)
 #include <OperatingSystem/GetLastErrorCode.hpp>
 ///OperatingSystem::BSD::sockets::BlockingCnnctError::GetPossibleCause_inl(...)
@@ -29,8 +29,11 @@ int main(int argCount, char * argVec [])
 {
   int port = 2000;/// > ca. 1024 is above well-known ports->needs less rights
   std::string srvHost = "localhost";
-  ///12000 micros is a sensible minimal timeout to test for send timeout
-  unsigned timeoutInUs = 5000000;///5 s for via Internet
+  /**Use same data type as member in "struct timeval" to avoid g++ compiler
+   *  warning "warning: narrowing conversion [...] to '__time_t' [...]" */
+  time_t timeoutInUs =
+    ///12000 micros is a sensible minimal timeout to test for send timeout
+    5000000;///5 s for via Internet
   cxxopts::HandleCmdLineOpts(argCount,/** Avoid GCC compiler "error: invalid
     *conversion from 'char**' to 'const char**' [-fpermissive]"*/(const char **)
     argVec, srvHost, port, timeoutInUs);
@@ -44,7 +47,9 @@ int main(int argCount, char * argVec [])
       " failed:" << enErrorMsgs[cnnctToSrvRslt] << "->exiting." << std::endl;
     return cnnctToSrvRslt;
   }
-  unsigned timeoutInS = 0;
+  /**Use same data type as member in "struct timeval" to avoid g++ compiler
+   *  warning "warning: narrowing conversion [...] to '__time_t' [...]" */
+  time_t timeoutInS = 0;
   if(timeoutInUs > 1000000){
     timeoutInS = timeoutInUs / 1000000;
     timeoutInUs %= 1000000;

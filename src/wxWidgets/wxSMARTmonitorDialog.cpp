@@ -119,6 +119,17 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
   return 0;
 }
 
+void SMARTdialog::RemovePerDataCarrierPanels()
+{
+  for(SMARTuniqueID2perDataCarrierPanelType::iterator iter =
+    m_SMARTuniqueID2perDataCarrierPanel.begin() ; iter !=
+    m_SMARTuniqueID2perDataCarrierPanel.end(); iter++)
+  {
+    iter->second->Destroy();//free UI control resources
+  }
+  m_SMARTuniqueID2perDataCarrierPanel.clear();
+}
+
 void SMARTdialog::SetStatus(const wxString & status)
 {
   /** Create title as local variable for easier debugging. */
@@ -141,6 +152,7 @@ void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
     wxString str(wxT("NON-blocking connecting to server") );
     ShowMessage(str, UserInterface::MessageType::info);
     }
+    break;
    case SMARTmonitorClient::readNumBytesForSuppSMART_IDs:
     {
     wxString str(wxT("reading number of bytes for supported S.M.A.R.T. IDs") );
@@ -235,7 +247,8 @@ void SMARTdialog::CreatePerDiskUIctrls(wxSizer * p_sizer)
 
     PerDataCarrierPanel * p_perDataCarrierPanel = new PerDataCarrierPanel(this,
       windowID);
-    p_sizer->Add(p_perDataCarrierPanel, 1,
+    p_sizer->Add(p_perDataCarrierPanel,
+      1/*wxEXPAND*/,///"proportion"
       wxEXPAND, 0);
     m_SMARTuniqueID2perDataCarrierPanel.insert(std::make_pair(
       sMARTuniqueID, p_perDataCarrierPanel) );
@@ -324,13 +337,22 @@ void SMARTdialog::buildUI()
   sizerBtns->Add(new wxButton(this, wxID_EXIT, wxT("E&xit")), flags);
 
   p_sMARTinfoSizer->Add(sizerBtns, flags.Align(wxALIGN_CENTER_HORIZONTAL));
+  //TODO avoid "Gtk-CRITICAL **: 19:22:10.000: gtk_box_gadget_distribute: 
+  // assertion 'size >= 0' failed in GtkScrollbar"
+  /** https://gitlab.gnome.org/GNOME/gtk/-/issues/210
+   * "Hi all, as a workaround, and for anyone finding this bug report from a
+   * search engine, I added a set_size_request(100, 200) call to my
+   * Gtk.ScrolledWindow() and the warnings disappeared. I originally added the
+   * set_size_request to a widget contained in the ScrolledWindow, and that
+   * worked too." */
   m_p_wxMessageTextCtrl = new wxTextCtrl(this, wxID_ANY, wxT(""), 
     wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE );
   m_p_wxMessageTextCtrl->SetEditable(false);
   p_sMARTinfoSizer->Add(
     m_p_wxMessageTextCtrl,
-    /** "in the main orientation of the wxBoxSizer - where 0 stands for not changeable" */
-    0 //proportion
+    /** "proportion": "in the main orientation of the wxBoxSizer - where 0
+     * stands for not changeable" */
+    0 //wxEXPAND///To not need to scroll vertically for large messages.
     , wxEXPAND //int flag=0
     , /*int border*/ 0);
   
@@ -357,14 +379,24 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
   static const wxChar * const message
     = _T("a tool to monitor (CRITICAL) S.M.A.R.T. parameters\n"
     "\nsee http://en.wikipedia.org/wiki/S.M.A.R.T."
-    "\n(C) 2013-" __DATE__ 
+    "\n(C) 2013-" __DATE__
     "\nby Stefan Gebauer, M.Sc. Comp. Science, Berlin, Germany");
+
+  wxString buildID = wxT("\nC++ compiler: \"");
+    buildID += wxSTRINGIZE(CXX_COMPILER);
+    buildID += " ";
+    buildID += wxSTRINGIZE(CXX_COMPILER_VERSION);
+    buildID += "\"\nC++ flags: \"";
+    buildID += wxSTRINGIZE(CXX_FLAGS);
+    buildID += "\"\nbuild type: ";
+    buildID += wxSTRINGIZE(BUILD_TYPE);
 
   std::string currWorkDir;
   OperatingSystem::GetCurrentWorkingDirA_inl(currWorkDir);
   
   ///Current working directory is relevant for reading configuration files.
-  wxString aboutString = message + wxString("\n\ncurrent working directory:\n")
+  wxString aboutString = message + wxString("\n") + buildID
+    + wxString("\n\ncurrent working directory:\n")
     + wxWidgets::GetwxString_Inline(currWorkDir);
   
 //#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
@@ -410,9 +442,12 @@ void SMARTdialog::OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event))
     wxGetApp().ConnectToServer();
     break;
    case SMARTmonitorClient::cnnctdToSrv:
+   case SMARTmonitorClient::valUpd8:///Is also connected when value update.
     ///Cancel connection:
     /** Closing the socket causes the server connect thread to break/finish */
-    close(wxGetApp().m_socketPortNumber);
+    //close(wxGetApp().m_socketPortNumber);
+    wxGetApp().EndUpdateUIthread();
+    //TODO set m_srvrCnnctnState to "uncnnctdToSrv"
     wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
     break;
   }
@@ -451,6 +486,10 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
 //      wxGetApp().UnCnnctdToSrvUIctrls();
       SetTitle(wxstrTitle);
     }
+      /** So "s_atLeast1CriticalNonNullValue != smartValueRating" in
+       * SMARTmonitorClient::UpdateSMARTvaluesUI() after next processing
+       * S.M.A.R.T. values->(task bar) icon is updated to "warning" or "OK" */
+      wxGetApp().s_atLeast1CriticalNonNullValue = unknown;
       wxGetApp().ShowSMARTstatusUnknownIcon();
       break;
   }
