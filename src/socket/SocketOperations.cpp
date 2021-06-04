@@ -449,7 +449,7 @@ DWORD InterruptableBlckngCnnctToSrvThrdFn(void * p_v)
 fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   const char * hostName, bool asyncConnect)
 {
-  registerSignalHandler();
+  regCancelSelectSigHandler();
   OperatingSystem::BSD::sockets::InitSocket();//TODO close the socket at end
   struct sockaddr_in srvAddr;
   fastestUnsignedDataType prepCnnctToSrvRslt = prepCnnctToSrv(hostName,

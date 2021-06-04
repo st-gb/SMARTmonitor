@@ -176,10 +176,13 @@ void SMARTmonitorBase::setDfltSMARTattrDef(){
 }
 
 void SMARTmonitorBase::sigHandler(int signo){}
-void SMARTmonitorBase::registerSignalHandler(){
-  ///https://en.wikipedia.org/wiki/C_signal_handling
-  ///Needed, else program exits when calling raise(SIGUSR1).
+void SMARTmonitorBase::regCancelSelectSigHandler(){
+#ifdef __linux__///SIGUSR1 not available in MinGW/MS Windows
+  /** https://en.wikipedia.org/wiki/C_signal_handling
+   * Needed, else program exits when calling raise(SIGUSR1) (for interrupting
+   * waiting in select(...) for non-blocking connection to server). */
   signal(SIGUSR1, sigHandler);
+#endif
 }
 
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {

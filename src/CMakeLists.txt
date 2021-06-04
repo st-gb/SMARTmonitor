@@ -152,6 +152,10 @@ message("CMAKE_CXX_FLAGS_DEBUG: \"${CMAKE_CXX_FLAGS_DEBUG}\"")
 message("CFLAGS: ${CFLAGS} CXXFLAGS: ${CXXFLAGS} LDFLAGS: ${LDFLAGS}")
 message("CMAKE_EXE_LINKER_FLAGS: \"${CMAKE_EXE_LINKER_FLAGS}\"")
 
+#From https://stackoverflow.com/questions/5403705/cmake-add-definitions-and-compile-definitions-how-to-see-them
+#: Output variable set with "add_definitions(...)"
+get_directory_property(CompDefs COMPILE_DEFINITIONS )
+message("COMPILE_DEFINITIONS (set with \"add_definitions(...)\"): ${CompDefs}")
 
   target_link_libraries(${EXE_NAME} ${LIBRARIES})
 endif()

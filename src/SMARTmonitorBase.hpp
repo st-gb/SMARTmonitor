@@ -98,7 +98,7 @@ public:
   virtual ~SMARTmonitorBase();
   
   static void sigHandler(int signo);
-  static void registerSignalHandler();
+  static void regCancelSelectSigHandler();
 
   static void setDfltSMARTattrDef();
   /** Needs to persist over the call to 
