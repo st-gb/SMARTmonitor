@@ -665,6 +665,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
 //        GetSMARTvaluesFromServer(sMARTuniqueIDandValuesSet);
       res = (*p_SMARTmonitorBase.*p_getSMARTvaluesFunction)();
       if( res == 0 )
+        //TODO is called 1 time after connection ended
         p_SMARTmonitorBase->BeforeWait();
       else{
         LOGN_ERROR("get S.M.A.R.T. values function returned non-0")

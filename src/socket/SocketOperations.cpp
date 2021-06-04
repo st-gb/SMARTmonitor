@@ -41,6 +41,10 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   //TODO connection to service error here when expecting data for the 2nd time 
   // running the wx GUI. errno: 11 from GetSMARTattrValsFromSrv
   // Maybe because the 2nd time is from another thread.
+  //TODO Did not continue:message stays: "reading number of bytes for S.M.A.R.T.
+  // data" after PC with S.M.A.R.T. server shut down. Disconnecting via
+  // "Disconnect" button was impossible. Create at least 1 unit test for this
+  // case.
   int rdFrmScktRslt = OperatingSystem::BSD::sockets::readFromSocket2(
     m_socketFileDesc,& numDataBytesToRead, numBytesToRead, & numBytesRead);
   if(numBytesRead < (int) numBytesToRead){
@@ -309,7 +313,8 @@ int ConnectToSocketNonBlocking(
         /*else*/ if(isConnected /*&& getsockoptRslt == 0*/ && selectRslt > 0 &&
           iSO_ERROR == 0)
         {
-          LOGN_INFO("successfully connected to " << serv_addr.sin_addr.s_addr )
+          LOGN_INFO("successfully connected to " << serv_addr.sin_addr.s_addr)
+//          p_smartMonClient->SetCurrentAction(SMARTmonitorClient::cnnctdToSrv);
           //TODO result was success even if the server/service is not running
           /** Change back to blocking mode. */
           setBlockingSocket(socketFileDescriptor);
