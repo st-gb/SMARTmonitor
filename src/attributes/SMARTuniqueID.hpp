@@ -332,6 +332,11 @@ struct SMARTuniqueID {
            *  value increments next time. For this calculate:
            * otherVal - otherMtrcValAtLastSMARTrawValInc[SMARTattrID] */
           otherMtrcValAtLastSMARTrawValInc[SMARTattrID] = unit;
+          //TODO unit for S.M.A.R.T. ID 242 was "256" in (G)UI although min.=
+          // 502B and max=512B.
+          // maybe due to the SMART raw value erratically decreased
+          // for SMART ST9500420AS firmware:0003SDM1 (serial:5VJ1WXTF)
+          // (see hardware/dataCarrier/SMARTattributeNames.h)
           /** This prevents a value overflow in contrast to "(lowerBound[
            *  SMARTattrID] + (upperBound[SMARTattrID])/2 but is slower.*/
           unit = lowerUnitBound[SMARTattrID] + (upperUnitBound[SMARTattrID] - 

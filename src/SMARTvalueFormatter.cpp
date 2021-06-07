@@ -73,9 +73,40 @@ std::string SMARTvalueFormatter::GetDegCfromCurrMinMax(
   const uint64_t & SMARTrawValue)
 {
   std::ostringstream stdoss;
-  stdoss << (SMARTrawValue & 0xFFFF) << "°C["
-    << ((SMARTrawValue >> 32) & 0xFFFF) << "..." 
-    << ((SMARTrawValue >> 16) & 0xFFFF) << "]";
+  const fastestUnsignedDataType maxVal = (SMARTrawValue >> 32) & 0xFFFF;
+  const fastestUnsignedDataType minVal = (SMARTrawValue >> 16) & 0xFFFF;
+
+  stdoss << (SMARTrawValue & 0xFFFF) << "°C";
+  /** Does not work for a model:ST9500420AS firmware:0003SDM1 (serial:5VJ1WXTF) :
+   * highmost byte is 12, lowmost byte: °C, other bytes 0. So check if both
+   * values are non-0. */
+  if(minVal && maxVal)
+    stdoss << "["
+      << minVal << "°C..."
+      << maxVal << "°C]";
+  return stdoss.str();
+}
+
+std::string SMARTvalueFormatter::TempDiffOrAirflowTemp_DegCforCurrMinMax(
+  const uint64_t & SMARTrawValue)
+{
+  std::ostringstream stdoss;
+  /** model:ST9500420AS firmware:0003SDM1 (serial:5VJ1WXTF) :
+   * lowmost byte: current temperature in °C
+   * 3rd lowmost byte: min. value in °C
+   * 4th lowmost byte: max. value in °C */
+  const fastestUnsignedDataType maxVal = (SMARTrawValue >> 24) & 0xFF;
+  const fastestUnsignedDataType minVal = (SMARTrawValue >> 16) & 0xFF;
+
+  stdoss << (SMARTrawValue & 0xFF) << "°C";
+  /** Does not work for a model:Samsung SSD 860 EVO M.2 500GB firmware:RVT24B6Q
+   *  (serial:S5GCNJ0N506884T) : lowmost byte is current temperature, all other
+   *  bytes 0. So check if both values are non-0. */
+  if(minVal && maxVal){
+    stdoss << "["
+      << minVal << "°C..."
+      << maxVal << "°C]";
+  }
   return stdoss.str();
 }
 
@@ -163,7 +194,9 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
     /** http://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      *  : "Lowest byte of the raw value contains the exact temperature value (
      *   Celsius degrees)."*/
-      return SMARTvalueFormatter::GetDegCfromCurr(SMARTval);
+//      return SMARTvalueFormatter::GetDegCfromCurr(SMARTval);
+      return SMARTvalueFormatter::TempDiffOrAirflowTemp_DegCforCurrMinMax(
+        SMARTval);
 
     case SMARTattributeNames::DevTemp :
 //     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large

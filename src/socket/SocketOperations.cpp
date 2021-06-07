@@ -306,8 +306,13 @@ int ConnectToSocketNonBlocking(
          *  connection attempt with that socket FD?)? */
         /** In Lubuntu 16.04 Ubuntu 16.04.4 LTS:
          *  select(...) returned 1 but "errno" was 115 after select(...) */
-        /*else*/ if(isConnected /*&& getsockoptRslt == 0*/ && selectRslt > 0 &&
-          iSO_ERROR == 0)
+        /*else*/ if(isConnected /*&& getsockoptRslt == 0*/ && selectRslt > 0
+#ifdef __linux__
+       /** iSO_ERROR is always -1 under non-Linux/MicroSoft Windows, so ignore it
+        * in these cases. */
+          && iSO_ERROR == 0
+#endif
+          )
         {
           LOGN_INFO("successfully connected to " << serv_addr.sin_addr.s_addr )
           //TODO result was success even if the server/service is not running
