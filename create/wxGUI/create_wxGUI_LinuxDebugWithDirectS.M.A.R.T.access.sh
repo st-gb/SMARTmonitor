@@ -1,3 +1,5 @@
+#This script must have Unix line endings (only '\n'/newline/value 10d) if
+# executing under Linux. Else error like "$'\r': Kommando nicht gefunden."
 dirPathOfThisScript=$(readlink -f $0)
 dirPathOfThisScript=$(dirname "$dirPathOfThisScript")
 #echo "directory path of this script file:" ${dirPathOfThisScript}
@@ -5,7 +7,8 @@ dirPathOfThisScript=$(dirname "$dirPathOfThisScript")
 CMakeBuildGenerator=$1
 numCmdLineArgs=$#
 
-if [ $numCmdLineArgs -l 1 ]; then
+#lt = less than
+if [ $numCmdLineArgs -lt 1 ]; then
   echo "ERROR: specify CMake build file generator as command line argument"
   echo "Available types (\"cmake -G\"):"
   cmake -G

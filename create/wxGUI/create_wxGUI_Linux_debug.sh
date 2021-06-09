@@ -1,3 +1,5 @@
+#This script must have Unix line endings (only '\n'/newline/value 10d) if
+# executing under Linux. Else error like "$'\r': Kommando nicht gefunden."
 dirPathOfThisScript=$(readlink -f $0)
 dirPathOfThisScript=$(dirname "$dirPathOfThisScript")
 #echo "directory path of this script file:" ${dirPathOfThisScript}
