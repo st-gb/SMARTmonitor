@@ -33,7 +33,11 @@
 #define setGreaterBit(value) (value |= GetBitMaskForMostSignificantBit(value) );
 
 /** Same structure as SkIdentifyParsedData in Linux' "atasmart.h" */
-struct SMARTuniqueID {
+struct SMARTuniqueID
+//TODO: derive this class from class "ModelAndFirmware"  because this also
+// contains the needed member variables for model and firmware?
+// : public ModelAndFirmware
+{
   ///Member vars are set by SMARTaccessBase-derived class, fill(...) method.
   char m_serialNumber[numSMART_SNbytes+1];
   char m_firmWareName[numSMART_FWbytes+1];
@@ -70,11 +74,14 @@ struct SMARTuniqueID {
   uint64_t m_SMARTrawValDiffs[numItems];
   fastestUnsignedDataType state[numItems];
 //  fastestUnsignedDataType numSamples[numItems];//Not needed?
+  //TODO values may wrap especially for # bytes read/written since OS start->
+  // units get wrong?
   unitDataType otherMtrcValAtLastSMARTrawValInc[numItems];//TODO Show in UI?
   /** For units long int is sufficient under 32 bit for # data read/written if
    *  unit is <= 2/4 GB. */
   unitDataType lowerUnitBound[numItems];
   unitDataType upperUnitBound[numItems];
+  uint64_t numBwrittenSinceOSstart;//TODO use this value.
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
   void initAttrVals(){
     supportedSMART_IDs[0] = 0;///Means:array is empty
@@ -278,10 +285,24 @@ struct SMARTuniqueID {
         if( SMARTrawValDiff > m_SMARTrawValDiffs[SMARTattrID]){
           m_SMARTrawValDiffs[SMARTattrID] = SMARTrawValDiff;
 //          numSamples[SMARTattrID]++;
-          uint64_t otherMetricDiff = otherVal - m_otherMetricVal[SMARTattrID];
-          //TODO long int may not be sufficient
+          uint64_t otherMetricDiff;
+//          if( numBforOtherMetricVal < 8 B)
+          //TODO value may be negative:when current other metric value <
+          // previous other metric value  / Value overflow for other metric
+          // value? because:
+          /* model:ST9500420AS firmware:0003SDM1 (serial #:5VJ1WXTF) counted
+           *  backwards :
+             * GSmartControl v.0.8.7 :
+             * -1471557884 at 9183 "Power_On_Hours" (S.M.A.R.T. ID 9)
+             * -1006509816 at 9186 "Power_On_Hours" (S.M.A.R.T. ID 9) */
+            ///current other metric value lower previous value.
+//          if(otherVal < m_otherMetricVal[SMARTattrID])
+//            otherMetricDiff = maxVal - m_otherMetricVal + otherVal;
+//          else
+            otherMetricDiff = otherVal - m_otherMetricVal[SMARTattrID];
+          //TODO long int may not be sufficient ///e.g. #bytes written=4G / 4
           long int unit = otherMetricDiff / SMARTrawValDiff;
-          const long int unitDiff = units[SMARTattrID] - unit;
+//          const long int unitDiff = units[SMARTattrID] - unit;
         ///For the Power-On Time a calculation like this could be more accurate:
           /*if(SMARTattrID == SMARTattributeNames::PowerOnTime){
             if(unitDiff < 0)
@@ -290,7 +311,7 @@ struct SMARTuniqueID {
               upperBound[SMARTattrID] -= unitDiff;
           }else*/
 #ifdef _DEBUG
-          double schwankung;
+          double schwankung;//Need to init variable?  = 1.0;
 #endif
           if(///unitDiff > 0)///New value lower than stored value.
             unit < lowerUnitBound[SMARTattrID]){

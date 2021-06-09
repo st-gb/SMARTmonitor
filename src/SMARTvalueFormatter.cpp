@@ -179,7 +179,18 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
         if(maxTeraBytesWritten > 0){
           const double percent = (double) SMARTval / (double)
             maxTeraBytesWritten / 10000000000.0 /** 1 tera / 100 */;
-          numWithSIprefix += " " + convertToStdString(percent) + "%";
+          //TODO idea: use an enum "unitDeterminationType" with values as in
+          // the following "case" statements rather than evaluating
+          // the "greater" bit etc. in the unit -> clearer / easier:
+          /*switch(unitDeterminationType){
+           case getLowerUnitBound:///Only lower unit bound available
+             numWithSIprefix +=
+               ///real unit value is probably higher, so percentage of "value /
+               /// max. TBW" is
+               " >=~" + convertToStdString(percent) + "%";
+           case getValRespMakeMoreAccurate:*/
+            numWithSIprefix += " " + convertToStdString(percent) + "%";
+//          }
         }
       }
       return numWithSIprefix;
