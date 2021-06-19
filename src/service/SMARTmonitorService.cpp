@@ -146,9 +146,7 @@ fastestUnsignedDataType SMARTmonitorService::BindAndListenToSocket()
 
   const int socketFileDesc = s_socketFileDesc;
 
-  //Bindet den Socket an eine Socket Adressinformation, in der Regel an eine IP-Adresse und Port. Wird typischerweise auf Server-Seite benutzt.
-  if( bind(socketFileDesc, (struct sockaddr *) & server_address, 
-      sizeof(server_address) ) < 0)
+  if(initSrvRslt != OperatingSystem::BSD::sockets::boundToSocket)
   {
     char * errorMessageForErrno = NULL;
     //https://linux.die.net/man/2/bind
@@ -443,6 +441,13 @@ void SMARTmonitorService::BeforeWait()
             SMARTattrID];
         oss << "\"/>";
       }
+      /** For data carriers that don't have S.M.A.R.T. ID 241 (Total Data
+       *  written) like HDD model "SAMSUNG HA200JC", firmware:"WS100-33" to
+       *  provide this info. It is useful if e.g. the computer doesn't react and
+       *  the LED shows access to the data carrier to know if it may be a read/
+       *  write error by knowing how much is read/written. */
+      oss << "<numBwrittenSinceOSstart=\"" <<
+        SMARTuniqueID.numBwrittenSinceOSstart << "\"/>";
       //m_arSMARTrawValue[lineNumber];  
     }
     oss << "</data_carrier>";

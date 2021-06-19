@@ -115,7 +115,8 @@ set(SOURCE_FILE_PATHS
   ${ATTRIBUTE_DATA_SOURCE_FILES}
 )
 
-if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+#Only defined if "-DCMAKE_BUILD_TYPE" passed to "cmake"?
+if(DEFINED ${CMAKE_BUILD_TYPE} AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     if(UNIX)#Address sanitizer/ "asan" library only available in Linux?
     #On Windows: "x86_64-w64-mingw32/bin/ld.exe: cannot find -lasan"

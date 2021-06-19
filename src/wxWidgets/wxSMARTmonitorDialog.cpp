@@ -183,7 +183,26 @@ void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
     ShowMessage(str, UserInterface::MessageType::info);
     }
     break;
+   case SMARTmonitorClient::WaitForSMARTupd8ThreadTerm:
+    {
+      wxString str(wxT("waiting for S.M.A.R.T. data update thread termination")
+        );
+      ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::AfterWaitForSMARTupd8ThreadTerm:
+    {
+      wxString str(wxT("finished waiting for S.M.A.R.T. data update thread termination")
+        );
+      ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
   }
+}
+
+void SMARTdialog::DrctSMARTaccssUIctrls()
+{
+  m_p_directSMARTaccesBtn->SetLabel(wxT("End Direct S.M.A.R.T.") );
 }
 
 void SMARTdialog::UnCnnctdToSrvUIctrls(){
@@ -413,6 +432,15 @@ void SMARTdialog::OnDrctSMARTaccss(wxCommandEvent &)
 //  LOGN_ERROR("current UID:" << UID)
 //  if(UID != 0)
 //    seteuid(0);
+  if(wxGetApp().upd8SMARTparamValsThrdIsRunning() ){
+    wxGetApp().EndUpdateUIthread();
+    m_p_directSMARTaccesBtn->SetLabel(wxT("Direct S.M.A.R.T.") );
+  }
+  else{
+    wxGetApp().EnsureSMARTattrToObsExist();
+    ReBuildUserInterface();
+    StartAsyncDrctUpd8Thread();
+  }
 }
 
 void SMARTdialog::OnOK(wxCommandEvent& WXUNUSED(event))
@@ -461,13 +489,17 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
   switch(newState)
   {
     case SMARTmonitorClient::valUpd8:
-      SetTitle(wxGetApp().GetTitleInclDataSrc() + wxT("--last update:") +
-        wxNow() );
+     {
+     const wxString title = wxGetApp().GetTitleInclDataSrc() +
+       wxT("--last update:") + wxNow();
+      SetTitle(title);
+     }
      break;
     case SMARTmonitorClient::cnnctdToSrv :
       SetTitle(wxGetApp().GetTitleInclDataSrc() );
       break;
     case SMARTmonitorClient::uncnnctdToSrv :
+    case SMARTmonitorClient::endedDrctSMART:
     {
       wxGetApp().GetSMARTvalsAndUpd8UIthreadID = 0;
       wxString wxstrTitle = wxGetApp().GetAppName();
@@ -476,11 +508,19 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
       
       std::string timeString = UserInterface::GetTimeAsString(
         timeOfLastSMARTvaluesUpdate);
-      //TODO don't show "from" if direct values?
-      wxstrTitle += wxString::Format(
-        wxT("--last update at %s from %s--unconnected"),
-        wxWidgets::GetwxString_Inline(timeString.c_str()), 
-        wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.c_str() ) );
+      if(newState == SMARTmonitorClient::uncnnctdToSrv)
+        wxstrTitle += wxString::Format(
+          wxT("--last update at %s from %s:%u--unconnected"),
+          wxWidgets::GetwxString_Inline(timeString.c_str()),
+          wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.
+            c_str() )
+        /** Also show port because different hosts may be behind the same IP
+         *  address (e.g. via port forwarding) */
+          , wxGetApp().m_socketPortNumber);
+      else
+        wxstrTitle += wxString::Format(
+          wxT("--last update at %s via direct S.M.A.R.T.(ended)"),
+          wxWidgets::GetwxString_Inline(timeString.c_str() ) );
       /** Not needed to set the unconnected UI because this is done in
        * "StartSrvCnnctnAttmptCntDown" */
 //      wxGetApp().UnCnnctdToSrvUIctrls();

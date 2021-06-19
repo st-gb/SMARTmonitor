@@ -1,4 +1,5 @@
 buildType=$1
+#service needs direct S.M.A.R.T. access, so add it
 AdditionalCMakeArgs="-DresourcesFSpath=/usr/share/SMARTmonitor -Dmultithread=ON -DdirectSMARTaccess=ON"
 
 cmake \

@@ -629,7 +629,8 @@ void wxSMARTmonitorApp::SetGetDirectSMARTvals()
     wxT("direct S.M.A.R.T. values in %u ms interval"),
     s_numberOfMilliSecondsToWaitBetweenSMARTquery);
   gs_dialog->SetStatus(status);
-  SetGetSMARTvalsMode(SMARTmonitorBase::directSMARTvals);
+  setUI(drctSMARTaccss);
+//  SetGetSMARTvalsMode(SMARTmonitorBase::directSMARTvals);
 }
 
 void wxSMARTmonitorApp::SetGetSMARTvalsMode(const enum GetSMARTvalsMode mode)
@@ -658,6 +659,9 @@ void wxSMARTmonitorApp::setUI(const enum serverConnectionState srvCnnctnState)
       wxGetApp().m_p_cnnctToSrvDlg->EnableCnnctBtn();
     else///Enable "Connect..." button if connect to server dialog is not shown.
       gs_dialog->UnCnnctdToSrvUIctrls();
+    break;
+   case SMARTmonitorClient::drctSMARTaccss:
+    gs_dialog->DrctSMARTaccssUIctrls();
     break;
   }
 }
@@ -777,15 +781,19 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 
 void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 {
-  wxString serviceLocation = wxWidgets::GetwxString_Inline(m_stdstrServiceHostName);
-
-  if( serviceLocation == wxT("") )
-    serviceLocation = wxT("direct SMART access");
-  /** Port number is relevant as e.g. with port forwarding done in a router
-   * multiple computers/hosts may be addressable. */
-  wxString tooltip = wxString::Format( wxT("for %s, port %u:\n%s"), 
-    serviceLocation, m_socketPortNumber, message );
-  
+  wxString tooltip;
+  if(/*serviceLocation == wxT("")*/ getsSMARTdataDrctly() )
+    tooltip = wxString::Format(wxT("data via direct (local) SMART access:\n%s"),
+      message);
+  else
+  {
+    const wxString serviceLocation = wxWidgets::GetwxString_Inline(
+      m_stdstrServiceHostName);
+    /** Port number is relevant as e.g. with port forwarding done in a router
+     * multiple computers/hosts may be addressable. */
+    tooltip = wxString::Format( wxT("for %s, port %u:\n%s"), 
+      serviceLocation, m_socketPortNumber, message );
+  }
   if(m_taskBarIcon///May be NULL if wxTaskBarIcon::IsAvailable() returns false
     && ! m_taskBarIcon->SetIcon(icon, tooltip) )
     wxMessageBox(wxT("Could not set new taskbar icon."), wxT("wxSMARTmonitor") );

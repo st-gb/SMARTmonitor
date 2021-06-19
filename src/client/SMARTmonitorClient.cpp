@@ -81,11 +81,16 @@ void SMARTmonitorClient::EndUpdateUIthread()
       "and starts waiting */
     //m_p_wxCloseCondition->Wait();
     
+    SetCurrentAction(WaitForSMARTupd8ThreadTerm);
     m_updateSMARTparameterValuesThread.WaitForTermination();
+    SetCurrentAction(AfterWaitForSMARTupd8ThreadTerm);
     ///Enable get S.M.A.R.T. values loop.
     AtomicExchange( (long *) & s_updateSMARTvalues, 1);
     AtomicExchange( (long *) & GetSMARTvalsAndUpd8UIthreadID, 0);
-    ChangeConnectionState(uncnnctdToSrv);
+    if(getsSMARTdataDrctly() )
+      ChangeConnectionState(endedDrctSMART);
+    else
+      ChangeConnectionState(uncnnctdToSrv);
   }
 }
 #endif

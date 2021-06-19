@@ -179,6 +179,8 @@ public:
     GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
       getSMARTvaluesFunctionType
     );
+  bool upd8SMARTparamValsThrdIsRunning(){
+    return m_updateSMARTparameterValuesThread.IsRunning();}
 #endif
   bool tryCfgFilePaths(const wchar_t fileName[], loadFuncType);
   fastestUnsignedDataType Upd8SMARTvalsDrctlyThreadSafe();
