@@ -663,6 +663,9 @@ void wxSMARTmonitorApp::setUI(const enum serverConnectionState srvCnnctnState)
    case SMARTmonitorClient::drctSMARTaccss:
     gs_dialog->DrctSMARTaccssUIctrls();
     break;
+   case SMARTmonitorClient::endedDrctSMART:
+    gs_dialog->NoDrctSMARTaccessUIctrls();
+    break;
   }
 }
 

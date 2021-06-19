@@ -249,6 +249,7 @@ void SMARTmonitorClient::ConnectToServer() {
 #endif
   switch(m_srvrCnnctnState){
    case uncnnctdToSrv :
+   case endedDrctSMART :
     ShwCnnctToSrvrDlg(m_stdstrServiceHostName);
     break;
    case cnnctdToSrv :
@@ -559,6 +560,20 @@ bool getRealValue(const std::string & stdstrUnit, const uint64_t SMARTrawVal,
           case 's':
             currNum *= 1000;
             break;
+         case -62:/// '°' in UTF-8 = -61 -80
+          if(idx != 0)
+            error = true;
+          break;
+         case -80:/// '°' in UTF-8 = -61 -80
+          if(idx != 1)
+            error = true;
+          break;
+         case 'C':/// '°' in UTF-8 = -61 -80
+          if(idx != 2)
+            error = true;
+          else
+            currNum = 1;
+          break;
           default:
             error = true;
         }

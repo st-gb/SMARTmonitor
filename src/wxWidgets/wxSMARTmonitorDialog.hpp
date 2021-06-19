@@ -50,6 +50,7 @@ public:
   
   void buildUI();
   void DrctSMARTaccssUIctrls();
+  void NoDrctSMARTaccessUIctrls();
   void UnCnnctdToSrvUIctrls();
   void DisableCnnctAndDiscnnctBtn(){
     m_p_ConnectAndDisconnectButton->Enable(false); }

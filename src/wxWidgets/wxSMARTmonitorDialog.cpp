@@ -205,6 +205,10 @@ void SMARTdialog::DrctSMARTaccssUIctrls()
   m_p_directSMARTaccesBtn->SetLabel(wxT("End Direct S.M.A.R.T.") );
 }
 
+void SMARTdialog::NoDrctSMARTaccessUIctrls(){
+  m_p_directSMARTaccesBtn->SetLabel(wxT("Direct S.M.A.R.T.") );
+}
+
 void SMARTdialog::UnCnnctdToSrvUIctrls(){
   m_p_ConnectAndDisconnectButton->SetLabel(wxT("Connect...") );
   m_p_ConnectAndDisconnectButton->Enable(true);
@@ -434,7 +438,7 @@ void SMARTdialog::OnDrctSMARTaccss(wxCommandEvent &)
 //    seteuid(0);
   if(wxGetApp().upd8SMARTparamValsThrdIsRunning() ){
     wxGetApp().EndUpdateUIthread();
-    m_p_directSMARTaccesBtn->SetLabel(wxT("Direct S.M.A.R.T.") );
+    NoDrctSMARTaccessUIctrls();
   }
   else{
     wxGetApp().EnsureSMARTattrToObsExist();
@@ -470,13 +474,31 @@ void SMARTdialog::OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event))
     wxGetApp().ConnectToServer();
     break;
    case SMARTmonitorClient::cnnctdToSrv:
-   case SMARTmonitorClient::valUpd8:///Is also connected when value update.
+   /** May mean:
+    * -Is (also/currently) connected to server
+    * -when getting S.M.A.R.T. data directly.*/
+   case SMARTmonitorClient::valUpd8:
     ///Cancel connection:
     /** Closing the socket causes the server connect thread to break/finish */
     //close(wxGetApp().m_socketPortNumber);
     wxGetApp().EndUpdateUIthread();
-    //TODO set m_srvrCnnctnState to "uncnnctdToSrv"
-    wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
+    if(wxGetApp().getsSMARTdataDrctly() ){
+      wxGetApp().setUI(SMARTmonitorClient::endedDrctSMART);
+      wxGetApp().ConnectToServer();
+    }
+    else
+      //TODO set m_srvrCnnctnState to "uncnnctdToSrv"
+      wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
+    break;
+   case SMARTmonitorClient::drctSMARTaccss:
+    wxGetApp().EndUpdateUIthread();
+    wxGetApp().setUI(SMARTmonitorClient::endedDrctSMART);
+    wxGetApp().setUI(SMARTmonitorClient::connectToSrv);
+    ///Currently unconnected->show "connect to server" dialog
+    wxGetApp().ConnectToServer();
+    break;
+   case SMARTmonitorClient::endedDrctSMART:
+    wxGetApp().ConnectToServer();
     break;
   }
 }
