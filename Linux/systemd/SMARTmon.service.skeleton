@@ -5,9 +5,6 @@
 #https://www.freedesktop.org/software/systemd/man/systemd.service.html
 # "man systemd.service"
 [Unit]
-#This serves as keywords when typing (after "Windows" key) in (Ubuntu's/Linux
-# Mint's) Desktop manager. So include "S.M.A.R.T." as well as "SMART" to include
-# both forms.
 Description=S.M.A.R.T./SMART monitor
 #network is mandatory, drives may also needed to be mounted before 
 After=network.target
