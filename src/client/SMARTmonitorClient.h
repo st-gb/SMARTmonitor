@@ -110,7 +110,8 @@ public:
   }
   void HandleTransmissionError(enum TransmissionError,
     const fastestUnsignedDataType numBread,
-    const fastestUnsignedDataType numBtoRead);
+    const fastestUnsignedDataType numBtoRead,
+    const int rdErrno);
   
   virtual void SetCurrentAction(enum CurrentAction) = 0;
   void SetServiceAddress(const std::string & str) {

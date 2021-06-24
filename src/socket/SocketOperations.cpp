@@ -15,6 +15,7 @@
 #ifdef __linux__
 #include <OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.h>
 #endif
+#include <OperatingSystem/BSD/socket/getSocketError.h>///getSocketError(...)
 #include <OperatingSystem/BSD/socket/socketTimeout.h>///getSocketTimeout(...)
 ///setNonBlockingSocket(...), setBlockingSocket(...)
 #include <OperatingSystem/BSD/socket/setBlockingMode.h>
@@ -45,12 +46,15 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   // data" after PC with S.M.A.R.T. server shut down. Disconnecting via
   // "Disconnect" button was impossible. Create at least 1 unit test for this
   // case.
+  int rdErrno;
   int rdFrmScktRslt = OperatingSystem::BSD::sockets::readFromSocket2(
-    m_socketFileDesc,& numDataBytesToRead, numBytesToRead, & numBytesRead);
+    m_socketFileDesc,& numDataBytesToRead, numBytesToRead, & numBytesRead,
+    & rdErrno);
   if(numBytesRead < (int) numBytesToRead){
     HandleTransmissionError(numBytesToReceive,
       /*numBytesRead < 0 ? 0 : numBytesRead*/numBytesRead,
-      numBytesToRead);
+      numBytesToRead,
+      rdErrno);
     return -1;
   }
   numDataBytesToRead = ntohs(numDataBytesToRead);
@@ -96,17 +100,18 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
     ioctl(m_socketFileDesc, FIONREAD, &numBinRead);
 #endif
     SetCurrentAction(readSMARTvaluesXMLdata);
+    int rdError;
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
     rdFrmScktRslt = readFromSocket2(m_socketFileDesc,
-      SMARTdataXML, numBytesToRead, & numBytesRead);
+      SMARTdataXML, numBytesToRead, & numBytesRead, & rdError);
     SetCurrentAction(hasReadSMARTvaluesXMLdata);
     //TODO often numBytesRead < numBytesToRead if this function is called from 
     //  "UpdateSMARTparameterValuesThreadFunc"
     if(numBytesRead < numBytesToRead) {
       HandleTransmissionError(SMARTparameterValues,
         //numBytesRead < 0 ? 0: numBytesRead,
-        numBytesRead, numBytesToRead);
+        numBytesRead, numBytesToRead, rdError);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
       std::string stdstrXML((char*)SMARTdataXML, numBytesRead);
@@ -166,38 +171,6 @@ struct SocketConnectThreadFuncParams
 //    p_SMARTmonitorClient->CloseServerConnectStatusUI();
   }
 };
-
-inline int getSocketError(const int socketFileDescriptor)
-{
-  /** http://man7.org/linux/man-pages/man2/connect.2.html :
-   *  section "ERRORS" , "EINPROGRESS" :
-   * "After select(2) indicates writability, use getsockopt(2) to read the
-   *  SO_ERROR option at level SOL_SOCKET to determine whether
-   *  connect() completed successfully (SO_ERROR is zero)" */
-#ifdef __linux__
-  /** http://pubs.opengroup.org/onlinepubs/7908799/xns/getsockopt.html
-   * "This option stores an int value." */
-  int iSO_ERROR;
-  socklen_t optlen = sizeof(int);
-  /** http://man7.org/linux/man-pages/man2/setsockopt.2.html
-   * " On success, zero is returned for the standard options." */
-  /// optval for SO_RCVBUF size is 16 if was connected
-  /*result =*/ int getsockoptRslt = getsockopt(
-    socketFileDescriptor,
-    SOL_SOCKET /*int level*/,
-    ///"This option stores an int value in the optval argument. "
-    /** https://pubs.opengroup.org/onlinepubs/007908799/xns/getsockopt.html
-     * SO_ERROR : "Reports information about error status and clears it.
-     * This option stores an int value." */
-    /*SO_RCVBUF,*/ SO_ERROR, //int optname
-    & iSO_ERROR///POSIX: void *optval Windows Socket API: char * optval
-    , & optlen //socklen_t *optlen
-    );
-  return iSO_ERROR;
-#else
-  return -1;
-#endif
-}
 
 //#ifdef __linux__
 ///\return -1 if connection failed.

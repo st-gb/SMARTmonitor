@@ -11,13 +11,13 @@ https://gist.github.com/PurpleBooth/109311bb0361f32d87a2#file-readme-template-md
 # S.M.A.R.T. monitor
 
 A tool to monitor raw values for (critical)
-[S.M.A.R.T.](https://en.wikipedia.org/wiki/S.M.A.R.T.) parameters locally or
+[S.M.A.R.T.](https://en.wikipedia.org/wiki/S.M.A.R.T.) parameters directly/locally or
 via [BSD sockets](https://en.wikipedia.org/wiki/Berkeley_sockets).
-S.M.A.R.T. values are retrieved periodically in an inverval.
+S.M.A.R.T. values are retrieved periodically in an interval.
 
 [comment]: # https://stackoverflow.com/questions/10189356/how-to-add-screenshot-to-readmes-in-github-repository
-[comment]: # ![here the screenshot of wxWidgets GUI in Linux Mint should appear](/screenshots/SMARTmonitor_wxGUI_main_dialog.png?raw=true "screenshot of wxWidgets GUI in Linux Mint")
-![here the screenshot of wxWidgets GUI in Linux Mint should appear](http://it-gebauer.de/SMARTmonitor/SMARTmonitor_wxGUI_main_dialog_Linux_Mint.png "Optional title")
+[comment]: # ![here the screenshot of wxWidgets GUI in Linux Mint should appear](/screenshots/SMARTmonitor_wxGUI_main_dialog.png?raw=true "screenshot of wxWidgets GUI's main dialog in Linux Mint")
+![here the screenshot of wxWidgets GUI in Linux Mint should appear](http://it-gebauer.de/SMARTmonitor/SMARTmonitor_wxGUI_main_dialog_Linux_Mint.png "screenshot of wxWidgets GUI's main dialog in Linux Mint")
 
 Some units (Power-On Time, Total Data Written, ...) for some
 [S.M.A.R.T. attributes](https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)

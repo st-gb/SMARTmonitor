@@ -441,18 +441,20 @@ void SMARTmonitorService::BeforeWait()
             SMARTattrID];
         oss << "\"/>";
       }
-      /** For data carriers that don't have S.M.A.R.T. ID 241 (Total Data
-       *  written) like HDD model "SAMSUNG HA200JC", firmware:"WS100-33" to
-       *  provide this info. It is useful if e.g. the computer doesn't react and
-       *  the LED shows access to the data carrier to know if it may be a read/
-       *  write error by knowing how much is read/written. */
-      oss << "<numBwrittenSinceOSstart=\"" <<
-        SMARTuniqueID.numBwrittenSinceOSstart << "\"/>";
-      //m_arSMARTrawValue[lineNumber];  
-    }
+      //m_arSMARTrawValue[lineNumber];
+    }///Ends loop over all S.M.A.R.T. attributes.
+    /** For data carriers that don't have S.M.A.R.T. ID 241 (Total Data
+     *  written) like HDD model "SAMSUNG HA200JC", firmware:"WS100-33" to
+     *  provide this info. It is useful if e.g. the computer doesn't react and
+     *  the LED shows access to the data carrier to know if it may be a read/
+     *  write error by knowing how much is read/written. */
+    /*oss << "<numBwrittenSinceOSstart=\"" <<
+      SMARTuniqueID.numBwrittenSinceOSstart << "\"/>";
+    oss << "<numB_readSinceOSstart=\"" <<
+      SMARTuniqueID.numB_readSinceOSstart << "\"/>";*/
     oss << "</data_carrier>";
     std::string xmlString = oss.str();
-    SendBytesToAllClients(xmlString);  
+    SendBytesToAllClients(xmlString);
   }
 }
 

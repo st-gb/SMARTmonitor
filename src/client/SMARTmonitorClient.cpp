@@ -5,6 +5,7 @@
 /** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
  *  winsock2.h before windows.h [-Wcpp]" */
 #include <OperatingSystem/BSD/socket/socket.h>///readFromSocket(...)
+#include <OperatingSystem/BSD/socket/getSocketError.h>///getSocketError(...)
 #include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 #include <hardware/CPU/atomic/memory_barrier.h>///memory_barrier(...)
@@ -265,7 +266,8 @@ void SMARTmonitorClient::ConnectToServer() {
 void SMARTmonitorClient::HandleTransmissionError( 
   enum SMARTmonitorClient::TransmissionError transmissionError,
   const fastestUnsignedDataType numBread,
-  const fastestUnsignedDataType numBtoRead)
+  const fastestUnsignedDataType numBtoRead,
+  const int rdErrno)///errno from read(...)/recv(...)
 {
   std::ostringstream stdoss;
   char * errorMessageForErrno = NULL;
@@ -274,9 +276,9 @@ void SMARTmonitorClient::HandleTransmissionError(
   //http://stackoverflow.com/questions/3400922/how-do-i-retrieve-an-error-string-from-wsagetlasterror
 #endif
   const int lastErrorNumber = /*OperatingSystem::GetLastErrorCode();*/ errno;
-  if( lastErrorNumber != 0)
+  if(rdErrno != 0)
   {
-    switch(lastErrorNumber)
+    switch(rdErrno)
     {
       //TODO Unix-specific value
       case EPIPE :
@@ -284,7 +286,7 @@ void SMARTmonitorClient::HandleTransmissionError(
         errorMessageForErrno = (char *) "The reading end of socket is closed.";
         break;
       default:
-        errorMessageForErrno = strerror(lastErrorNumber);
+        errorMessageForErrno = strerror(rdErrno);
 //        errorMessageForErrno  = OperatingSystem::GetErrorMessageFromErrorCodeA(
 //          lastErrorNumber);
         break;
@@ -293,8 +295,7 @@ void SMARTmonitorClient::HandleTransmissionError(
   switch(transmissionError)
   {
     case numBytesToReceive :
-      stdoss << "ERROR reading the number of following bytes from socket (read "
-        << numBread << "B instead of " << numBtoRead << "B)";
+      stdoss << "ERROR reading the number of following bytes from socket";
       break;
     case SMARTparameterValues :
       stdoss << "ERROR reading SMART parameter values from socket";
@@ -303,9 +304,15 @@ void SMARTmonitorClient::HandleTransmissionError(
       stdoss << "ERROR reading SMART data from socket";
       break;
   }
+  stdoss << " (read " << numBread << " B instead of " << numBtoRead << " B)";
+  const int iSO_ERROR = getSocketError(m_socketFileDesc);
   if( errorMessageForErrno )
     stdoss << " for socket file descriptor #" << m_socketFileDesc << ":\n" <<
       "OS error #:" << errno << "(" << errorMessageForErrno << ")";
+  else
+    stdoss << ".OS error number:" << rdErrno;
+  if(iSO_ERROR)
+   stdoss << " socket error:" << iSO_ERROR;
   LOGN_ERROR(stdoss.str() );
   ShowMessage(stdoss.str().c_str(), MessageType::error);
   //TODO set connection status of the user interface to "network errors"/"unconnected"
@@ -338,11 +345,12 @@ fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromServer()
   {
     unsigned numBytesRead;
     SetCurrentAction(readSuppSMART_IDsXMLdata);
+    int rdErrno;
     int rdFrmScktRslt = OperatingSystem::BSD::sockets::readFromSocket2(
-      m_socketFileDesc, XMLdata, numBytesToRead, & numBytesRead);
+      m_socketFileDesc, XMLdata, numBytesToRead, & numBytesRead, & rdErrno);
     if(numBytesRead < numBytesToRead) {
       HandleTransmissionError(SMARTdata,//numBytesRead < -1 ? 0 : numBytesRead
-        numBytesRead, numBytesToRead);
+        numBytesRead, numBytesToRead, rdErrno);
       LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected (" 
         << numBytesToRead << ")");
       return 2; //TODO provide error handling (show message to user etc.)
