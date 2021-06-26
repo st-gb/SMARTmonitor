@@ -785,10 +785,12 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 {
   wxString tooltip;
+#ifdef directSMARTaccess
   if(/*serviceLocation == wxT("")*/ getsSMARTdataDrctly() )
     tooltip = wxString::Format(wxT("data via direct (local) SMART access:\n%s"),
       message);
   else
+#endif
   {
     const wxString serviceLocation = wxWidgets::GetwxString_Inline(
       m_stdstrServiceHostName);

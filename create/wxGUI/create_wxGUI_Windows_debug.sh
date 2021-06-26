@@ -1,7 +1,7 @@
-#Gets directory path
 echo "Under MS Windows path of \"readlink\" and "dirname" must be in \"PATH\" environment variable"
 echo "Usually >>Cygwin root directory <<\bin includes these 2 executables."
 echo "PATH:" $PATH
+#Gets directory path
 dirPathOfThisScript=$(readlink -f $0)
 echo pathOfthisScript: $dirPathOfThisScript 
 #->absolute directory path

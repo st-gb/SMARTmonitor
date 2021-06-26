@@ -183,7 +183,9 @@ public:
     return m_updateSMARTparameterValuesThread.IsRunning();}
 #endif
   bool tryCfgFilePaths(const wchar_t fileName[], loadFuncType);
+#ifdef directSMARTaccess
   fastestUnsignedDataType Upd8SMARTvalsDrctlyThreadSafe();
+#endif
   virtual void BeforeWait() { }
   virtual void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult) { }
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {

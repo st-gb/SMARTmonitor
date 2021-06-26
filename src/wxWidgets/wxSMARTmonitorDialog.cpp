@@ -482,11 +482,13 @@ void SMARTdialog::OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event))
     /** Closing the socket causes the server connect thread to break/finish */
     //close(wxGetApp().m_socketPortNumber);
     wxGetApp().EndUpdateUIthread();
+#if directSMARTaccess
     if(wxGetApp().getsSMARTdataDrctly() ){
       wxGetApp().setUI(SMARTmonitorClient::endedDrctSMART);
       wxGetApp().ConnectToServer();
     }
     else
+#endif
       //TODO set m_srvrCnnctnState to "uncnnctdToSrv"
       wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
     break;

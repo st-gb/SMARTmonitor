@@ -112,11 +112,13 @@ wxString wxSMARTmonitorApp::GetTitleInclDataSrc()
     m_stdstrServiceHostName);
   
   wxString title;
+#ifdef directSMARTaccess
   if(getsSMARTdataDrctly() )
   {
     title = wxString("wxSMARTmonitor--direct S.M.A.R.T. data");
   }
   else
+#endif
     title = wxString::Format("wxSMARTmonitor--data from %s:%u",
       wxstrServiceAddress,
       /** Also show port because different hosts may be behind the same IP
