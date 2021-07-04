@@ -127,12 +127,10 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
     wxGetApp().m_taskBarIcon = new TaskBarIcon();
   else
   {
-    wxMessageBox(
-      wxT("There appears to be no system tray support in your current "
-        "environment. This application may not behave as expected."),
-      wxT("Warning")
-      , wxOK | wxICON_EXCLAMATION
-    );
+    /** Do not show a message at startup because this hinders displaying of the
+     *  main window/S.M.A.R.T. OK/warning icon (these is displayed after closing
+     *  message window at first). Especially if automatically started at OS boot
+     *  this is annoying.*/
   }
 #else
   wxGetApp().m_taskBarIcon = new TaskBarIcon();

@@ -416,12 +416,27 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
 
   std::string currWorkDir;
   OperatingSystem::GetCurrentWorkingDirA_inl(currWorkDir);
-  
+
+  wxString wxVer = wxSTRINGIZE(wxMAJOR_VERSION) + wxString(wxT(".") );
+  wxVer += wxSTRINGIZE(wxMINOR_VERSION);
+  wxVer += wxT(".");
+  wxVer += wxSTRINGIZE(wxRELEASE_NUMBER);
+
   ///Current working directory is relevant for reading configuration files.
   wxString aboutString = message + wxString("\n") + buildID
+    + wxT("\n\nUsing wxWidgets version ") + wxVer
     + wxString("\n\ncurrent working directory:\n")
     + wxWidgets::GetwxString_Inline(currWorkDir);
   
+#if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8 || wxMAJOR_VERSION > 2
+  if(///https://docs.wxwidgets.org/trunk/classwx_task_bar_icon.html#a287bb3303f01651f50c8de17e314a147;
+     /** "Since 2.9.0*/ ! wxTaskBarIcon::IsAvailable() )
+    aboutString += wxT("\n\nThere appears to be no task bar/system tray support"
+      " in your current environment. So you aren't able to hide the main window"
+      " (and re-show it by clicking on the task bar icon) while running this "
+      "application.");
+#endif
+
 //#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
 //  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,
 //    wxICON_INFORMATION);
