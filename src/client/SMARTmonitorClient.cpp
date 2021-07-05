@@ -88,9 +88,11 @@ void SMARTmonitorClient::EndUpdateUIthread()
     ///Enable get S.M.A.R.T. values loop.
     AtomicExchange( (long *) & s_updateSMARTvalues, 1);
     AtomicExchange( (long *) & GetSMARTvalsAndUpd8UIthreadID, 0);
+#if directSMARTaccess
     if(getsSMARTdataDrctly() )
       ChangeConnectionState(endedDrctSMART);
     else
+#endif
       ChangeConnectionState(uncnnctdToSrv);
   }
 }

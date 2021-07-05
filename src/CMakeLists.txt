@@ -158,6 +158,8 @@ get_directory_property(CompDefs COMPILE_DEFINITIONS )
 message("COMPILE_DEFINITIONS (set with \"add_definitions(...)\"): ${CompDefs}")
 
   target_link_libraries(${EXE_NAME} ${LIBRARIES})
+else()
+  set(cr8DebPkg TRUE)
 endif()
 
 if(cre8SrcArchive)

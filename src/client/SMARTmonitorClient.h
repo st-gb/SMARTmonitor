@@ -104,10 +104,16 @@ public:
   /// create the user interface)
   void GetSMARTvaluesAndUpdateUI();
   static DWORD GetSMARTvaluesAndUpdateUIthreadFn(void *);
+#ifdef directSMARTaccess
   bool getsSMARTdataDrctly() const{
     return m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction ==
       & SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe;
+/** Alternative: execute this function and return false if "directSMARTaccess"
+ * not defined.*/
+//#else
+//    return false;
   }
+#endif
   void HandleTransmissionError(enum TransmissionError,
     const fastestUnsignedDataType numBread,
     const fastestUnsignedDataType numBtoRead,
