@@ -585,6 +585,7 @@ bool getRealValue(const std::string & stdstrUnit, const uint64_t SMARTrawVal,
           default:
             error = true;
         }
+        //if(! error)
         realCircaValue += SMARTrawVal * currNum;
     }
   }

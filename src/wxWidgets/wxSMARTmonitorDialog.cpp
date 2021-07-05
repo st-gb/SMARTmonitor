@@ -513,7 +513,9 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
     case SMARTmonitorClient::valUpd8:
      {
      const wxString title = wxGetApp().GetTitleInclDataSrc() +
-       wxT("--last update:") + wxNow();
+       wxT("--last update:") +
+       //TODO: use wxGetApp().GetLastSMARTvaluesUpdateTime() instead??
+       wxNow();
       SetTitle(title);
      }
      break;

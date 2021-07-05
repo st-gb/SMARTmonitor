@@ -609,8 +609,17 @@ void wxSMARTmonitorApp::SetAttribute(
   else{
   wxWidgets::SMARTtableListCtrl * wxSMARTtableListCtrl;
   if(data == NULL){
+#ifdef _DEBUG
+    SMARTdialog::SMARTuniqueID2perDataCarrierPanelType &
+      sMARTuniqueID2perDataCarrierPanel = gs_dialog->
+      m_SMARTuniqueID2perDataCarrierPanel;
+#endif
     PerDataCarrierPanel * perDataCarrierPanel = gs_dialog->
       m_SMARTuniqueID2perDataCarrierPanel[sMARTuniqueID];
+    //TODO CrasheD here (pointer is NULL) after connected->cancel server
+    // connection->connect to other server. Maybe because the Unique IDs here.
+    // (2 elements, but nut [...] && known where the 2nd is inserted)
+    // Make a (unit) test for this?
     wxSMARTtableListCtrl = perDataCarrierPanel->m_pwxlistctrl;
   }
   else

@@ -20,6 +20,7 @@
 int SMARTmonitorService::s_socketFileDesc = 0;
 SMARTmonitorService * SMARTmonitorService::p_SMARTmonSvc;
 
+//TODO rename to "SMARTmonSrv"?? because this is only the server part
 SMARTmonitorService::SMARTmonitorService() 
   //: 
   /** https://computing.llnl.gov/tutorials/pthreads/#ConditionVariables :
@@ -377,6 +378,7 @@ void SMARTmonitorService::BeforeWait()
 
   std::ostringstream oss;
   oss.precision(3); //Allow 3 digits right of decimal point
+  ///TODO make as function "createXMLdoc" and move to folder "XML"
   for(fastestUnsignedDataType currentDriveIndex = 0;
     currentDriveIndex < numberOfDifferentDrives;
     ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
