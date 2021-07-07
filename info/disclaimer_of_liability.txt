@@ -1,0 +1,10 @@
+Limitation of Liability
+=======================
+
+You execute the software at your own risk.
+The manufacturer is not liable for any harm the software application may cause in any case.
+These may be:
+-a wrong rating of a S.M.A.R.T. ID i.e. the health state is good/OK although it is bad or vice versa
+-wrong representation of data in User Interface
+-writing log files to disk may cause a worsening of the health state.
+-any other misbehaviour
