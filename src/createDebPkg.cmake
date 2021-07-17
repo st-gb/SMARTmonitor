@@ -65,6 +65,7 @@ set(CPACK_PACKAGE_NAME
   ${PROJECT_NAME}_${exeTypes})
   set(CPACK_PACKAGE_NAME ${CPACK_PACKAGE_NAME}_${CMAKE_SYSTEM_PROCESSOR}_${Distri}_${CMAKE_BUILD_TYPE})
 else(${EXE_TYPE} STREQUAL "debPkg")
+  message("EXE_NAME_WOUT_EXT: \"${EXE_NAME_WOUT_EXT}\"")
   set(CPACK_PACKAGE_NAME
     ${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR}_${Distri}_${CMAKE_BUILD_TYPE})
   install(TARGETS ${EXE_NAME}#target name #required
@@ -90,20 +91,45 @@ set(localResourcesFSpath ".."
 #TODO use CMake variable holding configuration file names for both C(++) source
 # code and here to keep it consistent? Separate names there via non-printable
 # character like \t or \n
-set(additionalFiles
+set(cfgFilePaths
   ${localResourcesFSpath}/config/dataCarrierDefs.xml
   ${localResourcesFSpath}/config/SMARTsrvCnnctn.xml
   )
-message("additional Debian package files:" ${additionalFiles})
+set(destFolder ${resourcesFSpath}/config)
 #https://stackoverflow.com/questions/5232555/how-to-add-files-to-debian-package-with-cpack
-INSTALL(FILES ${additionalFiles} #required
-  DESTINATION ${resourcesFSpath}/config )
+INSTALL(FILES ${cfgFilePaths} #required
+  DESTINATION ${destFolder})
 
 set(additionalFiles
   ${localResourcesFSpath}/config/en/SMARTattrDefs.xml
   )
 INSTALL(FILES ${additionalFiles} #required
-  DESTINATION ${resourcesFSpath}/config/en )
+  DESTINATION ${resourcesFSpath}/config/en)
+
+set(allCfgFilePaths
+  ${cfgFilePaths}
+  ${additionalFiles}
+  )
+message("SMARTmonitor config files in Debian package:" ${allCfgFilePaths})
+set(createManPageFilePath
+ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Linux/create_man_page.sh)
+message("calling ${createManPageFilePath}")
+execute_process(COMMAND ${createManPageFilePath} ${allCfgFilePaths})
+
+set(additionalFiles
+  ${localResourcesFSpath}/info/disclaimer_of_liability.txt
+  ${localResourcesFSpath}/info/Haftungsausschluss.txt
+  )
+INSTALL(FILES ${additionalFiles} #required
+  DESTINATION ${resourcesFSpath}/info)
+
+set(manFileToCompress ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Linux/SMARTmonitor.8)
+#https://wiki.ubuntuusers.de/gzip/ "-k" to keep the the original file (avoid its
+# deletion)
+execute_process(COMMAND gzip -k ${manFileToCompress})
+#Store in /usr/share/man/man8 as for "smartctl".
+install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Linux/SMARTmonitor.8.gz
+  DESTINATION /usr/share/man/man8)
 
 message("EXE_TYPE before additional files: ${EXE_TYPE}")
 if(${EXE_TYPE} STREQUAL "wxGUI" OR ${EXE_TYPE} STREQUAL "debPkg")
@@ -201,5 +227,30 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS ${libsDependendOn})
 #  CPACK_DEBIAN_PACKAGE_SHLIBDEPS 
 
 SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Stefan Gebauer, M.Sc.Comp.Sc.")#required
+
+#see "man date"
+execute_process(COMMAND date +'%y' OUTPUT_VARIABLE year)
+execute_process(COMMAND date +'%m' OUTPUT_VARIABLE month)
+execute_process(COMMAND date +'%d' OUTPUT_VARIABLE day)
+
+execute_process(COMMAND date +%y.%m.%d OUTPUT_VARIABLE ver)
+#from https://stackoverflow.com/questions/39496043/how-to-strip-trailing-whitespace-in-cmake-variable
+string(REGEX REPLACE "\n$" "" ver "${ver}")
+set(CPACK_PACKAGE_VERSION ${ver})
+
+message("program version: ${ver}")
+
+#https://cmake.org/cmake/help/v3.3/module/CPack.html
+#How package name is created: CPACK_PACKAGE_FILE_NAME:
+# "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME}."
+#.deb packages are for Linux, so we can remove "Linux" from the package name
+set(CPACK_SYSTEM_NAME "")
+
+set(CPACK_PACKAGE_VERSION_MAJOR "${year}")
+set(CPACK_PACKAGE_VERSION_MINOR "${month}")
+set(CPACK_PACKAGE_VERSION_PATCH "${day}")
+message("CPACK_PACKAGE_VERSION:" ${CPACK_PACKAGE_VERSION} ${CPACK_PACKAGE_FILE_NAME})
+message("CPACK_PACKAGE_FILE_NAME: ${CPACK_PACKAGE_FILE_NAME}")
+
 INCLUDE(CPack)# This must always be last!
 message("Create Debian package running \"cpack\"")

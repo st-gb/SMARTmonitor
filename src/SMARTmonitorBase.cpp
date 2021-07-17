@@ -37,9 +37,9 @@ std::string SMARTmonitorBase::s_strAllLogLevels;
 
 CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"logfilefolder", "<absolute or relative log file FOLDER>, e.g. \"/run/\" "
-    "for writing log files to tmpfs/RAM drives"},
+    "for writing log files to tmpfs/RAM drive"},
   {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. "
-    "\"server.xml"},
+    "\"server.xml\""},
   {"loglevel", NULL},
   {""}
 };
@@ -67,6 +67,8 @@ SMARTmonitorBase::SMARTmonitorBase()
   , m_SMARTaccess(SMARTuniqueIDsAndValues)
 #endif
 {
+  //TODO also called in service_main.cpp: test if no error in Linux service
+  LogLevel::CreateLogLevelStringToNumberMapping();
   /** For calling ::UpdateSMARTparameterValuesThreadFunc(void *) */
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
 #ifdef directSMARTaccess
@@ -81,7 +83,7 @@ SMARTmonitorBase::SMARTmonitorBase()
 //  s_programOptionName2handler.insert(std::make_pair(L",));
   
   LogLevel::getAllLogLevels(s_strAllLogLevels);
-  s_strAllLogLevels = "1 of [" + s_strAllLogLevels + "]";
+  s_strAllLogLevels = ", option value:1 of [" + s_strAllLogLevels + "]";
   s_commandLineOptions[logLvlIdx].possibleOptionValue = s_strAllLogLevels.
     c_str();
 }
@@ -238,11 +240,11 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
   }
 }
 
-void SMARTmonitorBase::OutputUsage() {
-  std::ostringstream stdoss;
+void SMARTmonitorBase::GetUsage(std::ostringstream & stdoss)
+{
   stdoss << "Usage (options) either:\n"
-    "-pass 2 command line arguments for each in this order:\n"
-     "<command line option NAME> <command line option VALUE>):\n"
+    "-pass 2 command line arguments for each option in this order:\n"
+     "<command line option NAME> <command line option VALUE>\n"
     "-or as 1 command line argument:<command line option NAME>=<command line "
      "option VALUE>\n\n"
     "available options:\n";
@@ -253,6 +255,11 @@ void SMARTmonitorBase::OutputUsage() {
     commandLineOption.possibleOptionValue << "";
     stdoss << "\n";
   }
+}
+
+void SMARTmonitorBase::OutputUsage() {
+  std::ostringstream stdoss;
+  GetUsage(stdoss);
   std::string str = stdoss.str();
 //  std::cout << str << std::endl;
   ShowMessage(str.c_str() );

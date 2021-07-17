@@ -388,7 +388,6 @@ bool wxSMARTmonitorApp::OnInit()
   GetSMARTstatusUnknownIcon(s_SMARTstatusUnknownIcon);
   GetSMARTwarningIcon(s_SMARTwarningIcon);  
 
-  LogLevel::CreateLogLevelStringToNumberMapping();
   ProcessCommandLineArgs(); /** May display messages. */
   const bool succInitedLogger = InitializeLogger();
   if(! succInitedLogger)

@@ -43,9 +43,14 @@ fastestSignedDataType SMARTmonitorClient::ReadNumFollowingBytes()
   // running the wx GUI. errno: 11 from GetSMARTattrValsFromSrv
   // Maybe because the 2nd time is from another thread.
   //TODO Did not continue:message stays: "reading number of bytes for S.M.A.R.T.
-  // data" after PC with S.M.A.R.T. server shut down. Disconnecting via
+  // data" after PC with S.M.A.R.T. server shut down/service process killed with
+  // "-SIGKILL". Disconnecting via
   // "Disconnect" button was impossible. Create at least 1 unit test for this
-  // case.
+  // case. Maybe a signal handler with EPIPE for client helps?
+  // Maybe "netstat -tn src :>>S.M.A.R.T. server port<<" does not show it after
+  // loss of connection resp. it shows state "CLOSE_WAIT".
+  
+  ///https://stackoverflow.com/questions/283375/detecting-tcp-client-disconnect
   int rdErrno;
   int rdFrmScktRslt = OperatingSystem::BSD::sockets::readFromSocket2(
     m_socketFileDesc,& numDataBytesToRead, numBytesToRead, & numBytesRead,

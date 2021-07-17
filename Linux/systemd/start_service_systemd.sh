@@ -2,6 +2,10 @@
 #echo "Copying SMARTmon.service to /etc/systemd/system/"
 #cp $dirPathOfThisScript/SMARTmon.service /etc/systemd/system/
 
+#Else "SMARTmon.service: Failed to execute command: Permission denied" running
+# "systemctl status SMARTmon.service".
+chmod u+x fullExePath
+
 echo "Enabling and starting SMARTmon.service"
 #https://unix.stackexchange.com/questions/47695/how-to-write-startup-script-for-systemd
 #install AND start (answered Sep 10 '12 at 15:21 by don_crissti):

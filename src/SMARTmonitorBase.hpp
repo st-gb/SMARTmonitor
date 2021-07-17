@@ -202,6 +202,7 @@ public:
   //TODO this member isn't needed for the service
   std::string m_stdstrServiceHostName;
   fastestUnsignedDataType m_retryWaitTimeInS;
+  void GetUsage(std::ostringstream &);
   bool InitializeLogger();
   void EnsureSMARTattrToObsExist();
   ///A std::set ensures no double entries exist.

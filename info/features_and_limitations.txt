@@ -1,0 +1,13 @@
+S.M.A.R.T. monitor (2021 version) features and limitations
+===========================================
+
+S.M.A.R.T. (only) directly via ATA/IDE standard.
+Not possible/tested via USB (adapter/bridge) inbetween.
+
+Implemented to function with multiple data carriers but only tested with 1.
+
+possible unwanted behaviour:
+---------------------------
+The (wxWidgets) client is stuck at "reading number of bytes for S.M.A.R.T. data"
+when the host/computer of the server hangs/is shut down.
+Then in wxWidgets GUI one has to press the "Disconnect" button.

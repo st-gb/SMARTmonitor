@@ -436,6 +436,12 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
       " (and re-show it by clicking on the task bar icon) while running this "
       "application.");
 #endif
+  
+  std::ostringstream stdossCmdLineUsage;
+  wxGetApp().GetUsage(stdossCmdLineUsage);
+  
+  aboutString += wxT("\n\n") + wxWidgets::GetwxString_Inline(stdossCmdLineUsage.
+    str() );
 
 //#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
 //  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,
