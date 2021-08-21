@@ -13,8 +13,24 @@ execute_process(
 
 set(cmdLine "${localResourcesFSpath}/Linux/systemd/create_.service_file_default_parameters.sh")
 message("command line to exec:" ${cmdLine})
+#With "bash -c" the "RESULT_VARIABLE" variable is an error code
+#Without "bash -c" the "RESULT_VARIABLE" variable is an error character string.
 execute_process(
-  COMMAND bash -c ${cmdLine}
+  COMMAND #bash -c
+  ${cmdLine}
   RESULT_VARIABLE rsltVar
   )
-message("result of calling \"${cmdLine}\": ${rsltVar}")
+
+#${SGR_Green},${SGR_Red},${SGR_ColourReset}
+include(${cmnSrc}/CMake/SGR_terminalColours.cmake)
+
+#For the same error in Arch Linux armv7l:
+#-was "Permission denied" without "bash -c" in "execute_process"
+#-was error code/errno "126"? with "bash -c" in "execute_process"
+if(# ${rsltVar} EQUAL 0 )
+  "${rsltVar}" STREQUAL "")
+  message("${SGR_Green}result of calling \"${cmdLine}\": ${rsltVar}${SGR_ColourReset}")
+else()
+  message("${SGR_Red}result of calling \"${cmdLine}\": ${rsltVar}${SGR_ColourReset}")
+endif()
+
