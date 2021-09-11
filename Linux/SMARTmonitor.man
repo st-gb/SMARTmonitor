@@ -12,11 +12,11 @@
 .\" \fBSMARTmonitor\fP \- (Remote) Monitor Application for S.M.A.R.T.-capable Data Carriers
 
 .SH SYNOPSIS
-  To avoid divergence between this documentation and the application program
-  it is referred to the output of it. 
-  Calling the SMARTmonitor service application without program arguments or
-  showing the "About" dialog of the wxWidgets GUI gives an overview about the
-  available options (for service: on the \fBconsole/standard output\fP)
+To avoid divergence between this documentation and the application program
+it is referred to the application's output.
+Calling the SMARTmonitor service application without program arguments or
+showing the "About" dialog of the wxWidgets GUI gives an overview about the
+available options (for service: on the \fBconsole/standard output\fP)
 
 .SH DESCRIPTION
 A tool to monitor raw values for (critical) S.M.A.R.T. parameters directly/
@@ -28,13 +28,18 @@ Total Data Written).
 
 .SH FILES
 .B configuration files:
- allCfgFilePaths
+.\ Must be 1 space character intended, else appears in the same line
+ ${allCfgFilePaths}
+
+.B executable files:
+.\ Must be 1 space character intended, else appears in the same line
+ ${allExecFilePaths}
 
 .SH AUTHORS
- Stefan Gebauer, M.Sc. Computer Science (TU Berlin, www.it-gebauer.de)
+Stefan Gebauer, M. Sc. Computer Science (TU Berlin), www.it-gebauer.de
 
 .SH REPORTING BUGS
- http://github.com/st-gb/SMARTmonitor/issues
+http://github.com/st-gb/SMARTmonitor/issues
 
 .SH LICENSE
 You may test this software for free for 30 days. Using this sofware non-testing/

@@ -169,7 +169,7 @@ endif()
 if(UNIX)#only Unix binaries into .deb file
   message("cr8DebPkg: ${cr8DebPkg}")
   if(DEFINED cr8DebPkg)#"-Dcr8DebPkg" as cmake command line parameter
-    include(createDebPkg.cmake)#run CPack with "cpack --debug --verbose"
+    include(Linux/createDebPkg.cmake)#run CPack with "cpack --debug --verbose"
   endif()
 endif()
 
