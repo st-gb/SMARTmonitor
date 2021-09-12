@@ -33,7 +33,6 @@ function(addExeToPkg exeType)
   set(includedExes ${includedExes} ${exeType} PARENT_SCOPE)
 #  list(APPEND includedExes ${exeType} PARENT_SCOPE)
 #  message("includedExes: ${includedExes}")
-set(exeFileNames ${exeFileNames} /usr/${exeInstallDir}/${EXE_NAME} PARENT_SCOPE)
 message("addExeToPkg--copy ${EXE_NAME} to ${exeInstallDir}")
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../${EXE_NAME}#target name
   #required
@@ -109,42 +108,19 @@ set(localResourcesFSpath ".."
 #  createCfgFilesDebPkg(allCfgFilePaths)
 #endif()
 
-#TODO use CMake variable holding configuration file names for both C(++) source
-# code and here to keep it consistent? Separate names there via non-printable
-# character like \t or \n
-set(cfgFilePaths
-  ${localResourcesFSpath}/config/dataCarrierDefs.xml
-  ${localResourcesFSpath}/config/SMARTsrvCnnctn.xml
-  )
-set(destFolder ${resourcesFSpath}/config)
-#https://stackoverflow.com/questions/5232555/how-to-add-files-to-debian-package-with-cpack
-INSTALL(FILES ${cfgFilePaths} #required
-  DESTINATION ${destFolder})
-
-set(additionalFiles
-  ${localResourcesFSpath}/config/en/SMARTattrDefs.xml
-  )
-INSTALL(FILES ${additionalFiles} #required
-  DESTINATION ${resourcesFSpath}/config/en)
-
-set(allCfgFilePaths
-  ${cfgFilePaths}
-  ${additionalFiles}
-  )
-
 if(${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")
-  #These files are not executables, so set to empty string.
+  #These files are not executables, the architecture does not matter->
+  # set to empty string.
   set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "")
-else()
+
+  include(${PROJECT_SOURCE_DIR}/addCfgFiles.cmake)
+  
+  #Create exe files names for creating the man-page.
+  createExeName("wxGUI")
+  createExeName("service")
+  message("exeFileNames: ${exeFileNames}")
   include(${PROJECT_SOURCE_DIR}/Linux/createManPage.cmake)
 endif()
-
-set(additionalFiles
-  ${localResourcesFSpath}/info/disclaimer_of_liability.txt
-  ${localResourcesFSpath}/info/Haftungsausschluss.txt
-  )
-INSTALL(FILES ${additionalFiles} #required
-  DESTINATION ${resourcesFSpath}/info)
 
 message("EXE_TYPE before additional files: ${EXE_TYPE}")
 if(${EXE_TYPE} STREQUAL "wxGUI" OR ${EXE_TYPE} STREQUAL "debPkg")
@@ -231,9 +207,13 @@ if(DEFINED directSMARTaccess)
   message("\"directSMARTaccess\" defined")
   set(libsDependendOn "libatasmart4")
 endif()
+#Case-sensitivity (capital letters or not) seems to count.
+#Use this variable for (G)UI and service creation to keep the dependancy name
+# consistent.
+set(SMARTmonCmnFileDebPkgName "smartmonitor_cmnfiles")
 if(${EXE_TYPE} STREQUAL "wxGUI")
   #Needs this package to avoid file path conflicts between (GUI, server) .deb
-  set(libsDependendOn "${libsDependendOn}, SMARTmonitor_cmnFiles")
+  set(libsDependendOn "${libsDependendOn}, ${SMARTmonCmnFileDebPkgName}")
   #Needs at least wxWidgets 3.0?
   set(libsDependendOn "${libsDependendOn}, libwxbase3.0-0v5")
   if(${Distri} STREQUAL "Lubuntu")
@@ -247,7 +227,7 @@ if(${EXE_TYPE} STREQUAL "wxGUI")
 endif()
 if(${EXE_TYPE} STREQUAL "UNIX_service")
   #Needs this package to avoid file path conflicts between (GUI, server) .deb
-  set(libsDependendOn "${libsDependendOn}, SMARTmonitor_cmnFiles")
+  set(libsDependendOn "${libsDependendOn}, ${SMARTmonCmnFileDebPkgName}")
 endif()
 
 #Don't colour the libraries but only the rest because there may be no library.

@@ -1,3 +1,5 @@
+# The created ".service" files are for Linux' "systemd" startup process.
+# So place this file into a "Linux/systemd" file system directory path. 
 message("Calling shell script from CMake: " ${resourcesFSpath} )
 set(FullExePath "/usr/${exeInstallDir}/${EXE_NAME}")
 

@@ -3,10 +3,15 @@
 #param 3: file path for replacing text in
 replace()
 {
+#https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html :
+# "FUNCNAME" : "The element with index 0 is the name of any currently-executing
+# "FUNCNAME" only applies to Bourne Again SHell ("bash")? 
+sigOfThisFunction=${FUNCNAME[0]}\(...\)
+
 strToReplace=$1
 replaceByStr=$2
 filePath=$3
-echo "String to replace:" \"$strToReplace\"
+echo "$sigOfThisFunction--string to replace:" \"$strToReplace\"
 
 #https://stackoverflow.com/questions/13373984/how-to-replace-a-variable-in-shell-script-string
 #https://unix.stackexchange.com/questions/211834/slash-and-backslash-in-sed

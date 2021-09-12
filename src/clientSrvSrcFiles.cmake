@@ -8,12 +8,13 @@ if(UNIX)
   #Linux (e.g. Lubuntu) has tinyxml2 in its package manager
   #"apt-get install libtinyxml"
 endif()
-if(TINYXML2_ROOT_PATH STREQUAL "")
+#Both (unset/not defined and empty string) may be the case?
+if(NOT DEFINED TINYXML2_ROOT_PATH OR TINYXML2_ROOT_PATH STREQUAL "")
   set(TINYXML2_ROOT_PATH ${SMARTmonSrcDir}/../../../tinyxml2-master )
 endif()
 #include(${cmnSrcDir}/CMake/getAbsPath.cmake)
 #getAbsPath(${TINYXML2_ROOT_PATH} "${SMARTmonSrcDir}/../../../tinyxml2-master")
-message("TINYXML2_ROOT_PATH: ${TINYXML2_ROOT_PATH}")
+message("TINYXML2_ROOT_PATH: \"${TINYXML2_ROOT_PATH}\"")
 
 if(DEFINED resourcesFSpath)
   message("resourcesFSpath defined:value${resourcesFSpath}")

@@ -21,7 +21,23 @@ execute_process(COMMAND ${createManPageFilePath} "${allCfgFilePaths}"
 set(manFileToCompress ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Linux/SMARTmonitor.8)
 #https://wiki.ubuntuusers.de/gzip/ "-k" to keep the the original file (avoid its
 # deletion)
-execute_process(COMMAND gzip -k ${manFileToCompress})
+
+#Get/resolve away ".." in file path.
+get_filename_component(manFileToCompress "${manFileToCompress}" ABSOLUTE)
+#"man gzip" :
+# to avoid error: "already exists; do you wish to overwrite (y or n)?"
+# "-f --force" : "Force compression [...] even if [...] the corresponding file
+#  already exists"
+# "-k --keep" : "Keep (don't delete) input files during compression or
+#  decompression."
+set(cmdLine "gzip --keep --force ${manFileToCompress}")
+message("Command line to execute:${cmdLine}")
+execute_process(COMMAND ${cmdLine} RESULT_VARIABLE rsltVar)
+if( NOT ${rsltVar} EQUAL 0 )
+  message(STATUS "${SGR_Red}Calling command \"${cmdLine}\" failed. Return code:"
+    "${rsltVar}${SGR_ColourReset}")
+endif()
+
 #Store in /usr/share/man/man8 as for "smartctl".
 install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Linux/SMARTmonitor.8.gz
   DESTINATION /usr/share/man/man8)
