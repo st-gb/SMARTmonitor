@@ -10,8 +10,15 @@ project(SMARTmonitor)
 
 set(SMARTmonSrcDir ${PROJECT_SOURCE_DIR})
 
-#To create executable outside of "src" directory
+#To create executable outside of "src" directory;also used for creating man-page
+# for "cmnfiles" debian package.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/..)
+
+if(${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")
+  set(cr8DebPkg ON)
+  #The variable for "common_source" path is needed in "createDebPkg.cmake"
+  include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
+else()
 
 #Add all CMake script file paths to this variable (for including in an archive).
 set(CMakeScriptFilePaths
@@ -165,11 +172,11 @@ endif()
 if(cre8SrcArchive)
   include(${CmnSrc}/CMake/cr8srcArchive.cmake)
 endif()
-
+endif(${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")#"else" branch of condition
 if(UNIX)#only Unix binaries into .deb file
   message("cr8DebPkg: ${cr8DebPkg}")
   if(DEFINED cr8DebPkg)#"-Dcr8DebPkg" as cmake command line parameter
-    include(createDebPkg.cmake)#run CPack with "cpack --debug --verbose"
+    include(Linux/createDebPkg.cmake)#run CPack with "cpack --debug --verbose"
   endif()
 endif()
 
@@ -177,10 +184,12 @@ if(DEFINED cr8zip)#"-Dcr8zip" as cmake command line parameter
   #include(createZip.cmake)
 endif()
 
-include(${cmnSrcDir}/CMake/writeItemsToFile.cmake)
-Set(srcFilePathsFileName ${EXE_TYPE}_source_file_paths.txt)
-#For debugging purposes
-#write1ItemPerLneToFile(${EXE_TYPE}_source_file_paths.txt "${SOURCE_FILE_PATHS}")
+if(NOT ${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")
+  include(${cmnSrcDir}/CMake/writeItemsToFile.cmake)
+  Set(srcFilePathsFileName ${EXE_TYPE}_source_file_paths.txt)
+  #For debugging purposes
+  #write1ItemPerLneToFile(${EXE_TYPE}_source_file_paths.txt "${SOURCE_FILE_PATHS}")
+endif()
 message("If you didn't explicitely set some of the variables, then they may\
 come from a previous call to cmake. If you don't want these settings, delete \
 \"CMakeCache.txt\"")

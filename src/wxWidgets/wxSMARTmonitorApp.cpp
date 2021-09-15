@@ -373,7 +373,9 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
 
 /** http://docs.wxwidgets.org/trunk/classwx_app_console.html#a99953775a2fd83fa2456e390779afe15 : 
  *  "This must be provided by the application, and will usually create the 
- *  application's main window, optionally calling SetTopWindow()."  */
+ *  application's main window, optionally calling SetTopWindow()."
+ *  @return "Return true to continue processing, false to exit the application
+ *    immediately." */
 bool wxSMARTmonitorApp::OnInit()
 {
   CreateCommandLineArgsArrays();
