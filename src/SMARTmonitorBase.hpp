@@ -98,7 +98,7 @@ public:
   virtual ~SMARTmonitorBase();
   
   static void sigHandler(int signo);
-  static void registerSignalHandler();
+  static void regCancelSelectSigHandler();
 
   static void setDfltSMARTattrDef();
   /** Needs to persist over the call to 
@@ -179,9 +179,13 @@ public:
     GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
       getSMARTvaluesFunctionType
     );
+  bool upd8SMARTparamValsThrdIsRunning(){
+    return m_updateSMARTparameterValuesThread.IsRunning();}
 #endif
   bool tryCfgFilePaths(const wchar_t fileName[], loadFuncType);
+#ifdef directSMARTaccess
   fastestUnsignedDataType Upd8SMARTvalsDrctlyThreadSafe();
+#endif
   virtual void BeforeWait() { }
   virtual void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult) { }
   static unsigned GetNumberOfMilliSecondsToWaitBetweenSMARTquery() {
@@ -198,6 +202,7 @@ public:
   //TODO this member isn't needed for the service
   std::string m_stdstrServiceHostName;
   fastestUnsignedDataType m_retryWaitTimeInS;
+  void GetUsage(std::ostringstream &);
   bool InitializeLogger();
   void EnsureSMARTattrToObsExist();
   ///A std::set ensures no double entries exist.

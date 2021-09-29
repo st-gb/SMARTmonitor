@@ -213,7 +213,7 @@ bool ConfigLoader::readSMARTattrDefs(
         SMARTattrDefAccss::Add(sMARTattrDef);
         LOGN_DEBUG( "using SMART entry at address " << 
           SMARTattrDefAccss::getSMARTattrDef(sMARTattrID) )
-        LOGN("adding SMART ID" << sMARTattrID /*<< "to " 
+        LOGN("adding SMART ID " << sMARTattrID /*<< "to " 
           << mp_smartAttributes*/)
       }
     }
@@ -298,7 +298,7 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
     const int maxTeraBytesWritten = p_dataCarrierXMLele->IntAttribute(
       "maxTeraBytesWritten", -1);
     ModelAndFirmware modelAndFirmware;
-    if(p_chModel && p_chFirmware){
+    if(p_chModel && p_chFirmware){///<=>"model" and "firmware" are in XML data
       modelAndFirmware.setMaxTeraBytesWritten(maxTeraBytesWritten);
       modelAndFirmware.Set(p_chModel, p_chFirmware);
       const tinyxml2::XMLElement * p_tinyxml2XMLelement;
@@ -309,7 +309,9 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
         if(paramID != 0 && p_chUnit)
         {
           modelAndFirmware.setParamUnit(paramID, p_chUnit);
-          LOGN("setting SMART param unit for ID " << paramID << "to " << p_chUnit)
+          LOGN("For model:\"" << p_chModel << "\", firmware:\"" << p_chFirmware
+            << "\" setting SMART parameter unit for ID " << paramID << " to \""
+            << p_chUnit << "\"")
         }
         ///Next sibling element must be called from sibling:
         /// http://www.grinninglizard.com/tinyxmldocs/classTiXmlHandle.html#f0643f8683f3f2b779b8c9d78c67b2c0

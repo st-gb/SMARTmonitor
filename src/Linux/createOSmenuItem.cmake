@@ -3,7 +3,7 @@
 
 if(UNIX)
   message("Calling shell script from CMake: " ${EXE_NAME})
-  set(cmdLine "../Linux/createOSmenuItemFile.sh \
+  set(cmdLine "${PROJECT_SOURCE_DIR}/Linux/createOSmenuItemFile.sh \
 /usr/${exeInstallDir}/${EXE_NAME} \
 ${resourcesFSpath}/icons/S.M.A.R.T._OK.xpm")
   message("command line to exec:" ${cmdLine})

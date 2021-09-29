@@ -1,0 +1,19 @@
+Haftungsausschluss
+==================
+
+Die Software ist nach gutem Wissen (Stand eines Informatikers mit TU-Master-
+Abschluss) und Gewissen entwickelt und getestet und Fehler werden beseitigt,
+falls welche festgestellt werden.
+
+Um ein unabsehbares finanzielles Risiko für den Hersteller auszuschliessen,
+erfolgt die Benutzung der Software-Applikation jedoch auf eigenes Risiko.
+
+Für fahrlässige Programm-Fehler haftet der Hersteller daher nicht.
+Diese mögen sein:
+-falsche Einschätzung, ob eine oder mehrere S.M.A.R.T.-ID(s) im gesunden/
+ vertretbaren Bereich liegt/liegen bzw. ob der Gesamt-Zustand des Datenträgers
+ gut oder schlecht ist
+-falsche Daten-Anzeige in der (grafischen) Benutzerschnittstelle
+-das Schreiben von Daten in (Log)-Dateien auf den Datenträger kann den Zustand
+ dieses Datenträgers verschlechtern
+-jegliches anderes Fehlverhalten

@@ -1,0 +1,21 @@
+LXQt is a desktop environment for Unix /Linux
+(http://en.wikipedia.org/wiki/LXQt) and BSD (http://lxqt-project.org/).
+
+#see https://wiki.archlinux.org/title/LXQt#Autostart :
+1. either:
+-"LXQt" menu > "Preferences" > "LXQt Settings" > "Session Settings"
+-run command "lxqt-config-session" in terminal/shell
+
+2. in "LXQt Session Settings" dialog:
+2.1 mark "Autostart" on left pane
+2.2 press "Add" on right side
+2.3 in "Edit" dialog
+2.3.1 "Name:" e.g. "wxSMARTmonGUI for localhost"
+2.3.2 "Command:" file system path to the executable,
+  including possible command line parameters,
+  especially "svcConnConfFile" for automatically connecting to the server,
+  e.g. "/usr/local/bin/wxSMARTmonitor_GUI_Release.elf loglevel=warning svcConnConfFile=/usr/share/SMARTmonitor/config/localhost.xml"
+2.3.3 check "Wait for System Tray" the checkbox
+      because the GUI application uses a task bar icon
+2.3.4 press "OK"
+2.4 press "Close"

@@ -1,0 +1,48 @@
+.\" .ig
+.\" Copyright (C) 2013-2021 Stefan Gebauer
+
+.\" http://linux.die.net/man/7/man-pages :
+.\"  -".TH title section date source manual"
+.\"  -"title
+.\"   The title of the man page, written in all caps (e.g., MAN-PAGES)."
+.\   -"Dates should be written in the form YYYY-MM-DD"
+.\" This appears as 1st line when calling "man" with this man-page.
+.TH SMARTMONITOR 8 "2021-07-12" "SMARTmonitor" "(remote) S.M.A.R.T. monitoring/analysis"
+.\" .SH NAME
+.\" \fBSMARTmonitor\fP \- (Remote) Monitor Application for S.M.A.R.T.-capable Data Carriers
+
+.SH SYNOPSIS
+To avoid divergence between this documentation and the application program
+it is referred to the application's output.
+Calling the SMARTmonitor service application without program arguments or
+showing the "About" dialog of the wxWidgets GUI gives an overview about the
+available options (for service: on the \fBconsole/standard output\fP)
+
+.SH DESCRIPTION
+A tool to monitor raw values for (critical) S.M.A.R.T. parameters directly/
+locally or transferred to clients via BSD sockets.
+S.M.A.R.T. values are retrieved periodically in an interval.
+Automatic service/server installation for "systemd".
+Unit detection for some S.M.A.R.T. attributes (Power-On Hours, Total Data Read/
+Total Data Written).
+
+.SH FILES
+.B configuration files:
+.\ Must be 1 space character intended, else appears in the same line
+ ${allCfgFilePaths}
+
+.B executable files:
+.\ Must be 1 space character intended, else appears in the same line
+ ${allExecFilePaths}
+
+.SH AUTHORS
+Stefan Gebauer, M. Sc. Computer Science (TU Berlin), www.it-gebauer.de
+
+.SH REPORTING BUGS
+http://github.com/st-gb/SMARTmonitor/issues
+
+.SH LICENSE
+You may test this software for free for 30 days. Using this sofware non-testing/
+productively requires a valid bought license for \fBthis\fP version.
+Owning a license you are also allowed to build and use your own version with
+source code from http://github.com/st-gb/SMARTmonitor

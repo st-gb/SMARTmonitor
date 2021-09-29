@@ -18,6 +18,9 @@ set(EXE_NAME_WOUT_EXT ${EXE_NAME} PARENT_SCOPE)
 set(EXE_NAME ${EXE_NAME}_${CMAKE_BUILD_TYPE})
 include(${cmnSrcDir}/CMake/addExeFileExt.cmake)
 addExeFileExt(EXE_NAME)
-#Has to be done to progagate changes to EXE_NAME outside of this function.
+
+set(exeFileNames ${exeFileNames} /usr/${exeInstallDir}/${EXE_NAME} PARENT_SCOPE)
+#Has to be done to propagate changes to EXE_NAME outside of this function.
 set(EXE_NAME ${EXE_NAME} PARENT_SCOPE)
 endfunction()
+

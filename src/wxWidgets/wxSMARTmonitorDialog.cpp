@@ -183,7 +183,30 @@ void SMARTdialog::ShowCurrentAction(const enum SMARTmonitorClient::CurrentAction
     ShowMessage(str, UserInterface::MessageType::info);
     }
     break;
+   case SMARTmonitorClient::WaitForSMARTupd8ThreadTerm:
+    {
+      wxString str(wxT("waiting for S.M.A.R.T. data update thread termination")
+        );
+      ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
+   case SMARTmonitorClient::AfterWaitForSMARTupd8ThreadTerm:
+    {
+      wxString str(wxT("finished waiting for S.M.A.R.T. data update thread termination")
+        );
+      ShowMessage(str, UserInterface::MessageType::info);
+    }
+    break;
   }
+}
+
+void SMARTdialog::DrctSMARTaccssUIctrls()
+{
+  m_p_directSMARTaccesBtn->SetLabel(wxT("End Direct S.M.A.R.T.") );
+}
+
+void SMARTdialog::NoDrctSMARTaccessUIctrls(){
+  m_p_directSMARTaccesBtn->SetLabel(wxT("Direct S.M.A.R.T.") );
 }
 
 void SMARTdialog::UnCnnctdToSrvUIctrls(){
@@ -393,12 +416,33 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
 
   std::string currWorkDir;
   OperatingSystem::GetCurrentWorkingDirA_inl(currWorkDir);
-  
+
+  wxString wxVer = wxSTRINGIZE(wxMAJOR_VERSION) + wxString(wxT(".") );
+  wxVer += wxSTRINGIZE(wxMINOR_VERSION);
+  wxVer += wxT(".");
+  wxVer += wxSTRINGIZE(wxRELEASE_NUMBER);
+
   ///Current working directory is relevant for reading configuration files.
   wxString aboutString = message + wxString("\n") + buildID
+    + wxT("\n\nUsing wxWidgets version ") + wxVer
     + wxString("\n\ncurrent working directory:\n")
     + wxWidgets::GetwxString_Inline(currWorkDir);
   
+#if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8 || wxMAJOR_VERSION > 2
+  if(///https://docs.wxwidgets.org/trunk/classwx_task_bar_icon.html#a287bb3303f01651f50c8de17e314a147;
+     /** "Since 2.9.0*/ ! wxTaskBarIcon::IsAvailable() )
+    aboutString += wxT("\n\nThere appears to be no task bar/system tray support"
+      " in your current environment. So you aren't able to hide the main window"
+      " (and re-show it by clicking on the task bar icon) while running this "
+      "application.");
+#endif
+  
+  std::ostringstream stdossCmdLineUsage;
+  wxGetApp().GetUsage(stdossCmdLineUsage);
+  
+  aboutString += wxT("\n\n") + wxWidgets::GetwxString_Inline(stdossCmdLineUsage.
+    str() );
+
 //#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
 //  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,
 //    wxICON_INFORMATION);
@@ -413,6 +457,15 @@ void SMARTdialog::OnDrctSMARTaccss(wxCommandEvent &)
 //  LOGN_ERROR("current UID:" << UID)
 //  if(UID != 0)
 //    seteuid(0);
+  if(wxGetApp().upd8SMARTparamValsThrdIsRunning() ){
+    wxGetApp().EndUpdateUIthread();
+    NoDrctSMARTaccessUIctrls();
+  }
+  else{
+    wxGetApp().EnsureSMARTattrToObsExist();
+    ReBuildUserInterface();
+    StartAsyncDrctUpd8Thread();
+  }
 }
 
 void SMARTdialog::OnOK(wxCommandEvent& WXUNUSED(event))
@@ -442,13 +495,33 @@ void SMARTdialog::OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event))
     wxGetApp().ConnectToServer();
     break;
    case SMARTmonitorClient::cnnctdToSrv:
-   case SMARTmonitorClient::valUpd8:///Is also connected when value update.
+   /** May mean:
+    * -Is (also/currently) connected to server
+    * -when getting S.M.A.R.T. data directly.*/
+   case SMARTmonitorClient::valUpd8:
     ///Cancel connection:
     /** Closing the socket causes the server connect thread to break/finish */
     //close(wxGetApp().m_socketPortNumber);
     wxGetApp().EndUpdateUIthread();
-    //TODO set m_srvrCnnctnState to "uncnnctdToSrv"
-    wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
+#if directSMARTaccess
+    if(wxGetApp().getsSMARTdataDrctly() ){
+      wxGetApp().setUI(SMARTmonitorClient::endedDrctSMART);
+      wxGetApp().ConnectToServer();
+    }
+    else
+#endif
+      //TODO set m_srvrCnnctnState to "uncnnctdToSrv"
+      wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
+    break;
+   case SMARTmonitorClient::drctSMARTaccss:
+    wxGetApp().EndUpdateUIthread();
+    wxGetApp().setUI(SMARTmonitorClient::endedDrctSMART);
+    wxGetApp().setUI(SMARTmonitorClient::connectToSrv);
+    ///Currently unconnected->show "connect to server" dialog
+    wxGetApp().ConnectToServer();
+    break;
+   case SMARTmonitorClient::endedDrctSMART:
+    wxGetApp().ConnectToServer();
     break;
   }
 }
@@ -461,13 +534,19 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
   switch(newState)
   {
     case SMARTmonitorClient::valUpd8:
-      SetTitle(wxGetApp().GetTitleInclDataSrc() + wxT("--last update:") +
-        wxNow() );
+     {
+     const wxString title = wxGetApp().GetTitleInclDataSrc() +
+       wxT("--last update:") +
+       //TODO: use wxGetApp().GetLastSMARTvaluesUpdateTime() instead??
+       wxNow();
+      SetTitle(title);
+     }
      break;
     case SMARTmonitorClient::cnnctdToSrv :
       SetTitle(wxGetApp().GetTitleInclDataSrc() );
       break;
     case SMARTmonitorClient::uncnnctdToSrv :
+    case SMARTmonitorClient::endedDrctSMART:
     {
       wxGetApp().GetSMARTvalsAndUpd8UIthreadID = 0;
       wxString wxstrTitle = wxGetApp().GetAppName();
@@ -476,11 +555,19 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
       
       std::string timeString = UserInterface::GetTimeAsString(
         timeOfLastSMARTvaluesUpdate);
-      //TODO don't show "from" if direct values?
-      wxstrTitle += wxString::Format(
-        wxT("--last update at %s from %s--unconnected"),
-        wxWidgets::GetwxString_Inline(timeString.c_str()), 
-        wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.c_str() ) );
+      if(newState == SMARTmonitorClient::uncnnctdToSrv)
+        wxstrTitle += wxString::Format(
+          wxT("--last update at %s from %s:%u--unconnected"),
+          wxWidgets::GetwxString_Inline(timeString.c_str()),
+          wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.
+            c_str() )
+        /** Also show port because different hosts may be behind the same IP
+         *  address (e.g. via port forwarding) */
+          , wxGetApp().m_socketPortNumber);
+      else
+        wxstrTitle += wxString::Format(
+          wxT("--last update at %s via direct S.M.A.R.T.(ended)"),
+          wxWidgets::GetwxString_Inline(timeString.c_str() ) );
       /** Not needed to set the unconnected UI because this is done in
        * "StartSrvCnnctnAttmptCntDown" */
 //      wxGetApp().UnCnnctdToSrvUIctrls();

@@ -127,12 +127,10 @@ void wxSMARTmonitorApp::CreateTaskBarIcon()
     wxGetApp().m_taskBarIcon = new TaskBarIcon();
   else
   {
-    wxMessageBox(
-      wxT("There appears to be no system tray support in your current "
-        "environment. This application may not behave as expected."),
-      wxT("Warning")
-      , wxOK | wxICON_EXCLAMATION
-    );
+    /** Do not show a message at startup because this hinders displaying of the
+     *  main window/S.M.A.R.T. OK/warning icon (these is displayed after closing
+     *  message window at first). Especially if automatically started at OS boot
+     *  this is annoying.*/
   }
 #else
   wxGetApp().m_taskBarIcon = new TaskBarIcon();
@@ -375,7 +373,9 @@ void wxSMARTmonitorApp::OnTimer(wxTimerEvent& event)
 
 /** http://docs.wxwidgets.org/trunk/classwx_app_console.html#a99953775a2fd83fa2456e390779afe15 : 
  *  "This must be provided by the application, and will usually create the 
- *  application's main window, optionally calling SetTopWindow()."  */
+ *  application's main window, optionally calling SetTopWindow()."
+ *  @return "Return true to continue processing, false to exit the application
+ *    immediately." */
 bool wxSMARTmonitorApp::OnInit()
 {
   CreateCommandLineArgsArrays();
@@ -390,7 +390,6 @@ bool wxSMARTmonitorApp::OnInit()
   GetSMARTstatusUnknownIcon(s_SMARTstatusUnknownIcon);
   GetSMARTwarningIcon(s_SMARTwarningIcon);  
 
-  LogLevel::CreateLogLevelStringToNumberMapping();
   ProcessCommandLineArgs(); /** May display messages. */
   const bool succInitedLogger = InitializeLogger();
   if(! succInitedLogger)
@@ -452,7 +451,8 @@ bool wxSMARTmonitorApp::OnInit()
 #endif
     if(drctSMARTaccess == false)
       if(initSMARTresult == accessToSMARTdenied)
-        gs_dialog->disableDrctSMARTaccss(wxT("access to SMART denied\n"
+        gs_dialog->disableDrctSMARTaccss(wxT("direct (without client/server)\n"
+          "access to S.M.A.R.T. denied\n"
           "(maybe due to insufficient rights\n"
           "--start as administrator to enable)"));
       else
@@ -608,8 +608,17 @@ void wxSMARTmonitorApp::SetAttribute(
   else{
   wxWidgets::SMARTtableListCtrl * wxSMARTtableListCtrl;
   if(data == NULL){
+#ifdef _DEBUG
+    SMARTdialog::SMARTuniqueID2perDataCarrierPanelType &
+      sMARTuniqueID2perDataCarrierPanel = gs_dialog->
+      m_SMARTuniqueID2perDataCarrierPanel;
+#endif
     PerDataCarrierPanel * perDataCarrierPanel = gs_dialog->
       m_SMARTuniqueID2perDataCarrierPanel[sMARTuniqueID];
+    //TODO CrasheD here (pointer is NULL) after connected->cancel server
+    // connection->connect to other server. Maybe because the Unique IDs here.
+    // (2 elements, but nut [...] && known where the 2nd is inserted)
+    // Make a (unit) test for this?
     wxSMARTtableListCtrl = perDataCarrierPanel->m_pwxlistctrl;
   }
   else
@@ -628,7 +637,8 @@ void wxSMARTmonitorApp::SetGetDirectSMARTvals()
     wxT("direct S.M.A.R.T. values in %u ms interval"),
     s_numberOfMilliSecondsToWaitBetweenSMARTquery);
   gs_dialog->SetStatus(status);
-  SetGetSMARTvalsMode(SMARTmonitorBase::directSMARTvals);
+  setUI(drctSMARTaccss);
+//  SetGetSMARTvalsMode(SMARTmonitorBase::directSMARTvals);
 }
 
 void wxSMARTmonitorApp::SetGetSMARTvalsMode(const enum GetSMARTvalsMode mode)
@@ -657,6 +667,12 @@ void wxSMARTmonitorApp::setUI(const enum serverConnectionState srvCnnctnState)
       wxGetApp().m_p_cnnctToSrvDlg->EnableCnnctBtn();
     else///Enable "Connect..." button if connect to server dialog is not shown.
       gs_dialog->UnCnnctdToSrvUIctrls();
+    break;
+   case SMARTmonitorClient::drctSMARTaccss:
+    gs_dialog->DrctSMARTaccssUIctrls();
+    break;
+   case SMARTmonitorClient::endedDrctSMART:
+    gs_dialog->NoDrctSMARTaccessUIctrls();
     break;
   }
 }
@@ -776,15 +792,21 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 
 void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 {
-  wxString serviceLocation = wxWidgets::GetwxString_Inline(m_stdstrServiceHostName);
-
-  if( serviceLocation == wxT("") )
-    serviceLocation = wxT("direct SMART access");
-  /** Port number is relevant as e.g. with port forwarding done in a router
-   * multiple computers/hosts may be addressable. */
-  wxString tooltip = wxString::Format( wxT("for %s, port %u:\n%s"), 
-    serviceLocation, m_socketPortNumber, message );
-  
+  wxString tooltip;
+#ifdef directSMARTaccess
+  if(/*serviceLocation == wxT("")*/ getsSMARTdataDrctly() )
+    tooltip = wxString::Format(wxT("data via direct (local) SMART access:\n%s"),
+      message);
+  else
+#endif
+  {
+    const wxString serviceLocation = wxWidgets::GetwxString_Inline(
+      m_stdstrServiceHostName);
+    /** Port number is relevant as e.g. with port forwarding done in a router
+     * multiple computers/hosts may be addressable. */
+    tooltip = wxString::Format( wxT("for %s, port %u:\n%s"), 
+      serviceLocation, m_socketPortNumber, message );
+  }
   if(m_taskBarIcon///May be NULL if wxTaskBarIcon::IsAvailable() returns false
     && ! m_taskBarIcon->SetIcon(icon, tooltip) )
     wxMessageBox(wxT("Could not set new taskbar icon."), wxT("wxSMARTmonitor") );

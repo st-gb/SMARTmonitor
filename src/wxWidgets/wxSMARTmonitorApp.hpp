@@ -110,11 +110,24 @@ wxString wxSMARTmonitorApp::GetTitleInclDataSrc()
 {
   const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
     m_stdstrServiceHostName);
-  return wxString::Format("wxSMARTmonitor--data from %s:%u in ca. %u ms "
-    "interval",
-    wxstrServiceAddress,
-    m_socketPortNumber,
+  
+  wxString title;
+#ifdef directSMARTaccess
+  if(getsSMARTdataDrctly() )
+  {
+    title = wxString("wxSMARTmonitor--direct S.M.A.R.T. data");
+  }
+  else
+#endif
+    title = wxString::Format("wxSMARTmonitor--data from %s:%u",
+      wxstrServiceAddress,
+      /** Also show port because different hosts may be behind the same IP
+       *  address (e.g. via port forwarding) */
+      m_socketPortNumber);
+  
+  title += wxString::Format(wxT(" in ca. %u ms interval"),
     GetNumberOfMilliSecondsToWaitBetweenSMARTquery() );
+  return title;
 }
 
 DECLARE_APP(wxSMARTmonitorApp) //wxGetApp()

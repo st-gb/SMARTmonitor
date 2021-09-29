@@ -5,7 +5,7 @@
 #https://www.freedesktop.org/software/systemd/man/systemd.service.html
 # "man systemd.service"
 [Unit]
-Description=S.M.A.R.T. monitor
+Description=S.M.A.R.T./SMART monitor
 #network is mandatory, drives may also needed to be mounted before 
 After=network.target
 

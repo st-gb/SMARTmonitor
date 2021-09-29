@@ -1,0 +1,14 @@
+http://www.ibiblio.org/pub/Linux/docs/HOWTO/Man-Page
+
+https://wiki.ubuntuusers.de/man/Manpage_erstellen/ :
+"Speicherorte
+
+Üblicherweise werden englische Hilfeseiten unter usr/share/man/man1 (aus Debian-Paket) bzw. usr/local/share/man/man1 (andere Installtions-Methoden) abgelegt. Die deutschen Seiten liegen analog unter usr/share/man/de/man1 bzw. usr/local/share/man/de/man1."
+
+into same section (8) as "smartctl"?
+use groff
+
+https://www.cyberciti.biz/faq/linux-unix-creating-a-manpage/
+
+https://liw.fi/manpages/ :
+"man -l >>path to man-page source file<<" to view the man-page

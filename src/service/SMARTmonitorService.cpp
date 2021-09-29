@@ -1,18 +1,26 @@
-/** Author: sg
+/** Author: Stefan Gebauer, M.Sc. Comp.Sc.
  * Created on 19. November 2016, 22:13 */
-#include "SMARTmonitorService.hpp"
+
+///Standard C(++) header files:
 #include <sys/socket.h> //socket(...), bind(...), ...)
 #include <netinet/in.h> //struct sockaddr_in
+#include <vector>///class std::vector
+
+///Files from Stefan Gebauer's "common_sourcecode" repository:
 #include "Controller/time/GetTickCount.hpp" //OperatingSystem::GetTimeCountInNanoSeconds(...)
-#include "hardware/CPU/atomic/AtomicExchange.h" // AtomicExchange(...))
-#include <attributes/SMARTattributeNameAndID.hpp> //SMARTattributeNameAndID
+#include "hardware/CPU/atomic/AtomicExchange.h" // AtomicExchange(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
-#include <vector> //class std::vector
+///OperatingSystem::BSD::sockets::initSrv(...)
+#include <OperatingSystem/BSD/socket/initSrv.h>
+
+#include "SMARTmonitorService.hpp"
+#include <attributes/SMARTattributeNameAndID.hpp> //SMARTattributeNameAndID
 
 /** Definitions of class (static) variables. */
 int SMARTmonitorService::s_socketFileDesc = 0;
 SMARTmonitorService * SMARTmonitorService::p_SMARTmonSvc;
 
+//TODO rename to "SMARTmonSrv"?? because this is only the server part
 SMARTmonitorService::SMARTmonitorService() 
   //: 
   /** https://computing.llnl.gov/tutorials/pthreads/#ConditionVariables :
@@ -120,35 +128,26 @@ void SMARTmonitorService::SendSupportedSMART_IDsToClient(const int clientSocketF
       }
     }
   }
-  LOGN("end" )
+  LOGN_DEBUG("end")
 }
 
 fastestUnsignedDataType SMARTmonitorService::BindAndListenToSocket()
 {
   fastestUnsignedDataType retCode = SMARTmonitorService::unset;
-  //TODO replace the following by "common_sourcecode/socket/bindAndListen.cpp"
-    //Code adapted from http://www.linuxhowtos.org/data/6/server.c
-  unsigned portNumber = m_socketPortNumber;
+  //Code adapted from http://www.linuxhowtos.org/data/6/server.c
   struct sockaddr_in server_address;
-  memset(&server_address, 0, sizeof(server_address)); /* Clear structure */
+  const enum OperatingSystem::BSD::sockets::InitSrvRslt initSrvRslt =
+    OperatingSystem::BSD::sockets::initSrv(
+      server_address,
+      m_socketPortNumber,
+      AF_INET,
+      SOCK_STREAM,
+      s_socketFileDesc
+      );
 
-  server_address.sin_family = AF_INET;
-  server_address.sin_addr.s_addr = INADDR_ANY;
-  server_address.sin_port = htons(portNumber);
-
-  //Erzeugt ein neues Socket bestimmten Types und alloziert hierfür Systemressourcen. Für die Identifizierung gibt die Funktion eine eindeutige Zahl vom Typ Integer zurück.
-  s_socketFileDesc = socket(AF_INET, SOCK_STREAM, 0);
   const int socketFileDesc = s_socketFileDesc;
-  
-  /** see/from 
-   * http://stackoverflow.com/questions/10619952/how-to-completely-destroy-a-socket-connection-in-c
-  *  : Avoid bind problems (errno = EADDRINUSE) */
-  int true_ = 1;
-  setsockopt(socketFileDesc, SOL_SOCKET, SO_REUSEADDR, & true_, sizeof(true_) );
-          
-  //Bindet den Socket an eine Socket Adressinformation, in der Regel an eine IP-Adresse und Port. Wird typischerweise auf Server-Seite benutzt.
-  if( bind(socketFileDesc, (struct sockaddr *) & server_address, 
-      sizeof(server_address) ) < 0)
+
+  if(initSrvRslt != OperatingSystem::BSD::sockets::boundToSocket)
   {
     char * errorMessageForErrno = NULL;
     //https://linux.die.net/man/2/bind
@@ -379,6 +378,7 @@ void SMARTmonitorService::BeforeWait()
 
   std::ostringstream oss;
   oss.precision(3); //Allow 3 digits right of decimal point
+  ///TODO make as function "createXMLdoc" and move to folder "XML"
   for(fastestUnsignedDataType currentDriveIndex = 0;
     currentDriveIndex < numberOfDifferentDrives;
     ++ currentDriveIndex, SMARTuniqueIDandValuesIter ++)
@@ -443,11 +443,20 @@ void SMARTmonitorService::BeforeWait()
             SMARTattrID];
         oss << "\"/>";
       }
-      //m_arSMARTrawValue[lineNumber];  
-    }
+      //m_arSMARTrawValue[lineNumber];
+    }///Ends loop over all S.M.A.R.T. attributes.
+    /** For data carriers that don't have S.M.A.R.T. ID 241 (Total Data
+     *  written) like HDD model "SAMSUNG HA200JC", firmware:"WS100-33" to
+     *  provide this info. It is useful if e.g. the computer doesn't react and
+     *  the LED shows access to the data carrier to know if it may be a read/
+     *  write error by knowing how much is read/written. */
+    /*oss << "<numBwrittenSinceOSstart=\"" <<
+      SMARTuniqueID.numBwrittenSinceOSstart << "\"/>";
+    oss << "<numB_readSinceOSstart=\"" <<
+      SMARTuniqueID.numB_readSinceOSstart << "\"/>";*/
     oss << "</data_carrier>";
     std::string xmlString = oss.str();
-    SendBytesToAllClients(xmlString);  
+    SendBytesToAllClients(xmlString);
   }
 }
 

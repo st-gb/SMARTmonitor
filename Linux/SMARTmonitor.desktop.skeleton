@@ -1,7 +1,10 @@
 [Desktop Entry]
 Encoding=UTF-8
 Exec=exePath
-Name=S.M.A.R.T. monitor by it-gebauer.de
+#This serves as keywords when typing (after "Windows" key) in (Ubuntu's/Linux
+# Mint's) Desktop manager. So include "S.M.A.R.T." as well as "SMART" to include
+# both forms.
+Name=S.M.A.R.T./SMART monitor by it-gebauer.de
 GenericName=S.M.A.R.T. monitor
 Type=Application
 Terminal=false

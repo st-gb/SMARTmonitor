@@ -16,6 +16,12 @@ set(SOURCE_FILE_PATHS
   ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorTaskBarIcon.cpp
 )
 
+if(UNIX)
+  #Force build date to be updated/date of this build. Update time of main dialog
+  # source file->is compiled with "__DATE__ preprocessor marcro at compile time.
+  execute_process(COMMAND touch ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorDialog.cpp)
+endif()
+
 set(CMakeScriptFilePaths
   ${CMakeScriptFilePaths}
   ${CMAKE_CURRENT_LIST_FILE}#this CMake file
