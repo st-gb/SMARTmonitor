@@ -69,7 +69,22 @@ struct SMARTuniqueID
   unitDataType units[numItems];
   enum states {/**real unit >= this value*/getMinUnit,getUnitTillValInc,
     /**get unit more accurately*/getUnit};
+  /**The "initial"/previous S.M.A.R.T. attribute raw values:
+   * It is written in guessUnit(...):after state[\p SMARTattrID] "getMinUnit"
+   * its element at index \p SMARTattrID has the value of \p SMARTrawVal when it
+   * increased the 1st time for \p SMARTattrID in this function.*/
   uint64_t m_prevSMARTrawVals[numItems];
+  /**(Other) metric values:used to calculate the unit for "raw value"
+   * (http://en.wikipedia.org/wiki/S.M.A.R.T.#ATA_S.M.A.R.T._attributes) of a
+   * S.M.A.R.T. attribute.
+   * Metric (value) may be for example:
+   * -time in milliseconds of uptime/since Operating System start
+   * -number of bytes written to data carrier since Operating System start
+   *
+   * This is the previous/"initial" (other) metric value:
+   * Its element at index \p SMARTattrID is set/written in guessUnit(...) if:
+   * -it has not been written in this function
+   * -\p SMARTrawVal has increased in this function for the 1st time */
   uint64_t m_otherMetricVal[numItems];
   uint64_t m_SMARTrawValDiffs[numItems];
   fastestUnsignedDataType state[numItems];
@@ -77,9 +92,17 @@ struct SMARTuniqueID
   //TODO values may wrap especially for # bytes read/written since OS start->
   // units get wrong?
   unitDataType otherMtrcValAtLastSMARTrawValInc[numItems];//TODO Show in UI?
-  /** For units long int is sufficient under 32 bit for # data read/written if
-   *  unit is <= 2/4 GB. */
+  /**For (calculated) S.M.A.R.T. "raw value" units "long int" data type is
+   * sufficient if this soure code is built/executed as 32 bit application and
+   * if unit value is <= 2 Gi(~2^31)/4 Gi(2^32)
+   * This usally holds for:
+   * -S.M.A.R.T. ID 241/242:Total Data Written/Read (max. 1 GiB known as unit
+   *  for model "HFS256G39TND-N210A", firmware="30001P10) */
+  /**Lowest calculated S.M.A.R.T. attribute "raw value" units within
+   * guessUnit(...)*/
   unitDataType lowerUnitBound[numItems];
+  /**Highest calculated S.M.A.R.T. attribute "raw value" units within
+   * guessUnit(...)*/
   unitDataType upperUnitBound[numItems];
   uint64_t numBwrittenSinceOSstart;//TODO use this value.
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
@@ -194,8 +217,45 @@ struct SMARTuniqueID
     }
   }
   
-  /**\param otherVal : Can be called with value directly from device or
-  * delivered to client/SMARTvalueProcessorBase(-derived).*/
+  inline void logCalc_dSMARTattrRawValUntVrtn(
+    const unitDataType calc_dSMARTattrRawValUntBnd[numItems],
+    const fastestUnsignedDataType SMARTattrID,
+    const double calc_dSMARTattrRawValUntVrtn,
+    unitDataType calc_dSMARTattrRawValUnit,
+    const uint64_t otherMetricDiff,
+    const uint64_t otherMetricVal,
+    const uint64_t SMARTrawValDiff,
+    const uint64_t SMARTrawVal
+    )
+  {
+    const char * p_boundType = calc_dSMARTattrRawValUntBnd == lowerUnitBound ?
+      "lower" : "upper";
+    LOGN_ERROR("For S.M.A.R.T. attribute with ID " << SMARTattrID
+      << "--heavy variation:" << calc_dSMARTattrRawValUntVrtn
+      << " (current calculated \"raw value\" unit:"
+      << calc_dSMARTattrRawValUnit
+      << " / current calculated \"raw value\" unit " << p_boundType << " bound:"
+      << calc_dSMARTattrRawValUntBnd[SMARTattrID] << ")"
+
+      << " other metric value diff:" << otherMetricDiff
+      << " (current other metric value:" << otherMetricVal
+      << " - \"initial\" other metric value:" << m_otherMetricVal[
+        SMARTattrID] << ")"
+
+      << " S.M.A.R.T. raw value diff:" << SMARTrawValDiff
+      << " (current S.M.A.R.T. raw value:" << SMARTrawVal
+      << " - \"initial\" S.M.A.R.T. raw value:" << m_prevSMARTrawVals[
+        SMARTattrID] << ")"
+      )
+  }
+
+  /**@param SMARTattrID S.M.A.R.T. attribute ID
+   * @param SMARTrawVal "raw value" for S.M.A.R.T. attribute with ID
+   *  \p SMARTattrID
+   * @param otherVal : (other) metric value to calculate the unit for the
+   *  \SMARTrawVal of S.M.A.R.T. attribute with ID \p SMARTattrID
+   *  Can be called with value directly from device or delivered to client/
+   *  SMARTvalueProcessorBase(-derived).*/
   void guessUnit(
     const fastestUnsignedDataType SMARTattrID,
     const uint64_t & SMARTrawVal,
@@ -281,6 +341,9 @@ struct SMARTuniqueID
       	* The higher the difference  the more accurate?
         * But on the other hand: this was not always the case. */
         if(SMARTrawVal > m_prevSMARTrawVals[SMARTattrID]){
+        /**The difference of S.M.A.R.T. raw values between:
+         * -\param SMARTrawVal
+         * -1st increase of \param SMARTrawVal inside _this_ function.*/
         uint64_t SMARTrawValDiff = SMARTrawVal -m_prevSMARTrawVals[SMARTattrID];
         if( SMARTrawValDiff > m_SMARTrawValDiffs[SMARTattrID]){
           m_SMARTrawValDiffs[SMARTattrID] = SMARTrawValDiff;
@@ -300,9 +363,14 @@ struct SMARTuniqueID
 //            otherMetricDiff = maxVal - m_otherMetricVal + otherVal;
 //          else
             otherMetricDiff = otherVal - m_otherMetricVal[SMARTattrID];
-          //TODO long int may not be sufficient ///e.g. #bytes written=4G / 4
-          long int unit = otherMetricDiff / SMARTrawValDiff;
-//          const long int unitDiff = units[SMARTattrID] - unit;
+          //TODO long int may not be sufficient
+          long int
+          /**The calculated S.M.A.R.T. attribute "raw value" unit for S.M.A.R.T.
+           * attribute ID \param SMARTattrID */
+           ///e.g. S.M.A.R.T. ID 241 Total Data Written=4 Gi/4
+            calc_dSMARTattrRawValUnit = otherMetricDiff / SMARTrawValDiff;
+//          const long int unitDiff = units[SMARTattrID] -
+//            calc_dSMARTattrRawValUnit;
         ///For the Power-On Time a calculation like this could be more accurate:
           /*if(SMARTattrID == SMARTattributeNames::PowerOnTime){
             if(unitDiff < 0)
@@ -311,34 +379,41 @@ struct SMARTuniqueID
               upperBound[SMARTattrID] -= unitDiff;
           }else*/
 #ifdef _DEBUG
-          double schwankung;//Need to init variable?  = 1.0;
+          double calc_dSMARTattrRawValUntVrtn;//Need to init variable?  = 1.0;
 #endif
           if(///unitDiff > 0)///New value lower than stored value.
-            unit < lowerUnitBound[SMARTattrID]){
+            calc_dSMARTattrRawValUnit < lowerUnitBound[SMARTattrID])
+          {
 #ifdef _DEBUG
             ///Starke Schwankungen/Ausreißer erkennen.
-            schwankung = (double) unit / (double) lowerUnitBound[SMARTattrID];
-            if(schwankung < 0.5 || schwankung > 1.5)
-              LOGN_ERROR("heavy fluctation of S.M.A.R.T. ID " << SMARTattrID
-                << " :" << schwankung <<
-                " current unit:" << unit <<
-                " previous lower unit:" << lowerUnitBound[SMARTattrID] )
+            calc_dSMARTattrRawValUntVrtn = (double) calc_dSMARTattrRawValUnit
+              / (double) lowerUnitBound[SMARTattrID];
+            //TODO make threshold configurable (via configuration files/command
+            // line etc.)
+            if(calc_dSMARTattrRawValUntVrtn < 0.5 ||
+              calc_dSMARTattrRawValUntVrtn > 1.5)//TODO Also check if higher?
+              logCalc_dSMARTattrRawValUntVrtn(lowerUnitBound, SMARTattrID,
+                calc_dSMARTattrRawValUntVrtn, calc_dSMARTattrRawValUnit,
+                otherMetricDiff, otherVal,
+                SMARTrawValDiff, SMARTrawVal);
 #endif
-            lowerUnitBound[SMARTattrID] = unit;
+            lowerUnitBound[SMARTattrID] = calc_dSMARTattrRawValUnit;
           }
-          else if(unit > upperUnitBound[SMARTattrID]){
+          else if(calc_dSMARTattrRawValUnit > upperUnitBound[SMARTattrID]){
 #ifdef _DEBUG
             /** Upper value for unit once was too high: 42G 861M 394k 142 for
              *  S.M.A.R.T. ID 241 (total data written) */
             ///Starke Schwankungen/Ausreißer erkennen.
-            schwankung = (double) unit / (double) upperUnitBound[SMARTattrID];
-            if(schwankung < 0.5 || schwankung > 1.5)
-              LOGN_ERROR("heavy fluctation of S.M.A.R.T. ID " << SMARTattrID
-                << " :" << schwankung <<
-                " current unit:" << unit <<
-                " previous upper unit:" << upperUnitBound[SMARTattrID] )
+            calc_dSMARTattrRawValUntVrtn = (double) calc_dSMARTattrRawValUnit /
+              (double) upperUnitBound[SMARTattrID];
+            if(calc_dSMARTattrRawValUntVrtn < 0.5 ||//TODO Also check if lower?
+              calc_dSMARTattrRawValUntVrtn > 1.5)
+              logCalc_dSMARTattrRawValUntVrtn(upperUnitBound, SMARTattrID,
+                calc_dSMARTattrRawValUntVrtn, calc_dSMARTattrRawValUnit,
+                otherMetricDiff, otherVal,
+                SMARTrawValDiff, SMARTrawVal);
 #endif
-            upperUnitBound[SMARTattrID] = unit;
+            upperUnitBound[SMARTattrID] = calc_dSMARTattrRawValUnit;
           }
 #ifdef _DEBUG
 /** Errorneous?:
@@ -352,17 +427,20 @@ struct SMARTuniqueID
           /** Can be shown in user interface to give an info when the SMART raw
            *  value increments next time. For this calculate:
            * otherVal - otherMtrcValAtLastSMARTrawValInc[SMARTattrID] */
-          otherMtrcValAtLastSMARTrawValInc[SMARTattrID] = unit;
+          otherMtrcValAtLastSMARTrawValInc[SMARTattrID] =
+            calc_dSMARTattrRawValUnit;
           //TODO unit for S.M.A.R.T. ID 242 was "256" in (G)UI although min.=
           // 502B and max=512B.
           // maybe due to the SMART raw value erratically decreased
           // for SMART ST9500420AS firmware:0003SDM1 (serial:5VJ1WXTF)
           // (see hardware/dataCarrier/SMARTattributeNames.h)
-          /** This prevents a value overflow in contrast to "(lowerBound[
-           *  SMARTattrID] + (upperBound[SMARTattrID])/2 but is slower.*/
-          unit = lowerUnitBound[SMARTattrID] + (upperUnitBound[SMARTattrID] - 
-            lowerUnitBound[SMARTattrID]) / 2;
-          AtomicExchange(&units[SMARTattrID], unit);
+          calc_dSMARTattrRawValUnit =
+            /**This prevents a value overflow for data type in contrast to
+            * "(lowerBound[SMARTattrID] + upperBound[SMARTattrID])/2"
+            * but is a bit slower because it hase 1 more arithmetic operation.*/
+            lowerUnitBound[SMARTattrID] +
+            (upperUnitBound[SMARTattrID] - lowerUnitBound[SMARTattrID]) / 2;
+          AtomicExchange(&units[SMARTattrID], calc_dSMARTattrRawValUnit);
         }
       }
 #ifdef _DEBUG
