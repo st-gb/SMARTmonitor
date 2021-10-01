@@ -5,6 +5,7 @@
 
 #${SGR_Cyan},${SGR_ColourReset}
 include(${cmnSrcDir}/CMake/SGR_terminalColours.cmake)
+message("${SGR_Cyan}Create Deb Pkg:begin${SGR_ColourReset}")
 
 #https://de.wikipedia.org/wiki/Filesystem_Hierarchy_Standard#/usr-Verzeichnisstruktur
 # : "/usr/local distributionsunabhängige lokale Hierarchie. Hier kann und soll
@@ -18,6 +19,9 @@ message("Executable name:" ${EXE_NAME})
 message("CPU archictecture:" ${CMAKE_SYSTEM_PROCESSOR})
 #Define distribution via "-DDistri=>name<"
 message("Packaging for Linux distribution:" ${Distri})
+#Colour only the variable name because its content may be empty. 
+message("${SGR_Cyan}CMAKE_INSTALL_PREFIX:\"${SGR_ColourReset}"
+  "${CMAKE_INSTALL_PREFIX}${SGR_Cyan}\"${SGR_ColourReset}")
 
 #Automatically prefixed with "/usr" -> extracted into "/usr/local/bin"
 set(exeInstallDir "local/bin"
@@ -73,7 +77,8 @@ else(${EXE_TYPE} STREQUAL "debPkg")
   else()
     message("EXE_NAME_WOUT_EXT: \"${EXE_NAME_WOUT_EXT}\"")
     set(CPACK_PACKAGE_NAME "${EXE_NAME_WOUT_EXT}_${CMAKE_SYSTEM_PROCESSOR}")
-    if(DEFINED Distri OR ${Distri} NOT STREQUAL "")
+    #"NOT" has to be left of condition.
+    if(DEFINED Distri OR NOT ${Distri} STREQUAL "")
       set(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}_${Distri}")
     endif()
     set(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}_${CMAKE_BUILD_TYPE}")
@@ -240,7 +245,10 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS ${libsDependendOn})
 
 SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Stefan Gebauer, M.Sc.Comp.Sc.")#required
 
-include(${cmnSrcDir}/CMake/getDateAsString.cmake)
+include(${cmnSrcDir}/CMake/getDateAsVersionString.cmake)
+getDateAsVersionString(dateAsVersionString)
+set(CPACK_PACKAGE_VERSION ${dateAsVersionString})
+message("CPACK_PACKAGE_VERSION:\"${CPACK_PACKAGE_VERSION}\"")
 
 #https://cmake.org/cmake/help/v3.3/module/CPack.html
 #How package name is created: CPACK_PACKAGE_FILE_NAME:
