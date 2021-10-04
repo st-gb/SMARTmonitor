@@ -1,3 +1,16 @@
+#Include this file via "source" command from another script.
+
+#Set "cmnSrcDir" via the "export" command in the shell, for example:
+# "export cmnSrcDir=/media/sg/devel1/SourceCodeManagement/common_sourcecode"
+filePath=$cmnSrcDir/terminal/SGR_colors.sh
+. $filePath #Include file for "$SGRcyan","$SGRreset"
+inclFileRtrnVal=$?
+if [ $inclFileRtrnVal -ge 1 ]; then
+  #Only warning because continuing is possible, colours are only missing.
+  echo -e "Warning:\\033[33mFailed to include file \"$filePath\";\"cmnSrcDir\""\
+    "(environment variable):\"\\033[0m$cmnSrcDir\\033[33m\"\\033[0m"
+fi
+
 #param 1: string in file to replace
 #param 2: string to replace param 1 with
 #param 3: file path for replacing text in
@@ -22,8 +35,10 @@ escapedReplaceBy=`echo $replaceByStr | sed 's,/,\\\/,g'`
 echo "sed-escaped string for \"$replaceByStr\":
  $escapedReplaceBy"
 sedReplaceStr="s/$strToReplace/$escapedReplaceBy/g"
-echo "sed replace string for \"$strToReplace\":
- $sedReplaceStr"
+
+#"-e" to enable terminal colours
+echo -e "$sigOfThisFunction--sed replace string for \"$strToReplace\":
+ $SGRcyan $sedReplaceStr $SGRreset"
 
 #Following has to be executed in the directory of the .skeleton file?
 #TODO Only replace if it is not within a comment
