@@ -332,8 +332,13 @@ int ConnectToSocketNonBlocking(
         errNo = errno;
       }
     }
-    else{/// errno not EINPORGRESS
-      errNo = errno;
+/**Preparing to connect/calling connect(...) failed<=>"errno"<>EINPROGRESS in
+ * Linux/WSAGetLastError()<>WSAEWOULDBLOCK in Microsoft Windows.*/
+    else{
+/**Do not rely on "errno" because in >common_sourcecode<\OperatingSystem\Windows
+ * \BSD_sockets\isNonBlckngCnnctRtrnCode.h for OperatingSystem::BSD::sockets::
+ * isNonBlckngCnnctRtrnCode() errno was 0 although "WSAEFAULT" means an error.*/
+//      errNo = errno;
 //     connStep = connect;
       result = -1;
     }
