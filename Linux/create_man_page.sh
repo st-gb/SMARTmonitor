@@ -1,8 +1,15 @@
 #!/bin/bash
+##Line above:"shebang" http://en.wikipedia.org/wiki/Shebang_(Unix)
+##Interpret this file with "Bash" rather with "sh" (Bourne) shell because of
+## "source" command.
 #The "source" command is used in this file->needs "bash"?! :
 #https://stackoverflow.com/questions/4732200/replacement-for-source-in-sh
 
-numCmdLneArgs=$#
+#num=number:http://www.abbreviations.com/abbreviation/number
+#Cmd=command:http://www.abbreviations.com/abbreviation/command
+#Ln=line:http://www.abbreviations.com/abbreviation/Line
+#Args=argments:http://www.abbreviations.com/abbreviation/arguments
+numCmdLnArgs=$#
 
 filePathOfthisScript=$(readlink -f $0) #Used in both branches.
 if [ $numCmdLneArgs -le 2 ]

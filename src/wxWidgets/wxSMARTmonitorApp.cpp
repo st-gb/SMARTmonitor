@@ -271,6 +271,7 @@ bool wxSMARTmonitorApp::OnInit()
 //    if( m_SMARTaccess.GetNumberOfSMARTparametersToRead() > 0 )
     {
   #ifdef __MINGW32__
+      //TODO Hides a "CMD" console although not started by this application?
       HideMinGWconsoleWindow();
   #endif
     }
