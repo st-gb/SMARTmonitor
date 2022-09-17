@@ -8,7 +8,7 @@
 /** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
  *  winsock2.h before windows.h [-Wcpp]" */
 #include <OperatingSystem/BSD/socket/socket.h>///CloseSocket()
-#include <Controller/character_string/stdtstr.hpp>///GetStdWstring(...)
+#include <dataType/charStr/stdtstr.hpp>///GetStdWstring(...)
 #include <Controller/Logger/LogFileAccessException.hpp>
 typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
@@ -694,7 +694,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
     if(p_getSMARTvaluesFunction ==
         //p_SMARTmonitorBase->GetSMARTattrValsFromSrv()
         & SMARTmonitorBase::GetSMARTattrValsFromSrv )
-      OperatingSystem::BSD::sockets::CloseSocket();
+      OperatingSystem::BSD::sockets::End();
   }
   }///E.g. if rolling file appender and permission denied for the new file.
   catch(LogFileAccessException & lfae){

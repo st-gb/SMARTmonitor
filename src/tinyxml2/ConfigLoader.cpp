@@ -6,7 +6,7 @@
 #include "ConfigLoader.hpp"///this class's tinyxml2::ConfigLoader declaration
 ///FileSystem::GetAbsolutePathA(...)
 #include <FileSystem/File/GetAbsoluteFilePath.hpp>
-#include <Controller/character_string/ConvertStdStringToTypename.hpp>
+#include <dataType/charStr/ConvertStdStringToTypename.hpp>
 #include <tinyxml2.h>///class tinyxml2::XMLElement
 #include <SMARTmonitorBase.hpp>
 #include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware

@@ -33,7 +33,9 @@ class wxSMARTmonitorApp
 {
 public:
   wxTimer m_wxtimer;
+#ifdef TU_Bln361095useClntSrv
   ConnectToServerDialog * m_p_cnnctToSrvDlg/*(pch, timeOut )*/;
+#endif
   enum IDs {TIMER_ID = 0};
   static wxIcon s_SMARTokIcon;
   static wxIcon s_SMARTstatusUnknownIcon;
@@ -47,14 +49,18 @@ public:
   ~wxSMARTmonitorApp();
 
   std::set<wxTopLevelWindow *> openTopLevelWindows;
+#ifdef TU_Bln361095useClntSrv
   void AfterConnectToServer(int connectResult);
   void BeforeConnectToServer() {};
+#endif
   void BeforeWait();
   void ChangeConnectionState(enum serverConnectionState newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
+#ifdef TU_Bln361095useClntSrv
   void DisableSrvUIctrls();
   void UnCnnctdToSrvUIctrls();
+#endif
   void EndWaitTillCnnctTimer(){
     m_wxtimer.Stop();//stop connect timer in main window
     gs_dialog->SetTitle(GetAppDisplayName() );
@@ -81,7 +87,9 @@ public:
   void SetGetSMARTvalsMode(const enum GetSMARTvalsMode);
   void setUI(const enum serverConnectionState);
   void ShowConnectionState(const char * const pch, int timeOut);
+#ifdef TU_Bln361095useClntSrv
   void ShwCnnctToSrvrDlg(const std::string &);
+#endif
   void ShowMessage(const char * const ) const;
   void ShowMessage(const char * const, enum MessageType::messageTypes msg) const;
   wxIcon ShowSMARTokIcon();
@@ -90,15 +98,19 @@ public:
   void ShowIcon(const wxIcon & icon, const wxString & message );
   void ShowStateAccordingToSMARTvalues(const SMARTvalueRating
     entireSMARTvalRating);
+#ifdef TU_Bln361095useClntSrv
   ///Timeout/interval before attempting to connect to server.
   void startSrvCnnctCntDown();
   /** timeout for non-blocking connect. After timeout elapses the select(...)
    * function returns. */
   void StartSrvCnnctnAttmptCntDown(const fastestUnsignedDataType);
+#endif
   void ReBuildUserInterface();
   
   DECLARE_EVENT_TABLE()
+#ifdef TU_Bln361095useClntSrv
   void OnAfterConnectToServer(wxCommandEvent &);
+#endif
   void OnChangeState(wxCommandEvent &);
   void OnCnnctToSrvr(wxCommandEvent &);
   void OnShowMessage(wxCommandEvent & event);

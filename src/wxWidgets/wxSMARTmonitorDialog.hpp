@@ -41,7 +41,11 @@ public:
 //  SMARTaccess_type & m_SMARTaccess;
   wxCondition * m_p_wxCloseCondition;
   wxMutex m_wxCloseMutex;
-  wxButton * m_p_ConnectAndDisconnectButton;
+#ifdef TU_Bln361095useClntSrv
+  ///cnct=connect:http://www.allacronyms.com/connect/abbreviated
+  ///Btn=button:http://www.abbreviations.com/abbreviation/Button
+  wxButton * m_p_cnctAndDiscnctBtn;
+#endif
   SMARTdialog(const wxString & title//,
     //const wxWidgets::wxSMARTvalueProcessor & wxSMARTvalueProcessor
     //const SMARTvalueProcessorBase & SMARTvalueProcessor
@@ -51,9 +55,11 @@ public:
   void buildUI();
   void DrctSMARTaccssUIctrls();
   void NoDrctSMARTaccessUIctrls();
+#ifdef TU_Bln361095useClntSrv
   void UnCnnctdToSrvUIctrls();
   void DisableCnnctAndDiscnnctBtn(){
-    m_p_ConnectAndDisconnectButton->Enable(false); }
+    m_p_cnctAndDiscnctBtn->Enable(false); }
+#endif
   void EnableShowSupportedSMART_IDs();
   void CreatePerDiskUIctrls(wxSizer * p_sizer);
   void disableDrctSMARTaccss(const wxString & cause){
@@ -87,7 +93,9 @@ protected:
   void OnOK(wxCommandEvent& event);
   void OnExit(wxCommandEvent& event);
   void OnShowSupportedSMART_IDs(wxCommandEvent& WXUNUSED(event));
+#ifdef TU_Bln361095useClntSrv
   void OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event));
+#endif
   void OnReBuildUI(wxCommandEvent &);
   void OnUpdateSMARTparameterValuesInGUI(wxCommandEvent& event);
   void OnCloseWindow(wxCloseEvent& event);

@@ -8,7 +8,9 @@
 ///Stefan Gebauer's common_sourcecode repository header files:
 /** Include at 1st in Windows build to avoid:
  * "#warning Please include winsock2.h before windows.h" */
+#ifdef TU_Bln361095useBSDskt
 #include <OperatingSystem/BSD/socket/prepCnnctToSrv.h>///prepCnnctToSrv(...)
+#endif
 #include <OperatingSystem/multithread/nativeThreadType.hpp>///nativeThread_type
 
 ///This repository's files:
@@ -16,6 +18,15 @@
 #include <UserInterface/columnIndices.hpp>
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater
 #include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
+
+/**Define user interface control character strings here to use for various user
+ * interfaces like wxWidgets, ncurses etc.*/
+///cnct=connect:
+///Btn=button:
+#define TU_Bln361095cnctBtnANSIstr "Connect..."
+#define TU_Bln361095discnctBtnANSIstr "Disconnect"
+#define TU_Bln361095cnctBtnTltpANSIstr "connect to BSD sockets server for "\
+  "getting S.M.A.R.T. data"
 
 /** Base class for all BSD socket clients that receive data from a.S.M.A.R.T.
  server */
@@ -58,52 +69,70 @@ public:
   enum serverConnectionState {cnnctdToSrv, uncnnctdToSrv, connectToSrv,
     /**to diplay the (local) time of last S.M.A.R.T. value update*/ valUpd8,
     drctSMARTaccss, endedDrctSMART};
+#ifdef TU_Bln361095useClntSrv
   enum transmission { successfull = 0, readLessBytesThanIntended, unsetTransmResult };
   enum TransmissionError { numBytesToReceive, SMARTdata, SMARTparameterValues};
+#endif
   
   enum serverConnectionState m_srvrCnnctnState = uncnnctdToSrv;
+#ifdef TU_Bln361095useBSDskt
   int m_socketFileDesc;
+#endif
+#ifdef TU_Bln361095useClntSrv
   fastestUnsignedDataType m_srvCnnctnCntDownInSec;
   fastestUnsignedDataType m_serverConnectionState;
   
   void AfterGetSMARTvaluesLoop(int getSMARTvaluesResult);
+#endif
   /** E.g. show a dialog that enables cancelling of connection in implementation. */
   virtual void BeforeConnectToServer()/**Implement for not to override by a 
     small test program*/{};
   virtual void GetTextFromUser(const char * label, std::string & ) { };
+#ifdef TU_Bln361095useClntSrv
   ///Called after connection attempt to the server.(either from the thread that
   ///prepared the server connection or from another). So UI operations should 
   /// be ensured to run in UI thread via events etc..)
   ///Can be used to hide a "connect to server" window.
   virtual void AfterConnectToServer(int connectResult) { };
   void HandleConnectionError(const char * hostName, const int connectResult);
+#endif
+#ifdef TU_Bln361095useInterProcComm
   //TODO could use ByteArray datatype here
   void GetSMARTdataViaXML(const uint8_t SMARTvalues[], const
     fastestUnsignedDataType numBytesToRead, SMARTuniqueIDandValues &);
+#endif
   /**Called
    * -after a transmission error
    * -after connection to server established
    * -update of (only) S.M.A.R.T. values
    * -if a user canceled the connection via User Interface */
   virtual void ChangeConnectionState(enum serverConnectionState newState){}
+#ifdef TU_Bln361095useClntSrv
   fastestUnsignedDataType CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc);
   void ConnectToServer();
   fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
+#endif
+#ifdef TU_Bln361095useInterProcComm
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
     uint8_t * xmlDataByteArray,
     fastestUnsignedDataType numBytesToRead,
     dataCarrierID2supportedSMARTattrMap_type & supportedSMARTattributess
     );
+#endif
   void EndUpdateUIthread();
+#ifdef TU_Bln361095useClntSrv
   fastestUnsignedDataType GetSupportedSMARTidsFromServer();
   fastestSignedDataType ReadNumFollowingBytes();
   fastestUnsignedDataType GetSMARTattrValsFromSrv(//std::set<SMARTuniqueIDandValues> & 
     );
+#endif
   bool isAsyncCnnct() const {return asynCnnct;}
+#if TU_Bln361095useInterProcComm
   ///Should be called in user interface thread? (because it calls functions to 
   /// create the user interface)
   void GetSMARTvaluesAndUpdateUI();
   static DWORD GetSMARTvaluesAndUpdateUIthreadFn(void *);
+#endif
 #ifdef directSMARTaccess
   bool getsSMARTdataDrctly() const{
     return m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction ==
@@ -114,19 +143,24 @@ public:
 //    return false;
   }
 #endif
+#if TU_Bln361095useBSDskt
   void HandleTransmissionError(enum TransmissionError,
     const fastestUnsignedDataType numBread,
     const fastestUnsignedDataType numBtoRead,
     const int rdErrno);
-  
+#endif
   virtual void SetCurrentAction(enum CurrentAction) = 0;
+#ifdef TU_Bln361095useClntSrv
   void SetServiceAddress(const std::string & str) {
     m_stdstrServerAddress = str;
   }
+#endif
   void SetSMARTattribIDandNameLabel();
+#ifdef TU_Bln361095useClntSrv
   virtual void ShwCnnctToSrvrDlg(const std::string &){};
   virtual void StartSrvCnnctnAttmptCntDown(
     const fastestUnsignedDataType countDownInSeconds) {}
+#endif
   /** Operations that only need to be done once after connection to the service
       is established. 
       "virtual" is needed in order to generate a table of virtual functions. */
