@@ -66,7 +66,9 @@ wxIcon wxSMARTmonitorApp::s_SMARTokIcon;
 wxIcon wxSMARTmonitorApp::s_SMARTstatusUnknownIcon;
 wxIcon wxSMARTmonitorApp::s_SMARTwarningIcon;
 
-//from https://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case
+/**from
+ * http://wiki.wxwidgets.org/Custom_Events_in_wx2.8_and_earlier#The_Normal_Case
+ */
 //const wxEventType AfterConnectToServerEventType = wxNewEventType();
 ///Cnct=connect:http://www.allacronyms.com/connect/abbreviated
 ///Srv=server:http://www.abbreviations.com/abbreviation/server
@@ -249,7 +251,10 @@ bool wxSMARTmonitorApp::OnInit()
   GetSMARTstatusUnknownIcon(s_SMARTstatusUnknownIcon);
   GetSMARTwarningIcon(s_SMARTwarningIcon);  
 
-  ProcessCommandLineArgs(); /** May display messages. */
+  const fastestUnsignedDataType prcssCmdLneArgsRtrnVal =
+    ProcessCommandLineArgs(); /** May display messages. */
+  if(prcssCmdLneArgsRtrnVal == SMARTmonitorBase::calledHelp)
+    return false;
   const bool succInitedLogger = InitializeLogger();
   if(! succInitedLogger)
 //TODO Crashes at ntdll!RtlImageDirectoryEntryToData ()
@@ -596,6 +601,8 @@ void wxSMARTmonitorApp::ShowMessage(
   }
 }
 
+//TODO to avoid double code/for unification better call ShowMessage(
+// const char * const str, MessageType::info) than to implement the same!?
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 {
   unsigned currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
