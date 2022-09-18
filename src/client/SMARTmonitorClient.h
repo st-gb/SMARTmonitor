@@ -171,7 +171,7 @@ public:
   void setIDandLabel(const SMARTuniqueID &,
     const fastestUnsignedDataType SMARTattrID, void * data);
   virtual void setUI(const enum serverConnectionState) = 0;
-  enum SMARTvalueRating upd8rawAndH_andTime(
+  SMARTvalRatngTyp upd8rawAndH_andTime(
     const fastestUnsignedDataType SMARTattrID,
     const SMARTuniqueIDandValues &,
     void * data,
@@ -189,7 +189,8 @@ public:
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
-    const enum SMARTvalueRating, /**e.g. pointer to list ctrl */void * data){}
+    const SMARTvalRatngTyp,
+    /**e.g. pointer to list ctrl */void * data){}
   virtual void ShowStateAccordingToSMARTvalues(const enum SMARTvalueRating){}
   std::string m_stdstrServerAddress;
 protected:

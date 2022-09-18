@@ -17,18 +17,89 @@ enum SMARTvalueRating{noCriticalValue,SMARTvalueOK,SMARTvalueWarning,unknown};
 
 using namespace SMARTattributeNames;///enum SMARTattributeNames
 
+/**val=VALue: http://www.abbreviations.com/abbreviation/Value
+ * rtg=rating: http://www.abbreviations.com/abbreviation/Rating
+ * Typ=type: http://www.allacronyms.com/type/abbreviated */
+typedef/**If type is quotient between current value and threshold:use floating
+ * point type for example*/
+  float SMARTvalRatngTyp;
+
+#define SMARTvalAbs1RngWarnThresh 0.5f///Middle between fully OK and threshold
+
+///Mfr=ManuFactureR:http://www.abbreviations.com/abbreviation/Manufacturer
+///Rtg=RaTinG:http://www.abbreviations.com/abbreviation/rating
+namespace MfrRtg{
+/**Curr=CURRent:http://www.abbreviations.com/abbreviation/Current
+ * Val=VALue: http://www.abbreviations.com/abbreviation/Value
+ * Thresh=THRESHold: http://www.allacronyms.com/threshold/abbreviated */
+namespace nrmlzdCurrValAndThresh{
+///Mns=MiNuS
+///Rng=RaNGe:http://www.abbreviations.com/abbreviation/range
+inline float Get1ToMns1Rng(
+  const unsigned SMARTattrID,
+  const long int nrmlzdCurrVal,
+  const long int nrmlzdThresh)
+{
+  const long int divident = SMARTvalue::maxNrmlzdVals[SMARTattrID]-nrmlzdThresh;
+  if(divident == 0)///Avoid division by 0
+    return 0.0f;
+  else{
+    const long int divisor = nrmlzdCurrVal - nrmlzdThresh;
+    /**Use gradation (percent value) to make color between light red and
+     * dark red or red and dark violet.
+     * examples:
+     * (100-10)/(100-10)=90/90=1
+     * (99-10)/(100-10)=89/90~=0,98
+     * (50-0)/(100-0)=50/100=0.5
+     * (40-10)/(100-10)=30/90=0.period3
+     * (11-10)/(100-10)=1/90=0,0period1
+     * (10-10)/(100-10)=0/90=0.0
+     * (5-10)/(100-10)=-5/90=−0,0556
+     * (0-10)/(100-10)=-10/90=−0,period1 */
+    const float quotient =
+     (float)divisor///Many normalized current S.M.A.R.T. values start at 100
+      / (float) divident;
+    float scaledQuotient;
+    if(quotient >= 0.0f)
+      scaledQuotient = quotient;///To test errors: multiply with * -1.0f
+  /** http://en.wikipedia.org/wiki/S.M.A.R.T.#ATA_S.M.A.R.T._attributes :
+   * "threshold values beyond which attributes should not pass"*/
+    if(quotient < 0.0f)///Normalized current value is below threshold
+      scaledQuotient = quotient
+      ///Span to range 0--1.0
+      * (float)divident/(float)nrmlzdThresh;
+    return scaledQuotient;
+  }
+}
+}}///End namespaces
+
 class SMARTvalueRater
 {
 public:
-  /** Is called often: for every S.M.A.R.T. ID of every data carrier in an
+  /** @brief get rating for @see param SMARTattrID according to current
+   *   normalized value or @see realCircaRawValue
+   * Is called often: for every S.M.A.R.T. ID of every data carrier in an
    *  interval (every x seconds) -> make as member function in header file (
-   *  implicitely inline). */
-  enum SMARTvalueRating GetSMARTvalueRating(
+   *  implicitely inline).
+   * @return the higher the less critical.
+   *  1.0:fully OK/no warning
+   *  < 1.0:above or same as threshold
+   *  < 0.0:exceeds threshold->critical/warning/error
+   *  -1.0:worst value*/
+  SMARTvalRatngTyp GetSMARTvalueRating(
     fastestUnsignedDataType SMARTattrID,
     const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
     const uint64_t realCircaValue,
     const ModelAndFirmware * p_modelAndFirmware)
   {
+    const SMARTvalue & currSMARTval = SMARTuniqueIDandVals.m_SMARTvalues[
+      SMARTattrID];
+    const long int nrmlzdCurrVal = currSMARTval.GetNrmlzdCurrVal();
+    const long int nrmlzdThresh = currSMARTval.GetNrmlzdThresh();
+    const float scaledQuotient = MfrRtg::nrmlzdCurrValAndThresh::Get1ToMns1Rng(
+      SMARTattrID, nrmlzdCurrVal, nrmlzdThresh);
+    return scaledQuotient;
+
     switch( (enum SMARTattributeNames) SMARTattrID)
     {
     case ReadErrorRate:

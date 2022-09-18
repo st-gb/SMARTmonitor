@@ -131,6 +131,18 @@ void getSMARTrawValueCallback(
     pSMARTacc->possiblyAutoDetectUnit(SMARTattrID, rawSMARTattrVal, 
       (SMARTuniqueID &) sMARTuniqueID, p_libatasmart_attrHelper->device);
     cpySMARTattrThreadSafe(sMARTvalue, rawSMARTattrVal);
+  /**The following values are set by manufacturer (in drive controller?). They
+   * are important for detecting if the number of reallocated sectors is
+   * exceeded for example. Especially if this information is not known (from
+   * datasheets) then we must rely on how far the "current_value" is away from
+   * the "threshold".*/
+    AtomicExchange(sMARTvalue.GetNrmlzdThresh(),
+      p_SkSmartAttributeParsedData->threshold);
+    //TODO When debugging "current" value gotten via direct S.M.A.R.T. access in
+    // frontend code via was once 200 for reallocated sectors although it is
+    // only 100
+    AtomicExchange(sMARTvalue.GetNrmlzdCurrVal(),
+      p_SkSmartAttributeParsedData->current_value);
   }
   else
     AtomicExchange( (long int *) & p_sMARTuniqueIDandValues->

@@ -69,6 +69,7 @@ SMARTmonitorBase::SMARTmonitorBase()
 {
   //TODO also called in service_main.cpp: test if no error in Linux service
   LogLevel::CreateLogLevelStringToNumberMapping();
+  SMARTvalue::setMaxNrmlzdVals();
   /** For calling ::UpdateSMARTparameterValuesThreadFunc(void *) */
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
 #ifdef directSMARTaccess

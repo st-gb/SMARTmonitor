@@ -1,7 +1,7 @@
-/** Author: Stefan gebauer, M.Sc. Comp.Sc.
- * Created on 20. November 2016, 17:43 */
+/**Author:Stefan Gebauer,Computer Science Master(TU Berlin matric.number 361095)
+ * Created on 20. November 2016, 17:43 UTC+1*/
 
-///from Stefan Gebauer's common_sourcecode git repository:
+///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
 #include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 #include <hardware/CPU/atomic/memory_barrier.h>///memory_barrier(...)
@@ -15,7 +15,6 @@
 #include <SMARTvalueFormatter.hpp>
 #include <UserInterface/UserInterface.hpp>///class UserInterface
 
-///Stefan Gebauer's common_sourcecode repository header files:
 ///Standard C(++) header files:
 #include <stdint.h> //uint8_t
 ///http://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/close?view=vs-2019
@@ -39,12 +38,18 @@ char * SMARTmonitorClient::s_columnAttriuteNames [] =
 GCC_DIAG_ON(write-strings)
 SMARTvalueRater SMARTmonitorClient::s_SMARTvalueRater;
 
-SMARTmonitorClient::SMARTmonitorClient() 
-#ifdef TU_Bln361095useClntSrv
-  : m_srvCnnctnCntDownInSec(60)
+SMARTmonitorClient::SMARTmonitorClient()
+#if defined TU_Bln361095useClntSrv || defined _DEBUG
+  :
+#endif
+#if defined TU_Bln361095useClntSrv
+  m_srvCnnctnCntDownInSec(60)
+#endif
+#if defined TU_Bln361095useClntSrv && defined _DEBUG
+  ,
 #endif
 #ifdef _DEBUG
-  , GetSMARTvalsAndUpd8UIthreadID(0)
+  GetSMARTvalsAndUpd8UIthreadID(0)
 #endif
 {
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
@@ -202,7 +207,8 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
 #endif
   //memory_barrier(); //TODO: not really necessary??
   
-  enum SMARTvalueRating sMARTvalueRating, entireSMARTvalRating = SMARTvalueOK;
+  SMARTvalRatngTyp SMARTvalRatng;
+  enum SMARTvalueRating entireSMARTvalRating = SMARTvalueOK;
   /** Loop over data carriers. */
   //TODO (only) 1 item here when wxGUI started as root?
   for(fastestUnsignedDataType currentDriveIndex = 0;
@@ -228,9 +234,10 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
       const SMARTuniqueIDandValues & sMARTuniqueIDandVals = 
         *SMARTuniqueIDandValuesIter;
 #endif
-      sMARTvalueRating = upd8rawAndH_andTime(SMARTattrID,
+      SMARTvalRatng = upd8rawAndH_andTime(SMARTattrID,
         *SMARTuniqueIDandValuesIter, NULL, p_currModelAndFirmware);
-      if(sMARTvalueRating == SMARTvalueWarning)
+      if(///Negative if normalized current value < normalized threshold
+        SMARTvalRatng < SMARTvalAbs1RngWarnThresh)
         entireSMARTvalRating = SMARTvalueWarning;
     }
   }
@@ -442,14 +449,14 @@ inline void useDeterminedUnits(
 
 /** \param data e.g. a list control. A "void" pointer (alternative: subclassung)
  * to enable different UI control classes .*/
-enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
+SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
   const fastestUnsignedDataType SMARTattrID,
   const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
   void * data,
   const ModelAndFirmware * p_modelAndFirmware)
 {
   LOGN_DEBUG("begin--S.M.A.R.T. attribute ID:" << SMARTattrID)
-  enum SMARTvalueRating sMARTvalueRating;
+  SMARTvalRatngTyp sMARTvalueRating;
   uint64_t SMARTrawVal;
   //TODO attribute IDs of SMART values to observe may not be a subset of
   // SMART attributes in config file!
@@ -531,12 +538,29 @@ enum SMARTvalueRating SMARTmonitorClient::upd8rawAndH_andTime(
        std_ossRawSMARTval << SMARTrawVal;
      }
     stdstrUnit = std_ossUnit.str();
+    std::ostringstream std_ossNrmlzdCurrSMARTval, std_ossNrmlzdThreshVal;
+    std_ossNrmlzdCurrSMARTval << sMARTvalue.GetNrmlzdCurrVal();
+    std_ossNrmlzdThreshVal << sMARTvalue.GetNrmlzdThresh();
     //TODO pass warning or OK fpr critical SMART IDs to function
     //e.g. use highmost bits of SMARTattributeID for that purpose
       //std::numeric_limits<>::min();
 //          SMARTattributeID &= 2 << (numSMARTattributeIDbits - 1)
     sMARTvalueRating = s_SMARTvalueRater.GetSMARTvalueRating(SMARTattrID,
       SMARTuniqueIDandVals, realCircaValue, p_modelAndFirmware);
+    SetAttribute(
+      sMARTuniqueID,
+      SMARTattrID,
+      ColumnIndices::nrmlzdCurrVal/**column #/index*/,
+      std_ossNrmlzdCurrSMARTval.str(),
+      sMARTvalueRating,
+      data);
+    SetAttribute(
+      sMARTuniqueID,
+      SMARTattrID,
+      ColumnIndices::nrmlzdThresh/**column #/index*/,
+      std_ossNrmlzdThreshVal.str(),
+      sMARTvalueRating,
+      data);
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,

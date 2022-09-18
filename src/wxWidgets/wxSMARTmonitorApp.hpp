@@ -81,7 +81,7 @@ public:
     //TODO exchange enum with fastestUnsignedDataType for performance?
     const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
-    const enum SMARTvalueRating, void * data);
+    const SMARTvalRatngTyp, void * data);
   void SetCurrentAction(enum CurrentAction currAction);
   void SetGetDirectSMARTvals();
   void SetGetSMARTvalsMode(const enum GetSMARTvalsMode);

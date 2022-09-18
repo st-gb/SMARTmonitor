@@ -7,10 +7,12 @@
 #include "hardware/CPU/atomic/AtomicExchange.h"
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN())
 
+///Static (class) variables definitions:
 /** E.g. 32 bit Linux: size of long int is 4 bytes*/
 fastestUnsignedDataType SMARTvalue::s_sizeOfLongIntInBytes = sizeof(long int);
 fastestUnsignedDataType SMARTvalue::s_numTimesLongIntFitsInto8Bytes = 8/
   s_sizeOfLongIntInBytes;
+ATA3Std_NrmlzdValTyp SMARTvalue::maxNrmlzdVals[];
 
 /**\brief does all copy operations necessary for assignment operator or copy
  * constructor */

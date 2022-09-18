@@ -33,15 +33,25 @@ namespace wxWidgets
     
     //TODO is "SetId" needed at all?
     column.SetId(ColumnIndices::SMART_ID);
-    column.SetText( _("ID") );
+    column.SetText(wxT("ID") );
     //TODO calculate width needed for 3 digits ("255" is the highest SMART ID)
     //TODO is 0 under Windows.
     const int letterWidth = textControlFont.GetPixelSize().x;
     column.SetWidth(letterWidth * 4);
     InsertColumn(ColumnIndices::SMART_ID, column);
 
+    column.SetId(ColumnIndices::nrmlzdCurrVal);
+    column.SetText(wxT("current value(normalized)") );
+    column.SetWidth(50);
+    InsertColumn(ColumnIndices::nrmlzdCurrVal, column);
+
+    column.SetId(ColumnIndices::nrmlzdThresh);
+    column.SetText(wxT("threshold value(normalized)") );
+    column.SetWidth(50);
+    InsertColumn(ColumnIndices::nrmlzdThresh, column);
+
     column.SetId(ColumnIndices::SMARTparameterName);
-    column.SetText( _("parameter name") );
+    column.SetText(wxT("parameter name") );
     column.SetWidth(200);
     InsertColumn(ColumnIndices::SMARTparameterName, column);
 
@@ -72,11 +82,50 @@ namespace wxWidgets
     InsertColumn(ColumnIndices::lastUpdate, column);
   }
 
+inline void GetClrAccordng1toMns1Rng(const SMARTvalRatngTyp SMARTvalRatng,
+  wxColour & color)
+{
+  if(SMARTvalRatng < 0.0f){///current value < threshold->make red
+    /**Should be at least medium red to signalize/visualize error so it can be
+     *  seen easer by human eyes.*/
+    ///Worst rating value: -1.0 => with worst rating it gets dark red.
+    const wxColourBase::ChannelType blueAndGreen = 127 - SMARTvalRatng*-127.0f;
+  /** http://docs.wxwidgets.org/3.0/classwx_colour.html : red, green, blue,
+   * transparent */
+    color.Set(255, blueAndGreen, blueAndGreen);
+  }
+  else{/**Between fully OK and threshold=>color between green and yellow meaning
+    * OK or warning*/
+/**http://en.wikipedia.org/wiki/Yellow : "sRGB^B (r, g, b)	(255, 255, 0)"
+ * "B: Normalized to [0–255] (byte)" */
+/**http://en.wikipedia.org/wiki/Orange_(colour):"sRGB^B (r, g, b)	(255, 165, 0)"
+ * "B: Normalized to [0–255] (byte)" */
+    wxColourBase::ChannelType red = 255-(int)(255.0f * SMARTvalRatng /*/FLT_MAX*/);
+  /** http://docs.wxwidgets.org/3.0/classwx_colour.html : red, green, blue,
+   * transparent */
+    color.Set(red,/**green*/255, 0);
+  }
+}
+
+inline void GetClrAccordng1toEnum(const enum SMARTvalueRating SMARTvalRatng,
+  wxColour & color)
+{
+  switch(SMARTvalRatng){
+   case SMARTvalueOK:
+    color = *wxGREEN;
+    break;
+   case SMARTvalueWarning:
+    color = *wxYELLOW;
+    break;
+//    default:
+  }
+}
+
 void SMARTtableListCtrl::SetSMARTattribValue(
   fastestUnsignedDataType SMARTattributeID,
   fastestUnsignedDataType columnIndex,
   const wxString & wxstrValue,
-  const enum SMARTvalueRating sMARTvalueRating)
+  const SMARTvalRatngTyp SMARTvalRatng)
 {
   fastestUnsignedDataType lineNumber = m_SMARTattribIDtoLineNumber[
     SMARTattributeID];
@@ -84,29 +133,21 @@ void SMARTtableListCtrl::SetSMARTattribValue(
     lineNumber, //long index
     columnIndex /** column #/ index */,
     wxstrValue);
+  wxColour color;
+  GetClrAccordng1toMns1Rng(SMARTvalRatng, color);
   ///Only do it once/for 1 attribute/column
   if(columnIndex == ColumnIndices::rawValue)
-    switch(sMARTvalueRating)
-      case SMARTvalueOK:
-      case SMARTvalueWarning:
-    {
-      wxListItem wxListItem;
-      wxListItem.SetId(lineNumber);
-      GetItem(wxListItem);
-      switch(sMARTvalueRating){
-       case SMARTvalueOK:
-        //http://docs.wxwidgets.org/3.1.0/classwx_list_item.html
-        //wxListItem.SetTextColour(*wxGREEN);
-        ///https://forums.wxwidgets.org/viewtopic.php?t=26576
-        SetItemBackgroundColour(lineNumber, *wxGREEN);
-        break;
-       case SMARTvalueWarning:
-        SetItemBackgroundColour(lineNumber, *wxYELLOW);
-        break;
-      }
-    }
+  {
+    //http://docs.wxwidgets.org/3.1.0/classwx_list_item.html
+/*  wxListItem wxListItem;
+    wxListItem.SetId(lineNumber);
+    GetItem(wxListItem);
+    wxListItem.SetTextColour(color);*/
+    ///https://forums.wxwidgets.org/viewtopic.php?t=26576
+    SetItemBackgroundColour(lineNumber, color);
+  }
 }
-  
+
 void SMARTtableListCtrl::CreateLines(const SMARTuniqueID & sMARTuniqueID)
 {
   fastestUnsignedDataType SMARTattributeID, lineNumber = 0;

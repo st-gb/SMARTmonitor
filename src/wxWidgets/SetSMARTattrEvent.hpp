@@ -7,14 +7,14 @@
 
 #include <attributes/SMARTuniqueID.hpp>///class SMARTuniqueID
 #include <UserInterface/columnIndices.hpp>///enum ColumnIndices::columnIndices
-#include <SMARTvalueRater.hpp>///enum SMARTvalueRating
+#include <SMARTvalueRater.hpp>///SMARTvalRatngTyp
 
 class SMARTattrs{
 private:
   SMARTuniqueID m_SMARTuniqueID;
   fastestUnsignedDataType m_SMARTattributeID;
   enum ColumnIndices::columnIndices m_columnIndices;
-  enum SMARTvalueRating m_SMARTvalRating;
+  SMARTvalRatngTyp m_SMARTvalRating;
   std::string m_str;
   void * m_data;
 public:
@@ -25,7 +25,7 @@ public:
     /**Usually the column (number) */
     const enum ColumnIndices::columnIndices & colIndices,
     const std::string & str,
-    const enum SMARTvalueRating SMARTvalRating,
+    const SMARTvalRatngTyp SMARTvalRating,
     /**e.g. pointer to list ctrl */void * data)
    : m_SMARTuniqueID(_SMARTuniqueID),
      m_SMARTattributeID(SMARTattributeID),

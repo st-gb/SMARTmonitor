@@ -435,7 +435,7 @@ void wxSMARTmonitorApp::SetAttribute(
   fastestUnsignedDataType SMARTattributeID,
   const enum ColumnIndices::columnIndices & columnIndex,
   const std::string & std_strValue,
-  const enum SMARTvalueRating sMARTvalueRating,
+  const SMARTvalRatngTyp SMARTvalRatng,
   void * data/** Which list control to use (for supported S.M.A.R.T. IDs dialog
     it is non-NULL */
   )
@@ -451,7 +451,7 @@ void wxSMARTmonitorApp::SetAttribute(
       SMARTattributeID,
       columnIndex,
       std_strValue,
-      sMARTvalueRating,
+      SMARTvalRatng,
       data//,
       //SetSMARTattrEventType
       );
@@ -480,7 +480,7 @@ void wxSMARTmonitorApp::SetAttribute(
     /*lineNumber*/ SMARTattributeID, //long index
     columnIndex /** column #/ index */,
     wxstrValue,
-    sMARTvalueRating);
+    SMARTvalRatng);
   }
 }
 

@@ -45,7 +45,7 @@ public:
       fastestUnsignedDataType SMARTattributeID,
       fastestUnsignedDataType columnIndex,
       const wxString & wxstrValue,
-      const enum SMARTvalueRating);
+      const SMARTvalRatngTyp);
     virtual
     ~SMARTtableListCtrl();
   };
