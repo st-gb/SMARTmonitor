@@ -3,6 +3,7 @@
 
 ///Standard C/C++ header files:
 #include <unistd.h>///sleep(unsigned)
+#include <signal.h>///signal(...)
 
 ///Stefan Gebauer's common_sourcecode git repository:
 /** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
@@ -21,6 +22,7 @@ typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 ///OperatingSystem::GetCurrentTime(...)
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 
+///_This_ repository's header files:
 #include "SMARTmonitorBase.hpp"///class SMARTmonitorBase
 #include <SMARTaccessBase.hpp> //class SMARTaccessBase
 #include <tinyxml2/ConfigLoader.hpp> //class tinyxml2::ConfigLoader

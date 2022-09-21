@@ -1,0 +1,19 @@
+Ubuntu Desktop 64 bit 22.4.1
+============================
+
+~$ sudo apt-get install g++
+->"[...]
+Die folgenden Pakete haben unerfüllte Abhängigkeiten:
+ libc6-dev : Hängt ab von: libc6 (= 2.35-0ubuntu3) aber 2.35-0ubuntu3.1 soll
+ installiert werden
+E: Probleme können nicht korrigiert werden, Sie haben zurückgehaltene defekte
+Pakete."
+
+~$ "apt-rdepends g++":
+[...]
+"libc6-dev
+  [...]
+  Depends: libc6 (= 2.35-0ubuntu3)"
+
+"libc6" had to be updated (via "apt-get install") to meet the needed version for
+g++. Execute "apt-get update" before.

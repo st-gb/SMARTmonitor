@@ -78,6 +78,7 @@ the User Interface (wxGUI, command line etc.).
 
 #### Linux
 
+- "libatasmart-dev" is for header files (libatasmart.h etc.)
 - Debian-/APT-based
 
   The libatasmart package is needed.
@@ -86,6 +87,7 @@ the User Interface (wxGUI, command line etc.).
 
   ```
   apt-get install libatasmart4
+  apt-get install libatasmart-dev
   ```
 
 ### wxWidgets GUI
@@ -93,8 +95,9 @@ the User Interface (wxGUI, command line etc.).
 #### Linux
 
 - Debian Linux-/APT-based:
+  - libwxbase[...]dev is for CMake variable "wxWidgets_LIBRARIES"
   - command line to install [wxWidgets](https://www.wxwidgets.org/) runtime
-    libraries:
+    libraries (as root/superuser, that means use "sudo " before command):
 
     ```
     apt-get install libwxbase3.0-0v5
@@ -102,6 +105,13 @@ the User Interface (wxGUI, command line etc.).
     ```
 
     ([...]gtk[...] is "adv" library for Linux/GTK)
+    
+  - Ubuntu Desktop 22.4.1 64 bit:
+
+    ```
+    apt-get install libwxgtk3.0-gtk3-0v5
+    apt-get install libwxbase3.0-dev
+    ```
 
   - command line to build (assuming working directory is _repository_root_):
 

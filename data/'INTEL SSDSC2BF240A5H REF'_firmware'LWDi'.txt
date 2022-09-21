@@ -1,0 +1,13 @@
+Device Model: INTEL SSDSC2BF240A5H REF
+Firmware Version: LWDi
+
+Serial Number: CVTR549501G7240CGN
+---------------------------------
+For "Raw Read Error Rate" normalized current value was at 103, > 100 (also at
+120 before?)
+"Power-On Time": raw value unit ~ ca.1h 32 min
+"Temperature Difference or Airflow Temperature":
+ current normalized value unit ~°C
+"Temperature Celsius": current normalized value unit ~°C
+"Total Data Written": raw value unit ~ ca. 32 MiB
+"Total Data Read": raw value unit ~ ca. 32 MiB
