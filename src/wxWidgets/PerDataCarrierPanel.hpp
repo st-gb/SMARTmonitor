@@ -82,7 +82,7 @@ public:
     wxString label = wxString::Format(wxT("%u"), SMARTattrID);
     m_pwxlistctrl->SetSMARTattribValue(
       SMARTattrID,
-      ColumnIndices::SMART_ID,
+      colIndices::SMART_ID,
       label,
       noCriticalValue
       );
@@ -100,10 +100,11 @@ public:
     label = wxWidgets::GetwxString_Inline(stdstrSMARTattrName),
     m_pwxlistctrl->SetSMARTattribValue(
       SMARTattrID,
-      ColumnIndices::SMARTparameterName,
+      colIndices::SMARTparameterName,
       label,
       noCriticalValue
       );
+    m_pwxlistctrl->setMaxSMARTattrNmStrWdthInPx(label);
   }
 
   void SetSMARTattribIDandNameLabel(const SMARTuniqueID & sMARTuniqueID){

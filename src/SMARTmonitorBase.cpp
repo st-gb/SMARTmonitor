@@ -108,8 +108,11 @@ SMARTmonitorBase::~SMARTmonitorBase() {
 #define makeWchar_concat(x) L##x
 #define makeWchar(x) makeWchar_concat(x)
 
-/** Rationale: even If the S.M.A.R.T. attribute definition configuration file is
- * missing parameter names are possible. */
+/**@brief sets the default English S.M.A.R.T. parameter names.
+ *  These may not apply for a model or may be named too generally (the same
+ *  attribute ID may have multiple meanings among different drives).
+ *  Rationale: even if the S.M.A.R.T. attribute definition configuration file is
+ *  missing then parameter names are possible.*/
 void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(1, "Read Error Rate");
   SMARTattrDefAccss::Set(2, "Throughput Performance");

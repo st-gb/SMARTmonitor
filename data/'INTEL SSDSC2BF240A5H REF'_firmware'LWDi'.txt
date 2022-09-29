@@ -3,9 +3,11 @@ Firmware Version: LWDi
 
 Serial Number: CVTR549501G7240CGN
 ---------------------------------
-For "Raw Read Error Rate" normalized current value was at 103, > 100 (also at
-120 before?)
+For "Raw Read Error Rate"
+ -normalized current value was at 103, > 100 (also at 120 before?), after it was
+  103 it increased (in steps: 104, 106?) to 120.
 "Power-On Time": raw value unit ~ ca.1h 32 min
+ Ca. 2 days later at Power-On Time=ca. 814 was 1h48min49s622ms-1h50min57s990ms
 "Temperature Difference or Airflow Temperature":
  current normalized value unit ~°C
 "Temperature Celsius": current normalized value unit ~°C

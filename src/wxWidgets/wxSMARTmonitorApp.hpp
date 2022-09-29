@@ -79,7 +79,7 @@ public:
     const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
-    const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
+    const enum colIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
     const SMARTvalRatngTyp, void * data);
   void SetCurrentAction(enum CurrentAction currAction);

@@ -12,6 +12,24 @@
  <SMART paramID="242" unit="1GB"/>
 </data_carrier>
 
+<data_carrier model="INTEL SSDSC2BF240A5H REF" firmware="LWDi">
+ <!--Was ~25-28 at ca. 23°C ambient temperature-->
+ <SMART paramID="190" unit="°C" description="temperature"/>
+ <!--"Total Data Written" is 32 MiB:
+  -value equals "Host Written (32 MiB)"
+  -In application "GSmartControl" (by "Alexander Shaduri") 1.1.4:
+   "Statistics" tab:"Logical Sectors Written"~=65536(=32Mi/512)*
+   "Total LBAs Written":110.304*65536=7,228,882,944~=7.228.883.497
+  -SMARTmonitor application (by "Stefan Gebauer") measured ca. 32 MiB-->
+ <SMART paramID="241" unit="32MiB"/>
+ <!--"Total Data Read" is 32 MiB:
+  -In application "GSmartControl" (by "Alexander Shaduri") 1.1.4:
+   "Statistics" tab:"Logical Sectors Read"~=65536(=32Mi/512)*
+   "Total LBAs Read": 146.540×65536=9,603,645,440~=9.603.648.300
+  -SMARTmonitor application (by "Stefan Gebauer") measured ca. 32 MiB-->
+ <SMART paramID="242" unit="32MiB"/>
+</data_carrier>
+
 <!-- https://www.samsung.com/semiconductor/global.semi.static/SAMSUNG_SSD_Limited_Warranty_German.pdf 
   : "300 TB TBW" -->
 <data_carrier model="Samsung SSD 860 EVO M.2 500GB" firmware="RVT24B6Q"
