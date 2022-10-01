@@ -13,16 +13,23 @@
   #define TU_Berlin361095SMARTmon_UI_enLiterals_h
 
 ///lit=LITeral:http://www.allacronyms.com/literal/abbreviated
+///table header ASCII strings:
 #define enID_ASCIIlit "ID"
 #define enParamNmASCIIlit "parameter name"
 #define enNrmlzdCurrValASCIIlit "current value(normalized)"
 #define enNrmlzdThresValASCIIlit "threshold value(normalized)"
-#define enRawValASCIIlit "human readable raw value"
+#define enRawValASCIIlit "raw value"
 #define enHumanReadableRawValASCIIlit "human readable raw value"
 ///VaL=VALue:http://www.abbreviations.com/abbreviation/value
 #define enRawValUnitASCIIlit "raw value unit"
 ///Rng=RaNGe:http://www.abbreviations.com/abbreviation/Range
 #define enRawValUnitRngASCIIlit "raw value ~unit range"
 #define enLastUpdateAsUptimeASCIIlit "last update[uptime]"
+
+///context menu ASCII strings
+#define enCtxMenuLwrFntSzASCIIlit "decrease font size"
+#define enCtxMenuHghrFntSzASCIIlit "increase font size"
+
+#define enRghtClckTooltip "Click right to get context menu"
 
 #endif///! defined TU_Berlin361095SMARTmon_UI_enLiterals_h

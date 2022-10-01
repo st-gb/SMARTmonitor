@@ -30,6 +30,7 @@ class SMARTtableListCtrl
   : public wxListCtrl
 {
 private:
+  enum evtIDs{decreaseFontSize,increaseFontSize};
 public:
   wxClientDC clientDC;
   /*static*/ bool setColWdthAccHdrStrWdth = /*true*/false;
@@ -122,6 +123,9 @@ public:
     if(strWdth > m_maxSMARTattrNmStrWdthInPx)
       m_maxSMARTattrNmStrWdthInPx = strWdth;
   }
+  void OnRightMouseButtonDown(wxMouseEvent &);
+  void OnPopupClick(wxCommandEvent &);
+  DECLARE_EVENT_TABLE()
 };
 } /* namespace wxWidgets */
 

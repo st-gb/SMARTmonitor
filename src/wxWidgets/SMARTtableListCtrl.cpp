@@ -4,10 +4,13 @@
 
 ///wxWidgets header files:
 #include <wx/dcclient.h>///class wxClientDC
+#include <wx/menu.h>///class wxMenu
 
 //This repository's header files:
 #include <wxWidgets/SMARTtableListCtrl.hpp>//This class.
 #include <UserInterface/columnIndices.hpp> //enum columnIndices
+///enCtxMenuLwrFntSzASCIIlit,enCtxMenuHghrFntSzASCIIlit
+#include <UserInterface/enLiterals.h>
 //wxGetApp().m_IDsOfSMARTattributesToObserve
 #include <wxWidgets/wxSMARTmonitorApp.hpp>
 
@@ -16,6 +19,12 @@
 
 namespace wxWidgets
 {
+
+///Don't use indentation for namespaces
+BEGIN_EVENT_TABLE(SMARTtableListCtrl, wxListCtrl)
+  EVT_RIGHT_DOWN(SMARTtableListCtrl::OnRightMouseButtonDown)
+END_EVENT_TABLE()
+
   //TODO make constructor with SMARTuniqueID? because all values depend on it
   SMARTtableListCtrl::SMARTtableListCtrl(
     wxWindow * parent,
@@ -29,6 +38,7 @@ namespace wxWidgets
     ///http://forums.wxwidgets.org/viewtopic.php?t=17143
     , clientDC(this)
   {
+    SetToolTip(wxT(enRghtClckTooltip) );
 //	colHdrStrs[enColStrsIdx][en] = enColHdrStrs;
 
     getSMARTAttrNmWithMaxPx();///For width of parameter name column
@@ -154,7 +164,51 @@ void SMARTtableListCtrl::CreateLines(const SMARTuniqueID & sMARTuniqueID)
   int itemCount = GetItemCount();
   itemCount = itemCount;
 #endif
+}
+
+void SMARTtableListCtrl::OnRightMouseButtonDown(wxMouseEvent & evt)
+{
+  wxMenu menu(/*wxT("")*//**Set menu title because menu may be shown outside of
+    * user interface contol */wxGetApp().GetAppName()
+    /*+ wxT("SMART parameters table")*/);
+
+  wxFont font = GetFont();
+  const int fontPointSize = font.GetPointSize();
+  if(fontPointSize > wxGetApp().GetMinFntSizInPt() )
+    menu.Append(decreaseFontSize, wxT(enCtxMenuLwrFntSzASCIIlit) );
+  menu.Append(increaseFontSize, wxT(enCtxMenuHghrFntSzASCIIlit) );
+  menu.Connect(wxEVT_COMMAND_MENU_SELECTED,
+    /**func*/(wxObjectEventFunction) & SMARTtableListCtrl::OnPopupClick,
+    /**userData*/NULL, /**eventSink*/this);
+  PopupMenu(&menu);
+}
+
+void SMARTtableListCtrl::OnPopupClick(wxCommandEvent & evt)
+{
+  switch(evt.GetId() )
+  {
+    case increaseFontSize :
+     {
+      wxFont font = GetFont();
+      int fontPointSize = font.GetPointSize();
+      fontPointSize++;
+      font.SetPointSize(fontPointSize);
+      SetFont(font);
+     }
+     break;
+    case decreaseFontSize :
+     {
+      wxFont font = GetFont();
+      int fontPointSize = font.GetPointSize();
+      if(fontPointSize > wxGetApp().GetMinFntSizInPt() ){
+        fontPointSize--;
+        font.SetPointSize(fontPointSize);
+        SetFont(font);
+      }
+     }
+     break;
   }
+}
 
   SMARTtableListCtrl::~SMARTtableListCtrl()
   {

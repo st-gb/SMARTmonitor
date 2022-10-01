@@ -71,6 +71,8 @@ public:
   void OnTimer(wxTimerEvent& event);
 //  int OnRun();
   bool GetIcon(wxIcon & icon, wxString iconFileName, char * inMemoryIcon [] );
+  ///Gets the minimal FoNT SIZe in unit "PoinT".
+  int GetMinFntSizInPt() const {return 6;}
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTstatusUnknownIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
