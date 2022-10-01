@@ -5,9 +5,15 @@
 #ifndef ATTRIBUTES_SMARTUNIQUEIDANDVALUES_HPP_
 #define ATTRIBUTES_SMARTUNIQUEIDANDVALUES_HPP_
 
-#include "SMARTuniqueID.hpp" //struct SMARTuniqueID
+///"Standard C" header files:
 #include <stdint.h> //uint64_t
+
+///_This_ repository's files:
 //#include "SMARTaccessBase.hpp"
+#include "SMARTuniqueID.hpp"///struct SMARTuniqueID
+
+///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
+#include <hardware/dataCarrier/ATA3Std.h>///ATA3Std_NrmlzdValTyp
 #include <hardware/CPU/fastest_data_type.h>
 
 //class SMARTaccessBase;

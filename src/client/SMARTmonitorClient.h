@@ -15,6 +15,7 @@
 
 ///This repository's files:
 #include "../SMARTmonitorBase.hpp"
+///enum TU_Bln361095::SMARTmon::colIndices::ColIndices
 #include <UserInterface/columnIndices.hpp>
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater
 #include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
@@ -27,6 +28,8 @@
 #define TU_Bln361095discnctBtnANSIstr "Disconnect"
 #define TU_Bln361095cnctBtnTltpANSIstr "connect to BSD sockets server for "\
   "getting S.M.A.R.T. data"
+
+using namespace TU_Bln361095::SMARTmon;
 
 /** Base class for all BSD socket clients that receive data from a.S.M.A.R.T.
  server */
@@ -56,7 +59,7 @@ public:
   ///To check whether we need to run UI operations in another thread or not.
   static fastestUnsignedDataType s_UIthreadID;
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
-  static fastestUnsignedDataType s_charPosOAttrNameBegin[ColumnIndices::beyondLast];
+  static fastestUnsignedDataType s_charPosOAttrNameBegin[colIndices::byndLast];
   static char * s_columnAttriuteNames [];
       
   static enum SMARTvalueRating s_atLeast1CriticalNonNullValue;
@@ -188,7 +191,7 @@ public:
     const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
-    const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
+    const enum colIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
     const SMARTvalRatngTyp,
     /**e.g. pointer to list ctrl */void * data){}

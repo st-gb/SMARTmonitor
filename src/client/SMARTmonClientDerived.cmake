@@ -6,6 +6,7 @@ set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
   ${SMARTattrValProcSrcFilePaths}
   ${SMARTmonSrcDir}/client/SMARTmonitorClient.cpp
+  ${SMARTmonSrcDir}/UserInterface/SMARTparamTblHdrWStr.c
 )
 
 if(DEFINED TU_Bln361095useBSDskt)

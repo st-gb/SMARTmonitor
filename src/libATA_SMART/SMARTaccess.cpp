@@ -343,12 +343,12 @@ enum SMARTaccessBase::retCodes SMARTaccess::readSMARTforDevice(
     SkDisk * p_skDisk;
   //  sk_disk_smart_is_enabled(& skDisk);
 
-    /** "sk_disk_open" allocates an p_skDisk and assigns pointer to it.
-     *  (must be freed by caller later)*/
     errno = 0;///Set to 0 to detect errors in sk_disk_open(...)
     ///https://github.com/Rupan/libatasmart/blob/master/atasmart.c
-    int i = sk_disk_open(device, /* SkDisk **_d*/ & p_skDisk);
-    if( i == -1)
+    /** "sk_disk_open" allocates an p_skDisk and assigns pointer to it.
+     *  (must be freed by caller via "sk_disk_free(...)" later)*/
+    int rtrnVal = sk_disk_open(device, /* SkDisk **_d*/ & p_skDisk);
+    if(rtrnVal == -1)
     {
       //TODO fails often-> too many error messages
       //Solution?: only check if device plugged in:
@@ -368,26 +368,25 @@ enum SMARTaccessBase::retCodes SMARTaccess::readSMARTforDevice(
       LOGN_DEBUG("successfully opened device " << device)
   //    i = sk_init_smart( & skDisk);
   //        sk_disk_check_power_mode(p_skDisk);
-      i = sk_disk_smart_read_data(p_skDisk);
-      if( i == 0)
+      rtrnVal = sk_disk_smart_read_data(p_skDisk);///sk_disk_smart_is_available(...)
+      if(rtrnVal == 0)
       {
         LOGN_DEBUG("successfully called sk_disk_smart_read_data for " << device)
-        int retVal = ///Reads all supported attributes?
+        rtrnVal = ///Reads all supported attributes?
           sk_disk_smart_parse_attributes(
            p_skDisk,
            (SkSmartAttributeParseCallback) getDriveSupportedSMART_IDs,
            & SMARTattrNamesAndIDs);
              //TODO "sk_disk_smart_parse_attributes" traverses all attributes and calls
              // the callback function
-        if( retVal < 0 )
+        if( rtrnVal < 0 )
         {
-          LOGN_ERROR("sk_disk_smart_parse_attributes retVal:" << retVal)
-          return -1;
+          LOGN_ERROR("sk_disk_smart_parse_attributes return value:" << rtrnVal)
         }
       }
       sk_disk_free( p_skDisk);
     }
-  return 0;
+  return rtrnVal;
 }
 
   //TODO store paths where access was denied in order to show it later

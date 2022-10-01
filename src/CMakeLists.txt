@@ -14,7 +14,13 @@ set(SMARTmonSrcDir ${PROJECT_SOURCE_DIR})
 # for "cmnfiles" debian package.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/..)
 
-if(${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")
+set(cre8CmnFilesDebPkg FALSE)
+if(DEFINED EXE_TYPE)
+  if(${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")
+    set(cre8CmnFilesDebPkg TRUE)
+  endif()
+endif()
+if(cre8CmnFilesDebPkg)
   set(cr8DebPkg ON)
   #The variable for "common_source" path is needed in "createDebPkg.cmake"
   include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
@@ -174,7 +180,7 @@ endif()
 if(cre8SrcArchive)
   include(${CmnSrc}/CMake/cr8srcArchive.cmake)
 endif()
-endif(${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")#"else" branch of condition
+endif(cre8CmnFilesDebPkg)#"else" branch of condition
 if(UNIX)#only Unix binaries into .deb file
   message("cr8DebPkg: ${cr8DebPkg}")
   if(DEFINED cr8DebPkg)#"-Dcr8DebPkg" as cmake command line parameter

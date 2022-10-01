@@ -142,7 +142,7 @@ void SMARTmonitorClient::setIDandLabel(
   SetAttribute(
     sMARTuniqueID,
     SMARTattrID,
-    ColumnIndices::SMART_ID,
+    colIndices::SMART_ID,
     std_oss.str(),
     noCriticalValue,
     data
@@ -161,7 +161,7 @@ void SMARTmonitorClient::setIDandLabel(
   SetAttribute(
     sMARTuniqueID,
     SMARTattrID,
-    ColumnIndices::SMARTparameterName,
+    colIndices::SMARTparameterName,
     stdstrSMARTattrName,
     noCriticalValue
     ,data
@@ -180,7 +180,7 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
   SetAttribute(
     sMARTuniqueID,
     SMARTattributeID,
-    ColumnIndices::lastUpdate /** column #/ index */,
+    colIndices::lastUpdate /** column #/ index */,
     timeFormatString,
     noCriticalValue,
     data
@@ -550,35 +550,35 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      ColumnIndices::nrmlzdCurrVal/**column #/index*/,
+      colIndices::nrmlzdCurrVal/**column #/index*/,
       std_ossNrmlzdCurrSMARTval.str(),
       sMARTvalueRating,
       data);
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      ColumnIndices::nrmlzdThresh/**column #/index*/,
+      colIndices::nrmlzdThresh/**column #/index*/,
       std_ossNrmlzdThreshVal.str(),
       sMARTvalueRating,
       data);
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      ColumnIndices::rawValue /** column #/ index */,
+      colIndices::rawValue /** column #/ index */,
       std_ossRawSMARTval.str(),
       sMARTvalueRating,
       data);
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      ColumnIndices::humanReadableRawValue,
+      colIndices::humanReadableRawVal,
       stdstrHumanReadableRawVal,
       sMARTvalueRating,
       data);
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      ColumnIndices::unit,
+      colIndices::unit,
       stdstrUnit,
       sMARTvalueRating,
       data);
@@ -586,7 +586,7 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      ColumnIndices::unitRange,
+      colIndices::unitRange,
       std_ossUnitAccuracy.str(),
       sMARTvalueRating,
       data);
@@ -620,7 +620,7 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      ColumnIndices::lastUpdate,
+      colIndices::lastUpdate,
       /*"error:uptime is 0"*/"not read yet",
       sMARTvalueRating,
       data);

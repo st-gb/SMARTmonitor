@@ -3,6 +3,7 @@
 
 ///Standard C/C++ header files:
 #include <unistd.h>///sleep(unsigned)
+#include <signal.h>///signal(...)
 
 ///Stefan Gebauer's common_sourcecode git repository:
 /** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
@@ -21,6 +22,7 @@ typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 ///OperatingSystem::GetCurrentTime(...)
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 
+///_This_ repository's header files:
 #include "SMARTmonitorBase.hpp"///class SMARTmonitorBase
 #include <SMARTaccessBase.hpp> //class SMARTaccessBase
 #include <tinyxml2/ConfigLoader.hpp> //class tinyxml2::ConfigLoader
@@ -108,8 +110,11 @@ SMARTmonitorBase::~SMARTmonitorBase() {
 #define makeWchar_concat(x) L##x
 #define makeWchar(x) makeWchar_concat(x)
 
-/** Rationale: even If the S.M.A.R.T. attribute definition configuration file is
- * missing parameter names are possible. */
+/**@brief sets the default English S.M.A.R.T. parameter names.
+ *  These may not apply for a model or may be named too generally (the same
+ *  attribute ID may have multiple meanings among different drives).
+ *  Rationale: even if the S.M.A.R.T. attribute definition configuration file is
+ *  missing then parameter names are possible.*/
 void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(1, "Read Error Rate");
   SMARTattrDefAccss::Set(2, "Throughput Performance");

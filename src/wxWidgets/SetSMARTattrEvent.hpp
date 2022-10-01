@@ -13,7 +13,7 @@ class SMARTattrs{
 private:
   SMARTuniqueID m_SMARTuniqueID;
   fastestUnsignedDataType m_SMARTattributeID;
-  enum ColumnIndices::columnIndices m_columnIndices;
+  enum colIndices::columnIndices m_columnIndices;
   SMARTvalRatngTyp m_SMARTvalRating;
   std::string m_str;
   void * m_data;
@@ -23,7 +23,7 @@ public:
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     /**Usually the column (number) */
-    const enum ColumnIndices::columnIndices & colIndices,
+    const enum colIndices::columnIndices & colIndices,
     const std::string & str,
     const SMARTvalRatngTyp SMARTvalRating,
     /**e.g. pointer to list ctrl */void * data)

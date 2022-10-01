@@ -299,7 +299,8 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
       "maxTeraBytesWritten", -1);
     ModelAndFirmware modelAndFirmware;
     if(p_chModel && p_chFirmware){///<=>"model" and "firmware" are in XML data
-      modelAndFirmware.setMaxTeraBytesWritten(maxTeraBytesWritten);
+      if(maxTeraBytesWritten != -1)
+        modelAndFirmware.setMaxTeraBytesWritten(maxTeraBytesWritten);
       modelAndFirmware.Set(p_chModel, p_chFirmware);
       const tinyxml2::XMLElement * p_tinyxml2XMLelement;
       p_tinyxml2XMLelement = p_dataCarrierXMLele->FirstChildElement("SMART");

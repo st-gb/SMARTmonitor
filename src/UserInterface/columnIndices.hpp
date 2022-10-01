@@ -8,25 +8,53 @@
 ///Include guard, see http://en.wikipedia.org/wiki/Include_guard
 /**Non-standard include guard:supported by many, but not all industry compilers,
  * see http://en.wikipedia.org/wiki/Pragma_once#Portability */
-#ifdef TU_Bln361095usePrgmInclGuard
-#pragma once
+#ifdef TU_Bln361095usePrgmInclGrd
+  #pragma once
 #endif
-///Include guard supported by (nearly) all industry compilers:
-#ifndef TU_Bln361095SMARTmon_UI_ColumnIndices_hpp
-#define TU_Bln361095SMARTmon_UI_ColumnIndices_hpp
+#if defined TU_Bln361095usePrgmInclGrd || \
+  /**Include guard supported by (nearly) all industry compilers:*/\
+  ! defined TU_Bln361095SMARTmon_UI_ColIndices_hpp
+  #define TU_Bln361095SMARTmon_UI_ColIndices_hpp
 
-namespace ColumnIndices
-{
+#include <ID_prefix.h>///TU_Bn361095SMARTmonNmSpcBgn
+
+#ifdef __cplusplus
+  /**Col=COLumn:http://www.abbreviations.com/abbreviation/Column*/
+  #define TU_Bln361095SMARTmonColIdxsNmSpcBgn namespace colIndices{
+  #define TU_Bln361095SMARTmonColIdxsNmSpcEnd }
+  #define TU_Bln361095SMARTmonColIdxsDef(suffix) suffix
+  #define TU_Bn361095SMARTmonColIdxsUse(suffix) colIndices :: suffix
+#else
+  #define TU_Bln361095SMARTmonColIdxsNmSpcBgn
+  #define TU_Bln361095SMARTmonColIdxsNmSpcEnd
+  #define TU_Bln361095SMARTmonColIdxsDef(suffix) \
+    TU_Bn361095SMARTmonColIdxs##suffix
+  #define TU_Bn361095SMARTmonColIdxsUse(suffix) \
+    TU_Bn361095SMARTmonColIdxs##suffix
+#endif
+
+TU_Bln361095SMARTmonNmSpcBgn
+TU_Bln361095SMARTmonColIdxsNmSpcBgn
+
 /**Declare in a seperate header file and not in class's SMARTmonClient header
  * file because the whole class declaration of "SMARTmonitorClient" is not
  * needed when this enum is used by source code not derived from
  * "SMARTmonitorClient" such as wxWidgets::SMARTtableListCtrl.*/
-enum columnIndices{SMART_ID = 0, SMARTparameterName,
+enum columnIndices{
+  TU_Bln361095SMARTmonColIdxsDef(SMART_ID) = 0,
+  TU_Bln361095SMARTmonColIdxsDef(SMARTparameterName),
 ///Curr=CURRent:http://www.abbreviations.com/abbreviation/Current
-  nrmlzdCurrVal,
+  TU_Bln361095SMARTmonColIdxsDef(nrmlzdCurrVal),
 ///thresh=threshold:http://www.allacronyms.com/threshold/abbreviated
-  nrmlzdThresh,
-  rawValue, humanReadableRawValue, unit, unitRange, lastUpdate, beyondLast};
-}
+  TU_Bln361095SMARTmonColIdxsDef(nrmlzdThresh),
+  TU_Bln361095SMARTmonColIdxsDef(rawValue),
+  TU_Bln361095SMARTmonColIdxsDef(humanReadableRawVal),
+  TU_Bln361095SMARTmonColIdxsDef(unit),
+  TU_Bln361095SMARTmonColIdxsDef(unitRange),
+  TU_Bln361095SMARTmonColIdxsDef(lastUpdate),
+  TU_Bln361095SMARTmonColIdxsDef(byndLast)};
 
-#endif///TU_Bln361095SMARTmon_UI_ColumnIndices_hpp
+TU_Bln361095SMARTmonColIdxsNmSpcEnd
+TU_Bln361095SMARTmonNmSpcEnd
+
+#endif///! defined TU_Bln361095SMARTmon_UI_ColIndices_hpp
