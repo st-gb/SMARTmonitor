@@ -68,6 +68,8 @@ class SMARTmonitorBase
 public:
   enum GetSMARTvalsMode{directSMARTvals, noUpdate};
   enum GetSMARTvalsMode m_getSMARTvalsMode;
+  enum prcssCmdLneArgsRtrnVals {sccssfllyParsedAllCmdLneArgs = 0,//dontShowUI = 1,
+    calledHelp};
   const struct tm & GetLastSMARTvaluesUpdateTime() const {
     //TODO because "tm" is a struct with multiple fields/members:
     // changes non-atomically in get SMART values thread.

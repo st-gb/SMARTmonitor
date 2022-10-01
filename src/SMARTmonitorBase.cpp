@@ -41,6 +41,8 @@ CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. "
     "\"server.xml\""},
   {"loglevel", NULL},
+//  {"--help", "(no option value): shows all available command line options and "
+//    "exits"},
   {""}
 };
 
@@ -178,7 +180,18 @@ void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(254, "Free Fall Protection");
 }
 
-void SMARTmonitorBase::sigHandler(int signo){}
+void SMARTmonitorBase::sigHandler(int sigNo){
+  LOGN("received signal:" << sigNo)
+  switch(sigNo)
+  {
+    case SIGPIPE:
+      LOGN_ERROR("pipe/socket is broken")
+      break;
+    case SIGINT:
+      break;
+  }
+}
+
 void SMARTmonitorBase::regCancelSelectSigHandler(){
 #ifdef __linux__///SIGUSR1 not available in MinGW/MS Windows
   /** https://en.wikipedia.org/wiki/C_signal_handling
@@ -186,6 +199,7 @@ void SMARTmonitorBase::regCancelSelectSigHandler(){
    * waiting in select(...) for non-blocking connection to server). */
   signal(SIGUSR1, sigHandler);
 #endif
+  signal(SIGPIPE, sigHandler);
 }
 
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
@@ -250,11 +264,11 @@ void SMARTmonitorBase::GetUsage(std::ostringstream & stdoss)
      "option VALUE>\n\n"
     "available options:\n";
   for (fastestUnsignedDataType index = 0;
-    s_commandLineOptions[index].optionName[0] != '\0'; ++index) {
+    s_commandLineOptions[index].optionName[0] != '\0'; ++index)
+  {
     CommandLineOption & commandLineOption = s_commandLineOptions[index];
     stdoss << "-" << commandLineOption.optionName << " " <<
-    commandLineOption.possibleOptionValue << "";
-    stdoss << "\n";
+      commandLineOption.possibleOptionValue << std::endl;
   }
 }
 
@@ -263,7 +277,7 @@ void SMARTmonitorBase::OutputUsage() {
   GetUsage(stdoss);
   std::string str = stdoss.str();
 //  std::cout << str << std::endl;
-  ShowMessage(str.c_str() );
+  ShowMessage(str.c_str(), MessageType::info);
 }
 
 std::wstring SMARTmonitorBase::GetCommandLineOptionValue(
@@ -303,8 +317,12 @@ void SMARTmonitorBase::GetCmdLineOptionNameAndValue(
     programArgumentIndex++;
   } else {
     cmdLineOptionName = std_wstrCmdLineOption;
-    cmdLineOptionValue = GetCommandOptionValue(programArgumentIndex);
-    programArgumentIndex += 2;
+    if(cmdLineOptionName == L"--help")///Option value for help not intended.
+       ++programArgumentIndex;
+    else{
+      cmdLineOptionValue = GetCommandOptionValue(programArgumentIndex);
+      programArgumentIndex += 2;
+    }
   }
 }
 
@@ -387,6 +405,7 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
 {
   unsigned programArgumentCount = m_commandLineArgs.GetArgumentCount();
   bool showUsage = false;
+  fastestUnsignedDataType retVal = sccssfllyParsedAllCmdLneArgs;
   if (programArgumentCount > 1)
   {
     //    int charPosOfEqualSign;
@@ -405,11 +424,17 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
     {
       //      cmdLineOptionName = GetCommandOptionName(cmdLineOption);
       GetCmdLineOptionNameAndValue(programArgumentIndex, cmdLineOptionName,
-              cmdLineOptionValue);
+        cmdLineOptionValue);
 
       //      cmdLineOptionValue = GetCommandOptionValue(/*cmdLineOptionName.c_str()*/
       //        programArgumentIndex );
-      if (cmdLineOptionValue == L"") {
+      if(cmdLineOptionName == L"--help"){
+        showUsage = true;
+        retVal = calledHelp;
+      }
+      else if(cmdLineOptionValue == L"") {
+        //TODO show in UI.(via ShowMessage(), but this must persist after the
+        //  "no direct SMART access permission" message )
         std::wcout << L"unknown command line option \"" << cmdLineOptionName
                 << L"\"" << std::endl;
         atLeast1UnknwonCmdLineOption = true;
@@ -437,9 +462,8 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
     showUsage = true;
   if(showUsage){
     OutputUsage();
-    return 1;
   }
-  return 0;
+  return retVal;
 }
 
 bool SMARTmonitorBase::InitializeLogger() {
@@ -957,6 +981,7 @@ void SMARTmonitorBase::ShowMessage(const char * const msg,
     * logging to a file may be unavailable/the messages can be seen easier.*/
    case MessageType::error: /*LOGN_ERROR(msg)*/ std::cerr << msg; break;
    case MessageType::warning: /*LOGN_WARNING(msg)*/ std::cout << msg; break;
+   case MessageType::info:
    case MessageType::success: /*LOGN_SUCCESS(msg)*/ std::cout << msg; break;
   }
 }

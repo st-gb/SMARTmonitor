@@ -41,6 +41,12 @@ if( ${EXE_TYPE} STREQUAL "wxGUI")
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
 
 include(clientSrvSrcFiles.cmake)
+if(DEFINED SMARTmonClientDerived)#define for all clients
+  ##Must be called before wxWidgetsGUI.cmake because it sets
+  ## TU_Bln361095useClntSrv
+  include(client/SMARTmonClientDerived.cmake)
+endif()
+
 if(DEFINED WXWIDGETS)
   message("WXWIDGETS is defined")
   include(wxWidgets/wxWidgetsGUI.cmake)
@@ -120,10 +126,6 @@ if( ${EXE_TYPE} STREQUAL "ncursesClient" )
 endif(${EXE_TYPE} STREQUAL "ncursesClient" )
 
 set(TinyXML2dir ../../tinyxml2-master)
-
-if(DEFINED SMARTmonClientDerived)#define for all clients
-  include(client/SMARTmonClientDerived.cmake)
-endif()
 
 message("adding preproc macro \"-DCXX_FLAGS=${CMAKE_CXX_FLAGS}\"")
 set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DCXX_FLAGS=\"${CMAKE_CXX_FLAGS}\"")

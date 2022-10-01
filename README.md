@@ -8,20 +8,49 @@
 this file is based on
 https://gist.github.com/PurpleBooth/109311bb0361f32d87a2#file-readme-template-md
 
-# S.M.A.R.T. monitor
+# S.M.A.R.T. Values Monitor/Processor
 
-A tool to monitor raw values for (critical)
-[S.M.A.R.T.](https://en.wikipedia.org/wiki/S.M.A.R.T.) parameters directly/locally or
-via [BSD sockets](https://en.wikipedia.org/wiki/Berkeley_sockets).
+## Capabilities
+
+### Monitoring Directly/Locally or via Network/Internet
+A tool to monitor normalized and raw values for (critical) [S.M.A.R.T.](
+http://en.wikipedia.org/wiki/S.M.A.R.T.) parameters directly/locally (only Linux)
+or as [BSD sockets](http://en.wikipedia.org/wiki/Berkeley_sockets) client
+(Windows, Linux).
 S.M.A.R.T. values are retrieved periodically in an interval.
 
 [comment]: # https://stackoverflow.com/questions/10189356/how-to-add-screenshot-to-readmes-in-github-repository
 [comment]: # ![here the screenshot of wxWidgets GUI in Linux Mint should appear](/screenshots/SMARTmonitor_wxGUI_main_dialog.png?raw=true "screenshot of wxWidgets GUI's main dialog in Linux Mint")
 ![here the screenshot of wxWidgets GUI in Linux Mint should appear](http://it-gebauer.de/SMARTmonitor/SMARTmonitor_wxGUI_main_dialog_Linux_Mint.png "screenshot of wxWidgets GUI's main dialog in Linux Mint")
 
+### S.M.A.R.T. Parameter Value Unit Auto-Detection
 Some units (Power-On Time, Total Data Written, ...) for some
-[S.M.A.R.T. attributes](https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)
-are tried to be determined.
+[S.M.A.R.T. attributes](
+http://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes) are
+tried to be determined.
+
+### Multiple Data Carriers
+Also the software is capable to monitor more than 1 storage media/data carrier
+at the same time.
+
+### Usage Of Appropriate Values
+Basically this application uses the normalized current values for detecting how
+critical the corresponding S.M.A.R.T. parameter is as rating.
+But in some cases, for example the temperature, it is more senseful to rely on
+raw values. Because some manufacturers don't follow the convention that lower
+normalized current values for a S.M.A.R.T. parameter mean a worse state.
+
+## Debian(-based) Linux
+
+For Debian(-based) Linux 3 packages: common files, client, service can
+be created with included shell scripts.
+
+Both GUI/client and daemon/server/service depend on the "common files" (data
+files, configuration files) package.
+
+## systemd
+For systemd the service can be installed (for example using Debian package
+post-installation script).
 
 ## Building Prerequisites
 
@@ -29,7 +58,7 @@ general:
 
 * [CMake](https://cmake.org/download) for creating makefile / IDE project files
 * C++ compiler (source code is able to build with "g++" 7.5.0)
-* ["common_sourcecode"](https://www.github.com/st-gb/common_sourcecode) git
+* "[common_sourcecode](https://www.github.com/st-gb/common_sourcecode)" git
 repository from Stefan Gebauer
 
   Place this into the same directory level as this repository for ease of use.:
