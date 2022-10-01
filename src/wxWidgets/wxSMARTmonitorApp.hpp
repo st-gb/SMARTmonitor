@@ -74,7 +74,6 @@ public:
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTstatusUnknownIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
-  void OnStartSrvCnnctnCntDown(wxCommandEvent &);
   void SetAttribute(
     const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
@@ -115,7 +114,10 @@ public:
   void OnCnnctToSrvr(wxCommandEvent &);
   void OnShowMessage(wxCommandEvent & event);
   void OnShowCurrentAction(wxCommandEvent &);
+#ifdef TU_Bln361095useClntSrv
+  void OnStartSrvCnnctnCntDown(wxCommandEvent &);
   void OnStartServiceConnectionCountDown(wxCommandEvent & event);
+#endif
 };
 
 wxString wxSMARTmonitorApp::GetTitleInclDataSrc()

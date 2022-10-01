@@ -432,6 +432,12 @@ enum SMARTaccessBase::retCodes SMARTaccess::ReadSMARTValuesForAllDrives(
           absDvcFilePath, sMARTuniqueID, dataCarrierID2devicePath,
           ///Intersection of SMART IDs to read and supported SMART IDs.
           sMARTuniqueID.m_SMART_IDsToRd);
+        ///TODO may already have been retrieved by SMARTuniqueID::guessUnit(...)
+        // if done there then do not do it here.
+        // For example use "udev" monitoring if a data carrier was added or not
+        // therefore.
+//        sMARTuniqueID.numBwrittenSinceOSstart = /*OperatingSystem::*/dataCarrier::
+//          getNumBwrittenSinceOSstart(stdstrDataCarrierPath);
         switch( retCode)
         {
             case SMARTaccessBase::success :

@@ -110,7 +110,8 @@ public:
 #ifdef TU_Bln361095useClntSrv
   fastestUnsignedDataType CnnctToSrvAndGetSMARTvals(const bool asyncCnnctToSvc);
   void ConnectToServer();
-  fastestUnsignedDataType ConnectToServer(const char * hostName, bool asyncConnect);
+  fastestUnsignedDataType ConnectToServer(const char * hostName,
+    bool asyncConnect, int * p_errorCode);
 #endif
 #ifdef TU_Bln361095useInterProcComm
   /*fastestUnsignedDataType*/ void  GetSupportedSMARTattributesViaXML(
@@ -121,7 +122,7 @@ public:
 #endif
   void EndUpdateUIthread();
 #ifdef TU_Bln361095useClntSrv
-  fastestUnsignedDataType GetSupportedSMARTidsFromServer();
+  fastestUnsignedDataType GetSupportedSMARTidsFromSrv();
   fastestSignedDataType ReadNumFollowingBytes();
   fastestUnsignedDataType GetSMARTattrValsFromSrv(//std::set<SMARTuniqueIDandValues> & 
     );
