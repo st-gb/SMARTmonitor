@@ -6,7 +6,7 @@
 #include "ConfigLoader.hpp"///this class's tinyxml2::ConfigLoader declaration
 ///FileSystem::GetAbsolutePathA(...)
 #include <FileSystem/File/GetAbsoluteFilePath.hpp>
-#include <Controller/character_string/ConvertStdStringToTypename.hpp>
+#include <dataType/charStr/ConvertStdStringToTypename.hpp>
 #include <tinyxml2.h>///class tinyxml2::XMLElement
 #include <SMARTmonitorBase.hpp>
 #include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
@@ -299,7 +299,8 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
       "maxTeraBytesWritten", -1);
     ModelAndFirmware modelAndFirmware;
     if(p_chModel && p_chFirmware){///<=>"model" and "firmware" are in XML data
-      modelAndFirmware.setMaxTeraBytesWritten(maxTeraBytesWritten);
+      if(maxTeraBytesWritten != -1)
+        modelAndFirmware.setMaxTeraBytesWritten(maxTeraBytesWritten);
       modelAndFirmware.Set(p_chModel, p_chFirmware);
       const tinyxml2::XMLElement * p_tinyxml2XMLelement;
       p_tinyxml2XMLelement = p_dataCarrierXMLele->FirstChildElement("SMART");

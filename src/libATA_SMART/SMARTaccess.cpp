@@ -133,6 +133,18 @@ void getSMARTrawValueCallback(
     pSMARTacc->possiblyAutoDetectUnit(SMARTattrID, rawSMARTattrVal, 
       (SMARTuniqueID &) sMARTuniqueID, p_libatasmart_attrHelper->device);
     cpySMARTattrThreadSafe(sMARTvalue, rawSMARTattrVal);
+  /**The following values are set by manufacturer (in drive controller?). They
+   * are important for detecting if the number of reallocated sectors is
+   * exceeded for example. Especially if this information is not known (from
+   * datasheets) then we must rely on how far the "current_value" is away from
+   * the "threshold".*/
+    AtomicExchange(sMARTvalue.GetNrmlzdThresh(),
+      p_SkSmartAttributeParsedData->threshold);
+    //TODO When debugging "current" value gotten via direct S.M.A.R.T. access in
+    // frontend code via was once 200 for reallocated sectors although it is
+    // only 100
+    AtomicExchange(sMARTvalue.GetNrmlzdCurrVal(),
+      p_SkSmartAttributeParsedData->current_value);
   }
   else
     AtomicExchange( (long int *) & p_sMARTuniqueIDandValues->
@@ -346,11 +358,14 @@ int SMARTaccess::GetSupportedSMART_IDs(/*SkDisk * p_skDisk*/
  * opening device "/dev/fd0" OS error code:6 error:No such device or address"
  * Should display a status message ~"opening device" in this case.*/
   gp_SMARTmon->ShowMessage("Opening device"/*UI::OpnDvc, dvcFlPth*/);
+
   ///https://github.com/Rupan/libatasmart/blob/master/atasmart.c
-  int i = sk_disk_open(dvcFlPth, /* SkDisk **_d*/ & p_skDisk);
+  /** "sk_disk_open" allocates an p_skDisk and assigns pointer to it.
+   *  (must be freed by caller via "sk_disk_free(...)" later)*/
+  int rtrnVal = sk_disk_open(dvcFlPth, /* SkDisk **_d*/ & p_skDisk);
 /**"sk_disk_open" failed :
  * http://github.com/Rupan/libatasmart/blob/master/atasmart.c#L2759 */
-  if(i == -1)
+  if(rtrnVal == -1)
   {
       //TODO fails often-> too many error messages
       //Solution?: only check if device plugged in:
@@ -370,26 +385,25 @@ int SMARTaccess::GetSupportedSMART_IDs(/*SkDisk * p_skDisk*/
       LOGN_DEBUG("successfully opened device " << dvcFlPth)
   //    i = sk_init_smart( & skDisk);
   //        sk_disk_check_power_mode(p_skDisk);
-      i = sk_disk_smart_read_data(p_skDisk);
-      if( i == 0)
+      rtrnVal = sk_disk_smart_read_data(p_skDisk);///sk_disk_smart_is_available(...)
+      if(rtrnVal == 0)
       {
         LOGN_DEBUG("successfully called sk_disk_smart_read_data for " << dvcFlPth)
-        int retVal = ///Reads all supported attributes?
+        rtrnVal = ///Reads all supported attributes?
           sk_disk_smart_parse_attributes(
            p_skDisk,
            (SkSmartAttributeParseCallback) getDriveSupportedSMART_IDs,
            & SMARTattrNamesAndIDs);
              //TODO "sk_disk_smart_parse_attributes" traverses all attributes and calls
              // the callback function
-        if( retVal < 0 )
+        if( rtrnVal < 0 )
         {
-          LOGN_ERROR("sk_disk_smart_parse_attributes retVal:" << retVal)
-          return -1;
+          LOGN_ERROR("sk_disk_smart_parse_attributes return value:" << rtrnVal)
         }
       }
       sk_disk_free( p_skDisk);
     }
-  return i;
+  return rtrnVal;
 }
 
   //TODO store paths where access was denied in order to show it later
@@ -454,6 +468,12 @@ enum SMARTaccessBase::retCodes SMARTaccess::ReadSMARTValuesForAllDrives(
           absDvcFilePath, sMARTuniqueID, dataCarrierID2devicePath,
           ///Intersection of SMART IDs to read and supported SMART IDs.
           sMARTuniqueID.m_SMART_IDsToRd);
+        ///TODO may already have been retrieved by SMARTuniqueID::guessUnit(...)
+        // if done there then do not do it here.
+        // For example use "udev" monitoring if a data carrier was added or not
+        // therefore.
+//        sMARTuniqueID.numBwrittenSinceOSstart = /*OperatingSystem::*/dataCarrier::
+//          getNumBwrittenSinceOSstart(stdstrDataCarrierPath);
         switch( retCode)
         {
             case SMARTaccessBase::success :

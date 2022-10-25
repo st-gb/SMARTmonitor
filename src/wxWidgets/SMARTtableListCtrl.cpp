@@ -2,17 +2,29 @@
  * Created on: 10.03.2015
  * Author: Stefan Gebauer, M.Sc. Comp.Sc. */
 
+///wxWidgets header files:
+#include <wx/dcclient.h>///class wxClientDC
+#include <wx/menu.h>///class wxMenu
+
 //This repository's header files:
 #include <wxWidgets/SMARTtableListCtrl.hpp>//This class.
 #include <UserInterface/columnIndices.hpp> //enum columnIndices
+///enCtxMenuLwrFntSzASCIIlit,enCtxMenuHghrFntSzASCIIlit
+#include <UserInterface/enLiterals.h>
 //wxGetApp().m_IDsOfSMARTattributesToObserve
-#include <wxWidgets/wxSMARTmonitorApp.hpp> 
+#include <wxWidgets/wxSMARTmonitorApp.hpp>
 
-///"common_sourcecode" repository:
+///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 
 namespace wxWidgets
 {
+
+///Don't use indentation for namespaces
+BEGIN_EVENT_TABLE(SMARTtableListCtrl, wxListCtrl)
+  EVT_RIGHT_DOWN(SMARTtableListCtrl::OnRightMouseButtonDown)
+END_EVENT_TABLE()
+
   //TODO make constructor with SMARTuniqueID? because all values depend on it
   SMARTtableListCtrl::SMARTtableListCtrl(
     wxWindow * parent,
@@ -22,61 +34,92 @@ namespace wxWidgets
     //long style *= wxLC_REPORT
     )
     : wxListCtrl(parent, id, pos, size, wxLC_REPORT)
+    , m_maxSMARTattrNmStrWdthInPx(0)
+    ///http://forums.wxwidgets.org/viewtopic.php?t=17143
+    , clientDC(this)
   {
-    const wxFont & textControlFont = GetFont();
+    SetToolTip(wxT(enRghtClckTooltip) );
+//	colHdrStrs[enColStrsIdx][en] = enColHdrStrs;
+
+    getSMARTAttrNmWithMaxPx();///For width of parameter name column
+    createCols();
+  }
+
+  void SMARTtableListCtrl::createCols()
+  {
 //    this->GetDC
 //    unsigned numpixels = textControlFont.GetWidth("255");
 
-    /** Adapted from 
+    /** Adapted from
      * http://wiki.wxwidgets.org/WxListCtrl#Minimal_example_to_get_started */
     wxListItem column;
-    
-    //TODO is "SetId" needed at all?
-    column.SetId(ColumnIndices::SMART_ID);
-    column.SetText( _("ID") );
-    //TODO calculate width needed for 3 digits ("255" is the highest SMART ID)
-    //TODO is 0 under Windows.
-    const int letterWidth = textControlFont.GetPixelSize().x;
-    column.SetWidth(letterWidth * 4);
-    InsertColumn(ColumnIndices::SMART_ID, column);
 
-    column.SetId(ColumnIndices::SMARTparameterName);
-    column.SetText( _("parameter name") );
+    /**Calculate width needed for 3 digits ("255" is the highest SMART ID)
+     * is 0 under Windows.*/
+//    const int letterWidth = textControlFont.GetPixelSize().x;
+//    column.SetWidth(50/*letterWidth * 4*/);
+    setColHdrAndInsCol(column, colIndices::SMART_ID);
+
+    setColHdrAndInsCol(column, colIndices::nrmlzdCurrVal);
+    setColHdrAndInsCol(column, colIndices::nrmlzdThresh);
+
+    column.SetId(colIndices::SMARTparameterName);
+    column.SetText(wxT("parameter name") );
     column.SetWidth(200);
-    InsertColumn(ColumnIndices::SMARTparameterName, column);
+    InsertColumn(colIndices::SMARTparameterName, column);
 
-    column.SetId(ColumnIndices::rawValue);
-    column.SetText( wxT("raw value") );
-    column.SetWidth(70);
-    InsertColumn(ColumnIndices::rawValue, column);
-
-    column.SetId(ColumnIndices::humanReadableRawValue);
-    column.SetText( wxT("human readable") );
-    column.SetWidth(50);
-    InsertColumn(ColumnIndices::humanReadableRawValue, column);
-
-    column.SetId(ColumnIndices::unit);
-    column.SetText( wxT("unit") );
-    column.SetWidth(50);
-    InsertColumn(ColumnIndices::unit, column);
-    
-    column.SetId(ColumnIndices::unitRange);
-    column.SetText( wxT("~unit range") );
-    column.SetWidth(50);
-    InsertColumn(ColumnIndices::unitRange, column);
-    
-    column.SetId(ColumnIndices::lastUpdate);
-    column.SetText( wxT("last update [uptime]") );
+    setColHdrAndInsCol(column, colIndices::rawValue);
+    setColHdrAndInsCol(column, colIndices::humanReadableRawVal);
+    setColHdrAndInsCol(column, colIndices::unit);
+    setColHdrAndInsCol(column, colIndices::unitRange);
     //TODO calculate width needed for the last update time string
-    column.SetWidth(150);
-    InsertColumn(ColumnIndices::lastUpdate, column);
+    setColHdrAndInsCol(column, colIndices::lastUpdate);
   }
+
+inline void GetClrAccordng1toMns1Rng(const SMARTvalRatngTyp SMARTvalRatng,
+  wxColour & color)
+{
+  if(SMARTvalRatng < 0.0f){///current value < threshold->make red
+    /**Should be at least medium red to signalize/visualize error so it can be
+     *  seen easer by human eyes.*/
+    ///Worst rating value: -1.0 => with worst rating it gets dark red.
+    const wxColourBase::ChannelType blueAndGreen = 127 - SMARTvalRatng*-127.0f;
+  /** http://docs.wxwidgets.org/3.0/classwx_colour.html : red, green, blue,
+   * transparent */
+    color.Set(255, blueAndGreen, blueAndGreen);
+  }
+  else{/**Between fully OK and threshold=>color between green and yellow meaning
+    * OK or warning*/
+/**http://en.wikipedia.org/wiki/Yellow : "sRGB^B (r, g, b)	(255, 255, 0)"
+ * "B: Normalized to [0–255] (byte)" */
+/**http://en.wikipedia.org/wiki/Orange_(colour):"sRGB^B (r, g, b)	(255, 165, 0)"
+ * "B: Normalized to [0–255] (byte)" */
+    wxColourBase::ChannelType red = 255-(int)(255.0f * SMARTvalRatng /*/FLT_MAX*/);
+  /** http://docs.wxwidgets.org/3.0/classwx_colour.html : red, green, blue,
+   * transparent */
+    color.Set(red,/**green*/255, 0);
+  }
+}
+
+inline void GetClrAccordng1toEnum(const enum SMARTvalueRating SMARTvalRatng,
+  wxColour & color)
+{
+  switch(SMARTvalRatng){
+   case SMARTvalueOK:
+    color = *wxGREEN;
+    break;
+   case SMARTvalueWarning:
+    color = *wxYELLOW;
+    break;
+//    default:
+  }
+}
 
 void SMARTtableListCtrl::SetSMARTattribValue(
   fastestUnsignedDataType SMARTattributeID,
   fastestUnsignedDataType columnIndex,
   const wxString & wxstrValue,
-  const enum SMARTvalueRating sMARTvalueRating)
+  const SMARTvalRatngTyp SMARTvalRatng)
 {
   fastestUnsignedDataType lineNumber = m_SMARTattribIDtoLineNumber[
     SMARTattributeID];
@@ -84,29 +127,21 @@ void SMARTtableListCtrl::SetSMARTattribValue(
     lineNumber, //long index
     columnIndex /** column #/ index */,
     wxstrValue);
+  wxColour color;
+  GetClrAccordng1toMns1Rng(SMARTvalRatng, color);
   ///Only do it once/for 1 attribute/column
-  if(columnIndex == ColumnIndices::rawValue)
-    switch(sMARTvalueRating)
-      case SMARTvalueOK:
-      case SMARTvalueWarning:
-    {
-      wxListItem wxListItem;
-      wxListItem.SetId(lineNumber);
-      GetItem(wxListItem);
-      switch(sMARTvalueRating){
-       case SMARTvalueOK:
-        //http://docs.wxwidgets.org/3.1.0/classwx_list_item.html
-        //wxListItem.SetTextColour(*wxGREEN);
-        ///https://forums.wxwidgets.org/viewtopic.php?t=26576
-        SetItemBackgroundColour(lineNumber, *wxGREEN);
-        break;
-       case SMARTvalueWarning:
-        SetItemBackgroundColour(lineNumber, *wxYELLOW);
-        break;
-      }
-    }
+  if(columnIndex == colIndices::rawValue)
+  {
+    //http://docs.wxwidgets.org/3.1.0/classwx_list_item.html
+/*  wxListItem wxListItem;
+    wxListItem.SetId(lineNumber);
+    GetItem(wxListItem);
+    wxListItem.SetTextColour(color);*/
+    ///https://forums.wxwidgets.org/viewtopic.php?t=26576
+    SetItemBackgroundColour(lineNumber, color);
+  }
 }
-  
+
 void SMARTtableListCtrl::CreateLines(const SMARTuniqueID & sMARTuniqueID)
 {
   fastestUnsignedDataType SMARTattributeID, lineNumber = 0;
@@ -129,7 +164,51 @@ void SMARTtableListCtrl::CreateLines(const SMARTuniqueID & sMARTuniqueID)
   int itemCount = GetItemCount();
   itemCount = itemCount;
 #endif
+}
+
+void SMARTtableListCtrl::OnRightMouseButtonDown(wxMouseEvent & evt)
+{
+  wxMenu menu(/*wxT("")*//**Set menu title because menu may be shown outside of
+    * user interface contol */wxGetApp().GetAppName()
+    /*+ wxT("SMART parameters table")*/);
+
+  wxFont font = GetFont();
+  const int fontPointSize = font.GetPointSize();
+  if(fontPointSize > wxGetApp().GetMinFntSizInPt() )
+    menu.Append(decreaseFontSize, wxT(enCtxMenuLwrFntSzASCIIlit) );
+  menu.Append(increaseFontSize, wxT(enCtxMenuHghrFntSzASCIIlit) );
+  menu.Connect(wxEVT_COMMAND_MENU_SELECTED,
+    /**func*/(wxObjectEventFunction) & SMARTtableListCtrl::OnPopupClick,
+    /**userData*/NULL, /**eventSink*/this);
+  PopupMenu(&menu);
+}
+
+void SMARTtableListCtrl::OnPopupClick(wxCommandEvent & evt)
+{
+  switch(evt.GetId() )
+  {
+    case increaseFontSize :
+     {
+      wxFont font = GetFont();
+      int fontPointSize = font.GetPointSize();
+      fontPointSize++;
+      font.SetPointSize(fontPointSize);
+      SetFont(font);
+     }
+     break;
+    case decreaseFontSize :
+     {
+      wxFont font = GetFont();
+      int fontPointSize = font.GetPointSize();
+      if(fontPointSize > wxGetApp().GetMinFntSizInPt() ){
+        fontPointSize--;
+        font.SetPointSize(fontPointSize);
+        SetFont(font);
+      }
+     }
+     break;
   }
+}
 
   SMARTtableListCtrl::~SMARTtableListCtrl()
   {

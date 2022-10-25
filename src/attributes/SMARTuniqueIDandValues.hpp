@@ -5,9 +5,15 @@
 #ifndef ATTRIBUTES_SMARTUNIQUEIDANDVALUES_HPP_
 #define ATTRIBUTES_SMARTUNIQUEIDANDVALUES_HPP_
 
-#include "SMARTuniqueID.hpp" //struct SMARTuniqueID
+///"Standard C" header files:
 #include <stdint.h> //uint64_t
+
+///_This_ repository's files:
 //#include "SMARTaccessBase.hpp"
+#include "SMARTuniqueID.hpp"///struct SMARTuniqueID
+
+///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
+#include <hardware/dataCarrier/ATA3Std.h>///ATA3Std_NrmlzdValTyp
 #include <hardware/CPU/fastest_data_type.h>
 
 //class SMARTaccessBase;
@@ -31,14 +37,42 @@ public:
   long int m_rawValue [sizeof(long int) < 8 ? 8 / sizeof(long int) : 1];
   long int m_rawValueCheckSum, m_timeCheckSum;
   long int m_successfullyReadSMARTrawValue;
+  /// http://en.wikipedia.org/wiki/S.M.A.R.T.#ATA_S.M.A.R.T._attributes :
+  AtomicExchType m_normedCurrVal;///Normalized current value(0-255)
+  AtomicExchType m_normedThresh;///Normalized threshold value(0-255)
+//  long int m_normedWorstVal;///Normalized worst value(0-255)
   
   ///Declared here to have no dependancy to SMARTaccessBase or SMARTmonitorBase
   static fastestUnsignedDataType s_sizeOfLongIntInBytes;
   static fastestUnsignedDataType s_numTimesLongIntFitsInto8Bytes;
+  const AtomicExchType GetNrmlzdCurrVal() const{return m_normedCurrVal;}
+  ///For use in atomic compare and swap operations for example.
+  AtomicExchType * const GetNrmlzdCurrVal() {return &m_normedCurrVal;}
+  const AtomicExchType GetNrmlzdThresh() const{return m_normedThresh;}
+  ///For use in atomic compare and swap operations for example.
+  AtomicExchType * const GetNrmlzdThresh() {return &m_normedThresh;}
   void SetRawValue(/*long int * ,*/ const uint64_t & rawSMARTattrValue);
   bool GetRetrievalTime(uint64_t & uptimeInMs) const;
   void SetRetrievalTime(const long double &);
   bool IsConsistent(uint64_t &) const;
+  static ATA3Std_NrmlzdValTyp maxNrmlzdVals[numDifferentSMART_IDsPlus1];
+  ///@brief Sets the maximum normalized value for a certain SMART attribute.
+  static inline void setMaxNrmlzdVal(
+    const TU_Bln361095CPUuse(FaststUint) SMARTattrID,
+    const int maxNrmlzdVal)
+  {
+    maxNrmlzdVals[SMARTattrID]=maxNrmlzdVal;
+  }
+  ///@brief Sets maximum normalized value for all SMART attributes.
+  static void setMaxNrmlzdVals(){
+    /**http://pubs.opengroup.org/onlinepubs/000095399/functions/memset.html :
+     * "(void *s, int c, size_t n);"*/
+    memset(///For memset(...), the array must have 1 byte data type
+      maxNrmlzdVals,ATA3Std_DfltNrmlzdVal,sizeof(maxNrmlzdVals));
+    /**Max Normalized value from: model:Samsung SSD 860 EVO M.2 500GB
+     * firmware:RVT24B6Q serial:S5GCNJ0N506884T, current normalized value.*/
+    setMaxNrmlzdVal(SMARTattributeNames::HW_ECC_Recovered,200);
+  }
 private:
   inline void copyAttrs(const SMARTvalue &);
   /** Has to be uint64_t in order to also work if built as 32 bit program and a

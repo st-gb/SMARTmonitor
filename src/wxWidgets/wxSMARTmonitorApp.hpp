@@ -33,7 +33,9 @@ class wxSMARTmonitorApp
 {
 public:
   wxTimer m_wxtimer;
+#ifdef TU_Bln361095useClntSrv
   ConnectToServerDialog * m_p_cnnctToSrvDlg/*(pch, timeOut )*/;
+#endif
   enum IDs {TIMER_ID = 0};
   static wxIcon s_SMARTokIcon;
   static wxIcon s_SMARTstatusUnknownIcon;
@@ -47,14 +49,18 @@ public:
   ~wxSMARTmonitorApp();
 
   std::set<wxTopLevelWindow *> openTopLevelWindows;
+#ifdef TU_Bln361095useClntSrv
   void AfterConnectToServer(int connectResult);
   void BeforeConnectToServer() {};
+#endif
   void BeforeWait();
   void ChangeConnectionState(enum serverConnectionState newState);
   void CreateCommandLineArgsArrays();
   void CreateTaskBarIcon();
+#ifdef TU_Bln361095useClntSrv
   void DisableSrvUIctrls();
   void UnCnnctdToSrvUIctrls();
+#endif
   void EndWaitTillCnnctTimer(){
     m_wxtimer.Stop();//stop connect timer in main window
     gs_dialog->SetTitle(GetAppDisplayName() );
@@ -65,23 +71,26 @@ public:
   void OnTimer(wxTimerEvent& event);
 //  int OnRun();
   bool GetIcon(wxIcon & icon, wxString iconFileName, char * inMemoryIcon [] );
+  ///Gets the minimal FoNT SIZe in unit "PoinT".
+  int GetMinFntSizInPt() const {return 6;}
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTstatusUnknownIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
-  void OnStartSrvCnnctnCntDown(wxCommandEvent &);
   void SetAttribute(
     const SMARTuniqueID &,
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
-    const enum ColumnIndices::columnIndices &,/**Usually the column (number) */
+    const enum colIndices::columnIndices &,/**Usually the column (number) */
     const std::string &,
-    const enum SMARTvalueRating, void * data);
+    const SMARTvalRatngTyp, void * data);
   void SetCurrentAction(enum CurrentAction currAction);
   void SetGetDirectSMARTvals();
   void SetGetSMARTvalsMode(const enum GetSMARTvalsMode);
   void setUI(const enum serverConnectionState);
   void ShowConnectionState(const char * const pch, int timeOut);
+#ifdef TU_Bln361095useClntSrv
   void ShwCnnctToSrvrDlg(const std::string &);
+#endif
   void ShowMessage(const char * const ) const;
   void ShowMessage(const char * const, enum MessageType::messageTypes msg) const;
   wxIcon ShowSMARTokIcon();
@@ -90,20 +99,27 @@ public:
   void ShowIcon(const wxIcon & icon, const wxString & message );
   void ShowStateAccordingToSMARTvalues(const SMARTvalueRating
     entireSMARTvalRating);
+#ifdef TU_Bln361095useClntSrv
   ///Timeout/interval before attempting to connect to server.
   void startSrvCnnctCntDown();
   /** timeout for non-blocking connect. After timeout elapses the select(...)
    * function returns. */
   void StartSrvCnnctnAttmptCntDown(const fastestUnsignedDataType);
+#endif
   void ReBuildUserInterface();
   
   DECLARE_EVENT_TABLE()
+#ifdef TU_Bln361095useClntSrv
   void OnAfterConnectToServer(wxCommandEvent &);
+#endif
   void OnChangeState(wxCommandEvent &);
   void OnCnnctToSrvr(wxCommandEvent &);
   void OnShowMessage(wxCommandEvent & event);
   void OnShowCurrentAction(wxCommandEvent &);
+#ifdef TU_Bln361095useClntSrv
+  void OnStartSrvCnnctnCntDown(wxCommandEvent &);
   void OnStartServiceConnectionCountDown(wxCommandEvent & event);
+#endif
 };
 
 wxString wxSMARTmonitorApp::GetTitleInclDataSrc()

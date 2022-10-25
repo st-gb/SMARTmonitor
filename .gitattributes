@@ -1,2 +1,5 @@
-#Bash scripts must not contain Windows line endings
-.sh text eol=lf
+## http://git-scm.com/docs/gitattributes :format is *.<file extension>
+
+##Linux/bash shell scripts should contain Unix line endings. With Windows line
+## endings there were errors like "$'\r': Kommando nicht gefunden.".
+*.sh text eol=lf

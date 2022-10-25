@@ -1,7 +1,10 @@
 <!-- S.M.A.R.T. attribute definitions in English language -->
 
-<!-- see/details from
- -GSMARTControl 1.1.3 with a HFS256G39TND-N210A SSD [GSMARTCtl1.1.3]
+<!--see/details from (quotes):
+ -application "GSmartControl"(by Alexander Shaduri) version 1.1.3 with a
+  HFS256G39TND-N210A SSD="GSMARTCtl1.1.3"
+ -application "GSmartControl" (by Alexander Shaduri) 1.1.4 with an
+  "INTEL SSDSC2BF240A5H REF" SSD (firmware:"LWDi")="GSMARTCtl1.1.4"
  -libatasmart homepage
  -http://www.t13.org/Documents/UploadedDocuments/docs2005/e05148r0-ACS-SMARTAttributesAnnex.pdf
   [T13_2005]
@@ -34,8 +37,10 @@
   <SMART_parameter Id="100" Name="Data Erased"/><!--[GSMARTCtl1.1.3]-->
   <SMART_parameter Id="168" Name="SATA Physical Error Count"/><!--[GSMARTCtl1.1.3]-->
   <SMART_parameter Id="169" Name="Bad Block Count"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_parameter Id="170" Name="Reserved Block Count"/><!--[GSMARTCtl1.1.4]-->
   <SMART_parameter Id="171" Name="Program Fail Count"/><!--[enWikip]-->
   <SMART_parameter Id="172" Name="SSD Erase Fail Count"/><!--[enWikip]-->
+  <SMART_parameter Id="173" Name="Erase Count"/><!--[GSMARTCtl1.1.4]-->
   <SMART_parameter Id="174" Name="Unexpected Power Loss Count"/><!--[enWikip]-->
   <SMART_parameter Id="175" Name="Power Loss Protection Failure"/><!--[enWikip]-->
   <SMART_parameter Id="176" Name="Erase Fail Count"/><!--[enWikip]-->
@@ -84,6 +89,13 @@ The raw value of this attribute shows the total number of attempts to transfer d
 NOTE: Shift of disks is possible as a result of a strong shock or a fall, or for other reasons." />
   <SMART_parameter Id="223" Name="Load/Unload Retry Count"
    Details="Count of times head changes position." />
+  <SMART_parameter Id="225" Name="Host Written(32 MiB)"/><!--[GSMARTCtl1.1.4]-->
+  <!--[GSMARTCtl1.1.4]-->
+  <SMART_parameter Id="228" Name="Power-Off Retract Count"/>
+  <!--[GSMARTCtl1.1.4]-->
+  <SMART_parameter Id="232" Name="Available Reserved Space"/>
+  <!--[GSMARTCtl1.1.4]-->
+  <SMART_parameter Id="233" Name="Media Wear Out Indicator"/>
   <SMART_parameter Id="234" Name="Average erase count AND Maximum Erase Count"/><!--[enWikip]-->
   <SMART_parameter Id="235" Name="Good Block Count AND System(Free) Block Count"/><!--[enWikip]-->
   <SMART_parameter Id="240" Name="Head Flying Hours/Transfer Error Rate"
@@ -97,6 +109,7 @@ NOTE: Shift of disks is possible as a result of a strong shock or a fall, or for
    Details="Total count of data (different units:often LBAs/sectors) written to data carrier."/>
   <SMART_parameter Id="242" Name="Total Data Read"
    Details="Total count of Logical Block Addresses (LBAs) read." />
+  <SMART_parameter Id="249" Name="NAND Written(1GiB)"/><!--[GSMARTCtl1.1.4]-->
   <SMART_parameter Id="250" Name="Read Error Retry Rate"/><!--[T13_2005]-->
   <SMART_parameter Id="254" Name="Free Fall Protection"
    Details="Count of 'Free Fall Events' detected." />

@@ -9,6 +9,8 @@
 #include "wxSMARTmonitorDialog.hpp"
 #include "wxSMARTmonitorApp.hpp" //wxGetApp()
 #include "wxSMARTmonitorTaskBarIcon.hpp"
+///TU_Bln361095cnctBtnANSIstr,TU_Bln361095cnctBtnTltpANSIstr
+#include <client/SMARTmonitorClient.h>
 #include <wxWidgets/SupportedSMARTIDsDialog.hpp>///class
 
 ///wxWidgets files:
@@ -23,7 +25,7 @@
     #include "wx/wx.h"
 #endif
 
-///Stefan Gebauer's common_sourcecode repository:
+///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
 #include <compiler/GCC/enable_disable_warning.h>
 GCC_DIAG_OFF(write-strings)
 //#include "warning.xpm"
@@ -57,7 +59,9 @@ BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
   EVT_BUTTON(wxID_OK, SMARTdialog::OnOK)
   EVT_BUTTON(wxID_EXIT, SMARTdialog::OnExit)
   EVT_BUTTON(showSupportedSMART_IDs, SMARTdialog::OnShowSupportedSMART_IDs)
+#ifdef TU_Bln361095useClntSrv
   EVT_BUTTON(CONNECT, SMARTdialog::OnCnnctToSrvOrDiscnnct)
+#endif
   EVT_CLOSE(SMARTdialog::OnCloseWindow)
   EVT_COMMAND(wxID_ANY, UpdateSMARTparamValsInGUIevtType,
     SMARTdialog::OnUpdateSMARTparameterValuesInGUI)
@@ -209,11 +213,6 @@ void SMARTdialog::NoDrctSMARTaccessUIctrls(){
   m_p_directSMARTaccesBtn->SetLabel(wxT("Direct S.M.A.R.T.") );
 }
 
-void SMARTdialog::UnCnnctdToSrvUIctrls(){
-  m_p_ConnectAndDisconnectButton->SetLabel(wxT("Connect...") );
-  m_p_ConnectAndDisconnectButton->Enable(true);
-}
-
 void SMARTdialog::EnableShowSupportedSMART_IDs()
 {
   for(SMARTuniqueID2perDataCarrierPanelType::const_iterator iter =
@@ -230,11 +229,13 @@ void SMARTdialog::setUI(const enum SMARTmonitorClient::serverConnectionState
   srvCnnctnState)
 {
   switch(srvCnnctnState){
+#ifdef TU_Bln361095useClntSrv
    case SMARTmonitorClient::cnnctdToSrv:
-    m_p_ConnectAndDisconnectButton->SetLabelText(wxT("Disconnect") );
-    m_p_ConnectAndDisconnectButton->Enable();
+    m_p_cnctAndDiscnctBtn->SetLabelText(wxT(TU_Bln361095discnctBtnANSIstr) );
+    m_p_cnctAndDiscnctBtn->Enable();
     EnableShowSupportedSMART_IDs();
     break;
+#endif
   }
 }
 
@@ -340,15 +341,17 @@ void SMARTdialog::buildUI()
 
   wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
   sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
-  m_p_ConnectAndDisconnectButton = new wxButton(this, CONNECT,
-    wxT("&Connect...") );
   #ifdef directSMARTaccess
     //TODO only add if sufficient access rights: if(directSMARTaccessAvailable)
     m_p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,
       wxT("&direct S.M.A.R.T.") );
-    sizerBtns->Add(m_p_directSMARTaccesBtn),
+    sizerBtns->Add(m_p_directSMARTaccesBtn);//, flags);
   #endif
-  sizerBtns->Add(m_p_ConnectAndDisconnectButton, flags);
+#ifdef TU_Bln361095useClntSrv
+  m_p_cnctAndDiscnctBtn = new wxButton(this, CONNECT,
+    wxT(TU_Bln361095cnctBtnASCIstr) );
+  sizerBtns->Add(m_p_cnctAndDiscnctBtn, flags);
+#endif
   /** Needs to compile with wxWidgets headers > 2.8.x */
   if( wxTaskBarIcon::IsAvailable() )
   {
@@ -477,53 +480,6 @@ void SMARTdialog::OnExit(wxCommandEvent& WXUNUSED(event))
 {
   EndAllThreadsAndCloseAllOtherTopLevelWindows();
   Close(true);
-}
-
-///Called when pressing the "Connect..." / "disconnect" button
-void SMARTdialog::OnCnnctToSrvOrDiscnnct(wxCommandEvent& WXUNUSED(event))
-{
-//  if( m_p_ConnectAndDisconnectButton->GetLabelText(wxT("&Disconnect") );
-  //TODO or more general: disable all service interacting buttons
- 
-  ///Handle depending on the current connection state.
-  switch(wxGetApp().m_srvrCnnctnState)
-  {
-   case SMARTmonitorClient::uncnnctdToSrv:
-    ///Disable "Connect.." button as the connect to server" dialog is shown now.
-    wxGetApp().setUI(SMARTmonitorClient::connectToSrv);
-    ///Currently unconnected->show "connect to server" dialog
-    wxGetApp().ConnectToServer();
-    break;
-   case SMARTmonitorClient::cnnctdToSrv:
-   /** May mean:
-    * -Is (also/currently) connected to server
-    * -when getting S.M.A.R.T. data directly.*/
-   case SMARTmonitorClient::valUpd8:
-    ///Cancel connection:
-    /** Closing the socket causes the server connect thread to break/finish */
-    //close(wxGetApp().m_socketPortNumber);
-    wxGetApp().EndUpdateUIthread();
-#if directSMARTaccess
-    if(wxGetApp().getsSMARTdataDrctly() ){
-      wxGetApp().setUI(SMARTmonitorClient::endedDrctSMART);
-      wxGetApp().ConnectToServer();
-    }
-    else
-#endif
-      //TODO set m_srvrCnnctnState to "uncnnctdToSrv"
-      wxGetApp().setUI(SMARTmonitorClient::uncnnctdToSrv);
-    break;
-   case SMARTmonitorClient::drctSMARTaccss:
-    wxGetApp().EndUpdateUIthread();
-    wxGetApp().setUI(SMARTmonitorClient::endedDrctSMART);
-    wxGetApp().setUI(SMARTmonitorClient::connectToSrv);
-    ///Currently unconnected->show "connect to server" dialog
-    wxGetApp().ConnectToServer();
-    break;
-   case SMARTmonitorClient::endedDrctSMART:
-    wxGetApp().ConnectToServer();
-    break;
-  }
 }
 
 /** @param serverConnectionState the current? state

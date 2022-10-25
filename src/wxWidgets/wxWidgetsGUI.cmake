@@ -8,13 +8,20 @@ set(thisCMakeScriptFileDir ${CMAKE_CURRENT_LIST_DIR})
 
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
-  ${CMAKE_CURRENT_LIST_DIR}/ConnectToServerDialog.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SMARTtableListCtrl.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SupportedSMARTIDsDialog.cpp
   ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorApp.cpp
   ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorDialog.cpp
   ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorTaskBarIcon.cpp
 )
+
+if(DEFINED TU_Bln361095useClntSrv)
+ set(SOURCE_FILE_PATHS
+  ${SOURCE_FILE_PATHS}
+  ${CMAKE_CURRENT_LIST_DIR}/ConnectToServerDialog.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/client/SMARTmonDlg_client.cpp
+  )
+endif()
 
 if(UNIX)
   #Force build date to be updated/date of this build. Update time of main dialog

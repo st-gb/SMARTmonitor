@@ -86,7 +86,7 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
   ${defaultLoggerSrcFilePaths}
   ${SMARTmonSrcDir}/UserInterface/UserInterface.cpp
   ${SMARTmonSrcDir}/SMARTmonitorBase.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/character_string/stdtstr.cpp
+  ${COMMON_SOURCECODE_ROOT_PATH}/dataType/charStr/stdtstr.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/FileSystem/PathSeperatorChar.cpp
 )
 

@@ -3,12 +3,13 @@
 
 ///Standard C/C++ header files:
 #include <unistd.h>///sleep(unsigned)
+#include <signal.h>///signal(...)
 
 ///Stefan Gebauer's common_sourcecode git repository:
 /** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
  *  winsock2.h before windows.h [-Wcpp]" */
 #include <OperatingSystem/BSD/socket/socket.h>///CloseSocket()
-#include <Controller/character_string/stdtstr.hpp>///GetStdWstring(...)
+#include <dataType/charStr/stdtstr.hpp>///GetStdWstring(...)
 #include <Controller/Logger/LogFileAccessException.hpp>
 typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
@@ -21,6 +22,7 @@ typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 ///OperatingSystem::GetCurrentTime(...)
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 
+///_This_ repository's header files:
 #include "SMARTmonitorBase.hpp"///class SMARTmonitorBase
 #include <SMARTaccessBase.hpp> //class SMARTaccessBase
 #include <tinyxml2/ConfigLoader.hpp> //class tinyxml2::ConfigLoader
@@ -41,6 +43,8 @@ CommandLineOption SMARTmonitorBase::s_commandLineOptions [] = {
   {"svcConnConfFile", "<absolute or relative service config file FOLDER>, e.g. "
     "\"server.xml\""},
   {"loglevel", NULL},
+//  {"--help", "(no option value): shows all available command line options and "
+//    "exits"},
   {""}
 };
 
@@ -69,6 +73,7 @@ SMARTmonitorBase::SMARTmonitorBase()
 {
   //TODO also called in service_main.cpp: test if no error in Linux service
   LogLevel::CreateLogLevelStringToNumberMapping();
+  SMARTvalue::setMaxNrmlzdVals();
   /** For calling ::UpdateSMARTparameterValuesThreadFunc(void *) */
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
 #ifdef directSMARTaccess
@@ -106,8 +111,11 @@ SMARTmonitorBase::~SMARTmonitorBase() {
 #define makeWchar_concat(x) L##x
 #define makeWchar(x) makeWchar_concat(x)
 
-/** Rationale: even If the S.M.A.R.T. attribute definition configuration file is
- * missing parameter names are possible. */
+/**@brief sets the default English S.M.A.R.T. parameter names.
+ *  These may not apply for a model or may be named too generally (the same
+ *  attribute ID may have multiple meanings among different drives).
+ *  Rationale: even if the S.M.A.R.T. attribute definition configuration file is
+ *  missing then parameter names are possible.*/
 void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(1, "Read Error Rate");
   SMARTattrDefAccss::Set(2, "Throughput Performance");
@@ -178,7 +186,18 @@ void SMARTmonitorBase::setDfltSMARTattrDef(){
   SMARTattrDefAccss::Set(254, "Free Fall Protection");
 }
 
-void SMARTmonitorBase::sigHandler(int signo){}
+void SMARTmonitorBase::sigHandler(int sigNo){
+  LOGN("received signal:" << sigNo)
+  switch(sigNo)
+  {
+    case SIGPIPE:
+      LOGN_ERROR("pipe/socket is broken")
+      break;
+    case SIGINT:
+      break;
+  }
+}
+
 void SMARTmonitorBase::regCancelSelectSigHandler(){
 #ifdef __linux__///SIGUSR1 not available in MinGW/MS Windows
   /** https://en.wikipedia.org/wiki/C_signal_handling
@@ -186,6 +205,7 @@ void SMARTmonitorBase::regCancelSelectSigHandler(){
    * waiting in select(...) for non-blocking connection to server). */
   signal(SIGUSR1, sigHandler);
 #endif
+  signal(SIGPIPE, sigHandler);
 }
 
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
@@ -250,11 +270,11 @@ void SMARTmonitorBase::GetUsage(std::ostringstream & stdoss)
      "option VALUE>\n\n"
     "available options:\n";
   for (fastestUnsignedDataType index = 0;
-    s_commandLineOptions[index].optionName[0] != '\0'; ++index) {
+    s_commandLineOptions[index].optionName[0] != '\0'; ++index)
+  {
     CommandLineOption & commandLineOption = s_commandLineOptions[index];
     stdoss << "-" << commandLineOption.optionName << " " <<
-    commandLineOption.possibleOptionValue << "";
-    stdoss << "\n";
+      commandLineOption.possibleOptionValue << std::endl;
   }
 }
 
@@ -263,7 +283,7 @@ void SMARTmonitorBase::OutputUsage() {
   GetUsage(stdoss);
   std::string str = stdoss.str();
 //  std::cout << str << std::endl;
-  ShowMessage(str.c_str() );
+  ShowMessage(str.c_str(), MessageType::info);
 }
 
 std::wstring SMARTmonitorBase::GetCommandLineOptionValue(
@@ -303,8 +323,12 @@ void SMARTmonitorBase::GetCmdLineOptionNameAndValue(
     programArgumentIndex++;
   } else {
     cmdLineOptionName = std_wstrCmdLineOption;
-    cmdLineOptionValue = GetCommandOptionValue(programArgumentIndex);
-    programArgumentIndex += 2;
+    if(cmdLineOptionName == L"--help")///Option value for help not intended.
+       ++programArgumentIndex;
+    else{
+      cmdLineOptionValue = GetCommandOptionValue(programArgumentIndex);
+      programArgumentIndex += 2;
+    }
   }
 }
 
@@ -387,6 +411,7 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
 {
   unsigned programArgumentCount = m_commandLineArgs.GetArgumentCount();
   bool showUsage = false;
+  fastestUnsignedDataType retVal = sccssfllyParsedAllCmdLneArgs;
   if (programArgumentCount > 1)
   {
     //    int charPosOfEqualSign;
@@ -405,11 +430,17 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
     {
       //      cmdLineOptionName = GetCommandOptionName(cmdLineOption);
       GetCmdLineOptionNameAndValue(programArgumentIndex, cmdLineOptionName,
-              cmdLineOptionValue);
+        cmdLineOptionValue);
 
       //      cmdLineOptionValue = GetCommandOptionValue(/*cmdLineOptionName.c_str()*/
       //        programArgumentIndex );
-      if (cmdLineOptionValue == L"") {
+      if(cmdLineOptionName == L"--help"){
+        showUsage = true;
+        retVal = calledHelp;
+      }
+      else if(cmdLineOptionValue == L"") {
+        //TODO show in UI.(via ShowMessage(), but this must persist after the
+        //  "no direct SMART access permission" message )
         std::wcout << L"unknown command line option \"" << cmdLineOptionName
                 << L"\"" << std::endl;
         atLeast1UnknwonCmdLineOption = true;
@@ -437,9 +468,8 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
     showUsage = true;
   if(showUsage){
     OutputUsage();
-    return 1;
   }
-  return 0;
+  return retVal;
 }
 
 bool SMARTmonitorBase::InitializeLogger() {
@@ -695,7 +725,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
     if(p_getSMARTvaluesFunction ==
         //p_SMARTmonitorBase->GetSMARTattrValsFromSrv()
         & SMARTmonitorBase::GetSMARTattrValsFromSrv )
-      OperatingSystem::BSD::sockets::CloseSocket();
+      OperatingSystem::BSD::sockets::End();
   }
   }///E.g. if rolling file appender and permission denied for the new file.
   catch(LogFileAccessException & lfae){
@@ -957,6 +987,7 @@ void SMARTmonitorBase::ShowMessage(const char * const msg,
     * logging to a file may be unavailable/the messages can be seen easier.*/
    case MessageType::error: /*LOGN_ERROR(msg)*/ std::cerr << msg; break;
    case MessageType::warning: /*LOGN_WARNING(msg)*/ std::cout << msg; break;
+   case MessageType::info:
    case MessageType::success: /*LOGN_SUCCESS(msg)*/ std::cout << msg; break;
   }
 }

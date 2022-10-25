@@ -1,14 +1,31 @@
 
 set(SMARTattrValProcSrcFilePaths 
   ${SMARTmonSrcDir}/SMARTvalueFormatter.cpp)
-set(CmnSrcSocket ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/BSD/socket)
 #Source files needed for a SMARTmonitorClient(-derived) class
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
   ${SMARTattrValProcSrcFilePaths}
-  ${SMARTmonSrcDir}/socket/SocketOperations.cpp
-  ${CmnSrcSocket}/prepCnnctToSrv.c
-  ${CmnSrcSocket}/socketTimeout.cpp
-  ${SMARTmonSrcDir}/tinyxml2/ProcessSMARTdata.cpp
   ${SMARTmonSrcDir}/client/SMARTmonitorClient.cpp
+  ${SMARTmonSrcDir}/UserInterface/SMARTparamTblHdrWStr.c
 )
+
+if(DEFINED TU_Bln361095useBSDskt)
+ message("${SGR_Blue}UI should use BSD sockets${SGR_ColourReset}")
+ set(SOURCE_FILE_PATHS
+  ${SOURCE_FILE_PATHS}
+  ${SMARTmonSrcDir}/client/InterProcComm/BSDskt/SMARTmonUI_BSDskt.cpp
+  )
+  ##BSD sockets are a subtype of Client/Server and InterProcess Communication
+  set(TU_Bln361095useClntSrv TRUE)
+  set(compDefs "-DTU_Bln361095useBSDskt -DTU_Bln361095useClntSrv \
+    -DTU_Bln361095useInterProcComm")
+  add_definitions(${compDefs})
+  message("adding comp. defs:${compDefs}")
+  include(${cmnSrcDir}/OperatingSystem/BSD/socket/set_IPv.cmake)
+endif()
+if(DEFINED TU_Bln361095useClntSrv)
+ set(SOURCE_FILE_PATHS
+  ${SOURCE_FILE_PATHS}
+  ${SMARTmonSrcDir}/tinyxml2/ProcessSMARTdata.cpp
+  )
+endif()

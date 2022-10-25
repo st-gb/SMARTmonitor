@@ -1,0 +1,11 @@
+Visual Studio Code
+==================
+
+Show "CMake Diagnostics"
+
+wxWidgets Graphical User Interface ("wxGUI")
+--------------------------------------------
+In terminal window inside Visual Studio Code(in "src" directory):
+1. '../create/wxGUI/create_wxGUI_LinuxDebugWithDirectS.M.A.R.T.access.sh
+ "Unix Makefiles"'
+2."cmake --build ."

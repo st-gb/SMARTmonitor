@@ -13,8 +13,10 @@
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchType
 ///typedef nativeEvent_type
 #include <OperatingSystem/multithread/nativeEvent_type.hpp>
+#ifdef multithread
 ///typedef nativeThread_type
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
+#endif
 #include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
 ///struct CommandLineOption
 #include <OperatingSystem/Process/CommandLineOption.hpp>
@@ -68,6 +70,8 @@ class SMARTmonitorBase
 public:
   enum GetSMARTvalsMode{directSMARTvals, noUpdate};
   enum GetSMARTvalsMode m_getSMARTvalsMode;
+  enum prcssCmdLneArgsRtrnVals {sccssfllyParsedAllCmdLneArgs = 0,//dontShowUI = 1,
+    calledHelp};
   const struct tm & GetLastSMARTvaluesUpdateTime() const {
     //TODO because "tm" is a struct with multiple fields/members:
     // changes non-atomically in get SMART values thread.
@@ -123,7 +127,9 @@ protected:
    *  -or from config file */
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
 public:
+#ifdef multithread
   nativeThread_type connectThread;
+#endif
   virtual void startSrvCnnctCntDown(){};
   fastestUnsignedDataType m_cnnctTimeOutInSec;
   std::wstring GetProgramOptionValue(const /*enum programOptionNames*/

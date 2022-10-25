@@ -4,7 +4,7 @@
 
 /** Files from Stefan Gebauer's common_sourcecode repository: */
 ///convertToStdString(...)
-#include <Controller/character_string/convertFromAndToStdString.hpp>
+#include <dataType/charStr/convertFromAndToStdString.hpp>
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
 #include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN[...](...)
 
@@ -222,7 +222,8 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
                /// max. TBW" is
                " >=~" + convertToStdString(percent) + "%";
            case getValRespMakeMoreAccurate:*/
-            numWithSIprefix += " " + convertToStdString(percent) + "%";
+            numWithSIprefix += " " + TU_Bln361095::charStr::convertToStdString(
+              percent) + "%";
 //          }
         }
       }

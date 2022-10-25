@@ -1,14 +1,21 @@
 #ifdef __linux__
   #include <sys/ioctl.h>///FIONREAD
 #endif
-#include <OperatingSystem/BSD/socket/socket.h>///socket(...), InitSocket(...)
+
+///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
+/** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
+ *  winsock2.h before windows.h [-Wcpp]" */
+/**OperatingSystem::BSD::sockets::readFromSocket2(...),
+ * OperatingSystem::BSD::sockets::Bgn(...)*/
+#include <OperatingSystem/BSD/socket/socket.h>
+#include <OperatingSystem/BSD/socket/getSocketError.h>///getSocketError(...)
 #include <OperatingSystem/BSD/socket/sockaddr_in.h>///struct sockaddr_in
 #include <fcntl.h> //fcntl(...)
 
 //#include "SocketOperations.h"
 #include <client/SMARTmonitorClient.h>
 
-///Stefan Gebauer's common_sourcecode repository files:
+///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 #include "OperatingSystem/GetLastErrorCode.hpp" //OperatingSystem::GetLastErrorCode()
@@ -108,12 +115,14 @@ fastestUnsignedDataType SMARTmonitorClient::GetSMARTattrValsFromSrv(
     int rdError;
     /** http://man7.org/linux/man-pages/man2/read.2.html :
      *  "On error, -1 is returned, and errno is set appropriately." */
-    rdFrmScktRslt = readFromSocket2(m_socketFileDesc,
+    rdFrmScktRslt = OperatingSystem::BSD::sockets::readFromSocket2(
+      m_socketFileDesc,
       SMARTdataXML, numBytesToRead, & numBytesRead, & rdError);
     SetCurrentAction(hasReadSMARTvaluesXMLdata);
     //TODO often numBytesRead < numBytesToRead if this function is called from 
     //  "UpdateSMARTparameterValuesThreadFunc"
-    if(numBytesRead < numBytesToRead) {
+    if(numBytesRead < numBytesToRead) {//TODO read mutliple times?! because not
+      //all data may be sent/in buffer at once
       HandleTransmissionError(SMARTparameterValues,
         //numBytesRead < 0 ? 0: numBytesRead,
         numBytesRead, numBytesToRead, rdError);
@@ -332,8 +341,13 @@ int ConnectToSocketNonBlocking(
         errNo = errno;
       }
     }
-    else{/// errno not EINPORGRESS
-      errNo = errno;
+/**Preparing to connect/calling connect(...) failed<=>"errno"<>EINPROGRESS in
+ * Linux/WSAGetLastError()<>WSAEWOULDBLOCK in Microsoft Windows.*/
+    else{
+/**Do not rely on "errno" because in >common_sourcecode<\OperatingSystem\Windows
+ * \BSD_sockets\isNonBlckngCnnctRtrnCode.h for OperatingSystem::BSD::sockets::
+ * isNonBlckngCnnctRtrnCode() errno was 0 although "WSAEFAULT" means an error.*/
+//      errNo = errno;
 //     connStep = connect;
       result = -1;
     }
@@ -433,9 +447,10 @@ fastestUnsignedDataType SMARTmonitorClient::ConnectToServer(
   const char * hostName, bool asyncConnect)
 {
   regCancelSelectSigHandler();
-  OperatingSystem::BSD::sockets::InitSocket();//TODO close the socket at end
+  OperatingSystem::BSD::sockets::Bgn();//TODO close the socket at end
   struct sockaddr_in srvAddr;
-  fastestUnsignedDataType prepCnnctToSrvRslt = prepCnnctToSrv(hostName,
+  fastestUnsignedDataType prepCnnctToSrvRslt = OperatingSystem::BSD::sockets::
+    prepCnnctToSrv(hostName,
     m_socketPortNumber, & srvAddr, AF_INET, & m_socketFileDesc);
   if(prepCnnctToSrvRslt != prepCnnctToSrvSucceeded)
     return prepCnnctToSrvRslt;
@@ -495,6 +510,162 @@ void SMARTmonitorClient::AfterGetSMARTvaluesLoop(int getSMARTvaluesResult)
   }
 }
 
+///Srv=server:
+fastestUnsignedDataType SMARTmonitorClient::GetSupportedSMARTidsFromSrv()
+{
+  dataCarrierIDandSMARTidsContainer.clear();
+  SetCurrentAction(readNumBytesForSuppSMART_IDs);
+  fastestSignedDataType numBytesToRead = ReadNumFollowingBytes();
+  if( numBytesToRead < 1 )
+    return readLessBytesThanIntended;
+  LOGN_DEBUG("# of following bytes: " << numBytesToRead );
+  std::ostringstream std_oss;
+  std_oss << "# of bytes for supported SMART IDs: " << numBytesToRead;
+  UserInterface::MessageType::messageTypes msgType = UserInterface::MessageType
+    ::error;
+  if( numBytesToRead > 0 )
+    msgType = UserInterface::MessageType::success;
+  ShowMessage(std_oss.str().c_str(), msgType);
+  const fastestUnsignedDataType numBytesToAllocate = numBytesToRead + 1;
+  uint8_t * XMLdata = new uint8_t[numBytesToAllocate];
+  if( XMLdata)
+  {
+    unsigned numBytesRead;
+    SetCurrentAction(readSuppSMART_IDsXMLdata);
+    int rdErrno;
+    int rdFrmScktRslt = OperatingSystem::BSD::sockets::readFromSocket2(
+      m_socketFileDesc, XMLdata, numBytesToRead, & numBytesRead, & rdErrno);
+    if(numBytesRead < numBytesToRead) {
+      HandleTransmissionError(SMARTdata,//numBytesRead < -1 ? 0 : numBytesRead
+        numBytesRead, numBytesToRead, rdErrno);
+      LOGN_ERROR("read less bytes (" << numBytesRead << ") than expected ("
+        << numBytesToRead << ")");
+      return 2; //TODO provide error handling (show message to user etc.)
+    }
+    LOGN_DEBUG("successfully read " << numBytesRead << "bytes")
+    XMLdata[numBytesToRead] = '\0';
+
+    GetSupportedSMARTattributesViaXML(XMLdata, numBytesToRead,
+      dataCarrierIDandSMARTidsContainer);
+    delete [] XMLdata;
+  }
+  return 0;
+}
+
+/** @brief Gets S.M.A.R.T. values and starts "get S.M.A.R.T. values" loop (in a
+ *  dedicated thread if multithreaded) */
+void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
+{
+#ifdef _DEBUG
+  /**Prevent the update thread from running more than once (this brings socket
+   * problems--read the wrong size of bytes to receive)*/
+  if( GetSMARTvalsAndUpd8UIthreadID == 0){
+    const DWORD currentThreadNum = OperatingSystem::GetCurrentThreadNumber();
+//    GetSMARTvalsAndUpd8UIthreadID = currentThreadNum;
+    AtomicExchange( (AtomicExchType *) & GetSMARTvalsAndUpd8UIthreadID,
+      (AtomicExchType) currentThreadNum);
+  }
+  else
+  {
+//  std::string fnName = compiler::GetCurrFnName();
+    //TODO if unprivileged (non-root) access and after countdown to connect to
+    // (with localhost configuration file) server this happens
+    ShowMessage("a thread already started GetSMARTvaluesAndUpdateUI",
+      UserInterface::MessageType::error);
+    return;
+  }
+#endif
+  //TODO memory fence (synchronize for multiple ("GUI" and "get S.M.A.R.T. info)
+  // for access to SMARTuniqueIDsAndValues?
+//  std::atomic_thread_fence(std::memory_order_relaxed);
+  //asm volatile (“” : : : “memory”)
+//  asm volatile ("mfence" ::: "memory");
+//  memory_barrier();
+//  waitOrSignalEvt.WaitForSignalOrTimeoutInMs(1);
+  /** Avoid using old values for unit etc. after reconnecting (to another
+   *  server) */
+  SMARTuniqueIDsAndValues.clear();
+  /** Before calling this function the connection should be established. */
+  //TODO possibly move this line to after successfull connection.
+  m_serverConnectionState = cnnctdToSrv;
+  ChangeConnectionState(cnnctdToSrv);
+  //SMARTaccess_type & sMARTaccess = m_SMARTaccess.;
+  std::set<SMARTuniqueIDandValues> & sMARTuniqueIDandValues =
+    SMARTuniqueIDsAndValues;
+  int result = GetSupportedSMARTidsFromServer();
+  if( result > 0 )
+  {
+    /** If not closing then the socket file descriptor number increases on
+     *  next socket(...) call?! */
+    /** http://man7.org/linux/man-pages/man2/close.2.html :
+     * "close() returns zero on success." */
+    result = close(m_socketFileDesc);
+//    SetState(unconnected);//TODO
+    //TODO use variable m_serviceConnectionCountDownInSeconds as parameter
+    StartSrvCnnctnAttmptCntDown(60);
+    return;
+  }
+  LOGN("SMART unique ID and values container:" << &sMARTuniqueIDandValues)
+  /** Get # of attributes to in order build the user interface (write
+   *  attribute ID an name into the table--creating the UI needs to be done
+   *  only once because the attribute IDs received usually do not change).*/
+  const int getSMARTvaluesResult = GetSMARTattrValsFromSrv(
+    /*sMARTuniqueIDandValues*/);
+  if(getSMARTvaluesResult == 0)
+  {
+    //TODO the following code could go into a function of a new
+    // "class SMARTuniqueIDsAndValues
+    // : public SMARTuniqueIDandValsContType"
+    ///Important if no S.M.A.R.T. attributes to read exist yet.
+    for(SMARTuniqueIDandValsContType::iterator iter =
+      SMARTuniqueIDsAndValues.begin(); iter != SMARTuniqueIDsAndValues.end();
+      iter++)
+    {
+      SMARTuniqueID & sMARTuniqueID =(SMARTuniqueID &) iter->getSMARTuniqueID();
+      if(sMARTuniqueID.noSMARTattrsToRead() )
+        ( (SMARTuniqueIDandValues &) *iter).
+          setSMART_IDsToReadFromSuccSMARTrawValUpd8();
+//      else
+        //TODO call SMARTuniqueID.SetSMART_IDsToRead() ?
+      	// because else old values are used of connecting to another server
+    }
+    SetSMARTattributesToObserve(sMARTuniqueIDandValues);
+//      m_p_ConnectAndDisconnectButton->SetLabel(wxT("disconnect"));
+    ReBuildUserInterface();
+    UpdateSMARTvaluesUI();
+    /** Show the state (SMART OK or warning) for the 1st time
+     *  (in the user interface). E.g. show the icon and message belonging.
+     *  Afterwards this method is only called if "s_atLeast1CriticalNonNullValue" changes.*/
+    //TODO re-enable thread-safe? (ensure executed in GUI thread)
+//    ShowStateAccordingToSMARTvalues(s_atLeast1CriticalNonNullValue);
+    m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction =
+      & SMARTmonitorBase::GetSMARTattrValsFromSrv;
+#ifdef multithread
+//  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+    /** To start thread object m_updateSMARTparameterValuesThread which is
+     * waited for thread termination at exit. */
+    StartAsyncUpdateThread(
+      //UpdateSMARTvaluesThreadSafe
+      m_getSMARTvaluesFunctionParams
+      );
+//  else
+//    UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
+#else
+    UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
+#endif
+//      ((SMARTmonitorBase *)this)->StartAsyncUpdateThread(SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
+  }
+  else
+  {
+    /** If not closing then the socket file descriptor number increases on
+     *  next socket(...) call?! */
+    close(m_socketFileDesc);
+    //TODO use variable m_serviceConnectionCountDownInSeconds as parameter
+    StartSrvCnnctnAttmptCntDown(60);
+  }
+  LOGN_DEBUG("end")
+}
+
 /**@param connectResult the errno from calling "connect" (blocking connect)/
  * "select" (non-blocking connect) */
 void SMARTmonitorClient::HandleConnectionError(const char * hostName,
@@ -536,5 +707,67 @@ void SMARTmonitorClient::HandleConnectionError(const char * hostName,
     break;
   }
   ShowMessage(oss.str().c_str(), MessageType::error );
-  LOGN_ERROR(oss.str() )
+  ///Is logged too often if interval/timer with connection attempts.
+//  LOGN_ERROR(oss.str() )
+}
+
+void SMARTmonitorClient::HandleTransmissionError(
+  enum SMARTmonitorClient::TransmissionError transmissionError,
+  const fastestUnsignedDataType numBread,
+  const fastestUnsignedDataType numBtoRead,
+  const int rdErrno)///errno from read(...)/recv(...)
+{
+  std::ostringstream stdoss;
+  char * errorMessageForErrno = NULL;
+#ifdef _WIN32
+  int lastWSAerror = WSAGetLastError();
+  //http://stackoverflow.com/questions/3400922/how-do-i-retrieve-an-error-string-from-wsagetlasterror
+#endif
+  const int lastErrorNumber = /*OperatingSystem::GetLastErrorCode();*/ errno;
+  if(rdErrno != 0)
+  {
+    switch(rdErrno)
+    {
+      //TODO Unix-specific value
+      case EPIPE :
+        //see https://linux.die.net/man/2/write
+        errorMessageForErrno = (char *) "The reading end of socket is closed.";
+        break;
+      default:
+        errorMessageForErrno = strerror(rdErrno);
+//        errorMessageForErrno  = OperatingSystem::GetErrorMessageFromErrorCodeA(
+//          lastErrorNumber);
+        break;
+    }
+  }
+  switch(transmissionError)
+  {
+    case numBytesToReceive :
+      stdoss << "ERROR reading the number of following bytes from socket";
+      break;
+    case SMARTparameterValues :
+      stdoss << "ERROR reading SMART parameter values from socket";
+      break;
+    case SMARTdata :
+      stdoss << "ERROR reading SMART data from socket";
+      break;
+  }
+  stdoss << " (read " << numBread << " B instead of " << numBtoRead << " B)";
+  const int iSO_ERROR = getSocketError(m_socketFileDesc);
+  if( errorMessageForErrno )
+    stdoss << " for socket file descriptor #" << m_socketFileDesc << ":\n" <<
+      "OS error #:" << errno << "(" << errorMessageForErrno << ")";
+  else
+    stdoss << ".OS error number:" << rdErrno;
+  if(iSO_ERROR)
+   stdoss << " socket error:" << iSO_ERROR;
+  LOGN_ERROR(stdoss.str() );
+  ShowMessage(stdoss.str().c_str(), MessageType::error);
+  //TODO set connection status of the user interface to "network errors"/"unconnected"
+  m_serverConnectionState = uncnnctdToSrv;
+  ChangeConnectionState(uncnnctdToSrv);
+  ///Try to connect again after timeout elapses.
+  //TODO test
+  StartSrvCnnctnAttmptCntDown(-1);
+  //TODO close socket, set status (also in UI) to unconnected
 }

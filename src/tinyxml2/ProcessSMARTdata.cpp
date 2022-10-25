@@ -3,7 +3,7 @@
 #include <client/SMARTmonitorClient.h>
 
 ///from Stefan Gebauer's common_sourcecode repository:
-#include <Controller/character_string/ConvertStdStringToTypename.hpp>
+#include <dataType/charStr/ConvertStdStringToTypename.hpp>
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 #include <hardware/dataCarrier/ATA3Std.h>///numDifferentSMART_IDsPlus1
 #include <preprocessor_macros/logging_preprocessor_macros.h>
