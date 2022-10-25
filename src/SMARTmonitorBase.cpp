@@ -86,6 +86,7 @@ SMARTmonitorBase::SMARTmonitorBase()
   s_strAllLogLevels = ", option value:1 of [" + s_strAllLogLevels + "]";
   s_commandLineOptions[logLvlIdx].possibleOptionValue = s_strAllLogLevels.
     c_str();
+  gp_SMARTmon = this;
 }
 
 SMARTmonitorBase::~SMARTmonitorBase() {
