@@ -63,6 +63,26 @@ public:
   {
     maxNrmlzdVals[SMARTattrID]=maxNrmlzdVal;
   }
+  /**To solve situations like: normalized current value was 200, normalized
+   * threshold value 140, (pre-defined/default) maximal normalized value 100.
+   * Set maximal normalized value to the next bigger default value. For example
+   * to 200 when normalized threshold value=140.*/
+  static inline TU_Bln361095CPUuse(FaststUint) getNxtGtrMaxNrmlzdVal(
+    const TU_Bln361095CPUuse(FaststUint) maxNrmlzdVal,
+    const TU_Bln361095CPUuse(FaststUint) nrmlzdCurrVal,
+    const TU_Bln361095CPUuse(FaststUint) nrmlzdThresh)
+  {
+    //TODO?!: for some data carriers the normalized worst value > normalized
+    // current value:
+    // For 40 GB model "WDC WD400EB-00CPF0", firmware "06.04G06", serial number
+    // "WD-WCAAT4328734" at Power-On Time "5666" for parameter ID 199 (UDMA CRC
+    // error count) normalized current value=200, normalized worst value=253
+    // (and normalized threshold=0).
+    if(maxNrmlzdVal < ATA3Std_GtrDfltNrmlzdVal && (
+      maxNrmlzdVal < nrmlzdThresh || maxNrmlzdVal < nrmlzdCurrVal) )
+      return ATA3Std_GtrDfltNrmlzdVal;
+    return maxNrmlzdVal;
+  }
   ///@brief Sets maximum normalized value for all SMART attributes.
   static void setMaxNrmlzdVals(){
     /**http://pubs.opengroup.org/onlinepubs/000095399/functions/memset.html :
@@ -71,7 +91,8 @@ public:
       maxNrmlzdVals,ATA3Std_DfltNrmlzdVal,sizeof(maxNrmlzdVals));
     /**Max Normalized value from: model:Samsung SSD 860 EVO M.2 500GB
      * firmware:RVT24B6Q serial:S5GCNJ0N506884T, current normalized value.*/
-    setMaxNrmlzdVal(SMARTattributeNames::HW_ECC_Recovered,200);
+    setMaxNrmlzdVal(SMARTattributeNames::HW_ECC_Recovered,
+      ATA3Std_GtrDfltNrmlzdVal);
   }
 private:
   inline void copyAttrs(const SMARTvalue &);
