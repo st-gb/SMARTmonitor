@@ -61,7 +61,10 @@ inline float Get1ToMns1Rng(
   const long int nrmlzdCurrVal,
   const long int nrmlzdThresh)
 {
-  const long int divident = SMARTvalue::maxNrmlzdVals[SMARTattrID]-nrmlzdThresh;
+  long maxNrmlzdVal = SMARTvalue::maxNrmlzdVals[SMARTattrID];
+  maxNrmlzdVal = SMARTvalue::getNxtGtrMaxNrmlzdVal(maxNrmlzdVal,
+    nrmlzdCurrVal, nrmlzdThresh);
+  const long int divident = maxNrmlzdVal-nrmlzdThresh;
   if(divident == 0)///Avoid division by 0
     return 0.0f;
   else{

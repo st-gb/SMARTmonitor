@@ -2,7 +2,9 @@
  *  Created on: 31.07.2016
  *  Author: Stefan Gebauer, M.Sc. Comp. Sc.(TU Berlin)*/
 
+///_This_ repository's files:
 #include <libATA_SMART/SMARTaccess.hpp>
+#include <SMARTmonitorBase.hpp>///gp_SMARTmon
 
 ///Standard C/C++ libs
 #include <atasmart.h> //sk_disk_smart_is_available
@@ -12,7 +14,7 @@
 #include <iostream> //std::cout
 #include <sstream>///class std::ostringstream
 
-///Stefan Gebauer's common_sourcecode repo
+///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
 ///OperatingSystem::GetTimeCountInNanoSeconds(...)
 #include "Controller/time/GetTickCount.hpp"
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
@@ -336,20 +338,35 @@ enum SMARTaccessBase::retCodes SMARTaccess::readSMARTforDevice(
     return retVal;
   }
 
-  int SMARTaccess::GetSupportedSMART_IDs(/*SkDisk * p_skDisk*/ 
-    const char * const device,
-    suppSMART_IDsType & SMARTattrNamesAndIDs)
-  {
-    SkDisk * p_skDisk;
+/**@param dvcFlPth file system path of device file
+ * @return 0 success, else error*/
+int SMARTaccess::GetSupportedSMART_IDs(/*SkDisk * p_skDisk*/
+  const char dvcFlPth[],
+  suppSMART_IDsType & SMARTattrNamesAndIDs)
+{
+  SkDisk * p_skDisk;
   //  sk_disk_smart_is_enabled(& skDisk);
 
-    errno = 0;///Set to 0 to detect errors in sk_disk_open(...)
-    ///https://github.com/Rupan/libatasmart/blob/master/atasmart.c
-    /** "sk_disk_open" allocates an p_skDisk and assigns pointer to it.
-     *  (must be freed by caller via "sk_disk_free(...)" later)*/
-    int rtrnVal = sk_disk_open(device, /* SkDisk **_d*/ & p_skDisk);
-    if(rtrnVal == -1)
-    {
+  /** "sk_disk_open" allocates an p_skDisk and assigns pointer to it.
+   *  (must be freed by caller later)*/
+  errno = 0;///Set to 0 to detect errors in sk_disk_open(...)
+/**Iterating over block devices took ca. 24,5 s because also floppy drives/disks
+ * are examined. See log file entries:
+ * "2022.04.16 15:55:42s817ms INFO [UI-3365] :: readSMARTforDevice end for
+ * "/dev/sda":returning 0
+ * 2022.04.16 15:56:07s345ms ERROR [UI-3365] :: GetSupportedSMART_IDs error
+ * opening device "/dev/fd0" OS error code:6 error:No such device or address"
+ * Should display a status message ~"opening device" in this case.*/
+  gp_SMARTmon->ShowMessage("Opening device"/*UI::OpnDvc, dvcFlPth*/);
+
+  ///https://github.com/Rupan/libatasmart/blob/master/atasmart.c
+  /** "sk_disk_open" allocates an p_skDisk and assigns pointer to it.
+   *  (must be freed by caller via "sk_disk_free(...)" later)*/
+  int rtrnVal = sk_disk_open(dvcFlPth, /* SkDisk **_d*/ & p_skDisk);
+/**"sk_disk_open" failed :
+ * http://github.com/Rupan/libatasmart/blob/master/atasmart.c#L2759 */
+  if(rtrnVal == -1)
+  {
       //TODO fails often-> too many error messages
       //Solution?: only check if device plugged in:
       // https://unix.stackexchange.com/questions/315216/ubuntu-16-04-how-can-i-detect-a-device-independent-usb-insert-event
@@ -360,18 +377,18 @@ enum SMARTaccessBase::retCodes SMARTaccess::readSMARTforDevice(
       // https://github.com/gentoo/eudev/blob/master/src/udev/udevadm-monitor.c
       // static int adm_monitor(struct udev *udev, int argc, char *argv[])
       if(errno > 0)///sk_disk_open(...) sets "errno" on error
-        LOGN_ERROR("error opening device \"" << device << "\" OS error code:"
+        LOGN_ERROR("error opening device \"" << dvcFlPth << "\" OS error code:"
           << errno << " error:" << strerror(errno) )
     }
     else
     {
-      LOGN_DEBUG("successfully opened device " << device)
+      LOGN_DEBUG("successfully opened device " << dvcFlPth)
   //    i = sk_init_smart( & skDisk);
   //        sk_disk_check_power_mode(p_skDisk);
       rtrnVal = sk_disk_smart_read_data(p_skDisk);///sk_disk_smart_is_available(...)
       if(rtrnVal == 0)
       {
-        LOGN_DEBUG("successfully called sk_disk_smart_read_data for " << device)
+        LOGN_DEBUG("successfully called sk_disk_smart_read_data for " << dvcFlPth)
         rtrnVal = ///Reads all supported attributes?
           sk_disk_smart_parse_attributes(
            p_skDisk,
@@ -394,27 +411,47 @@ enum SMARTaccessBase::retCodes SMARTaccess::ReadSMARTValuesForAllDrives(
   const fastestUnsignedDataType sMARTattrIDsToRead[],
   dataCarrierID2devicePath_type & dataCarrierID2devicePath)
 {
-    enum SMARTaccessBase::retCodes overallRetCode = SMARTaccessBase::
-      noSingleSMARTdevice;
-    //TODO scan all files in /dev/ or some better idea? libblkid?
-    fastestUnsignedDataType numCharsNeeded = ::GetBlockDeviceFiles(NULL);
-    char arch[numCharsNeeded];
-    numCharsNeeded = ::GetBlockDeviceFiles(arch);
+  enum SMARTaccessBase::retCodes overallRetCode = SMARTaccessBase::
+    noSingleSMARTdevice;
+  //TODO scan all files in /dev/ or some better idea? libblkid?
+  fastestUnsignedDataType numCharsNeeded = ::GetBlockDeviceFiles(NULL);
+  char arch[numCharsNeeded];
+/**Iterating over block devices took ca. 24,5 s because also floppy drives/disks
+ * are examined. See log file entries:
+ * "2022.04.16 15:55:42s817ms INFO [UI-3365] :: readSMARTforDevice end for
+ * "/dev/sda":returning 0
+ * 2022.04.16 15:56:07s345ms ERROR [UI-3365] :: GetSupportedSMART_IDs error
+ * opening device "/dev/fd0" OS error code:6 error:No such device or address"
+ * Should display a status message ~"opening device" in this case.
+ * After ca. 8 h (ca.15:55-01:00):
+ * Unit range for model:WDC WD400EB-00CPF0 firmware:06.04G06 serial number:
+ * WD-WCAAT4328734 was then ca.1h1s-1h30s. Without this lag/ unit range was
+ * 59min47s541ms-59min55s88ms.
+ * Unit range for model :QUANTUM FIREBALLP LM10 firmware:A35.0500 serial number:
+ * 882008566041 was then ca.1h1s-1h30s */
+  //numCharsNeeded = TU_Bln361095OpSys(GetAllBlkDvcFiles)(archDirPath, sepStr);
+  numCharsNeeded = ::GetBlockDeviceFiles(arch);
+
   char const * dvcFileNameBgn = arch;
-  for( int index = 0; index < numCharsNeeded ; index ++ )
+  ///Loop to filter for data carriers (file names without decimial digits(s) ).
+  for(TU_Bln361095::hardware::CPU::FaststUint index = 0; index < numCharsNeeded;
+   index++)
   {
-    if( arch[index] == '\t' )
+    if(arch[index] >= '0' && arch[index] <=9)
+      ;
+    if(arch[index] == '\t')
     {
-        arch[index] = '\0';
-        LOGN_DEBUG("current block device:" << dvcFileNameBgn )
+      ///Mark character string end for Standard C's sprintf(...)
+      arch[index] = '\0';
+      LOGN_DEBUG("current block device:" << dvcFileNameBgn )
       if( (arch + index - dvcFileNameBgn) == numCharsForDataCarrierFiles )
       {
         char absDvcFilePath[strlen(dvcFileNameBgn) + numCharsForDvcAndTerm0];
         ///Alternative:strcat(...)
         sprintf(absDvcFilePath, "/dev/%s", dvcFileNameBgn);
-          
+        //strcat()
         suppSMART_IDsType suppSMARTattrNamesAndIDs;
-          
+
         SMARTuniqueID sMARTuniqueID;
         fill(absDvcFilePath, sMARTuniqueID);
 
@@ -452,4 +489,4 @@ enum SMARTaccessBase::retCodes SMARTaccess::ReadSMARTValuesForAllDrives(
   }
   return overallRetCode;
 }
-} /* namespace libatasmart */
+}/**namespace libatasmart*/

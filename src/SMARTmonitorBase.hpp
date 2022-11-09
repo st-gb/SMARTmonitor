@@ -266,5 +266,7 @@ private:
 DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   void * p_v);
 
+extern SMARTmonitorBase * gp_SMARTmon;
+
 #endif /* SMARTMONITORBASE_HPP */
 

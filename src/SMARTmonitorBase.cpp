@@ -33,6 +33,7 @@ dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
 AtomicExchType SMARTmonitorBase::s_updateSMARTvalues = 1;
 extern const char FileSystem::dirSeperatorChar;
+SMARTmonitorBase * gp_SMARTmon;
 
 ///Is filled with log levels.
 std::string SMARTmonitorBase::s_strAllLogLevels;
@@ -91,6 +92,7 @@ SMARTmonitorBase::SMARTmonitorBase()
   s_strAllLogLevels = ", option value:1 of [" + s_strAllLogLevels + "]";
   s_commandLineOptions[logLvlIdx].possibleOptionValue = s_strAllLogLevels.
     c_str();
+  gp_SMARTmon = this;
 }
 
 SMARTmonitorBase::~SMARTmonitorBase() {
