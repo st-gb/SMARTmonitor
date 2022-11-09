@@ -1,0 +1,2 @@
+Proc=PROCess:http://www.abbreviations.com/abbreviation/Process
+Comm=COMMunication:http://www.abbreviations.com/abbreviation/Communication

@@ -1,3 +1,7 @@
+##Author:Stefan Gebauer(TU Berlin matriculation number 361095)
+
+##${SGR_Yellow},${SGR_Blue},${SGR_ColourReset}
+include(${cmnSrcDir}/CMake/SGR_terminalColours.cmake)
 
 #see http://stackoverflow.com/questions/8934295/add-source-in-a-subdirectory-to-a-cmake-project
 
@@ -6,8 +10,17 @@
 # "Full directory of the listfile currently being processed."
 set(thisCMakeScriptFileDir ${CMAKE_CURRENT_LIST_DIR})
 
+##bld=BuiLD:http://www.abbreviations.com/abbreviation/build
+##Tm=TiMe:http://www.abbreviations.com/abbreviation/time
+##Char=CHARacter:http://www.abbreviations.com/abbreviation/character
+##Arr=ARRay:http://www.allacronyms.com/array/abbreviated
+##Src=SouRCe:http://www.abbreviations.com/abbreviation/Source
+##Fl=FiLe
+##Pth=PaTH:http://www.allacronyms.com/path/abbreviated
+set(TU_Bln361095bldTmCharArrSrcFlPth ${SMARTmonSrcDir}/bldTmCharArr.c)
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
+  ${TU_Bln361095bldTmCharArrSrcFlPth}
   ${CMAKE_CURRENT_LIST_DIR}/SMARTtableListCtrl.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SupportedSMARTIDsDialog.cpp
   ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorApp.cpp
@@ -24,9 +37,12 @@ if(DEFINED TU_Bln361095useClntSrv)
 endif()
 
 if(UNIX)
+  message("${SGR_Yellow}Forcing update of build time character array in \"About"
+   "\" dialog by updating timestamp of \"${SGR_Blue}"
+   "${TU_Bln361095bldTmCharArrSrcFlPth}${SGR_Yellow}\".${SGR_ColourReset}")
   #Force build date to be updated/date of this build. Update time of main dialog
   # source file->is compiled with "__DATE__ preprocessor marcro at compile time.
-  execute_process(COMMAND touch ${CMAKE_CURRENT_LIST_DIR}/wxSMARTmonitorDialog.cpp)
+  execute_process(COMMAND touch ${TU_Bln361095bldTmCharArrSrcFlPth})
 endif()
 
 set(CMakeScriptFilePaths

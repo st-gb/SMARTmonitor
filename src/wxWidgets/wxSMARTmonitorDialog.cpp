@@ -1,6 +1,6 @@
-/* wxSMARTmonitiorDialog.cpp
- *  Created on: 26.11.2013
- *  Author: Stefan Gebauer, M.Sc. Comp. Sc. */
+/**(c) from 2013 Stefan Gebauer(TU Berlin matriculation number 361095)
+ * Author:Stefan Gebauer,Computer Science Master(from TU Berlin)
+ * Created on:26.Nov.2013(Berlin,Germany time zone)*/
 
 ///This repository's files:
 /** Include at 1st in Windows build to avoid:
@@ -35,13 +35,10 @@ typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
 #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <hardware/CPU/atomic/memory_barrier.h>
-///FileSystem::GetCurrentWorkingDir
-#include <FileSystem/GetCurrentWorkingDir.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h>
+///wxWidgets::GetwxString_Inline
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
-
-///Standard C(++) files:
-#include <sstream> //ostringstream
+#include <wxWidgets/UI/About.hpp>///class wxWidgets::AboutDlg
 
 //extern wxSMARTmonitorApp theApp;
 /** Static (class) variables. */
@@ -349,7 +346,7 @@ void SMARTdialog::buildUI()
   #endif
 #ifdef TU_Bln361095useClntSrv
   m_p_cnctAndDiscnctBtn = new wxButton(this, CONNECT,
-    wxT(TU_Bln361095cnctBtnASCIstr) );
+    wxSTRINGIZE_T(TU_Bln361095cnctBtnASCIstr) );
   sizerBtns->Add(m_p_cnctAndDiscnctBtn, flags);
 #endif
   /** Needs to compile with wxWidgets headers > 2.8.x */
@@ -401,57 +398,7 @@ SMARTdialog::~SMARTdialog()
 
 void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
-  static const wxChar * const title = wxT("About wxS.M.A.R.T.monitor");
-  static const wxChar * const message
-    = _T("a tool to monitor (CRITICAL) S.M.A.R.T. parameters\n"
-    "\nsee http://en.wikipedia.org/wiki/S.M.A.R.T."
-    "\n(C) 2013-" __DATE__
-    "\nby Stefan Gebauer, M.Sc. Comp. Science, Berlin, Germany");
-
-  wxString buildID = wxT("\nC++ compiler: \"");
-    buildID += wxSTRINGIZE(CXX_COMPILER);
-    buildID += " ";
-    buildID += wxSTRINGIZE(CXX_COMPILER_VERSION);
-    buildID += "\"\nC++ flags: \"";
-    buildID += wxSTRINGIZE(CXX_FLAGS);
-    buildID += "\"\nbuild type: ";
-    buildID += wxSTRINGIZE(BUILD_TYPE);
-
-  std::string currWorkDir;
-  OperatingSystem::GetCurrentWorkingDirA_inl(currWorkDir);
-
-  wxString wxVer = wxSTRINGIZE(wxMAJOR_VERSION) + wxString(wxT(".") );
-  wxVer += wxSTRINGIZE(wxMINOR_VERSION);
-  wxVer += wxT(".");
-  wxVer += wxSTRINGIZE(wxRELEASE_NUMBER);
-
-  ///Current working directory is relevant for reading configuration files.
-  wxString aboutString = message + wxString("\n") + buildID
-    + wxT("\n\nUsing wxWidgets version ") + wxVer
-    + wxString("\n\ncurrent working directory:\n")
-    + wxWidgets::GetwxString_Inline(currWorkDir);
-  
-#if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8 || wxMAJOR_VERSION > 2
-  if(///https://docs.wxwidgets.org/trunk/classwx_task_bar_icon.html#a287bb3303f01651f50c8de17e314a147;
-     /** "Since 2.9.0*/ ! wxTaskBarIcon::IsAvailable() )
-    aboutString += wxT("\n\nThere appears to be no task bar/system tray support"
-      " in your current environment. So you aren't able to hide the main window"
-      " (and re-show it by clicking on the task bar icon) while running this "
-      "application.");
-#endif
-  
-  std::ostringstream stdossCmdLineUsage;
-  wxGetApp().GetUsage(stdossCmdLineUsage);
-  
-  aboutString += wxT("\n\n") + wxWidgets::GetwxString_Inline(stdossCmdLineUsage.
-    str() );
-
-//#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
-//  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,
-//    wxICON_INFORMATION);
-//#else // !__WXMSW__
-  wxMessageBox(aboutString, title, wxICON_INFORMATION | wxOK, this);
-//#endif // __WXMSW__/!__WXMSW__
+  showAboutDlg(this);
 }
 
 void SMARTdialog::OnDrctSMARTaccss(wxCommandEvent &)

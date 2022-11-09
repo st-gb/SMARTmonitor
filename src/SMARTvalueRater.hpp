@@ -121,6 +121,11 @@ public:
     if(realCircaValue < maxWarnTempInDegC)
       return (float)realCircaValue / (float)maxWarnTempInDegC;///=> [0...1[ =warning
     else if(realCircaValue >= minWarnTempInDegC){
+    //TODO Also see GSmartControl(confirmed:version 1.1.3 and data carrier model
+    // "Samsung SSD 860 EVO M.2 500GB", firmware "RVT24B6Q") "Statistics" tab:
+    // "Description","Value","Flags","Page, Offset"
+    // "Specified Maximum Operating Temperature (C)","70","---","0x05, 0x058"
+    // This value can be used as "minCritTempInDegC".
       if(realCircaValue > minCritTempInDegC)
         return (float)(realCircaValue-minCritTempInDegC)/-30.0f;///=> ]0...-1] =error
       else///[minWarnTempInDegC-1...minCritTempInDegC]

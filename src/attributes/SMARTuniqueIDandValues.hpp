@@ -69,6 +69,11 @@ public:
      * "(void *s, int c, size_t n);"*/
     memset(///For memset(...), the array must have 1 byte data type
       maxNrmlzdVals,ATA3Std_DfltNrmlzdVal,sizeof(maxNrmlzdVals));
+    /**Seems to apply to model "WDC WD400EB-00CPFO", firmware "06.04G06":
+     * current normalized value=200, model "ST500LT012-1DG142", firmware
+     * "0002LVM1":current normalized value=111 for serial number "W3P78D3W"*/
+    setMaxNrmlzdVal(SMARTattributeNames::ReadErrorRate,
+      ATA3Std_GtrDfltNrmlzdVal);
     /**Max Normalized value from: model:Samsung SSD 860 EVO M.2 500GB
      * firmware:RVT24B6Q serial:S5GCNJ0N506884T, current normalized value.*/
     setMaxNrmlzdVal(SMARTattributeNames::HW_ECC_Recovered,200);

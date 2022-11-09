@@ -12,9 +12,11 @@ set(SMARTmonSrcDir ${PROJECT_SOURCE_DIR})
 
 #To create executable outside of "src" directory;also used for creating man-page
 # for "cmnfiles" debian package.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/..)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/../build)
 
 set(cre8CmnFilesDebPkg FALSE)
+##Don't treat quoted character string as variable.
+cmake_policy(SET CMP0054 NEW)
 if(DEFINED EXE_TYPE)
   if(${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")
     set(cre8CmnFilesDebPkg TRUE)
@@ -53,6 +55,9 @@ if(DEFINED SMARTmonClientDerived)#define for all clients
   include(client/SMARTmonClientDerived.cmake)
 endif()
 
+##${SGR_Cyan},${SGR_ColourReset}
+include(${cmnSrcDir}/CMake/SGR_terminalColours.cmake)
+
 if(DEFINED WXWIDGETS)
   message("WXWIDGETS is defined")
   include(wxWidgets/wxWidgetsGUI.cmake)
@@ -76,7 +81,8 @@ if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     -D_DEBUG
     )
 endif()
-message( "CXX_DEFINITIONS: ${CXX_DEFINITIONS}" )
+message("${SGR_Cyan}CXX_DEFINITIONS${SGR_ColourReset}:\"${SGR_Magenta}"
+  "${CXX_DEFINITIONS}${SGR_ColourReset}\"")
 
 #add_subdirectory(./libConfig
 #  #EXCLUDE_FROM_ALL

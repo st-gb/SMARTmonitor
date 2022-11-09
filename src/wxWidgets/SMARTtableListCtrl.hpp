@@ -81,7 +81,9 @@ public:
       getTxtWdthInPx(widestColValStr[colIndices::SMART_ID]);
     maxColValStrWdthInPx[colIndices::SMARTparameterName] =
       m_maxSMARTattrNmStrWdthInPx;
-    for(unsigned colID = 2; colID < colIndices::byndLast; colID++){
+    for(TU_Bln361095::hardware::CPU::FaststUint colID =
+      TU_Bln361095::SMARTmon::colIndices::nrmlzdCurrVal;
+      colID < TU_Bln361095::SMARTmon::colIndices::byndLast; colID++){
       maxColValStrWdthInPx[colID] =
 /**Alternative:get max. value string width via SMARTmonClient::
  * upd8rawAndH_andTime(...) (simulate real output)*/
