@@ -40,13 +40,13 @@ bool operator < (const SMARTuniqueID & left,
   }
 
   void SMARTuniqueID::SetModelName(const char * modelName) {
-    strncpy(m_modelName, modelName, numSMARTmodelBytes+1);
+    strncpy(m_modelName, modelName, TU_Bln361095hardwareSMARTnumModelBytes+1);
   }
   void SMARTuniqueID::SetFirmwareName(const char * firmwareName) {
-    strncpy(m_firmWareName, firmwareName, numSMART_FWbytes+1);
+    strncpy(m_firmWareName, firmwareName, TU_Bln361095hardwareSMARTnumFWbytes+1);
   }
   void SMARTuniqueID::SetSerialNumber(const char * serialNumber) {
-    strncpy(m_serialNumber, serialNumber, numSMART_SNbytes);
+    strncpy(m_serialNumber, serialNumber, TU_Bln361095hardwareSMARTnumSNbytes);
   }
 
   std::string SMARTuniqueID::str() const
@@ -78,9 +78,12 @@ void SMARTuniqueID::copyArr(const fastestUnsignedDataType orig [],
 SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & orig)
 {
 //  SMARTuniqueID copy;
-  strncpy(m_firmWareName, orig.m_firmWareName, numSMART_FWbytes+1);
-  strncpy(m_modelName, orig.m_modelName, numSMARTmodelBytes+1);
-  strncpy(m_serialNumber, orig.m_serialNumber, numSMART_SNbytes+1);
+  strncpy(m_firmWareName, orig.m_firmWareName,
+    TU_Bln361095hardwareSMARTnumFWbytes + 1);
+  strncpy(m_modelName, orig.m_modelName,
+    TU_Bln361095hardwareSMARTnumModelBytes + 1);
+  strncpy(m_serialNumber, orig.m_serialNumber,
+    TU_Bln361095hardwareSMARTnumSNbytes + 1);
   
   copyArr(orig.m_SMART_IDsToRd, m_SMART_IDsToRd);
   copyArr(orig.supportedSMART_IDs, supportedSMART_IDs );

@@ -2,6 +2,16 @@
  * Created on: 10.03.2015
  * Author: Stefan Gebauer, M.Sc. Comp.Sc. */
 
+/**from >>SMARTmonitor root directory<</src/wxWidgets/SMARTtableListCtrl.cpp:15:
+ * >>TDM-GCC 64bit 10.3.0-2 root directory<</x86_64-w64-mingw32/include/
+ * winsock2.h:15:2: warning: #warning Please include winsock2.h before
+ * windows.h [-Wcpp]*/
+//#include <winsock2.h>
+/**Prevents <winsock.h> to be included in <windows.h>. <Winsock.h> and
+ * <Winsock2.h> have the same definitions.->re-definition happens if <winsock.h>
+ * is included before <Winsock2.h> */
+#define _WINSOCKAPI_
+
 ///wxWidgets header files:
 #include <wx/dcclient.h>///class wxClientDC
 #include <wx/menu.h>///class wxMenu

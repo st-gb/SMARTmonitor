@@ -2,6 +2,11 @@
  * Author:Stefan Gebauer,Computer Science Master(from TU Berlin)
  * Created on:26.Nov.2013(Berlin,Germany time zone)*/
 
+/**Prevents <winsock.h> to be included in <windows.h>. <Winsock.h> and
+ * <Winsock2.h> have the same definitions.->re-definition happens if <winsock.h>
+ * is included before <Winsock2.h> */
+#define _WINSOCKAPI_
+
 ///This repository's files:
 /** Include at 1st in Windows build to avoid:
  * "#warning Please include winsock2.h before windows.h" */
@@ -37,7 +42,7 @@ typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
 #include <hardware/CPU/atomic/memory_barrier.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 ///wxWidgets::GetwxString_Inline
-#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include <wxWidgets/charStr/wxStringHelper.hpp>
 #include <wxWidgets/UI/About.hpp>///class wxWidgets::AboutDlg
 
 //extern wxSMARTmonitorApp theApp;
@@ -52,6 +57,7 @@ DEFINE_LOCAL_EVENT_TYPE(ReBuildUIeventType)
 BEGIN_EVENT_TABLE(SMARTdialog, wxDialog)
 //    EVT_TIMER(TIMER_ID, SMARTdialog::OnTimer)
   EVT_BUTTON(wxID_ABOUT, SMARTdialog::OnAbout)
+  EVT_BUTTON(options, SMARTdialog::OnOptions)
   EVT_BUTTON(directSMARTdata, SMARTdialog::OnDrctSMARTaccss)
   EVT_BUTTON(wxID_OK, SMARTdialog::OnOK)
   EVT_BUTTON(wxID_EXIT, SMARTdialog::OnExit)
@@ -338,6 +344,7 @@ void SMARTdialog::buildUI()
 
   wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
   sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
+  sizerBtns->Add(new wxButton(this, options, wxT("&Options")), flags);
   #ifdef directSMARTaccess
     //TODO only add if sufficient access rights: if(directSMARTaccessAvailable)
     m_p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,
@@ -401,6 +408,19 @@ void SMARTdialog::OnAbout(wxCommandEvent& WXUNUSED(event))
   showAboutDlg(this);
 }
 
+void SMARTdialog::OnOptions(wxCommandEvent& WXUNUSED(event))
+{
+  static const wxChar * const title = wxT("wxS.M.A.R.T.monitor options");
+
+  std::ostringstream stdossCmdLineUsage;
+  wxGetApp().GetUsage(stdossCmdLineUsage);
+  wxString optionsStr = TU_Bln361095::wxWidgets::GetwxString_inln(
+    stdossCmdLineUsage.str());
+
+  AboutDlg aboutDlg(optionsStr, title);
+  aboutDlg.ShowModal();
+}
+
 void SMARTdialog::OnDrctSMARTaccss(wxCommandEvent &)
 {
 //  __uid_t UID = geteuid();
@@ -461,16 +481,16 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
       if(newState == SMARTmonitorClient::uncnnctdToSrv)
         wxstrTitle += wxString::Format(
           wxT("--last update at %s from %s:%u--unconnected"),
-          wxWidgets::GetwxString_Inline(timeString.c_str()),
-          wxWidgets::GetwxString_Inline(wxGetApp().m_stdstrServiceHostName.
-            c_str() )
+          TU_Bln361095::wxWidgets::GetwxString_inln(timeString.c_str()),
+          TU_Bln361095::wxWidgets::GetwxString_inln(wxGetApp().
+            m_stdstrServiceHostName.c_str() )
         /** Also show port because different hosts may be behind the same IP
          *  address (e.g. via port forwarding) */
           , wxGetApp().m_socketPortNumber);
       else
         wxstrTitle += wxString::Format(
           wxT("--last update at %s via direct S.M.A.R.T.(ended)"),
-          wxWidgets::GetwxString_Inline(timeString.c_str() ) );
+          TU_Bln361095::wxWidgets::GetwxString_inln(timeString.c_str() ) );
       /** Not needed to set the unconnected UI because this is done in
        * "StartSrvCnnctnAttmptCntDown" */
 //      wxGetApp().UnCnnctdToSrvUIctrls();

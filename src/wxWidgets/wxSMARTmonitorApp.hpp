@@ -124,8 +124,8 @@ public:
 
 wxString wxSMARTmonitorApp::GetTitleInclDataSrc()
 {
-  const wxString wxstrServiceAddress = wxWidgets::GetwxString_Inline(
-    m_stdstrServiceHostName);
+  const wxString wxstrServiceAddress = TU_Bln361095::wxWidgets::
+    GetwxString_inln(m_stdstrServiceHostName);
   
   wxString title;
 #ifdef directSMARTaccess

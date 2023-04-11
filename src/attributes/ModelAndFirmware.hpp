@@ -5,14 +5,19 @@
 #include <string.h>///strcpy(...)
 
 /** Files from Stefan Gebauer's common_sourcecode repository:*/
-///numSMART_SNbytes, numSMART_FWbytes, numSMARTmodelBytes, 
+/**TU_Bln361095hardwareSMARTnumSNbytes, TU_Bln361095hardwareSMARTnumFWbytes,
+ * TU_Bln361095hardwareSMARTnumModelBytes */
 #include <hardware/dataCarrier/ATA3Std.h>
 #include <hardware/CPU/fastest_data_type.h>///fastestUnsignedDataType
 
+/**To avoid compile problem with MicroSoft Visual Studio in
+ * "std::numeric_limits<T>::min()".*/
+#undef min
+
 class ModelAndFirmware{
 protected:
-  char m_firmWareName[numSMART_FWbytes+1];
-  char m_modelName[numSMARTmodelBytes+1];
+  char m_firmWareName[TU_Bln361095hardwareSMARTnumFWbytes+1];
+  char m_modelName[TU_Bln361095hardwareSMARTnumModelBytes+1];
   std::string SMARTparamUnit[numDifferentSMART_IDs];
   typedef fastestUnsignedDataType maxTBytesWrittenType; 
   maxTBytesWrittenType m_maxTeraBytesWritten;
@@ -21,8 +26,8 @@ public:
   typedef int64_t remainingTotalDataWrittenType;
   ModelAndFirmware() : m_maxTeraBytesWritten(0) {}
   ModelAndFirmware(
-    const char modelName[numSMARTmodelBytes+1],
-    const char firmWareName[numSMART_FWbytes+1])
+    const char modelName[TU_Bln361095hardwareSMARTnumModelBytes+1],
+    const char firmWareName[TU_Bln361095hardwareSMARTnumFWbytes+1])
     : m_maxTeraBytesWritten(0)
   {
     strcpy(m_modelName, modelName);

@@ -27,9 +27,10 @@
 ///FileSystem::GetCurrentWorkingDir
 #include <FileSystem/GetCurrentWorkingDir.hpp>
 ///OperatingSystem::Process::GetCurrExePath(...)
-#include <OperatingSystem/Process/GetCurrExePath.hpp>
+#include <OperatingSystem/Process/FileSys/GetCurrExePath.hpp>
+
 ///wxWidgets::GetwxString_Inline(...)
-#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include <wxWidgets/charStr/wxStringHelper.hpp>
 #include "../wxSMARTmonitorApp.hpp"///wxGetApp()
 #include <bldTmCharArr.h>///TU_Bln361095SMARTmonBldTmANSIcharArr
 
@@ -68,14 +69,18 @@ public:
 
 inline void showAboutDlg(wxWindow * parent)
 {
+  /**"static" within function means: this is only created/assigned at the 1st
+   * time.*/
   static const wxChar * const title = wxT("About wxS.M.A.R.T.monitor");
   static wxString message =
     wxT("a tool to monitor (CRITICAL) S.M.A.R.T. parameters\n"
     "(see http://en.wikipedia.org/wiki/S.M.A.R.T.)\n"
     "\n(c) ca. Nov 26 2013-"/*__DATE__*/)
-    + wxWidgets::GetwxString_Inline(TU_Bln361095SMARTmonBldDtANSIcharArr)
+    + TU_Bln361095::wxWidgets::GetwxString_inln(
+        TU_Bln361095SMARTmonBldDtANSIcharArr)
     + wxT(" ")
-    + wxWidgets::GetwxString_Inline(TU_Bln361095SMARTmonBldTmOfD_ANSIcharArr)
+    + TU_Bln361095::wxWidgets::GetwxString_inln(
+        TU_Bln361095SMARTmonBldTmOfD_ANSIcharArr)
     + wxT("(Berlin, Germany time zone) by Stefan Gebauer(Computer Science "
     "Master from TU Berlin--matriculation number 361095), Berlin, Germany");
 
@@ -114,20 +119,21 @@ inline void showAboutDlg(wxWindow * parent)
 #ifdef untDtctnLeastMtrcDiffsBetwnRawValInc
   buildID += "least metric differences between raw value increases";
 #endif
-  std::string currWorkDir, currExeDir;
-  const int getCurrWorkDirRslt = OperatingSystem::Process::
-    GetCurrentWorkingDirA_inl(currWorkDir);
-  const bool getCurrExePathSccss = OperatingSystem::Process::GetCurrExePath(
-    currExeDir);
+  std::tstring currWorkDir, currExeDir;
+  const int getCurrWorkDirRslt = TU_Bln361095::FileSys::GetCurrWorkngDir_inln(
+    currWorkDir);
+  const bool getCurrExePathSccss = TU_Bln361095::OpSys::Process::FileSys::
+    GetExeFileName_inln(currExeDir);
 
-  ///Current working directory is relevant for reading configuration files.
+  /**The current working directory is relevant for reading configuration files.
+   * So display it to let a user know where they are searched.*/
   wxString aboutString = message + wxString("\n") + buildID
     + wxString("\n\ncurrent working directory:\n")
-    + (getCurrExePathSccss ? wxWidgets::GetwxString_Inline(currWorkDir)
-      : wxT("Getting path failed") )
+    + (getCurrExePathSccss ? TU_Bln361095::wxWidgets::GetwxString_inln(
+      currWorkDir) : wxT("Getting path failed") )
     + wxString("\nFile system path of this executable:\n")
-    + (getCurrWorkDirRslt == 0 ? wxWidgets::GetwxString_Inline(currExeDir) :
-      wxT("") );
+    + (getCurrWorkDirRslt == 0 ? TU_Bln361095::wxWidgets::
+       GetwxString_inln(currExeDir) : wxT("") );
 
 #if wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8 || wxMAJOR_VERSION > 2
   if(///https://docs.wxwidgets.org/trunk/classwx_task_bar_icon.html#a287bb3303f01651f50c8de17e314a147;
@@ -137,12 +143,6 @@ inline void showAboutDlg(wxWindow * parent)
       " (and re-show it by clicking on the task bar icon) while running this "
       "application.");
 #endif
-
-  std::ostringstream stdossCmdLineUsage;
-  wxGetApp().GetUsage(stdossCmdLineUsage);
-
-  aboutString += wxT("\n\n") + wxWidgets::GetwxString_Inline(stdossCmdLineUsage.
-    str() );
 
 //#if defined(__WXMSW__) && wxUSE_TASKBARICON_BALLOONS
 //  wxGetApp().m_taskBarIcon->ShowBalloon(title, message, 15000,

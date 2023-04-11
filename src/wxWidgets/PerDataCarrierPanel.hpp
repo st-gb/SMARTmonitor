@@ -13,7 +13,7 @@
 
 ///from Stefan Gebauer's "common_sourcecode" repository :
 ///wxWidgets::GetwxString_Inline(...)
-#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include <wxWidgets/charStr/wxStringHelper.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN_DEBUG(...)
 
 using namespace wxWidgets;
@@ -97,7 +97,7 @@ public:
       stdstrSMARTattrName = sMARTattrDef.GetName();
     }
 
-    label = wxWidgets::GetwxString_Inline(stdstrSMARTattrName),
+    label = TU_Bln361095::wxWidgets::GetwxString_inln(stdstrSMARTattrName),
     m_pwxlistctrl->SetSMARTattribValue(
       SMARTattrID,
       colIndices::SMARTparameterName,
@@ -127,7 +127,7 @@ public:
     oss << " firmware:" << sMARTuniqueID.m_firmWareName;
     oss << " serial:" << sMARTuniqueID.m_serialNumber;
     const std::string mediaInfo = oss.str();
-    const wxString & label = wxWidgets::GetwxString_Inline(mediaInfo);
+    const wxString & label = TU_Bln361095::wxWidgets::GetwxString_inln(mediaInfo);
     SetDataCarrierLabel(label);
   }
 

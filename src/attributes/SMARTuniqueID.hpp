@@ -39,9 +39,9 @@ struct SMARTuniqueID
 // : public ModelAndFirmware
 {
   ///Member vars are set by SMARTaccessBase-derived class, fill(...) method.
-  char m_serialNumber[numSMART_SNbytes+1];
-  char m_firmWareName[numSMART_FWbytes+1];
-  char m_modelName[numSMARTmodelBytes+1];
+  char m_serialNumber[TU_Bln361095hardwareSMARTnumSNbytes+1];
+  char m_firmWareName[TU_Bln361095hardwareSMARTnumFWbytes+1];
+  char m_modelName[TU_Bln361095hardwareSMARTnumModelBytes+1];
 
   //TODO # supported SMART IDs may only be 30->less space needed
   fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs];// = {0};

@@ -2,25 +2,31 @@
  * Created on 17. November 2016, 13:05 */
 
 ///Standard C/C++ header files:
-#include <unistd.h>///sleep(unsigned)
-#include <signal.h>///signal(...)
+#include <signal.h>///signal(...),SIGINT
 
-///Stefan Gebauer's common_sourcecode git repository:
+///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
+#ifdef TU_Bln361095useBSDskt
 /** Include 1st to avoid MinGW GCC (9.2.0) "warning: #warning Please include
  *  winsock2.h before windows.h [-Wcpp]" */
-#include <OperatingSystem/BSD/socket/socket.h>///CloseSocket()
+  ///TU_Bln361095::OpSys::BSD::skt::End()
+  #include <OperatingSystem/BSD/socket/socket.h>
+#endif
 #include <dataType/charStr/stdtstr.hpp>///GetStdWstring(...)
 #include <Controller/Logger/LogFileAccessException.hpp>
 typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
 #include <Controller/time/GetTickCount.hpp>
 #include <FileSystem/File/GetAbsoluteFilePath.hpp>///GetAbsoluteFilePath(...)
-#include <FileSystem/GetCurrentWorkingDir.hpp> //OperatingSystem::GetCurrentWorkingDirA_inl(...)
+///TU_Bln361095::OpSys::Process::FileSys::GetCurrWorkngDirA_inln(...)
+#include <FileSystem/GetCurrentWorkingDir.hpp>
 #include <FileSystem/PathSeperatorChar.hpp>///FileSystem::dirSeperatorChar
 #include <FileSystem/path_seperator.h>///PATH_SEPERATOR_CHAR_STRING
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 ///OperatingSystem::GetCurrentTime(...)
 #include <OperatingSystem/time/GetCurrentTime.hpp>
+/**TU_Bln361095::OpSys::suspendExecInS(...),
+ * TU_Bln361095::OpSys::suspendExecInMs(...) */
+#include <OperatingSystem/time/suspendExecution.hpp>
 
 ///_This_ repository's header files:
 #include "SMARTmonitorBase.hpp"///class SMARTmonitorBase
@@ -191,22 +197,24 @@ void SMARTmonitorBase::sigHandler(int sigNo){
   LOGN("received signal:" << sigNo)
   switch(sigNo)
   {
+#ifdef __linux__///SIGPIPE not available in MinGW/Microsoft Windows
     case SIGPIPE:
       LOGN_ERROR("pipe/socket is broken")
       break;
+#endif
     case SIGINT:
       break;
   }
 }
 
 void SMARTmonitorBase::regCancelSelectSigHandler(){
-#ifdef __linux__///SIGUSR1 not available in MinGW/MS Windows
+#ifdef __linux__///SIGUSR1,SIGPIPE not available in MinGW/MicroSoft Windows
   /** https://en.wikipedia.org/wiki/C_signal_handling
    * Needed, else program exits when calling raise(SIGUSR1) (for interrupting
    * waiting in select(...) for non-blocking connection to server). */
   signal(SIGUSR1, sigHandler);
-#endif
   signal(SIGPIPE, sigHandler);
+#endif
 }
 
 void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
@@ -659,10 +667,10 @@ inline void SMARTmonitorBase::WaitForTimeout(
     * Alternatives (needn't wait the whole time):
     * -WaitForSingleObjectEx(...) for MS Windows API
     * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
-    sleep(1);///http://linux.die.net/man/3/sleep
+    TU_Bln361095::OpSys::suspendExecInS(1);
   }
-  //Sleep in microseconds (1/1000th of a millisecond))
-  usleep(numberOfMilliSecondsToWaitBetweenSMARTquery % 1000 * 1000);
+  TU_Bln361095::OpSys::suspendExecInMs(
+    numberOfMilliSecondsToWaitBetweenSMARTquery % 1000);
 }
 
 ///Function that can be used by clients and service.
@@ -723,10 +731,12 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
       /** The SMARTmonitor object may have already been destroyed if 
        *  SMARTmonitorBase::s_updateSMARTvalues is false->invalid pointer.*/
       p_SMARTmonitorBase->AfterGetSMARTvaluesLoop(res);
+#ifdef TU_Bln361095useBSDskt
     if(p_getSMARTvaluesFunction ==
         //p_SMARTmonitorBase->GetSMARTattrValsFromSrv()
         & SMARTmonitorBase::GetSMARTattrValsFromSrv )
-      OperatingSystem::BSD::sockets::End();
+      TU_Bln361095::OpSys::BSD::skt::End();
+#endif
   }
   }///E.g. if rolling file appender and permission denied for the new file.
   catch(LogFileAccessException & lfae){
@@ -824,7 +834,7 @@ void SMARTmonitorBase::ConstructConfigFilePath(
 //    std::wstring stdwstrCurrExeFilePath = GetStdWstring(currExePath);
 //    LOGN("this exe's file path: \"" << stdwstrCurrExeFilePath << "\"")
 
-    OperatingSystem::GetCurrentWorkingDirA_inl(stdstrCfgPathBaseDir);
+    TU_Bln361095::FileSys::GetCurrWorkngDirA_inln(stdstrCfgPathBaseDir);
     stdwstrCfgFilePathWoutExt = GetStdWstring(stdstrCfgPathBaseDir);
   //  std::wstring stdwstrAbsoluteFilePath = GetAbsoluteFilePath(
   //    GetStdWstring(currentWorkingDir), 

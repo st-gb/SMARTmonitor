@@ -3,6 +3,11 @@
  *  Author:Stefan Gebauer, M. Sc. Comp. Sc.
  *  adapted from the wxWidgets "tbtest" sample  */
 
+/**Prevents <winsock.h> to be included in <windows.h>. <Winsock.h> and
+ * <Winsock2.h> have the same definitions.->re-definition happens if <winsock.h>
+ * is included before <Winsock2.h> */
+#define _WINSOCKAPI_
+
 /** Include at 1st in Windows build to avoid:
  * "#warning Please include winsock2.h before windows.h" */
 #include "wxSMARTmonitorApp.hpp"
@@ -40,7 +45,7 @@
 #include <OperatingSystem/Windows/HideMinGWconsoleWindow.h>
 #endif
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(..)
-#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include <wxWidgets/charStr/wxStringHelper.hpp>
 
 ///This repository's header files:
 /** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
@@ -198,15 +203,16 @@ void wxSMARTmonitorApp::GetTextFromUser(
   const char * label, 
   std::string & std_strValue)
 {
-  const wxString wxstrLabel = wxWidgets::GetwxString_Inline(label);
-  const wxString defaultValue = wxWidgets::GetwxString_Inline(std_strValue);
+  const wxString wxstrLabel = TU_Bln361095::wxWidgets::GetwxString_inln(label);
+  const wxString defaultValue = TU_Bln361095::wxWidgets::GetwxString_inln(
+    std_strValue);
   wxString wxstrText = wxGetTextFromUser(
     wxstrLabel //message,
     , wxGetTextFromUserPromptStr// const wxString & 	caption = wxGetTextFromUserPromptStr,
     , defaultValue //const wxString & 	default_value = wxEmptyString,
     , NULL //wxWindow * 	parent = NULL,
     );
-  std_strValue = wxWidgets::GetStdString_Inline(wxstrText);
+  std_strValue = TU_Bln361095::wxWidgets::GetStdString_inln(wxstrText);
 }
 
 void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
@@ -219,7 +225,7 @@ void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
   //TODO move to "common_sourcecode"
   for(fastestUnsignedDataType index = 0; index < argc; ++index)
   { //TODO accessing "argv[]" and converting to std::wstring be too inefficient.
-    m_ar_stdwstrCmdLineArgs[index] = wxWidgets::GetStdWstring_Inline(
+    m_ar_stdwstrCmdLineArgs[index] = TU_Bln361095::wxWidgets::GetStdWstring_inln(
       ///"wxAppConsoleBase.argv" has type "wxCmdLineArgsArray" if wxUSE_UNICODE
       /// is defined (in wxWidgets 3.0?) wxCmdLineArgsArray::operator [] returns
       /// a wxString from wxArrayString::operator []
@@ -330,7 +336,8 @@ bool wxSMARTmonitorApp::OnInit()
   catch(const FileException & fe) 
   {
     TCHAR * filePath = fe.GetFilePath();
-    wxMessageBox(wxT("failed to open file: ") + wxWidgets::getwxString_inline(
+    wxMessageBox(wxT("failed to open file: ") + TU_Bln361095::wxWidgets::
+     GetwxString_inln(
       //GetStdWstring( ))
       filePath ) );
     return false;
@@ -398,7 +405,8 @@ bool wxSMARTmonitorApp::GetIcon(
     std::wstring exeFilePath = m_commandLineArgs.GetProgramPath();
     std::wstring exeFileDir = exeFilePath.substr(0,
       exeFilePath.rfind(FileSystem::dirSeperatorCharW) +1);
-    wxString iconFilePathFromExe = getwxString_inline(exeFileDir);
+    wxString iconFilePathFromExe = TU_Bln361095::wxWidgets::GetwxString_inln(
+      exeFileDir);
     createIconFilePath(iconFilePathFromExe, iconFileName);
 
     bIconFileSuccessfullyLoaded = icon.LoadFile(iconFilePathFromExe, wxbitmapType);
@@ -440,7 +448,7 @@ void wxSMARTmonitorApp::SetAttribute(
     it is non-NULL */
   )
 {
-  wxString wxstrValue = wxWidgets::GetwxString_Inline(std_strValue );
+  wxString wxstrValue = TU_Bln361095::wxWidgets::GetwxString_inln(std_strValue);
   //TODO: Maybe implement this in class wxWidgets::SMARTtableListCtrl as this 
   //should avoid 2 times a pointer dereference -> performs better or in 
   //SMARTmonitorDialog as param. "sMARTuniqueID" needs to be taken into account
@@ -588,7 +596,7 @@ void wxSMARTmonitorApp::ShowMessage(
    *  "wxMessageBox(...)" . */
   if(currentThreadNumber == s_UIthreadID)
   {
-    wxString wxstrMessage = wxWidgets::GetwxString_Inline(message);
+    wxString wxstrMessage = TU_Bln361095::wxWidgets::GetwxString_inln(message);
     gs_dialog->ShowMessage(wxstrMessage, msgType);
   }
   else
@@ -596,7 +604,7 @@ void wxSMARTmonitorApp::ShowMessage(
     /** Post an event with the message as content to show 
     *   this message in the GUI thread */
     wxCommandEvent wxcommand_event(ShowMessageEventType);
-    wxcommand_event.SetString(GetwxString_Inline(message));
+    wxcommand_event.SetString(TU_Bln361095::wxWidgets::GetwxString_inln(message));
     wxcommand_event.SetInt(msgType);
     wxPostEvent( (wxSMARTmonitorApp *) this, wxcommand_event);
   }
@@ -611,7 +619,7 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
    *  "wxMessageBox(...)" . */
   if( currentThreadNumber == s_UIthreadID )
   {
-    wxString wxstrMessage = wxWidgets::GetwxString_Inline(str);
+    wxString wxstrMessage = TU_Bln361095::wxWidgets::GetwxString_inln(str);
 //    wxMessageBox(wxstrMessage, m_appName );
     gs_dialog->ShowText(wxstrMessage);
   }
@@ -620,7 +628,7 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
     /** Post an event with the message as content to show 
     *   this message in the GUI thread */
     wxCommandEvent wxcommand_event(ShowMessageEventType);
-    wxcommand_event.SetString(GetwxString_Inline(str));
+    wxcommand_event.SetString(TU_Bln361095::wxWidgets::GetwxString_inln(str));
     wxcommand_event.SetInt(-1);//TODO neccessary?
     wxPostEvent( (wxSMARTmonitorApp *) this, wxcommand_event);
   }
@@ -636,7 +644,7 @@ void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
   else
 #endif
   {
-    const wxString serviceLocation = wxWidgets::GetwxString_Inline(
+    const wxString serviceLocation = TU_Bln361095::wxWidgets::GetwxString_inln(
       m_stdstrServiceHostName);
     /** Port number is relevant as e.g. with port forwarding done in a router
      * multiple computers/hosts may be addressable. */

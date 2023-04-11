@@ -2,10 +2,15 @@
  *  Created on: 26.11.2013
  *  Author: Stefan Gebauer, M.Sc. Comp.Sc. */
 
+/**Prevents <winsock.h> to be included in <windows.h>. <Winsock.h> and
+ * <Winsock2.h> have the same definitions.->re-definition happens if <winsock.h>
+ * is included before <Winsock2.h> */
+#define _WINSOCKAPI_
+
 /** Include at 1st in Windows build to avoid:
  * "#warning Please include winsock2.h before windows.h" */
 #include "wxSMARTmonitorApp.hpp"
-#include "wxSMARTmonitorTaskBarIcon.hpp" //class wxSMARTmonitorTaskBarIcon
+#include "wxSMARTmonitorTaskBarIcon.hpp"///class wxSMARTmonitorTaskBarIcon
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
 

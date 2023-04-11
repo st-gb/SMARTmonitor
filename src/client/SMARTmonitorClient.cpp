@@ -17,8 +17,6 @@
 
 ///Standard C(++) header files:
 #include <stdint.h> //uint8_t
-///http://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/close?view=vs-2019
-#include <unistd.h>///close(...), read(...)
 
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_UIthreadID;
@@ -397,19 +395,19 @@ inline void useDeterminedUnits(
     uint64_t numForHumanReadableFormat;
     switch(SMARTattrID)
     {
-     case SMARTattributeNames::DevTemp:
+     case TU_Bln361095::SMARTattrNm::DevTemp:
       numForHumanReadableFormat = SMARTrawVal;
        std_ossUnit << "°C?";
       realCircaValue = CurrTemp(SMARTrawVal);
       break;
-     case SMARTattributeNames::PowerOnTime:
+     case TU_Bln361095::SMARTattrNm::PowerOnTime:
        numForHumanReadableFormat = SMARTrawVal * /**h to ms*/3600000ULL;
-     case SMARTattributeNames::HeadFlyingHours:
+     case TU_Bln361095::SMARTattrNm::HeadFlyingHours:
        numForHumanReadableFormat = (SMARTrawVal & 0xFFFFFF) * /**h to ms*/
          3600000ULL;
        std_ossUnit << "~h?";
        break;
-     case SMARTattributeNames::SpinUpTime:
+     case TU_Bln361095::SMARTattrNm::SpinUpTime:
        std_ossUnit << "ms?";
        numForHumanReadableFormat = SMARTrawVal;
       break;
@@ -417,24 +415,24 @@ inline void useDeterminedUnits(
       numForHumanReadableFormat = SMARTrawVal;
       switch(SMARTattrID)
       {
-      case SMARTattributeNames::StrtStpCnt:///S.M.A.R.T. parameter ID 4
-      case SMARTattributeNames::ReallocSectorsCnt:///S.M.A.R.T. parameter ID 5
-      case SMARTattributeNames::SpinUpRetryCnt:///S.M.A.R.T. parameter ID 10
+      case TU_Bln361095::SMARTattrNm::StrtStpCnt:///S.M.A.R.T. parameter ID 4
+      case TU_Bln361095::SMARTattrNm::ReallocSectorsCnt:///S.M.A.R.T. parameter ID 5
+      case TU_Bln361095::SMARTattrNm::SpinUpRetryCnt:///S.M.A.R.T. parameter ID 10
       ///S.M.A.R.T. parameter ID 11
-      case SMARTattributeNames::RecalibRetriesOrCalibrRetryCnt:
-      case SMARTattributeNames::PwrCycleCnt:///S.M.A.R.T. parameter ID 12
-      case SMARTattributeNames::ReallocEvtCnt:///S.M.A.R.T. parameter ID 196
-      case SMARTattributeNames::CurrPendSecCnt:///S.M.A.R.T. parameter ID 197
-      case SMARTattributeNames::UncorrSecCnt:///S.M.A.R.T. parameter ID 198
-      case SMARTattributeNames::UDMA_CRCerrorCnt:///S.M.A.R.T. parameter ID 199
-      case SMARTattributeNames::FreeFallEvtCnt:
-      case SMARTattributeNames::MultiZoneErrorRate:///S.M.A.R.T. param ID 200
+      case TU_Bln361095::SMARTattrNm::RecalibRetriesOrCalibrRetryCnt:
+      case TU_Bln361095::SMARTattrNm::PwrCycleCnt:///S.M.A.R.T. parameter ID 12
+      case TU_Bln361095::SMARTattrNm::ReallocEvtCnt:///S.M.A.R.T. parameter ID 196
+      case TU_Bln361095::SMARTattrNm::CurrPendSecCnt:///S.M.A.R.T. parameter ID 197
+      case TU_Bln361095::SMARTattrNm::UncorrSecCnt:///S.M.A.R.T. parameter ID 198
+      case TU_Bln361095::SMARTattrNm::UDMA_CRCerrorCnt:///S.M.A.R.T. parameter ID 199
+      case TU_Bln361095::SMARTattrNm::FreeFallEvtCnt:
+      case TU_Bln361095::SMARTattrNm::MultiZoneErrorRate:///S.M.A.R.T. param ID 200
       ///S.M.A.R.T. param ID 201
-      case SMARTattributeNames::SoftReadErrorRateOrTACnterDetected:
+      case TU_Bln361095::SMARTattrNm::SoftReadErrorRateOrTACnterDetected:
         std_ossUnit << "#?";
         break;
-      case SMARTattributeNames::TotalDataWritten:
-      case SMARTattributeNames::TotalDataRead:
+      case TU_Bln361095::SMARTattrNm::TotalDataWritten:
+      case TU_Bln361095::SMARTattrNm::TotalDataRead:
         std_ossUnit << ">=1sector?";
         break;
   default:
@@ -517,20 +515,20 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
     std::ostringstream std_ossRawSMARTval;
     switch(SMARTattrID)
     {
-     case SMARTattributeNames::GiB_Erased:
+     case TU_Bln361095::SMARTattrNm::GiB_Erased:
     /** https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      *  : "Value is equal to (100-temp. °C)"*/
-     case SMARTattributeNames::TempDiffOrAirflowTemp:
+     case TU_Bln361095::SMARTattrNm::TempDiffOrAirflowTemp:
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      * 9 Jul 2020: "Lowest byte of the raw value contains the exact temperature
      * value (Celsius degrees)"*/
-     case SMARTattributeNames::DevTemp:
-     case SMARTattributeNames::HW_ECC_Recovered:
+     case TU_Bln361095::SMARTattrNm::DevTemp:
+     case TU_Bln361095::SMARTattrNm::HW_ECC_Recovered:
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      * 9 Jul 2020: "Decoded as: byte 0-1-2 = average erase count (big endian)
      * and byte 3-4-5 = max erase count (big endian).*/
-     case SMARTattributeNames::AvgEraseCntAndMaxEraseCnt:
-     case SMARTattributeNames::HeadFlyingHours:
+     case TU_Bln361095::SMARTattrNm::AvgEraseCntAndMaxEraseCnt:
+     case TU_Bln361095::SMARTattrNm::HeadFlyingHours:
        std_ossRawSMARTval << std::hex << /**To better differentiate between number and
        * base*/std::uppercase << SMARTrawVal << "h";
        break;

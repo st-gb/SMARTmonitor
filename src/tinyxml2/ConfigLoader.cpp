@@ -359,7 +359,7 @@ void ConfigLoader::ReadServiceConnectionSettings(
     if( xmlResult != XML_SUCCESS)
     {
       std::string stdstrAbsFullConfigFilePath;
-      FileSystem::GetAbsolutePathA(
+      TU_Bln361095::FileSys::GetAbsPathA(
         stdstrFullConfigFilePath.c_str(), stdstrAbsFullConfigFilePath );
       std::ostringstream std_oss;
       switch(xmlResult) {

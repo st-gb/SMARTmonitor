@@ -21,15 +21,17 @@
    #define TU_Bln361095SMARTmon_BldTmANSIcharArr_h
 
 #ifdef __cplusplus
-//extern "C"
-//{
+/**Must declare as extern "C" if compiling as C++, else Microsoft Visual Studio
+ * gives linker errors.*/
+extern "C"
+{
 #endif
 
 extern char TU_Bln361095SMARTmonBldDtANSIcharArr[];
 extern char TU_Bln361095SMARTmonBldTmOfD_ANSIcharArr[];
 
 #ifdef __cplusplus
-//}
+}///extern "C"
 #endif
 
 #endif///include guard

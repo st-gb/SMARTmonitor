@@ -16,8 +16,6 @@
 //TODO encapsulate in own namespace?
 enum SMARTvalueRating{SMARTvalueWarning=0,SMARTvalueOK=1,noCriticalValue,unknown};
 
-using namespace SMARTattributeNames;///enum SMARTattributeNames
-
 /**val=VALue: http://www.abbreviations.com/abbreviation/Value
  * rtg=rating: http://www.abbreviations.com/abbreviation/Rating
  * Typ=type: http://www.allacronyms.com/type/abbreviated */
@@ -157,7 +155,8 @@ public:
 	bool useManufacturerRtg = true;
 	switch((enum SMARTattributeNames) SMARTattrID)
 	{
-     case DevTemp:///temperatures for OK or warning depends on whether HDD or SSD
+    ///temperatures for OK or warning depends on whether HDD or SSD
+    case TU_Bln361095::SMARTattrNm::DevTemp:
 /**In regard of temperatures some manufacturers like Intel for model
  * "INTEL SSDSC2BF240A5H REF", firmware "LWDi" don't follow the semantics that
  * lower normalized current values mean a worse rating: for
@@ -176,33 +175,33 @@ public:
 	}
     switch( (enum SMARTattributeNames) SMARTattrID)
     {
-    case ReadErrorRate:
-    case ReallocSectorsCnt:
-    case SpinUpRetryCnt:
-    case RecalibRetriesOrCalibrRetryCnt:
-    case SSDprogFailCnt:
-    case SSDeraseFailCnt:
-    case PwrLossProtectionFailure:
-    case EraseFailCnt:
-    case CmdTimeout:
-    case HighFlyWrites:
-    case EndToEndError:
-    case ReportedUncorrError:
-    case G_senseErrorCnt:
-    case ReallocEvtCnt:
-    case CurrPendSecCnt:
-    case UncorrSecCnt:
-    case UDMA_CRCerrorCnt:
-    case MultiZoneErrorRate:
-    case SoftReadErrorRateOrTACnterDetected:
-    case ShockDuringWrite:
-    case FreeFallEvtCnt:
+    case TU_Bln361095::SMARTattrNm::ReadErrorRate:
+    case TU_Bln361095::SMARTattrNm::ReallocSectorsCnt:
+    case TU_Bln361095::SMARTattrNm::SpinUpRetryCnt:
+    case TU_Bln361095::SMARTattrNm::RecalibRetriesOrCalibrRetryCnt:
+    case TU_Bln361095::SMARTattrNm::SSDprogFailCnt:
+    case TU_Bln361095::SMARTattrNm::SSDeraseFailCnt:
+    case TU_Bln361095::SMARTattrNm::PwrLossProtectionFailure:
+    case TU_Bln361095::SMARTattrNm::EraseFailCnt:
+    case TU_Bln361095::SMARTattrNm::CmdTimeout:
+    case TU_Bln361095::SMARTattrNm::HighFlyWrites:
+    case TU_Bln361095::SMARTattrNm::EndToEndError:
+    case TU_Bln361095::SMARTattrNm::ReportedUncorrError:
+    case TU_Bln361095::SMARTattrNm::G_senseErrorCnt:
+    case TU_Bln361095::SMARTattrNm::ReallocEvtCnt:
+    case TU_Bln361095::SMARTattrNm::CurrPendSecCnt:
+    case TU_Bln361095::SMARTattrNm::UncorrSecCnt:
+    case TU_Bln361095::SMARTattrNm::UDMA_CRCerrorCnt:
+    case TU_Bln361095::SMARTattrNm::MultiZoneErrorRate:
+    case TU_Bln361095::SMARTattrNm::SoftReadErrorRateOrTACnterDetected:
+    case TU_Bln361095::SMARTattrNm::ShockDuringWrite:
+    case TU_Bln361095::SMARTattrNm::FreeFallEvtCnt:
       if(realCircaValue == 0)
         return SMARTvalueOK;
       else
         return SMARTvalueWarning;
       break;
-    case TotalDataWritten:
+    case TU_Bln361095::SMARTattrNm::TotalDataWritten:
       {
       if(p_modelAndFirmware){///may be NULL
         const ModelAndFirmware::remainingTotalDataWrittenType
@@ -221,7 +220,8 @@ public:
       else
         return unknown;
     }
-    case DevTemp:///temperatures for OK or warning depends on whether HDD or SSD
+    case TU_Bln361095::SMARTattrNm::DevTemp:
+    ///Temperatures for OK or warning depends on whether HDD or SSD too hot/cold.
       return rateAccDegCelsius(realCircaValue);
 //      case TotalDataWritten:
       //TODO if too many data/bytes (depending on SSD cell type (SLC/MLC/TLC)

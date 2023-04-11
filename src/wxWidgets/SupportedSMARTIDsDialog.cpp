@@ -2,6 +2,11 @@
  *  Created on: 29.10.2016
  *  Author:Stefan Gebauer, M.Sc.Comp.Sc.*/
 
+/**Prevents <winsock.h> to be included in <windows.h>. <Winsock.h> and
+ * <Winsock2.h> have the same definitions.->re-definition happens if <winsock.h>
+ * is included before <Winsock2.h> */
+#define _WINSOCKAPI_
+
 /** Include at 1st in Windows build to avoid:
  * "#warning Please include winsock2.h before windows.h" */
 #include <wxWidgets/SupportedSMARTIDsDialog.hpp>
@@ -13,7 +18,7 @@
 #include <wx/defs.h> //wxID_ANY
 
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
-#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+#include <wxWidgets/charStr/wxStringHelper.hpp>
 #include "wxSMARTmonitorApp.hpp" //wxGetApp()
 #include <sstream>///class std::ostringstream
 //#include <attributes/SMARTuniqueID.hpp>
@@ -83,7 +88,7 @@ wxSizer * SupportedSMART_IDsDialog::CreateGUI(
   std::string std_strDataCarrierID = dataCarrierID.str();
   wxTextCtrl * p_wxTextCtrl = new wxTextCtrl(this, wxID_ANY, 
     wxT("ALL S.M.A.R.T. attribute IDs supported by\n") + 
-      wxWidgets::GetwxString_Inline(std_strDataCarrierID),
+      TU_Bln361095::wxWidgets::GetwxString_inln(std_strDataCarrierID),
     wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
   p_wxTextCtrl->SetEditable(false);
 
@@ -190,7 +195,8 @@ void SupportedSMART_IDsDialog::SetTitleFromDataCarrierID(
   std::ostringstream std_oss;
   std_oss << dataCarrierID/*.str()*/.m_modelName << " " <<
     dataCarrierID.m_firmWareName;
-  wxString wstrDataCarrierID = wxWidgets::GetwxString_Inline(std_oss.str() );
+  wxString wstrDataCarrierID = TU_Bln361095::wxWidgets::GetwxString_inln(
+    std_oss.str() );
   /** Show data carrier model (, firmware, serial #) in title bar because 
    *  the supported attribute IDs are specific to the HDD model e.g.. */
   SetTitle(wstrDataCarrierID + wxT("--all supported S.M.A.R.T. IDs") );

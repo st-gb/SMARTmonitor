@@ -74,6 +74,7 @@ if(WIN32)#https://cmake.org/cmake/help/v3.0/variable/WIN32.html
 endif()
 
 set(CmnSrcLogger ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
+##Sets CMake variable "defaultLoggerSrcFilePaths".
 include(${CmnSrcLogger}/defaultLoggerFiles.cmake)
 
 set(CfgRdrSrcfiles

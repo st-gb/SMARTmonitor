@@ -119,8 +119,8 @@ set( INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 #message("include directories: ${INCLUDE_DIRS}")
-include(${cmnSrcDir}/CMake/ShowMsg_CompLvl.cmake)
-showInclDirs(5)
+include(${cmnSrcDir}/compiler/C,C++/printInclDirs.cmake)
+printInclDirs(5)
 
 if(${EXE_TYPE} STREQUAL "UNIX_service")
   include(server/BSD_sockets.cmake)#sets "BSD_sockets_srcFiles"
@@ -172,6 +172,9 @@ message("CMAKE CXX flags: \"${CMAKE_CXX_FLAGS}\"")
 message("CMAKE_CXX_FLAGS_DEBUG: \"${CMAKE_CXX_FLAGS_DEBUG}\"")
 message("CFLAGS: ${CFLAGS} CXXFLAGS: ${CXXFLAGS} LDFLAGS: ${LDFLAGS}")
 message("CMAKE_EXE_LINKER_FLAGS: \"${CMAKE_EXE_LINKER_FLAGS}\"")
+
+include(${cmnSrcDir}/compiler/C,C++/printLibDirs.cmake)##printLibDirs(...)
+printLibDirs(5)
 
 #From https://stackoverflow.com/questions/5403705/cmake-add-definitions-and-compile-definitions-how-to-see-them
 #: Output variable set with "add_definitions(...)"
