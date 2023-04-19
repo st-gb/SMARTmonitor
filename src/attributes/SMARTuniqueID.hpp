@@ -1,11 +1,11 @@
-/** SMARTuniqueID.hpp
  *  Created on: 05.08.2016
- * Author:Stefan Gebauer, M.Sc.Comp.Sc. TU Berlin */
+/**(c) from 2016 by Stefan Gebauer(Computer Science Master from TU Berlin)
+ * @author:Stefan Gebauer(TU Berlin matriculation number 361095)*/
 
 #ifndef ATTRIBUTES_SMARTUNIQUEID_HPP_
 #define ATTRIBUTES_SMARTUNIQUEID_HPP_
 
-///standard C/C++ lib
+///C/C++ standard library header files:
 #include <iostream>///class std::ostream
 #include <limits>///std::numeric_limits<>::max()
 #include <map> //class std::map
@@ -13,14 +13,19 @@
 #include <stdint.h>///uint64_t
 #include <string.h>///memset(...)
 
-///common_sourcecode repo of Stefan Gebauer
+///Stefan Gebauer's(TU Berlin mat.#361095)~"common_sourcecode" repository files:
+ ///enum TU_Bln361095::hardware::bus::Type
+#include <hardware/bus/busType.h>
 #include <hardware/CPU/fastest_data_type.h>///fastestUnsignedDataType
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
-///numSMART_SNbytes, numSMART_FWbytes, numSMARTmodelBytes, numDifferentSMART_IDs
+ /**TU_Bln361095hardwareSMARTnumSNbytes, TU_Bln361095hardwareSMARTnumFWbytes, 
+  * TU_Bln361095hardwareSMARTnumModelBytes, numDifferentSMART_IDs */
 #include <hardware/dataCarrier/ATA3Std.h>
-#include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
+ ///enum TU_Bln361095SMARTattrNm
+#include <hardware/dataCarrier/SMARTattributeNames.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN_ERROR(...)
 
+///This repository's header files:
 #include "SMARTattributeNameAndID.hpp"///class SMARTattributeNameAndID
 
 ///So the last SMART attrubute ID (254) can be used to index (255 items array)
@@ -42,6 +47,13 @@ struct SMARTuniqueID
   char m_serialNumber[TU_Bln361095hardwareSMARTnumSNbytes+1];
   char m_firmWareName[TU_Bln361095hardwareSMARTnumFWbytes+1];
   char m_modelName[TU_Bln361095hardwareSMARTnumModelBytes+1];
+  enum TU_Bln361095::hardware::bus::Type m_busType;
+  char * getModelNameAddr() const{ return (char *) m_modelName;}
+  char * getSerialNumberAddr() const{ return (char *) m_serialNumber;}
+  char * getFirmWareNameAddr() const{ return (char *) m_firmWareName;}
+  void setBusType(const enum TU_Bln361095::hardware::bus::Type busType)
+    { m_busType = busType;}
+  enum TU_Bln361095::hardware::bus::Type getBusType() const { return m_busType;}
 
   //TODO # supported SMART IDs may only be 30->less space needed
   fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs];// = {0};

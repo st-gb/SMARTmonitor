@@ -89,52 +89,72 @@ if(SetwxPathsManually)
     )
 endif()
 
-message("SetwxVarsManually: ${SetwxVarsManually}")
-if(SetwxVarsManually)
-#Setting manually makes wxWidgets version changes difficult as the version is
-#part of the file name: "wx_baseu-3.0" 
-set( LIBRARIES
-  ${LIBRARIES}
-  )
+if(DEFINED wxLibs)
 
-if(WIN32)
-  add_definitions(-D__WXMSW__)
-  set(CXX_DEFINITIONS
-    ${CXX_DEFINITIONS}
-    -D__WXMSW__
-  )
-endif(WIN32)
+  message("wxLibs:${wxLibs}")
 
-if(UNIX)
-  #add_definitions(-D__WXGTK__)
-  set(CXX_DEFINITIONS
-    ${CXX_DEFINITIONS}
-    -D__WXGTK__
-  )
+  ##If setting wxWidgets library file names manually then these file names
+  ##should be set on command line and not hardcoded into a CMake file because
+  ##the wxWidgets version is part of the file name: "wx_baseu-3.0[...]" and
+  ##so this file name may change.
   set( LIBRARIES
     ${LIBRARIES}
-    #libwx_gtk2ud_core-2.8.a
-    #wx_baseud-2.8
-    #wx_gtk2ud_adv-2.8
-  )
-endif(UNIX)
-else(SetwxVarsManually)
+  ## Pass "-DwxLibs=>><<" to CMake command (line).
+  ##
+  ## "_U_nicode release libraries: "u" in file name, for example "libwxbase32u.a"
+  ## "_U_nicode _d_ebug" libraries:"ud" in file name,for example "libwxbase32ud.a"
+  ## For building Unicode debug version under Microsoft Windows, for example:
+  ##  "-DwxLibs=libwxbase32ud.a;libwxmsw32ud_adv.a;libwxmsw32ud_core.a"
 
-#If not set, wxWidgets_LIBRARIES includes all/too many wxWidgets libraries after
-# "find_package(wxWidgets [...]"
-SET(wxWidgets_USE_LIBS core base adv)
-if(SetFindwxVarsManually)#=set wx vars and call "find_package(wxWidgets..."
-#https://wiki.wxwidgets.org/CMake
-set(wxWidgets_CONFIGURATION mswud)
-#set(wxWidgets_CONFIGURATION mswu)
-#TODO already covered by "SET(wxWidgets_USE_LIBS..."?
-find_package(wxWidgets COMPONENTS core base adv REQUIRED)
-include(${wxWidgets_USE_FILE})
+  ## For Unicode, pass "_UNICODE" as compiler definition?!, else errors like:
+  ## "D:/wxWidgets/3.2.1/include/wx/msw/winundef.h:48:45: error: cannot convert
+  ##  'LPCTSTR' {aka 'const wchar_t*'} to 'LPCSTR' {aka 'const char*'}"
+    ${wxLibs}
+    )
 
-message("wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
-message (STATUS "wxWidgets type: ${wxWidgets_CONFIGURATION}")
-else(SetFindwxVarsManually)
-set(debugCallFindwxWidgets TRUE)
-include(${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/callFindwxWidgets.cmake)
-endif(SetFindwxVarsManually)
-endif(SetwxVarsManually)
+  message("Adding ${wxLibDir} to link directories.")
+   ##http://cmake.org/cmake/help/latest/command/link_directories.html :
+   ## -"Add directories in which the linker will look for libraries."
+   ## -"This command [...] should be avoided"
+   ##  alternative: target_link_libraries([...]).
+   link_directories(${wxLibDir})
+
+  if(WIN32)##Building under/for Microsoft Windows operating system(also 64 bit)
+    add_definitions(-D__WXMSW__
+      ##Needed for "wxUSE_UNICODE_WINDOWS_H" to be defined in 
+      ## ">>wxWidgets source root directory<</include/wx/msw/winundef.h"
+      -D_UNICODE)
+    set(CXX_DEFINITIONS
+      ${CXX_DEFINITIONS}
+      -D__WXMSW__
+    )
+  endif(WIN32)
+
+  if(UNIX)##Unix(-derived) operating systems like Linux
+    #add_definitions(-D__WXGTK__)
+    set(CXX_DEFINITIONS
+      ${CXX_DEFINITIONS}
+      -D__WXGTK__
+    )
+  endif(UNIX)
+else(DEFINED wxLibs)
+  ##If not set, wxWidgets_LIBRARIES contains all/too many wxWidgets libraries
+  ## after "find_package(wxWidgets [...]".
+  SET(wxWidgets_USE_LIBS core base adv)
+  ##=Set wxWidgets variables and call "find_package(wxWidgets..."
+  if(SetFindwxVarsManually)
+    #https://wiki.wxwidgets.org/CMake
+    #set(wxWidgets_CONFIGURATION mswud)
+    #set(wxWidgets_CONFIGURATION mswu)
+    #TODO already covered by "SET(wxWidgets_USE_LIBS..."?
+    find_package(wxWidgets COMPONENTS core base adv REQUIRED)
+    ##This calls 
+    include(${wxWidgets_USE_FILE})
+
+    message("wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
+    message (STATUS "wxWidgets type: ${wxWidgets_CONFIGURATION}")
+  else(SetFindwxVarsManually)
+    set(debugCallFindwxWidgets TRUE)
+    include(${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/callFindwxWidgets.cmake)
+  endif(SetFindwxVarsManually)
+endif()#wxLibs

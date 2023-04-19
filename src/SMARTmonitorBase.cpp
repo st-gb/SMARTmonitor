@@ -580,13 +580,12 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
   SMARTaccess_type & SMARTaccess = *mp_SMARTaccess;
   if (dwRetVal == SMARTaccessBase::success)
   {
-    unsigned lineNumber = 0;
     bool atLeast1NonNullValue = false;
     //    //loop over drives
     //    long double timeInS;
     //    for(unsigned ucT1 = 0, ucT4 = 0; ucT1 < m_SMARTvalueProcessor.m_ucDrivesWithInfo; ++ ucT1)
     //    {
-    const fastestUnsignedDataType numberOfDifferentDrives = SMARTaccess.
+    const TU_Bln361095::CPU::FaststUint numDifferentDataCarriers = SMARTaccess.
       GetNumberOfDifferentDrives();
     std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = SMARTaccess.
             GetSMARTuniqueIDandValues();
@@ -597,9 +596,10 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
     uint64_t SMARTrawValue;
             //TODO crashed in loop header at "iter++"
             bool consistent;
-    for (fastestUnsignedDataType currentDriveIndex = 0 /*, ucT4 = 0*/;
-            currentDriveIndex < numberOfDifferentDrives;
-            ++currentDriveIndex, SMARTuniqueIDandValuesIter++) {
+    for(TU_Bln361095::CPU::FaststUint currDataCarrierIdx = 0;
+        currDataCarrierIdx < numDifferentDataCarriers;
+        ++currDataCarrierIdx, SMARTuniqueIDandValuesIter++)
+    {
       //    pDriveInfo = m_SMARTvalueProcessor.GetDriveInfo(currentDriveIndex);
       //TODO only read intersection with supported S.M.A.R.T. attributes?
       SMARTattrToObsType::const_iterator
@@ -608,8 +608,10 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
       //TODO crashes here (iterator-related?!-> thread access problem??)
       //TODO why this loop?? multithread-safe (AtomicExchange(...) ) already in
       // SMARTaccessBase::ReadSMARTValuesForAllDrives(...)
+      TU_Bln361095::CPU::FaststUint lineNumber = 0;
       for (; SMARTattrsToObserveIter != m_IDsOfSMARTattrsToObserve.end();
-              SMARTattrsToObserveIter++) {
+        SMARTattrsToObserveIter++)
+      {
         SMARTattributeID = * SMARTattrsToObserveIter;
 
         consistent = SMARTuniqueIDandValuesIter->m_SMARTvalues[
@@ -631,7 +633,7 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
         }
       }
     }
-    OperatingSystem::GetCurrentTime(m_timeOfLastSMARTvaluesUpdate);
+    TU_Bln361095::OpSys::GetCurrTime(m_timeOfLastSMARTvaluesUpdate);
     //    }
   } else // e.g. SMARTaccessBase::accessDenied
     ;
@@ -667,9 +669,9 @@ inline void SMARTmonitorBase::WaitForTimeout(
     * Alternatives (needn't wait the whole time):
     * -WaitForSingleObjectEx(...) for MS Windows API
     * -pthread_cond_timedwait(&cond, &mutex, &ts); for Linux */
-    TU_Bln361095::OpSys::suspendExecInS(1);
+    TU_Bln361095::OpSys::SuspendExecInS(1);
   }
-  TU_Bln361095::OpSys::suspendExecInMs(
+  TU_Bln361095::OpSys::SuspendExecInMs(
     numberOfMilliSecondsToWaitBetweenSMARTquery % 1000);
 }
 

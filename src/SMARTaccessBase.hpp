@@ -26,13 +26,14 @@ protected:
   SMARTuniqueIDandValsContType & m_SMARTuniqueIDsandVals;
 public:
   enum retCodes { success = 0, accessDenied, noSingleSMARTdevice, 
-    gotSMARTattributeValue, unset};
+    gotSMARTattributeValue, unset, getBusTypFaild, otherError};
   SMARTaccessBase(SMARTuniqueIDandValsContType &);
   virtual
   ~SMARTaccessBase ();
 
   ///\brief fill @sMARTuniqueID with firmware, model and serial number
-  virtual void fill(const char device[], SMARTuniqueID & sMARTuniqueID) = 0;
+  //void fill(const char device[], SMARTuniqueID & sMARTuniqueID) = 0;
+
   /**It makes sense to do the unit detection/calculation in this class because
   * it belongs to the server and the logic only needs to be done once at 
   * server side. Could also do it to in the client/dyn lib but then it has to be

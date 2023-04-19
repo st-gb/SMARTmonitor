@@ -10,10 +10,16 @@
 #include <client/SMARTmonitorClient.h>///base class SMARTmonitorClient
 
 ///wxWidgets header files:
+ /**Avoid Microsoft Visual Studio compiler warnings like :
+  * "include\wx / wxcrt.h(213, 14) warning C4996 : 'strcpy' : This function
+  * or variable may be unsafe.Consider using strcpy_s instead.To disable
+  * deprecation, use _CRT_SECURE_NO_WARNINGS.See online help for details." */
+ #pragma warning(disable:4996)
 #include <wx/app.h> //Base class wxApp
 #include <wx/dialog.h> //class wxDialog
 #include <wx/icon.h> //class wxIcon
 #include <wx/timer.h> //class wxTimer
+ #pragma warning(enable:4996)
 
 //#include "wxSMARTmonitorTaskBarIcon.hpp"
 //#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase

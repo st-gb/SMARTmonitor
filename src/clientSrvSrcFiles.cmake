@@ -62,6 +62,7 @@ if(UNIX)
 endif()
 if(WIN32)#https://cmake.org/cmake/help/v3.0/variable/WIN32.html
   message("WIN32 defined")
+  if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   #To avoid a lot of warnings like " warning: 'virtual void
   # wxWindowBase::SetInitialBestSize(const wxSize&)' is deprecated: use
   # SetInitialSize() instead. [-Wdeprecated-declarations]"
@@ -70,6 +71,7 @@ if(WIN32)#https://cmake.org/cmake/help/v3.0/variable/WIN32.html
   # "This is a known issue for MinGW GCC compiler version < 5.3 (related to "assert" implementation)."
   add_definitions(-Wdeprecated-declarations)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wdeprecated-declarations")
+  endif()
   include(${SMARTmonSrcDir}/Windows/Windows.cmake)
 endif()
 

@@ -1,20 +1,43 @@
-/* Author:Stefan Gebauer */
-#include "UserInterface.hpp" //class UserInterface
-#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
+///@author:Stefan Gebauer(TU Berlin matriculation number 361095)
+
+///C,C++ standard library header files:
 #include <stdio.h> //snprintf(...)
 #include <string.h>///strcat(...)
 #include <sstream>///class std::ostringstream
 #include <time.h>///strftime(...)
 
-std::string UserInterface::GetTimeAsString(const struct tm & timeOfLastSMARTvaluesUpdate)
+///This repository's header files:
+#include "UserInterface.hpp"///class UserInterface
+
+///Stefan Gebauer's(TU Berlin mat.#361095) ~"common_sourcecode"repository files:
+#include <hardware/CPU/fastest_data_type.h>///fastestUnsignedDataType
+
+/**numChars(abbreviated weekday)=3 + numChars(day)=2 +
+ * numChars(abbreviated month)=3 + numChars("HH:MM:SS")=8 + 3 space chars = 19
+ * + character string terminating '\0' character = 20 */
+#define numCharsForDt_andTm 25
+
+std::string UserInterface::GetTimeAsString(const struct tm & time)
 {
-  char buffer[80];
-  //"%a" : Abbreviated weekday name
-  // %d : Day of the month, zero-padded (01-31)
-  // %b : Abbreviated month name
-  // %T : ISO 8601 time format (HH:MM:SS),
-  size_t strLen = strftime(buffer, 80, "%a %d %b %T", 
-    & timeOfLastSMARTvaluesUpdate );
+  char buffer[numCharsForDt_andTm];
+  /**http://pubs.opengroup.org/onlinepubs/009695399/functions/strftime.html ,
+   * section "RETURN VALUE" :
+   * "If the total number of resulting bytes including the terminating null
+   * byte is not more than maxsize, strftime() shall return the number of bytes
+   * placed into the array pointed to by s, not including the terminating null
+   * byte.Otherwise, 0 shall be returned and the contents of the array are
+   * unspecified." */
+  size_t numBwoutTerm0written = 
+    strftime(buffer, numCharsForDt_andTm,
+     /**http://pubs.opengroup.org/onlinepubs/009695399/functions/strftime.html :
+       * %a : Abbreviated weekday name
+       * %d : Day of the month, zero-padded (01-31)
+       * %b : Abbreviated month name
+       * %T : ISO 8601 time format (HH:MM:SS) */
+      "%a %d %b %T",
+      & time);
+  if(numBwoutTerm0written == 0)
+    return std::string("");
   return std::string(buffer);
 }
 

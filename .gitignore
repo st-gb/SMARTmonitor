@@ -35,6 +35,17 @@
 #NetBeans IDE
 **/nbproject/**
 
+##Microsoft Visual Studio
+##-----------------------
+##OBJect files created by Microsoft C(++) compiler "cl.exe"
+**/*.dir/**/*.obj
+**/*.dir/**/*.pdb
+*.tlog
+**/.vs/**
+**/*.vcxproj
+**/*.vcxproj.filters
+**/*.vcxproj.user
+
 ##Visual Studio Code
 ##------------------
 ##Because these folders were not only under directory "src/.vscode" but also in

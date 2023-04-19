@@ -2,15 +2,19 @@
  * Created on: 05.08.2016
  * Author:Stefan Gebauer, M.Sc.Comp.Sc.*/
 
-///standard C/C++ libs
+///C/C++ standard library files:
 #include <sstream>///class std::ostringstream
-#include <string.h> //strcmp
+#include <string.h>///strcmp
 
-#include "SMARTuniqueID.hpp" //struct SMARTuniqueID
-///numSMART_FWbytes, numSMARTmodelBytes, numSMART_FWbytes
+///this repository's header files:
+#include "SMARTuniqueID.hpp"///struct SMARTuniqueID
+
+///Stefan Gebauer's(TU Berlin mat.#361095)~"common_sourcecode" repository files:
+ ///TU_Bln361095::CstdLib::strcmp::EqlStrs
+#include <C_standard_library/string_compare_return_codes.h>
+ /**TU_Bln361095hardwareSMARTnumFWbytes, TU_Bln361095hardwareSMARTnumModelBytes,
+  * TU_Bln361095hardwareSMARTnumSNbytes, numDifferentSMART_IDs */
 #include <hardware/dataCarrier/ATA3Std.h>
-
-#define STRING_ARE_IDENTICAL 0
 
 bool operator < (const SMARTuniqueID & left,
                  const SMARTuniqueID & right)
@@ -18,12 +22,12 @@ bool operator < (const SMARTuniqueID & left,
   int retVal = strcmp(left.m_modelName, right.m_modelName);
   if( retVal < 0 )
     return true;
-  else if( retVal == STRING_ARE_IDENTICAL )
+  else if( retVal == TU_Bln361095::CstdLib::strcmp::EqlStrs )
   {
     retVal = strcmp(left.m_firmWareName, right.m_firmWareName);
     if( retVal < 0)
       return true;
-    else if( retVal == STRING_ARE_IDENTICAL )
+    else if( retVal == TU_Bln361095::CstdLib::strcmp::EqlStrs)
     {
       if( strcmp(left.m_serialNumber, right.m_serialNumber) < 0)
         return true;
@@ -87,5 +91,6 @@ SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & orig)
   
   copyArr(orig.m_SMART_IDsToRd, m_SMART_IDsToRd);
   copyArr(orig.supportedSMART_IDs, supportedSMART_IDs );
+  m_busType = orig.getBusType();
   return *this;
 }
