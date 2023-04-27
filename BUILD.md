@@ -1,29 +1,42 @@
 this file is based on
 https://gist.github.com/PurpleBooth/109311bb0361f32d87a2#file-readme-template-md
 
-# Building S.M.A.R.T. monitor
+# Building Stefan Gebauer's S.M.A.R.T. monitor/analyzer
 
-A tool to monitor raw values for (critical)
-[S.M.A.R.T.](https://en.wikipedia.org/wiki/S.M.A.R.T.) parameters locally or
-via [BSD sockets](https://en.wikipedia.org/wiki/Berkeley_sockets).
-S.M.A.R.T. values are retrieved periodically in an inverval.
-
-Some units (Power-On Time, Total Data Written, ...) for some
-[S.M.A.R.T. attributes](https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)
-are tried to be determined.
+Stefan Gebauer=ex-student with TU Berlin matriculation number 361095
 
 ## General
 
-This affects all builds/targets.
+This affects all ([Graphical User Interface](
+http://en.wikipedia.org/wiki/Graphical_user_interface), [service](
+http://en.wikipedia.org/wiki/Service), ...) [builds](
+http://en.wikipedia.org/wiki/Software_build).
+
+### Building Prerequisites
+
+* [CMake](https://cmake.org/download) for creating makefile / IDE project files
+* [C++](https://en.wikipedia.org/wiki/C%2B%2B) [compiler](
+   http://en.wikipedia.org/wiki/Compiler) (source code is able to build for
+   example with "g++" 7.5.0)
+* "[common_sourcecode](https://www.github.com/st-gb/common_sourcecode)" git
+repository from Stefan Gebauer(TU Berlin matriculation number 361095)
+
+    Place this repository into the same file system directory level as _this_
+    repository for ease of use.:
+
+    ```
+        top-level directory
+                / \
+    SMARTmonitor   common_sourcecode
+    ```
 
 ### Invocation
 
-1. Change to _repository_root_/src" directory where 
+1. Change to _repository root file system directory_/src" where 
 [CMakeLists.txt](https://cmake.org/cmake/help/latest/guide/tutorial/index.html#a-basic-starting-point-step-1)
 resides.
 
 2. either
-
 
     * call [CMake](https://cmake.org) directly:
 
@@ -39,22 +52,17 @@ resides.
       cmake -G
       ```
 
-    * call the build scripts in _repository_root_/create" directory
+    * call the build scripts in _repository root file system directory_/create" 
 
 ### Additional options
 
-Additonal options can be passed either to CMake command line directly or to the
+Additional options can be passed either to CMake command line directly or to the
 script file as parameter for "AdditionalCMakeArgs".
 
 If passed to the script for the "AdditionalCMakeOpts" parameter, multiple
 options must be enclosed in brackets:
 
 "_option1_=_value1_ _option2_=_value2_" 
-
-#### Create Debian package
-
-Pass "-Dcr8DebPkg=TRUE" to [CMake](https://cmake.org) command line.
-Call "cpack" afterwards.
 
 #### Specify build type
 
@@ -69,7 +77,29 @@ can be 1 of
 * RelWithDebInfo
 * MinSizeRel
 
-## Build Examples
+## Create Debian package
+
+Pass "-Dcr8DebPkg=TRUE" to [CMake](https://cmake.org) command line.
+Call "cpack" afterwards.
+
+## Preparation Examples
+
+### Many/all build targets/executables
+
+This affects (nearly) all targets(service/GUI, ...).
+
+####  Linux
+
+- Debian-/APT-based
+
+  command line:
+
+  ```
+  apt-get install g++
+  apt-get install cmake
+  ```
+
+- g++: GNU C++ compiler
 
 ### Direct Access To S.M.A.R.T.
 
@@ -78,61 +108,46 @@ the User Interface (wxGUI, command line etc.).
 
 #### Linux
 
-- "libatasmart-dev" is for header files (libatasmart.h etc.)
-- Debian-/APT-based
+  - Debian-/APT-based
 
-  The libatasmart package is needed.
-
-  Command line to install it:
-
-  ```
-  apt-get install libatasmart4
-  apt-get install libatasmart-dev
-  ```
-
-### wxWidgets GUI
-
-#### Linux
-
-- Debian Linux-/APT-based:
-  - libwxbase[...]dev is for CMake variable "wxWidgets_LIBRARIES"
-  - command line to install [wxWidgets](https://www.wxwidgets.org/) runtime
-    libraries (as root/superuser, that means use "sudo " before command):
-
-    ```
-    apt-get install libwxbase3.0-0v5
-    apt-get install libwxgtk3.0-0v5
-    ```
-
-    ([...]gtk[...] is "adv" library for Linux/GTK)
-    
-  - Ubuntu Desktop 22.4.1 64 bit:
-
-    ```
-    apt-get install libwxgtk3.0-gtk3-0v5
-    apt-get install libwxbase3.0-dev
-    ```
-
-  - command line to build (assuming working directory is _repository_root_):
-
-    ```
-    cd src
-    ../create/create_wxGUI_Linux_debug.sh "Unix Makefiles"
-    make -j `nproc`
-    ```
-  - Arch Linux
+    The "libatasmart" package is needed.
 
     Command line to install it:
 
     ```
-    pacman -S wxgtk-common
-    pacman -S wxgtk2
+    apt-get install libatasmart4
+    apt-get install libatasmart-dev
     ```
 
-    wxgtk2: for findWixwidgets.cmake, although not shown with "pacman -Ql wxgtk2" 
-    wxgtk-common: header files, wxbase .so files
+- "libatasmart4" for library (.so, .a) files(?) (to link the executable to)
+- "libatasmart-dev" is for header files (libatasmart.h etc.)
 
-### Makefiles
+### [wxWidgets](http://www.wxwidgets.org/downloads)(tested with version 3) GUI
+
+#### Operating System-independent Prerequisites
+
+For building the wxWidgets GUI for both operating systems "Microsoft Windows"
+and "Linux" this software is additionally needed:
+
+-  wxWidgets headers (for compiling)
+-  wxWidgets libraries (for linking to and for running the target/executable)
+  
+  needed wxWidgets libraries:
+
+  - core
+  - base
+  - adv (for User Interface (control elements) )
+
+#### Linux operating system
+
+see [building the wxWidgets GUI for Linux](build/build_Linux_wxGUI.md)
+
+#### Microsoft Windows operating system
+
+See [building the wxWidgets GUI for Microsoft Windows](
+build/build_Windows_wxGUI.md)
+
+### [Makefiles](#makefile)
 
 if the CMake build system generator created a Makefile:
 
@@ -147,8 +162,9 @@ if the CMake build system generator created a Makefile:
 
 ## Authors
 
-[Stefan Gebauer, M.Sc. Comp. Sc.](https://github.com/st-gb)
+[Stefan Gebauer, TU Berlin Computer Science Master](https://github.com/st-gb)
 
 ## License
 
-Copyright by Stefan Gebauer, no commercial use without grant
+Copyright by Stefan Gebauer(TU Berlin matriculation number 361095), no
+commercial use without grant

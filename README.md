@@ -13,10 +13,14 @@ https://gist.github.com/PurpleBooth/109311bb0361f32d87a2#file-readme-template-md
 ## Capabilities
 
 ### Monitoring Directly/Locally or via Network/Internet
-A tool to monitor normalized and raw values for (critical) [S.M.A.R.T.](
-http://en.wikipedia.org/wiki/S.M.A.R.T.) parameters directly/locally (only Linux)
-or as [BSD sockets](http://en.wikipedia.org/wiki/Berkeley_sockets) client
-(Windows, Linux).
+A tool to monitor [normalized](
+http://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#ATA_S.M.A.R.T._attributes)
+and [raw](
+http://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#ATA_S.M.A.R.T._attributes)
+values for (critical) [S.M.A.R.T.](http://en.wikipedia.org/wiki/S.M.A.R.T.)
+parameters directly/locally (only Linux operating system) or as [BSD sockets](
+http://en.wikipedia.org/wiki/Berkeley_sockets) client (Microsoft Windows, Linux
+operating systems).
 S.M.A.R.T. values are retrieved periodically in an interval.
 
 [comment]: # https://stackoverflow.com/questions/10189356/how-to-add-screenshot-to-readmes-in-github-repository
@@ -24,10 +28,9 @@ S.M.A.R.T. values are retrieved periodically in an interval.
 ![here the screenshot of wxWidgets GUI in Linux Mint should appear](http://it-gebauer.de/SMARTmonitor/SMARTmonitor_wxGUI_main_dialog_Linux_Mint.png "screenshot of wxWidgets GUI's main dialog in Linux Mint")
 
 ### S.M.A.R.T. Parameter Value Unit Auto-Detection
-Some units (Power-On Time, Total Data Written, ...) for some
-[S.M.A.R.T. attributes](
-http://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes) are
-tried to be determined.
+For some [S.M.A.R.T. attributes](
+http://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)
+(Power-On Time, Total Data Written, ...) units are tried to be determined.
 
 ### Multiple Data Carriers
 Also the software is capable to monitor more than 1 storage media/data carrier
@@ -52,75 +55,9 @@ files, configuration files) package.
 For systemd the service can be installed (for example using Debian package
 post-installation script).
 
-## Building Prerequisites
+## Building
 
-general:
-
-* [CMake](https://cmake.org/download) for creating makefile / IDE project files
-* C++ compiler (source code is able to build with "g++" 7.5.0)
-* "[common_sourcecode](https://www.github.com/st-gb/common_sourcecode)" git
-repository from Stefan Gebauer
-
-  Place this into the same directory level as this repository for ease of use.:
-
-  ```
-        top-level directory
-              / \
-  SMARTmonitor   common_sourcecode
-  ```
-* Linux for direct access to S.M.A.R.T.:
-  - libatasmart-dev
-
-### wxWidgets GUI:
-
-- [wxWidgets](http://www.wxwidgets.org/downloads) (tested with version 3)
-  
-  needed libraries:
-  - base
-  - adv (GTK etc.)
-
-## Preparation Examples
-
-### General
-####  Linux
-
-- Debian-/APT-based
-
-  command line:
-
-  ```
-  apt-get install g++
-  apt-get install cmake
-  ```
-
-### Direct Access To S.M.A.R.T.
-
-This is essentially needed by server/service/daemon but may also be desired for
-the User Interface (wxGUI, command line etc.).
-
-#### Linux
-
-- Debian-/APT-based
-
-  command line:
-
-  ```
-  apt-get install libatasmart-dev
-  ```
-
-### wxWidgets GUI
-
-#### Linux
-
-- Debian Linux-/APT-based:
-  - command line:
-
-    ```
-    apt-get install libwxbase3.0-dev
-    apt-get install libwxgtk3.0-dev
-    ```
-    ([...]gtk[...] is "adv" library for Linux/GTK)
-
+See [here](BUILD.md)
 
 ## Tests
 
@@ -135,6 +72,11 @@ BSD sockets S.M.A.R.T. client derived from class "SMARTmonitorClient".
 ### readAllSupportedSMART_IDsTime
 
 Measures time to read all S.M.A.R.T. attributes supported by a certain drive. 
+
+## Running
+
+If the wxWidgets GUI was built with dynamic wxWidgets libraries, then their
+directories must be in "Path" environment variable.
 
 ## Authors
 
