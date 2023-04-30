@@ -175,8 +175,8 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
     * "The raw value of this attribute shows total count of hours (or minutes,
     * or seconds, depending on manufacturer) in power-on state."*/
-    case TU_Bln361095::SMARTattrNm::PowerOnTime :
-    case TU_Bln361095::SMARTattrNm::HeadFlyingHours:{
+    case TU_Bln361095::dataCarrier::SMART::Attr::PowerOnTime :
+    case TU_Bln361095::dataCarrier::SMART::Attr::HeadFlyingHours:{
     //TODO could do a diff of OS uptime (GetTickCount(...) under MS Windows)
      // and values to determine the time unit.
 //      return GetTimeFrom_ms(SMARTrawVal);
@@ -185,7 +185,7 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
       UserInterface::FormatTime(SMARTval, timeFmt);
       return timeFmt;
     }
-    case TU_Bln361095::SMARTattrNm::TempDiffOrAirflowTemp:
+    case TU_Bln361095::dataCarrier::SMART::Attr::TempDiffOrAirflowTemp:
 //     ///If temp. in Celsius: and 100-temp. °C: maximum is 100-(-273)=373
 //     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
 //      /** http://en.wikipedia.org/wiki/S.M.A.R.T.: "some older drives may 
@@ -198,11 +198,11 @@ std::string SMARTvalueFormatter::FormatHumanReadable(
       return SMARTvalueFormatter::TempDiffOrAirflowTemp_DegCforCurrMinMax(
         SMARTval);
 
-    case TU_Bln361095::SMARTattrNm::DevTemp :
+    case TU_Bln361095::dataCarrier::SMART::Attr::DevTemp :
 //     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
       return GetDegCfromCurrMinMax(SMARTval);
-    case TU_Bln361095::SMARTattrNm::TotalDataWritten:
-    case TU_Bln361095::SMARTattrNm::TotalDataRead:{
+    case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataWritten:
+    case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataRead:{
       std::string numWithSIprefix = GetNumberWithSIprefix(SMARTval);
       if(unitKnown)
         numWithSIprefix += "B";///Only append "B" if unit is known!

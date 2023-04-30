@@ -36,7 +36,11 @@ GCC_DIAG_OFF(write-strings)
 //#include "warning.xpm"
 //#include "smile.xpm"
 GCC_DIAG_ON(write-strings)
-typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
+#ifndef TU_Bln361095TmCntDfnd
+  #define TU_Bln361095TmCntDfnd
+  typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
+  typedef long double TimeCountInNanosec_type;///for GetTimeCountInNanoSeconds(...)
+#endif
 #include <Controller/time/GetTickCount.hpp>
 #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <hardware/CPU/atomic/memory_barrier.h>
@@ -499,7 +503,7 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
       /** So "s_atLeast1CriticalNonNullValue != smartValueRating" in
        * SMARTmonitorClient::UpdateSMARTvaluesUI() after next processing
        * S.M.A.R.T. values->(task bar) icon is updated to "warning" or "OK" */
-      wxGetApp().s_atLeast1CriticalNonNullValue = unknown;
+      wxGetApp().s_entireSMARTstatus = SMARTvals::Rating::unknown;
       wxGetApp().ShowSMARTstatusUnknownIcon();
       break;
   }

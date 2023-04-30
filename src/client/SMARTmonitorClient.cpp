@@ -24,8 +24,8 @@ fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
 #ifdef multithread
 //nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
 #endif
-enum SMARTvalueRating SMARTmonitorClient::s_atLeast1CriticalNonNullValue =
-  unknown;
+enum SMARTvals::Rating::E SMARTmonitorClient::
+  s_entireSMARTstatus =TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
 fastestUnsignedDataType SMARTmonitorClient::s_maxNumCharsNeededForDisplay [] =
  { 3, 30, 15, 20, 40};
 fastestUnsignedDataType SMARTmonitorClient::s_charPosOAttrNameBegin [] =
@@ -142,7 +142,7 @@ void SMARTmonitorClient::setIDandLabel(
     SMARTattrID,
     colIndices::SMART_ID,
     std_oss.str(),
-    noCriticalValue,
+    TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::noCriticalVal,
     data
     );
 
@@ -161,7 +161,7 @@ void SMARTmonitorClient::setIDandLabel(
     SMARTattrID,
     colIndices::SMARTparameterName,
     stdstrSMARTattrName,
-    noCriticalValue
+    TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::noCriticalVal
     ,data
     );
 }
@@ -180,7 +180,7 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
     SMARTattributeID,
     colIndices::lastUpdate /** column #/ index */,
     timeFormatString,
-    noCriticalValue,
+    TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::noCriticalVal,
     data
     );
 }
@@ -206,7 +206,9 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
   //memory_barrier(); //TODO: not really necessary??
   
   SMARTvalRatngTyp SMARTvalRatng;
-  enum SMARTvalueRating entireSMARTvalRating = SMARTvalueOK;
+  ///Set to unknown at begin because no single SMART value may be read.
+  enum SMARTvals::Rating::E entireSMARTvalRating =
+    TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
   /** Loop over data carriers. */
   //TODO (only) 1 item here when wxGUI started as root?
   for(fastestUnsignedDataType currentDriveIndex = 0;
@@ -236,7 +238,8 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
         *SMARTuniqueIDandValuesIter, NULL, p_currModelAndFirmware);
       if(///Negative if normalized current value < normalized threshold
         SMARTvalRatng < SMARTvalAbs1RngWarnThresh)
-        entireSMARTvalRating = SMARTvalueWarning;
+        entireSMARTvalRating = TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::
+          atLeast1Warn;
     }
   }
   /** After hitting "Disconnect" some more values updates may arrive here.
@@ -245,11 +248,11 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
   if(m_updateSMARTparameterValuesThread.IsRunning() )///Only if not cancelled.
     ChangeConnectionState(valUpd8);
   /** ^= state changed. */
-  if(s_atLeast1CriticalNonNullValue != entireSMARTvalRating)
+  if(s_entireSMARTstatus != entireSMARTvalRating)
   {
     ShowStateAccordingToSMARTvalues(entireSMARTvalRating);
   }
-  s_atLeast1CriticalNonNullValue = entireSMARTvalRating;
+  s_entireSMARTstatus = entireSMARTvalRating;
   LOGN_DEBUG("end")
 }
 
@@ -395,19 +398,19 @@ inline void useDeterminedUnits(
     uint64_t numForHumanReadableFormat;
     switch(SMARTattrID)
     {
-     case TU_Bln361095::SMARTattrNm::DevTemp:
+     case TU_Bln361095::dataCarrier::SMART::Attr::DevTemp:
       numForHumanReadableFormat = SMARTrawVal;
        std_ossUnit << "°C?";
       realCircaValue = CurrTemp(SMARTrawVal);
       break;
-     case TU_Bln361095::SMARTattrNm::PowerOnTime:
+     case TU_Bln361095::dataCarrier::SMART::Attr::PowerOnTime:
        numForHumanReadableFormat = SMARTrawVal * /**h to ms*/3600000ULL;
-     case TU_Bln361095::SMARTattrNm::HeadFlyingHours:
+     case TU_Bln361095::dataCarrier::SMART::Attr::HeadFlyingHours:
        numForHumanReadableFormat = (SMARTrawVal & 0xFFFFFF) * /**h to ms*/
          3600000ULL;
        std_ossUnit << "~h?";
        break;
-     case TU_Bln361095::SMARTattrNm::SpinUpTime:
+     case TU_Bln361095::dataCarrier::SMART::Attr::SpinUpTime:
        std_ossUnit << "ms?";
        numForHumanReadableFormat = SMARTrawVal;
       break;
@@ -415,24 +418,35 @@ inline void useDeterminedUnits(
       numForHumanReadableFormat = SMARTrawVal;
       switch(SMARTattrID)
       {
-      case TU_Bln361095::SMARTattrNm::StrtStpCnt:///S.M.A.R.T. parameter ID 4
-      case TU_Bln361095::SMARTattrNm::ReallocSectorsCnt:///S.M.A.R.T. parameter ID 5
-      case TU_Bln361095::SMARTattrNm::SpinUpRetryCnt:///S.M.A.R.T. parameter ID 10
+        ///S.M.A.R.T. parameter ID 4
+      case TU_Bln361095::dataCarrier::SMART::Attr::StrtStpCnt:
+        ///S.M.A.R.T. parameter ID 5
+      case TU_Bln361095::dataCarrier::SMART::Attr::ReallocSectorsCnt:
+        ///S.M.A.R.T. parameter ID 10
+      case TU_Bln361095::dataCarrier::SMART::Attr::SpinUpRetryCnt:
       ///S.M.A.R.T. parameter ID 11
-      case TU_Bln361095::SMARTattrNm::RecalibRetriesOrCalibrRetryCnt:
-      case TU_Bln361095::SMARTattrNm::PwrCycleCnt:///S.M.A.R.T. parameter ID 12
-      case TU_Bln361095::SMARTattrNm::ReallocEvtCnt:///S.M.A.R.T. parameter ID 196
-      case TU_Bln361095::SMARTattrNm::CurrPendSecCnt:///S.M.A.R.T. parameter ID 197
-      case TU_Bln361095::SMARTattrNm::UncorrSecCnt:///S.M.A.R.T. parameter ID 198
-      case TU_Bln361095::SMARTattrNm::UDMA_CRCerrorCnt:///S.M.A.R.T. parameter ID 199
-      case TU_Bln361095::SMARTattrNm::FreeFallEvtCnt:
-      case TU_Bln361095::SMARTattrNm::MultiZoneErrorRate:///S.M.A.R.T. param ID 200
+      case TU_Bln361095::dataCarrier::SMART::Attr::
+       RecalibRetriesOrCalibrRetryCnt:
+        ///S.M.A.R.T. parameter ID 12
+      case TU_Bln361095::dataCarrier::SMART::Attr::PwrCycleCnt:
+        ///S.M.A.R.T. parameter ID 196
+      case TU_Bln361095::dataCarrier::SMART::Attr::ReallocEvtCnt:
+        ///S.M.A.R.T. parameter ID 197
+      case TU_Bln361095::dataCarrier::SMART::Attr::CurrPendSecCnt:
+        ///S.M.A.R.T. parameter ID 198
+      case TU_Bln361095::dataCarrier::SMART::Attr::UncorrSecCnt:
+        ///S.M.A.R.T. parameter ID 199
+      case TU_Bln361095::dataCarrier::SMART::Attr::UDMA_CRCerrorCnt:
+      case TU_Bln361095::dataCarrier::SMART::Attr::FreeFallEvtCnt:
+        ///S.M.A.R.T. param ID 200
+      case TU_Bln361095::dataCarrier::SMART::Attr::MultiZoneErrorRate:
       ///S.M.A.R.T. param ID 201
-      case TU_Bln361095::SMARTattrNm::SoftReadErrorRateOrTACnterDetected:
+      case TU_Bln361095::dataCarrier::SMART::Attr::
+       SoftReadErrorRateOrTACnterDetected:
         std_ossUnit << "#?";
         break;
-      case TU_Bln361095::SMARTattrNm::TotalDataWritten:
-      case TU_Bln361095::SMARTattrNm::TotalDataRead:
+      case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataWritten:
+      case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataRead:
         std_ossUnit << ">=1sector?";
         break;
   default:
@@ -515,20 +529,20 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
     std::ostringstream std_ossRawSMARTval;
     switch(SMARTattrID)
     {
-     case TU_Bln361095::SMARTattrNm::GiB_Erased:
+     case TU_Bln361095::dataCarrier::SMART::Attr::GiB_Erased:
     /** https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      *  : "Value is equal to (100-temp. °C)"*/
-     case TU_Bln361095::SMARTattrNm::TempDiffOrAirflowTemp:
+     case TU_Bln361095::dataCarrier::SMART::Attr::TempDiffOrAirflowTemp:
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      * 9 Jul 2020: "Lowest byte of the raw value contains the exact temperature
      * value (Celsius degrees)"*/
-     case TU_Bln361095::SMARTattrNm::DevTemp:
-     case TU_Bln361095::SMARTattrNm::HW_ECC_Recovered:
+     case TU_Bln361095::dataCarrier::SMART::Attr::DevTemp:
+     case TU_Bln361095::dataCarrier::SMART::Attr::HW_ECC_Recovered:
     /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
      * 9 Jul 2020: "Decoded as: byte 0-1-2 = average erase count (big endian)
      * and byte 3-4-5 = max erase count (big endian).*/
-     case TU_Bln361095::SMARTattrNm::AvgEraseCntAndMaxEraseCnt:
-     case TU_Bln361095::SMARTattrNm::HeadFlyingHours:
+     case TU_Bln361095::dataCarrier::SMART::Attr::AvgEraseCntAndMaxEraseCnt:
+     case TU_Bln361095::dataCarrier::SMART::Attr::HeadFlyingHours:
        std_ossRawSMARTval << std::hex << /**To better differentiate between number and
        * base*/std::uppercase << SMARTrawVal << "h";
        break;
@@ -537,28 +551,41 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
      }
     stdstrUnit = std_ossUnit.str();
     std::ostringstream std_ossNrmlzdCurrSMARTval, std_ossNrmlzdThreshVal;
-    std_ossNrmlzdCurrSMARTval << sMARTvalue.GetNrmlzdCurrVal();
-    std_ossNrmlzdThreshVal << sMARTvalue.GetNrmlzdThresh();
+    /**According to struct "NVME_HEALTH_INFO_LOG" in file "nvme.h" (see
+http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info_log
+     * ) S.M.A.R.T. via NVMe does not have normalized current, worst and
+     * threshold values per attribute ID.*/
+    if(sMARTuniqueID.getBusType() != TU_Bln361095::hardware::bus::NVMe){
+      std_ossNrmlzdCurrSMARTval << sMARTvalue.GetNrmlzdCurrVal();
+      std_ossNrmlzdThreshVal << sMARTvalue.GetNrmlzdThresh();
+    }
     //TODO pass warning or OK fpr critical SMART IDs to function
     //e.g. use highmost bits of SMARTattributeID for that purpose
       //std::numeric_limits<>::min();
 //          SMARTattributeID &= 2 << (numSMARTattributeIDbits - 1)
     sMARTvalueRating = s_SMARTvalueRater.GetSMARTvalueRating(SMARTattrID,
       SMARTuniqueIDandVals, realCircaValue, p_modelAndFirmware);
-    SetAttribute(
-      sMARTuniqueID,
-      SMARTattrID,
-      colIndices::nrmlzdCurrVal/**column #/index*/,
-      std_ossNrmlzdCurrSMARTval.str(),
-      sMARTvalueRating,
-      data);
-    SetAttribute(
-      sMARTuniqueID,
-      SMARTattrID,
-      colIndices::nrmlzdThresh/**column #/index*/,
-      std_ossNrmlzdThreshVal.str(),
-      sMARTvalueRating,
-      data);
+    /**According to struct "NVME_HEALTH_INFO_LOG" in file "nvme.h" (see
+http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info_log
+     * ) S.M.A.R.T. via NVMe does not have normalized current, worst and
+     * threshold values per attribute ID.*/
+    if(sMARTuniqueID.getBusType() != TU_Bln361095::hardware::bus::NVMe)
+    {
+      SetAttribute(
+        sMARTuniqueID,
+        SMARTattrID,
+        colIndices::nrmlzdCurrVal/**column #/index*/,
+        std_ossNrmlzdCurrSMARTval.str(),
+        sMARTvalueRating,
+        data);
+      SetAttribute(
+        sMARTuniqueID,
+        SMARTattrID,
+        colIndices::nrmlzdThresh/**column #/index*/,
+        std_ossNrmlzdThreshVal.str(),
+        sMARTvalueRating,
+        data);
+    }
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
@@ -614,7 +641,9 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
   }
   }///
 //  if(upTimeOfRetrievalInMs == 0)///0 means: "not read" / "not send by server"
-  else
+  else///sMARTvalue.m_successfullyReadSMARTrawValue
+  {
+    sMARTvalueRating = TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
@@ -622,7 +651,7 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
       /*"error:uptime is 0"*/"not read yet",
       sMARTvalueRating,
       data);
-  	;
+  }
 //  }
 //  else
 //  {//TODO show message that no S.M.A.R.T. attribute definition found

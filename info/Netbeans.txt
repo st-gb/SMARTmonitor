@@ -1,16 +1,13 @@
 NetBeans Integrated Development Environment
 ===========================================
 
-NetBeans IDE needs a Java Virtual Machine (JVM) to start.
-A missing Java Runtime Environment (JRE) installation was not shown after
-installing NetBeans in Ubuntu Desktop 64 bit 22.4.1.
-So install for example OpenJDK JRE.
-
-C/C++ plugin
-------------
-For "unpack200" for NetBeans 8.2 C++ plugin in higher NetBeans versions:
-Install Java Development Kit(JDK) ?:
-: http://docs.oracle.com/en/java/javase/11/tools/unpack200.html
+General Configuration
+---------------------
+For general configuration of the NetBeans IDE see Stefan Gebauer's (TU Berlin
+matriculation number 361095) ~"common sourcecode" repository, file
+~"/IDEs/NetBeans.txt".
+The ~"common sourcecode" repository may be (currently) located here:
+https://github.com/st-gb/common_sourcecode.
 
 Project Properties:
 

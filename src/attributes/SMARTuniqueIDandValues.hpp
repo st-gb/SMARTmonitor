@@ -92,11 +92,11 @@ public:
     /**Seems to apply to model "WDC WD400EB-00CPFO", firmware "06.04G06":
      * current normalized value=200, model "ST500LT012-1DG142", firmware
      * "0002LVM1":current normalized value=111 for serial number "W3P78D3W"*/
-    setMaxNrmlzdVal(TU_Bln361095::SMARTattrNm::ReadErrorRate,
+    setMaxNrmlzdVal(TU_Bln361095::dataCarrier::SMART::Attr::ReadErrorRate,
       ATA3Std_GtrDfltNrmlzdVal);
     /**Max Normalized value from: model:Samsung SSD 860 EVO M.2 500GB
      * firmware:RVT24B6Q serial:S5GCNJ0N506884T, current normalized value.*/
-    setMaxNrmlzdVal(TU_Bln361095::SMARTattrNm::HW_ECC_Recovered,
+    setMaxNrmlzdVal(TU_Bln361095::dataCarrier::SMART::Attr::HW_ECC_Recovered,
       ATA3Std_GtrDfltNrmlzdVal);
   }
 private:
@@ -122,6 +122,8 @@ public:
   virtual ~SMARTuniqueIDandValues ();
 
   const SMARTuniqueID & getSMARTuniqueID() const { return m_SMARTuniqueID; }
+  ///Version for possibility to change the object.
+  SMARTuniqueID & getSMARTuniqueID(){ return m_SMARTuniqueID; }
   void SetDataCarrierID(const SMARTuniqueID & sMARTuniqueID) {
     m_SMARTuniqueID = sMARTuniqueID;
   }

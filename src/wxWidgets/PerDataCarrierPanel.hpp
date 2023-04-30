@@ -84,7 +84,7 @@ public:
       SMARTattrID,
       colIndices::SMART_ID,
       label,
-      noCriticalValue
+      SMARTvals::Rating::noCriticalVal
       );
 
     /** Now get the attribute name belonging to SMART ID */
@@ -102,7 +102,7 @@ public:
       SMARTattrID,
       colIndices::SMARTparameterName,
       label,
-      noCriticalValue
+      SMARTvals::Rating::noCriticalVal
       );
     m_pwxlistctrl->setMaxSMARTattrNmStrWdthInPx(label);
   }

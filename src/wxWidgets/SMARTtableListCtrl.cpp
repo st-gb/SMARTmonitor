@@ -98,8 +98,9 @@ inline void GetClrAccordng1toMns1Rng(const SMARTvalRatngTyp SMARTvalRatng,
    * transparent */
     color.Set(255, blueAndGreen, blueAndGreen);
   }
-  else{/**Between fully OK and threshold=>color between green and yellow meaning
-    * OK or warning*/
+  /**Between fully OK and threshold=>color between green and yellow meaning "OK"
+    * or "warning"*/
+  else if(SMARTvalRatng <= 1.0f){
 /**http://en.wikipedia.org/wiki/Yellow : "sRGB^B (r, g, b)	(255, 255, 0)"
  * "B: Normalized to [0–255] (byte)" */
 /**http://en.wikipedia.org/wiki/Orange_(colour):"sRGB^B (r, g, b)	(255, 165, 0)"
@@ -109,16 +110,18 @@ inline void GetClrAccordng1toMns1Rng(const SMARTvalRatngTyp SMARTvalRatng,
    * transparent */
     color.Set(red,/**green*/255, 0);
   }
+  else///Rating is "unknown", for example because of missing metric.
+    color.Set(0,255,255);///cyan
 }
 
 inline void GetClrAccordng1toEnum(const enum SMARTvalueRating SMARTvalRatng,
   wxColour & color)
 {
   switch(SMARTvalRatng){
-   case SMARTvalueOK:
+   case SMARTvals::Rating::OK:
     color = *wxGREEN;
     break;
-   case SMARTvalueWarning:
+   case SMARTvals::Rating::atLeast1Warn:
     color = *wxYELLOW;
     break;
 //    default:

@@ -61,8 +61,9 @@ public:
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
   static fastestUnsignedDataType s_charPosOAttrNameBegin[colIndices::byndLast];
   static char * s_columnAttriuteNames [];
-      
-  static enum SMARTvalueRating s_atLeast1CriticalNonNullValue;
+  
+  static enum TU_Bln361095::SMARTmon::SMARTvals::Rating::E
+    s_entireSMARTstatus;
 //  static nativeThread_type s_updateSMARTparameterValuesThread;
   static fastestUnsignedDataType s_updateUI;
   dataCarrierID2supportedSMARTattrMap_type
@@ -195,7 +196,8 @@ public:
     const std::string &,
     const SMARTvalRatngTyp,
     /**e.g. pointer to list ctrl */void * data){}
-  virtual void ShowStateAccordingToSMARTvalues(const enum SMARTvalueRating){}
+  virtual void ShowStateAccordingToSMARTvalues(
+    const enum TU_Bln361095::SMARTmon::SMARTvals::Rating::E){}
   std::string m_stdstrServerAddress;
 protected:
   tinyxml2::SrvDataProcessor srvDataProcessor;

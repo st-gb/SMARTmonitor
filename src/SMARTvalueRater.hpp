@@ -2,23 +2,36 @@
  * Author: Stefan Gebauer,M.Sc.Comp.Sc.
  * Created on 13. Juli 2020, 19:48 */
 
-#ifndef SMARTVALUERATER_HPP
-#define SMARTVALUERATER_HPP
+#ifndef TU_Bln361095SMARTmon_SMARTValRater_hpp
+#define TU_Bln361095SMARTmon_SMARTValRater_hpp
 
 ///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
 #include <hardware/dataCarrier/SMARTattributeNames.h>///enum SMARTattributeNames
 #include <compiler/force_inline.h>///TU_Bln361095frcInln
 
 ///Files from SMARTmonitor repository:
+ ///TU_Bln361095SMARTmonNmSpcBgn,TU_Bln361095SMARTmonNmSpcEnd
+#include <SMARTmon_ID_prefix.h>
 #include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 #include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
 
 //TODO encapsulate in own namespace?
-enum SMARTvalueRating{SMARTvalueWarning=0,SMARTvalueOK=1,noCriticalValue,unknown};
+TU_Bln361095SMARTmonNmSpcBgn
+///Use plural because the rating affects multiple S.M.A.R.T. values.
+namespace SMARTvals{
+///val=VALue: 
+///Rtg=RaTinG: http://www.abbreviations.com/abbreviation/rating
+  namespace Rating{
+    enum E
+  {///first letter should be uppercase?
+    OK=0,atLeast1Warn,noCriticalVal,unknown};
+}
+}///end namespace
+TU_Bln361095SMARTmonNmSpcEnd
 
 /**val=VALue: http://www.abbreviations.com/abbreviation/Value
- * rtg=rating: http://www.abbreviations.com/abbreviation/Rating
- * Typ=type: http://www.allacronyms.com/type/abbreviated */
+ * rtg=RaTinG: http://www.abbreviations.com/abbreviation/Rating
+ * Typ=TYPe: http://www.allacronyms.com/type/abbreviated */
 typedef/**If type is quotient between current value and threshold:use floating
  * point type for example*/
   float SMARTvalRatngTyp;
@@ -152,11 +165,16 @@ public:
     const uint64_t realCircaValue,
     const ModelAndFirmware * p_modelAndFirmware)
   {
-	bool useManufacturerRtg = true;
-	switch((enum SMARTattributeNames) SMARTattrID)
+	bool useManufacturerRtg = SMARTuniqueIDandVals.getSMARTuniqueID().getBusType()
+    /**According to struct "NVME_HEALTH_INFO_LOG" in file "nvme.h" (see
+http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info_log
+     * ) S.M.A.R.T. via NVMe does not have normalized current, worst and
+     * threshold values per attribute ID.*/
+    == TU_Bln361095::hardware::bus::NVMe ? false : true;
+	switch((enum TU_Bln361095::dataCarrier::SMART::Attr::ID) SMARTattrID)
 	{
     ///temperatures for OK or warning depends on whether HDD or SSD
-    case TU_Bln361095::SMARTattrNm::DevTemp:
+   case TU_Bln361095::dataCarrier::SMART::Attr::DevTemp:
 /**In regard of temperatures some manufacturers like Intel for model
  * "INTEL SSDSC2BF240A5H REF", firmware "LWDi" don't follow the semantics that
  * lower normalized current values mean a worse rating: for
@@ -173,35 +191,35 @@ public:
       SMARTattrID, nrmlzdCurrVal, nrmlzdThresh);
     return scaledQuotient;
 	}
-    switch( (enum SMARTattributeNames) SMARTattrID)
+    switch( (enum TU_Bln361095::dataCarrier::SMART::Attr::ID) SMARTattrID)
     {
-    case TU_Bln361095::SMARTattrNm::ReadErrorRate:
-    case TU_Bln361095::SMARTattrNm::ReallocSectorsCnt:
-    case TU_Bln361095::SMARTattrNm::SpinUpRetryCnt:
-    case TU_Bln361095::SMARTattrNm::RecalibRetriesOrCalibrRetryCnt:
-    case TU_Bln361095::SMARTattrNm::SSDprogFailCnt:
-    case TU_Bln361095::SMARTattrNm::SSDeraseFailCnt:
-    case TU_Bln361095::SMARTattrNm::PwrLossProtectionFailure:
-    case TU_Bln361095::SMARTattrNm::EraseFailCnt:
-    case TU_Bln361095::SMARTattrNm::CmdTimeout:
-    case TU_Bln361095::SMARTattrNm::HighFlyWrites:
-    case TU_Bln361095::SMARTattrNm::EndToEndError:
-    case TU_Bln361095::SMARTattrNm::ReportedUncorrError:
-    case TU_Bln361095::SMARTattrNm::G_senseErrorCnt:
-    case TU_Bln361095::SMARTattrNm::ReallocEvtCnt:
-    case TU_Bln361095::SMARTattrNm::CurrPendSecCnt:
-    case TU_Bln361095::SMARTattrNm::UncorrSecCnt:
-    case TU_Bln361095::SMARTattrNm::UDMA_CRCerrorCnt:
-    case TU_Bln361095::SMARTattrNm::MultiZoneErrorRate:
-    case TU_Bln361095::SMARTattrNm::SoftReadErrorRateOrTACnterDetected:
-    case TU_Bln361095::SMARTattrNm::ShockDuringWrite:
-    case TU_Bln361095::SMARTattrNm::FreeFallEvtCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::ReadErrorRate:
+    case TU_Bln361095::dataCarrier::SMART::Attr::ReallocSectorsCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::SpinUpRetryCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::RecalibRetriesOrCalibrRetryCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::SSDprogFailCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::SSDeraseFailCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::PwrLossProtectionFailure:
+    case TU_Bln361095::dataCarrier::SMART::Attr::EraseFailCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::CmdTimeout:
+    case TU_Bln361095::dataCarrier::SMART::Attr::HighFlyWrites:
+    case TU_Bln361095::dataCarrier::SMART::Attr::EndToEndError:
+    case TU_Bln361095::dataCarrier::SMART::Attr::ReportedUncorrError:
+    case TU_Bln361095::dataCarrier::SMART::Attr::G_senseErrorCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::ReallocEvtCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::CurrPendSecCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::UncorrSecCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::UDMA_CRCerrorCnt:
+    case TU_Bln361095::dataCarrier::SMART::Attr::MultiZoneErrorRate:
+    case TU_Bln361095::dataCarrier::SMART::Attr::SoftReadErrorRateOrTACnterDetected:
+    case TU_Bln361095::dataCarrier::SMART::Attr::ShockDuringWrite:
+    case TU_Bln361095::dataCarrier::SMART::Attr::FreeFallEvtCnt:
       if(realCircaValue == 0)
-        return SMARTvalueOK;
+        return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::OK;
       else
-        return SMARTvalueWarning;
+        return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::atLeast1Warn;
       break;
-    case TU_Bln361095::SMARTattrNm::TotalDataWritten:
+    case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataWritten:
       {
       if(p_modelAndFirmware){///may be NULL
         const ModelAndFirmware::remainingTotalDataWrittenType
@@ -209,18 +227,18 @@ public:
           getRemainingTotalDataWritten(realCircaValue);
         if(remainingTotalDataWritten == ModelAndFirmware::
           maxTeraBytesWrittenNotSet)
-          return unknown;
+          return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
         else{
           if(remainingTotalDataWritten > 10000000000 )///> 10 GB left
-            return SMARTvalueOK;
+            return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::OK;
           else///< 10 GB to write left or max. TeraBytesWritten exceeded
-            return SMARTvalueWarning;
+            return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::atLeast1Warn;
         }
       }
       else
-        return unknown;
+        return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
     }
-    case TU_Bln361095::SMARTattrNm::DevTemp:
+    case TU_Bln361095::dataCarrier::SMART::Attr::DevTemp:
     ///Temperatures for OK or warning depends on whether HDD or SSD too hot/cold.
       return rateAccDegCelsius(realCircaValue);
 //      case TotalDataWritten:
@@ -230,8 +248,8 @@ public:
       //TODO If ratio between power cycle count (diff) and power-on-hours (diff)
       // is too high then warn
     }
-    return unknown;
+    return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
   }
 };
 
-#endif /* SMARTVALUERATER_HPP */
+#endif///include guard

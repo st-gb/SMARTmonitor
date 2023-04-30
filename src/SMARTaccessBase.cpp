@@ -35,7 +35,7 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
   const std::string & stdstrDataCarrierPath)
 {
   switch(SMARTattrID){
-   case TU_Bln361095::SMARTattrNm::PowerOnTime:{
+  case TU_Bln361095::dataCarrier::SMART::Attr::PowerOnTime:{
     /** "long int" may not be sufficient for uptime in ns (especially for 32
      * bit) */
     uint64_t uptimeInNs;
@@ -46,7 +46,7 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
     break;
    /** see TU Berlin OS Design slides winter term 2014/2015, SSDs lecture about
     * how many data is erased by a write operation.*/
-   case TU_Bln361095::SMARTattrNm::GiB_Erased:
+   case TU_Bln361095::dataCarrier::SMART::Attr::GiB_Erased:
 	 /** The unit for "GiB/data erased" (attr. ID 100) could be approximated via
 	  * low level IO functions by OS that determine the written sector/offset
 	  * + length of write operations.*/
@@ -55,7 +55,7 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
     /** The unit for "Total Data/LBAs Written/Read" differs among models. For
      * HFS256G39TND-N210A, firmware:30001P10 (serial:EJ7CN55981080CH09)
      * Solid State Device (SSD) it seems to be GiB rather than LBAs.*/
-   case TU_Bln361095::SMARTattrNm::TotalDataWritten:{
+   case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataWritten:{
     //get device path belonging to sMARTuniqueID.
   //  const char * dataCarrierPath = //getDevicePath(sMARTuniqueID);
     /**For SSDs in reality there may be more written by its SSD controller than
@@ -71,7 +71,7 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
       sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, numWrittenBsinceOSstart);
     }
     break;
-   case TU_Bln361095::SMARTattrNm::TotalDataRead:{
+   case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataRead:{
     ///Use 64 bit value because it can get very high (>409257094144)
     /**Caching may take effect on data carrier side so that less bytes are read
     * than assumed.->Caching must be disabled before?*/

@@ -29,6 +29,7 @@
 
 ///Stefan Gebauer's(TU Berlin matr.#361095)~"common_sourcecode"repository files:
 #include <hardware/bus/busType.h>///enum TU_Bln361095::hardware::bus::Type
+#include <hardware/dataCarrier/NVMe/NVMe_SMART_attr.h>
  ///TU_Bln361095::hardware::bus::UnifyType()
 #include <OperatingSystem/Windows/hardware/busType.h>
  ///TU_Bln361095hardwareDataCarrierUse(GetPath)
@@ -40,6 +41,13 @@
  ///TU_Bln361095::hardware::dataCarrier::GetStorageDvcInfo(...)
 #include <OperatingSystem/Windows/hardware/dataCarrier/getStorageDvcInfo.h>
 #include <OperatingSystem/Windows/hardware/NVMe/getSMARTvals.h>
+
+#ifndef TU_Bln361095TmCntDfnd
+  #define TU_Bln361095TmCntDfnd
+  typedef uint64_t TimeCountInNanosec_type;
+  typedef double TimeCountInSecType;
+#endif
+#include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
 
 TU_Bln361095SMARTmon_OpSysWindowsNmSpcBgn
 
@@ -79,8 +87,15 @@ public:
         & pDvcIOctlBuf,
         & pNMVeHealthInfoLog);
 
-    sMARTuniqueIDandVals.m_SMARTvalues[TU_Bln361095::SMARTattrNm::PowerOnTime].
-      SetRawValue( *((uint64_t*) pNMVeHealthInfoLog->PowerOnHours) );
+
+    SMARTvalue & sMARTval = sMARTuniqueIDandVals.m_SMARTvalues[
+      TU_Bln361095::dataCarrier::SMART::Attr::PowerOnTime];
+    sMARTval.SetRawValue( *((uint64_t*) pNMVeHealthInfoLog->PowerOnHours) );
+    AtomicExchange(& sMARTval.m_successfullyReadSMARTrawValue, 1);
+    long double uptimeInSeconds;
+    OperatingSystem::GetUptimeInS(uptimeInSeconds);
+    sMARTval.SetRetrievalTime(uptimeInSeconds);
+
     if(getSMARTvalsRslt != TU_Bln361095::hardware::dataCarrier::NVMe::
       getSMARTvals::AllocBufFaild)
       free(pDvcIOctlBuf);

@@ -13,7 +13,11 @@
 #endif
 #include <dataType/charStr/stdtstr.hpp>///GetStdWstring(...)
 #include <Controller/Logger/LogFileAccessException.hpp>
-typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
+#ifndef TU_Bln361095TmCntDfnd
+  #define TU_Bln361095TmCntDfnd
+  typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
+  typedef long double TimeCountInNanosec_type;///for GetTimeCountInNanoSeconds(...)
+#endif
 #include <Controller/time/GetTickCount.hpp>
 #include <FileSystem/File/GetAbsoluteFilePath.hpp>///GetAbsoluteFilePath(...)
 ///TU_Bln361095::OpSys::Process::FileSys::GetCurrWorkngDirA_inln(...)
@@ -605,11 +609,11 @@ fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
       SMARTattrToObsType::const_iterator
         SMARTattrsToObserveIter = m_IDsOfSMARTattrsToObserve.begin();
       uint64_t currentSMARTrawValue;
-      //TODO crashes here (iterator-related?!-> thread access problem??)
+      TU_Bln361095::CPU::FaststUint lineNumber = 0;
       //TODO why this loop?? multithread-safe (AtomicExchange(...) ) already in
       // SMARTaccessBase::ReadSMARTValuesForAllDrives(...)
-      TU_Bln361095::CPU::FaststUint lineNumber = 0;
       for (; SMARTattrsToObserveIter != m_IDsOfSMARTattrsToObserve.end();
+        ///crashed here (iterator-related?!-> thread access problem??)
         SMARTattrsToObserveIter++)
       {
         SMARTattributeID = * SMARTattrsToObserveIter;

@@ -24,6 +24,7 @@
   #define TU_Bln361095SMARTmon_ID_prefix_h
 
 #ifdef __cplusplus
+  #define TU_Bln361095SMARTmonNmSpc TU_Bln361095::SMARTmon
   #define TU_Bln361095SMARTmonNmSpcBgn namespace TU_Bln361095{namespace \
   SMARTmon{
   #define TU_Bln361095SMARTmonNmSpcEnd }}

@@ -161,13 +161,13 @@ void wxSMARTmonitorApp::ReBuildUserInterface(){
 }
 
 void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(
-  const SMARTvalueRating entireSMARTvalRating)
+  const SMARTvals::Rating::E entireSMARTvalRating)
 {
   switch(entireSMARTvalRating){
-   case SMARTvalueWarning:
+   case SMARTvals::Rating::atLeast1Warn:
     ShowSMARTwarningIcon();
     break;
-  case SMARTvalueOK:
+   case SMARTvals::Rating::OK:
     ShowSMARTokIcon();
     break;
   }
