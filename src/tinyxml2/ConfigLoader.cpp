@@ -35,7 +35,8 @@ bool ConfigLoader::ReadSrvCnnctnCfg(
   std::string & errorMsg,
   std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix,
   std::string * p_stdstrFullConfigFilePath,
-  tinyxml2::XMLElement * p_tinyxml2XMLele)
+  tinyxml2::XMLElement * p_tinyxml2XMLele,
+  void * p_additionalParam)
 {
   unsigned portNumber;
   tinyxml2::XMLDocument tinyXML2Doc;
@@ -136,9 +137,11 @@ bool ConfigLoader::readSMARTattrDefs(
   std::string & errorMsg,
   std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix,
   std::string * p_stdstrFullConfigFilePath,
-  tinyxml2::XMLElement * p_tinyxml2XMLelement
+  tinyxml2::XMLElement * p_tinyxml2XMLelement,
+  void * p_additionalParam
   )
 {
+  SMARTattrDef * SMARTattrDefArr = (SMARTattrDef *)p_additionalParam;
   tinyxml2::XMLDocument tinyXML2Doc;
   if(p_tinyxml2XMLelement == NULL){
     p_tinyxml2XMLelement = OpenConfigFile(
@@ -151,7 +154,7 @@ bool ConfigLoader::readSMARTattrDefs(
    * "options" */
   if(! p_tinyxml2XMLelement)
     return false;
-  std::string xmlEleName = "SMART_parameter";
+  std::string xmlEleName = "SMART_attribute";
   p_tinyxml2XMLelement = p_tinyxml2XMLelement->FirstChildElement(
     xmlEleName.c_str() );
   if( ! p_tinyxml2XMLelement )
@@ -176,10 +179,10 @@ bool ConfigLoader::readSMARTattrDefs(
   std::string std_strAttribName, std_strAttribDetails;
   do
   {
-    sMARTattrID = p_tinyxml2XMLelement->IntAttribute("Id", 0);
+    sMARTattrID = p_tinyxml2XMLelement->IntAttribute("ID", 0);
     if( sMARTattrID != 0 )
     {
-      p_ch = (char *) p_tinyxml2XMLelement->Attribute("Name", 
+      p_ch = (char *) p_tinyxml2XMLelement->Attribute("name", 
         /** Value: specify '0' in order to retrieve the value */ NULL);
       if( p_ch)
         std_strAttribName = p_ch;
@@ -210,9 +213,9 @@ bool ConfigLoader::readSMARTattrDefs(
         //use pointer from member var instead of from stack.
         sMARTattrDef.SetName(std_strAttribName.c_str() );
 
-        SMARTattrDefAccss::Add(sMARTattrDef);
+        SMARTattrDefAccss::Add(sMARTattrDef, SMARTattrDefArr);
         LOGN_DEBUG( "using SMART entry at address " << 
-          SMARTattrDefAccss::getSMARTattrDef(sMARTattrID) )
+          SMARTattrDefAccss::getSMARTattrDef(sMARTattrID, SMARTattrDefArr) )
         LOGN("adding SMART ID " << sMARTattrID /*<< "to " 
           << mp_smartAttributes*/)
       }
@@ -274,7 +277,8 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
   std::string & errorMsg,
   std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix,
   std::string * p_stdstrFullConfigFilePath,
-  tinyxml2::XMLElement * p_rootXMLele)
+  tinyxml2::XMLElement * p_rootXMLele,
+  void * p_additionalParam)
 {
   tinyxml2::XMLDocument tinyXML2Doc;
   if(p_rootXMLele == NULL){

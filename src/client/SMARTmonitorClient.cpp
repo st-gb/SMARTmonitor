@@ -147,8 +147,17 @@ void SMARTmonitorClient::setIDandLabel(
     );
 
   /** Now get the attribute name belonging to SMART ID */
-  SMARTattrDef * p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
-    SMARTattrID);
+  SMARTattrDef * p_sMARTattrDef;
+  switch(sMARTuniqueID.getBusType() )
+  {
+  case TU_Bln361095::hardware::bus::NVMe:
+   p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
+    SMARTattrID, SMARTattrDefAccss::NVMeSMARTattrDefs);
+   break;
+  default:
+   p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
+    SMARTattrID, SMARTattrDefAccss::SMARTattrDefs);
+  }
   std::string stdstrSMARTattrName;
   if( p_sMARTattrDef != NULL)
   {

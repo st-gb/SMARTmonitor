@@ -9,108 +9,108 @@
  -http://www.t13.org/Documents/UploadedDocuments/docs2005/e05148r0-ACS-SMARTAttributesAnnex.pdf
   [T13_2005]
  -https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes [enWikip] -->
-<SMART_parameters> 
-  <SMART_parameter Id="1" Name="Read Error Rate"
+<SMART_attributes> 
+  <SMART_attribute ID="1" name="Read Error Rate"
 	Details="Quantity of uncorrectable errors. The raw value of this attribute indicates the total number of uncorrectable errors when reading/writing a sector. A rise in the value of this attribute indicates that there are evident defects of the disk surface and/or there are problems in the hard disk drive mechanical subsystem." />
-  <SMART_parameter Id="2" Name="Throughput Performance" />
-  <SMART_parameter Id="3" Name="Spin-Up Time" />
-  <SMART_parameter Id="4" Name="Start/Stop Count"
+  <SMART_attribute ID="2" name="Throughput Performance" />
+  <SMART_attribute ID="3" name="Spin-Up Time" />
+  <SMART_attribute ID="4" name="Start/Stop Count"
    Details="A tally of spindle start/stop cycles. The spindle turns on, and hence the count is increased, both when the hard disk is turned on after having before been turned entirely off (disconnected from power source) and when the hard disk returns from having previously been put to sleep mode." />
-  <SMART_parameter Id="5" Name="Reallocated Sectors Count" Critical="yes"
+  <SMART_attribute ID="5" name="Reallocated Sectors Count" Critical="yes"
    Details="Count of reallocated sectors. When the hard drive finds a read/write/verification error, it marks this sector as reallocated and transfers data to a special reserved area (spare area).
 	This process is also known as remapping and reallocated sectors are called remaps. This is why, on a modern hard disks, you can not see bad blocks while testing the surface - all bad blocks are hidden in reallocated sectors. However, the more sectors that are reallocated, the more a sudden decrease (up to 10% and more) can be noticed in the disk read/write speed." />
-  <SMART_parameter Id="6" Name="Read Channel Margin"
+  <SMART_attribute ID="6" name="Read Channel Margin"
    Details="Margin of a channel while reading data. The function of this attribute is not specified." />
-  <SMART_parameter Id="7" Name="Seek Error Rate"
+  <SMART_attribute ID="7" name="Seek Error Rate"
    Details="(Vendor specific raw value.) Rate of seek errors of the magnetic heads. If there is a partial failure in the mechanical positioning system, then seek errors will arise. Such a failure may be due to numerous factors, such as damage to a servo, or thermal widening of the hard disk. The raw value has different structure for different vendors and is often not meaningful as a decimal number." />
-  <SMART_parameter Id="8" Name="Seek Time Performances"
+  <SMART_attribute ID="8" name="Seek Time Performances"
    Details="Average performance of seek operations of the magnetic heads. If this attribute is decreasing, it is a sign of problems in the mechanical subsystem." />
-  <SMART_parameter Id="9" Name="Power-On Time"
+  <SMART_attribute ID="9" name="Power-On Time"
    Details="Count of hours in power-on state. 
    The raw value of this attribute shows total count of hours (or minutes, or seconds, depending on manufacturer) in power-on state." />
-  <SMART_parameter Id="10" Name="Spin Retry Count"
+  <SMART_attribute ID="10" name="Spin Retry Count"
    Details="Count of retry of spin start attempts. This attribute stores a total count of the spin start attempts to reach the fully operational speed (under the condition that the first attempt was unsuccessful). An increase of this attribute value is a sign of problems in the hard disk mechanical subsystem." />
-  <SMART_parameter Id="11" Name="Recalibration Retries or Calibration Retry Count"
+  <SMART_attribute ID="11" name="Recalibration Retries or Calibration Retry Count"
    Details="This attribute indicates the count that recalibration was requested (under the condition that the first attempt was unsuccessful). An increase of this attribute value is a sign of problems in the hard disk mechanical subsystem." />
-  <SMART_parameter Id="12" Name="Power Cycle Count"
+  <SMART_attribute ID="12" name="Power Cycle Count"
    Details="This attribute indicates the count of full hard disk power on/off cycles." />
-  <SMART_parameter Id="100" Name="Data Erased"/><!--[GSMARTCtl1.1.3]-->
-  <SMART_parameter Id="168" Name="SATA Physical Error Count"/><!--[GSMARTCtl1.1.3]-->
-  <SMART_parameter Id="169" Name="Bad Block Count"/><!--[GSMARTCtl1.1.3]-->
-  <SMART_parameter Id="170" Name="Reserved Block Count"/><!--[GSMARTCtl1.1.4]-->
-  <SMART_parameter Id="171" Name="Program Fail Count"/><!--[enWikip]-->
-  <SMART_parameter Id="172" Name="SSD Erase Fail Count"/><!--[enWikip]-->
-  <SMART_parameter Id="173" Name="Erase Count"/><!--[GSMARTCtl1.1.4]-->
-  <SMART_parameter Id="174" Name="Unexpected Power Loss Count"/><!--[enWikip]-->
-  <SMART_parameter Id="175" Name="Power Loss Protection Failure"/><!--[enWikip]-->
-  <SMART_parameter Id="176" Name="Erase Fail Count"/><!--[enWikip]-->
-  <SMART_parameter Id="177" Name="Wear Range Delta"/><!--[enWikip]-->
-  <SMART_parameter Id="178" Name="Used Reserved Block Count (Chip)"/><!--[GSMARTCtl1.1.3]-->
-  <SMART_parameter Id="179" Name="Used Reserved Block Count Total"/><!--[enWikip]-->
-  <SMART_parameter Id="180" Name="Unused Reserved Block Count Total"/><!--[enWikip]-->
-  <SMART_parameter Id="181" Name="Program Fail Count"/><!--[enWikip]-->
-  <SMART_parameter Id="182" Name="Erase Fail Count"/><!--[enWikip]-->
-  <SMART_parameter Id="183" Name="Runtime Bad Blocks"/><!--[enWikip]-->
-  <SMART_parameter Id="184" Name="End to End Error"/><!--[enWikip]-->
-  <SMART_parameter Id="187" Name="Reported Uncorrectable Errors" Critical="yes"
+  <SMART_attribute ID="100" name="Data Erased"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_attribute ID="168" name="SATA Physical Error Count"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_attribute ID="169" name="Bad Block Count"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_attribute ID="170" name="Reserved Block Count"/><!--[GSMARTCtl1.1.4]-->
+  <SMART_attribute ID="171" name="Program Fail Count"/><!--[enWikip]-->
+  <SMART_attribute ID="172" name="SSD Erase Fail Count"/><!--[enWikip]-->
+  <SMART_attribute ID="173" name="Erase Count"/><!--[GSMARTCtl1.1.4]-->
+  <SMART_attribute ID="174" name="Unexpected Power Loss Count"/><!--[enWikip]-->
+  <SMART_attribute ID="175" name="Power Loss Protection Failure"/><!--[enWikip]-->
+  <SMART_attribute ID="176" name="Erase Fail Count"/><!--[enWikip]-->
+  <SMART_attribute ID="177" name="Wear Range Delta"/><!--[enWikip]-->
+  <SMART_attribute ID="178" name="Used Reserved Block Count (Chip)"/><!--[GSMARTCtl1.1.3]-->
+  <SMART_attribute ID="179" name="Used Reserved Block Count Total"/><!--[enWikip]-->
+  <SMART_attribute ID="180" name="Unused Reserved Block Count Total"/><!--[enWikip]-->
+  <SMART_attribute ID="181" name="Program Fail Count"/><!--[enWikip]-->
+  <SMART_attribute ID="182" name="Erase Fail Count"/><!--[enWikip]-->
+  <SMART_attribute ID="183" name="Runtime Bad Blocks"/><!--[enWikip]-->
+  <SMART_attribute ID="184" name="End to End Error"/><!--[enWikip]-->
+  <SMART_attribute ID="187" name="Reported Uncorrectable Errors" Critical="yes"
    Details="The count of errors that could not be recovered using hardware ECC (see attribute 195)" />
-  <SMART_parameter Id="188" Name="Command Timeout"
+  <SMART_attribute ID="188" name="Command Timeout"
    Details="The count of aborted operations due to HDD timeout." /><!--[enWikip]-->
-  <SMART_parameter Id="189" Name="High Fly Writes"/><!--[enWikip]-->
-  <SMART_parameter Id="190" Name="Temperature Difference or Airflow Temperature"
+  <SMART_attribute ID="189" name="High Fly Writes"/><!--[enWikip]-->
+  <SMART_attribute ID="190" name="Temperature Difference or Airflow Temperature"
    Details="" />
-  <SMART_parameter Id="191" Name="G-sense Error Rate"
+  <SMART_attribute ID="191" name="G-sense Error Rate"
    Details="The count of errors resulting from externally induced shock and vibration." />
-  <SMART_parameter Id="192" Name="Power-off/Emergency Retract Count"
+  <SMART_attribute ID="192" name="Power-off/Emergency Retract Count"
    Details="Number of power-off or emergency retract cycles." />
-  <SMART_parameter Id="193" Name="Load(/Unload) Cycle Count" Details="" />
-  <SMART_parameter Id="194" Name="Temperature Celsius"
+  <SMART_attribute ID="193" name="Load(/Unload) Cycle Count" Details="" />
+  <SMART_attribute ID="194" name="Temperature Celsius"
    Details="Current internal temperature." />
-  <SMART_parameter Id="195" Name="Hardware ECC Recovered"
+  <SMART_attribute ID="195" name="Hardware ECC Recovered"
    Details="(Vendor-specific raw value.) The raw value has different structure for different vendors and is often not meaningful as a decimal number." />
-  <SMART_parameter Id="196" Name="Reallocation Event Count" Critical="yes"
+  <SMART_attribute ID="196" name="Reallocation Event Count" Critical="yes"
    Details="Count of remap operations (transfering data from a bad sector to a special reserved disk area - spare area).
 The raw value of this attribute shows the total number of attempts to transfer data from reallocated sectors to a spare area. Unsuccessful attempts are counted as well as successful." />
-  <SMART_parameter Id="197" Name="Current Pending Sector Count" Critical="yes"
+  <SMART_attribute ID="197" name="Current Pending Sector Count" Critical="yes"
    Details="Current count of unstable sectors (waiting for remapping). The raw value of this attribute indicates the total number of sectors waiting for remapping. Later, when some of these sectors are read successfully, the value is decreased. If errors still occur when reading some sector, the hard drive will try to restore the data, transfer it to the reserved disk area (spare area) and mark this sector as remapped. If this attribute value remains at zero, it indicates that the quality of the corresponding surface area is low." />
-  <SMART_parameter Id="198" Name="Uncorrectable Sector Count" Critical="yes"
+  <SMART_attribute ID="198" name="Uncorrectable Sector Count" Critical="yes"
    Details="This attribute value depends of read errors, disk surface condition and indicates the rate of hardware read errors that occurred when reading data from a disk surface. Lower values indicate that there is a problem with either disk surface or read/write heads" />
-  <SMART_parameter Id="199" Name="UltraDMA CRC Error Count" Critical="yes"
+  <SMART_attribute ID="199" name="UltraDMA CRC Error Count" Critical="yes"
    Details="The count of errors in data transfer via the interface cable as determined by ICRC (Interface Cyclic Redundancy Check)." />
-  <SMART_parameter Id="200" Name="Multi-Zone Error Rate or Write Error Rate"
+  <SMART_attribute ID="200" name="Multi-Zone Error Rate or Write Error Rate"
    Details="The total count of errors when writing a sector." />
-  <SMART_parameter Id="201" Name="Soft Read Error Rate or TA Counter Detected"
+  <SMART_attribute ID="201" name="Soft Read Error Rate or TA Counter Detected"
    Details="Count indicates the number of uncorrectable software read errors." />
-  <SMART_parameter Id="204" Name="Soft ECC Correction"
+  <SMART_attribute ID="204" name="Soft ECC Correction"
    Details="Count of errors corrected by the internal error correction software." />
-  <SMART_parameter Id="212" Name="Shock During Write"/><!--[enWikip]-->
-  <SMART_parameter Id="220" Name="Disk Shift"
+  <SMART_attribute ID="212" name="Shock During Write"/><!--[enWikip]-->
+  <SMART_attribute ID="220" name="Disk Shift"
    Details="Shift of disks towards spindle. The raw value of this attribute indicates how much the disk has shifted. Unit measure is unknown. For more info see G-Force Protection technology description (click to learn more on Seagate website ).
 NOTE: Shift of disks is possible as a result of a strong shock or a fall, or for other reasons." />
-  <SMART_parameter Id="223" Name="Load/Unload Retry Count"
+  <SMART_attribute ID="223" name="Load/Unload Retry Count"
    Details="Count of times head changes position." />
-  <SMART_parameter Id="225" Name="Host Written(32 MiB)"/><!--[GSMARTCtl1.1.4]-->
+  <SMART_attribute ID="225" name="Host Written(32 MiB)"/><!--[GSMARTCtl1.1.4]-->
   <!--[GSMARTCtl1.1.4]-->
-  <SMART_parameter Id="228" Name="Power-Off Retract Count"/>
+  <SMART_attribute ID="228" name="Power-Off Retract Count"/>
   <!--[GSMARTCtl1.1.4]-->
-  <SMART_parameter Id="232" Name="Available Reserved Space"/>
+  <SMART_attribute ID="232" name="Available Reserved Space"/>
   <!--[GSMARTCtl1.1.4]-->
-  <SMART_parameter Id="233" Name="Media Wear Out Indicator"/>
-  <SMART_parameter Id="234" Name="Average erase count AND Maximum Erase Count"/><!--[enWikip]-->
-  <SMART_parameter Id="235" Name="Good Block Count AND System(Free) Block Count"/><!--[enWikip]-->
-  <SMART_parameter Id="240" Name="Head Flying Hours/Transfer Error Rate"
+  <SMART_attribute ID="233" name="Media Wear Out Indicator"/>
+  <SMART_attribute ID="234" name="Average erase count AND Maximum Erase Count"/><!--[enWikip]-->
+  <SMART_attribute ID="235" name="Good Block Count AND System(Free) Block Count"/><!--[enWikip]-->
+  <SMART_attribute ID="240" name="Head Flying Hours/Transfer Error Rate"
    Details="Time spent during the positioning of the drive heads./Count of times the link is reset during a data transfer." />
   <!-- Value seems to be gigabytes for the SSD model FS256G39TND-N210A
    firmware:30001P10 (serial:EJ7CN55981080CH09) because the value is 440k337
    after 627 days 17 h Power-On Hours and 87380824 kB ~=87 GB written to disk
    (via "iostat/dev/sda" Unix command) after 9 days and 20 h uptime.
    So name it "total _data_ written"-->
-  <SMART_parameter Id="241" Name="Total Data Written" 
+  <SMART_attribute ID="241" name="Total Data Written" 
    Details="Total count of data (different units:often LBAs/sectors) written to data carrier."/>
-  <SMART_parameter Id="242" Name="Total Data Read"
+  <SMART_attribute ID="242" name="Total Data Read"
    Details="Total count of Logical Block Addresses (LBAs) read." />
-  <SMART_parameter Id="249" Name="NAND Written(1GiB)"/><!--[GSMARTCtl1.1.4]-->
-  <SMART_parameter Id="250" Name="Read Error Retry Rate"/><!--[T13_2005]-->
-  <SMART_parameter Id="254" Name="Free Fall Protection"
+  <SMART_attribute ID="249" name="NAND Written(1GiB)"/><!--[GSMARTCtl1.1.4]-->
+  <SMART_attribute ID="250" name="Read Error Retry Rate"/><!--[T13_2005]-->
+  <SMART_attribute ID="254" name="Free Fall Protection"
    Details="Count of 'Free Fall Events' detected." />
-</SMART_parameters>
+</SMART_attributes>

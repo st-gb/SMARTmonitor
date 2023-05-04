@@ -87,21 +87,60 @@ public:
         & pDvcIOctlBuf,
         & pNMVeHealthInfoLog);
 
-
-    SMARTvalue & sMARTval = sMARTuniqueIDandVals.m_SMARTvalues[
-      TU_Bln361095::dataCarrier::SMART::Attr::PowerOnTime];
-    sMARTval.SetRawValue( *((uint64_t*) pNMVeHealthInfoLog->PowerOnHours) );
-    AtomicExchange(& sMARTval.m_successfullyReadSMARTrawValue, 1);
-    long double uptimeInSeconds;
-    OperatingSystem::GetUptimeInS(uptimeInSeconds);
-    sMARTval.SetRetrievalTime(uptimeInSeconds);
-
-    if(getSMARTvalsRslt != TU_Bln361095::hardware::dataCarrier::NVMe::
-      getSMARTvals::AllocBufFaild)
-      free(pDvcIOctlBuf);
     if(getSMARTvalsRslt != TU_Bln361095::hardware::dataCarrier::NVMe::
       getSMARTvals::Sccss)
+    {
+      if(getSMARTvalsRslt != TU_Bln361095::hardware::dataCarrier::NVMe::
+        getSMARTvals::AllocBufFaild)
+        free(pDvcIOctlBuf);
       return SMARTaccessBase::otherError;
+    }
+
+    long double uptimeInSeconds;
+    OperatingSystem::GetUptimeInS(uptimeInSeconds);
+
+    SMARTuniqueID & sMARTuniqueID = sMARTuniqueIDandVals.getSMARTuniqueID();
+
+    if(SMARTuniqueID::isEmpty(sMARTuniqueID.getSupportedSMART_IDs() ) )
+    {
+      suppSMART_IDsType suppSMARTattrNamesAndIDs;
+      for(TU_Bln361095::CPU::FaststUint SMARTattrID = TU_Bln361095::
+        dataCarrier::NVMe::SMART::Attr::TotalDataRead;
+        SMARTattrID <= TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
+        ErrorInfoLogEntryCount; SMARTattrID++)
+      {
+        /**Only needs to be done for the 1st time to create the intersection
+         * of supported and SMART IDs to read from the configuration file.*/
+        suppSMARTattrNamesAndIDs.insert(SMARTattributeNameAndID("", SMARTattrID)
+          );
+      }
+      sMARTuniqueID.setSupportedSMART_IDs(suppSMARTattrNamesAndIDs);
+      sMARTuniqueID.SetSMART_IDsToRead(suppSMARTattrNamesAndIDs, 
+        IDsOfSMARTattrsToRd);
+    }
+    for(TU_Bln361095::CPU::FaststUint SMART_IDsToReadArrIdx = 0;
+      sMARTuniqueID.SMART_IDsToReadNotEnd(SMART_IDsToReadArrIdx);
+      SMART_IDsToReadArrIdx++)
+    {
+      const TU_Bln361095::CPU::FaststUint SMART_ID = sMARTuniqueID.
+        m_SMART_IDsToRd[SMART_IDsToReadArrIdx];
+  /**See
+http://media.kingston.com/support/downloads/MKP_521.6_SMART-DCP1000_attribute.pdf
+   * : "ByteIndex": "47:32" -> 16 byte S.M.A.R.T. attribute raw values beginning
+   * with NVMe S.M.A.R.T. attribute ID "Data Units Read".*/
+      if(SMART_ID >= TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
+        TotalDataRead)
+      {
+        SMARTvalue & sMARTval = sMARTuniqueIDandVals.m_SMARTvalues[SMART_ID];
+        const uint8_t * const SMARTrawValAddr =( (uint8_t*) pNMVeHealthInfoLog->
+          DataUnitRead) + TU_Bln361095dataCarrierNVMeSMARTattrNumRawValB * 
+          (SMART_ID - TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
+            TotalDataRead);
+        sMARTval.SetRawVal(SMARTrawValAddr,
+          TU_Bln361095dataCarrierNVMeSMARTattrNumRawValB, uptimeInSeconds);
+      }
+    }
+    free(pDvcIOctlBuf);
     return SMARTaccessBase::success;
   }
 

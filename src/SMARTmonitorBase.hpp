@@ -35,7 +35,8 @@ typedef bool (CfgLoaderType::*loadFuncType)(
   std::string & errorMsg,///Reference param. must be before default arguments
   std::wstring * stdwstrWorkingDirWithConfigFilePrefix,
   std::string * stdstrFullConfigFilePath,
-  loaderParamType);
+  loaderParamType,
+  void * p_additionalParam);
 
 #if directSMARTaccess
   #include <SMARTaccType.hpp>///typedef SMARTaccess_type
@@ -188,7 +189,8 @@ public:
   bool upd8SMARTparamValsThrdIsRunning(){
     return m_updateSMARTparameterValuesThread.IsRunning();}
 #endif
-  bool tryCfgFilePaths(const wchar_t fileName[], loadFuncType);
+  bool tryCfgFilePaths(const wchar_t fileName[], loadFuncType,
+    void * p_additionalParam);
 #ifdef directSMARTaccess
   fastestUnsignedDataType Upd8SMARTvalsDrctlyThreadSafe();
 #endif

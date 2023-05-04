@@ -15,7 +15,8 @@ class ModelAndFirmware;
 /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes: 
  * Current temperature of SMART ID 194 (Device Temperature) is in the lowmost 2
  * bytes.*/
-#define CurrTemp(SMARTrawValue) (SMARTrawValue & 0xFFFF)
+#define TU_Bln361095dataCarrierSMARTcurrTemp(SMARTattrRawVal)\
+  (SMARTattrRawVal & 0xFFFF)
 
 class SMARTvalueFormatter {
 public:

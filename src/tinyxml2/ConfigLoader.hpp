@@ -46,19 +46,22 @@ class ConfigLoader : public ConfigurationLoaderBase
     std::string & errorMsg,///Reference param. must be before default arguments
     std::wstring * stdwstrWorkingDirWithConfigFilePrefix = NULL,
     std::string * stdstrFullConfigFilePath = NULL,
-    tinyxml2::XMLElement * p_tinyxml2XMLele = NULL
+    tinyxml2::XMLElement * p_tinyxml2XMLele = NULL,
+    void * p_additionalParam = NULL
     );
   bool readSMARTattrDefs(
     std::string & errorMsg,///Reference param. must be before default arguments
     std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix = NULL,
     std::string * p_stdstrFullConfigFilePath = NULL,
-    tinyxml2::XMLElement * p_tinyxml2XMLele = NULL
+    tinyxml2::XMLElement * p_tinyxml2XMLele = NULL,
+    void * p_additionalParam = NULL
     );
   bool ReadSMARTdataCarrierDefs(
     std::string & errorMsg,///Reference param. must be before default arguments
     std::wstring * p_stdwstrWorkingDirWithConfigFilePrefix = NULL,
     std::string * p_stdstrFullConfigFilePath = NULL,
-    tinyxml2::XMLElement * p_tinyxml2XMLele = NULL);
+    tinyxml2::XMLElement * p_tinyxml2XMLele = NULL,
+    void * p_additionalParam = NULL);
   void ReadServiceConnectionSettings(const std::wstring &, std::string &
     errorMsg);
   private:

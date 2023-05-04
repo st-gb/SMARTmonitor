@@ -20,6 +20,9 @@
 
 ///+1 to enable a 1-based array index
 #define numDifferentSMART_IDsPlus1 (numDifferentSMART_IDs + 1)
+///+1 to enable a 1-based array index
+#define TU_Bln361095dataCarrierNumNVMeSMART_IDsPlus1\
+  (TU_Bln361095dataCarrierNumNVMeSMART_IDs+1)
 
 class SMARTvalue
 {
@@ -45,6 +48,16 @@ public:
   ///Declared here to have no dependancy to SMARTaccessBase or SMARTmonitorBase
   static fastestUnsignedDataType s_sizeOfLongIntInBytes;
   static fastestUnsignedDataType s_numTimesLongIntFitsInto8Bytes;
+  static bool highBytesSet(
+    const uint8_t arr[],
+    const TU_Bln361095CPUuse(FaststUint) numBytes)
+  {
+    for(TU_Bln361095CPUuse(FaststUint) arrIdx = s_sizeOfLongIntInBytes;
+      arrIdx < numBytes; arrIdx++)
+      if(arr[arrIdx] != 0)
+        return true;
+    return false;
+  }
   const AtomicExchType GetNrmlzdCurrVal() const{return m_normedCurrVal;}
   ///For use in atomic compare and swap operations for example.
   AtomicExchType * const GetNrmlzdCurrVal() {return &m_normedCurrVal;}

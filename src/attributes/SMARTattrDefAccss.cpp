@@ -6,4 +6,5 @@
 
 ///Static variable definition
 SMARTattrDef SMARTattrDefAccss::SMARTattrDefs[];
+SMARTattrDef SMARTattrDefAccss::NVMeSMARTattrDefs[];
 

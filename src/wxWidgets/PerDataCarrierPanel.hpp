@@ -23,6 +23,7 @@ class PerDataCarrierPanel
 {
   wxTextCtrl * m_p_wxDataCarrierIDtextCtrl;
   wxButton * m_p_showSupportedSMART_IDs;
+  TU_Bln361095::hardware::bus::Type m_busType;
 public:
   SMARTtableListCtrl * m_pwxlistctrl;
   PerDataCarrierPanel(wxWindow * parent, const wxWindowID windowID)
@@ -88,8 +89,19 @@ public:
       );
 
     /** Now get the attribute name belonging to SMART ID */
-    SMARTattrDef * p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
-      SMARTattrID);
+    SMARTattrDef * p_sMARTattrDef;
+    ///Use S.M.A.R.T. attribute name according to bus type (ATA, NVMe, ...):
+    switch(m_busType)
+    {
+     case TU_Bln361095::hardware::bus::NVMe:
+      p_sMARTattrDef = SMARTattrDefAccss::getNVMeSMARTattrDef(
+        SMARTattrID);
+        break;
+     default:
+      p_sMARTattrDef = SMARTattrDefAccss::getATA_SMARTattrDef(
+        SMARTattrID);
+        break;
+    }
     std::string stdstrSMARTattrName;
     if( p_sMARTattrDef != NULL)
     {
@@ -129,6 +141,7 @@ public:
     const std::string mediaInfo = oss.str();
     const wxString & label = TU_Bln361095::wxWidgets::GetwxString_inln(mediaInfo);
     SetDataCarrierLabel(label);
+    m_busType = sMARTuniqueID.getBusType();
   }
 
   void EnableShowSupportedSMART_IDs() const {m_p_showSupportedSMART_IDs->Enable(); }

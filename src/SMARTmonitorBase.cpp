@@ -898,7 +898,8 @@ void SMARTmonitorBase::ConstructConfigFilePath(
 *   -path relative to curr work dir */
 bool SMARTmonitorBase::tryCfgFilePaths(
   const wchar_t fileName[],
-  loadFuncType loadFunc
+  loadFuncType loadFunc,
+  void * p_additionalParam
   )
 {
   enum InitSMARTretCode initSMARTretCode = success;
@@ -921,7 +922,7 @@ bool SMARTmonitorBase::tryCfgFilePaths(
   //TODO just for compilation
   bool successfullyLoadedCfgFile = /*mp_cfgLoader.LoadSMARTCfg*/
     (m_cfgLoader.*loadFunc)(errorMsgFile1, & stdwstrWorkDirWithCfgFilePrefix, 
-      & stdstrFullConfigFilePath, NULL);
+      & stdstrFullConfigFilePath, NULL, p_additionalParam);
 
   if(! successfullyLoadedCfgFile)
     if(origPath != L""){///-> use current working directory
@@ -931,7 +932,7 @@ bool SMARTmonitorBase::tryCfgFilePaths(
       stdwstrWorkDirWithCfgFilePrefix += fileName;
       successfullyLoadedCfgFile = /*mp_cfgLoader->LoadSMARTCfg*/
         (m_cfgLoader.*loadFunc)(errorMsgFile2, & stdwstrWorkDirWithCfgFilePrefix
-          ,& stdstrFullConfigFilePath, NULL);
+          ,& stdstrFullConfigFilePath, NULL, p_additionalParam);
     }
   if(! successfullyLoadedCfgFile){
     const std::string errorMsg = errorMsgFile1 + "\n" + errorMsgFile2;
@@ -946,13 +947,16 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART(){
 
   try{
     if(! tryCfgFilePaths(L"en/SMARTattrDefs.", & CfgLoaderType::
-      readSMARTattrDefs) )
+      readSMARTattrDefs, (void *) SMARTattrDefAccss::SMARTattrDefs) )
+      return readingConfigFileFailed;
+    if(! tryCfgFilePaths(L"en/NVMeSMARTattrDefs.", & CfgLoaderType::
+      readSMARTattrDefs, (void *) SMARTattrDefAccss::NVMeSMARTattrDefs) )
       return readingConfigFileFailed;
     if(! tryCfgFilePaths(L"dataCarrierDefs.", & CfgLoaderType::
-      ReadSMARTdataCarrierDefs) )
+      ReadSMARTdataCarrierDefs, NULL) )
       return readingConfigFileFailed;
-    if(! tryCfgFilePaths(L"SMARTsrvCnnctn.", & CfgLoaderType::ReadSrvCnnctnCfg)
-      )
+    if(! tryCfgFilePaths(L"SMARTsrvCnnctn.", & CfgLoaderType::ReadSrvCnnctnCfg,
+      NULL) )
       return readingConfigFileFailed;
     
     //    {

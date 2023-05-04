@@ -155,6 +155,9 @@ struct SMARTuniqueID
   const fastestUnsignedDataType * getSupportedSMART_IDs() const{
     return supportedSMART_IDs;
   }
+  inline static bool isEmpty(const TU_Bln361095::CPU::FaststUint * array){
+    return array[0] == 0;}
+
   void copyArr(const fastestUnsignedDataType orig [],
     fastestUnsignedDataType cpy []);
   void setSupportedSMART_IDs(suppSMART_IDsType & suppSMARTattrNamesAndIDs)
