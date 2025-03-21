@@ -2,8 +2,11 @@
  * Created on 20. November 2016, 17:43 UTC+1*/
 
 ///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
-#include <compiler/GCC/enable_disable_warning.h>///GCC_DIAG_OFF(...)
-#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
+ /**TU_Bln361095TU_Bln361095GCCdisableWarn(...),
+  * TU_Bln361095TU_Bln361095GCCdisableWarn(...) */
+ //#include <compiler/C,C++/enableAndDisableWarn.h>
+ ///TU_Bln361095::CPU::atomicXchg(...)
+ #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <hardware/CPU/atomic/memory_barrier.h>///memory_barrier(...)
 ///OperatingSystem::GetLastErrorCode()
 #include <OperatingSystem/GetLastErrorCode.hpp>
@@ -18,6 +21,7 @@
 ///Standard C(++) header files:
 #include <stdint.h> //uint8_t
 
+using namespace TU_Bln361095SMARTmonNmSpc;///for SMARTuniqueID
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_UIthreadID;
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
@@ -30,10 +34,10 @@ fastestUnsignedDataType SMARTmonitorClient::s_maxNumCharsNeededForDisplay [] =
  { 3, 30, 15, 20, 40};
 fastestUnsignedDataType SMARTmonitorClient::s_charPosOAttrNameBegin [] =
  { 0, 3, 33, 48, 68};
-GCC_DIAG_OFF(write-strings)
-char * SMARTmonitorClient::s_columnAttriuteNames [] =
+//TU_Bln361095GCCdisableWarn(write-strings)
+const char * const SMARTmonitorClient::s_columnAttributeNames[] =
  { "ID", "name", "raw", "human readable", "last update"};
-GCC_DIAG_ON(write-strings)
+//TU_Bln361095GCCenableWarn(write-strings)
 SMARTvalueRater SMARTmonitorClient::s_SMARTvalueRater;
 
 SMARTmonitorClient::SMARTmonitorClient()
@@ -75,7 +79,7 @@ void SMARTmonitorClient::EndUpdateUIthread()
     //m_wxCloseMutex.TryLock();
     LOGN("disabling update UI (ends update UI thread)");
     waitOrSignalEvt.Broadcast();
-    AtomicExchange( (long *) & s_updateSMARTvalues, 0);
+    TU_Bln361095::CPU::atomicXchg( (long *) & s_updateSMARTvalues, 0);
     
     LOGN("waiting for close event");
     /** http://docs.wxwidgets.org/trunk/classwx_condition.html : 
@@ -87,8 +91,8 @@ void SMARTmonitorClient::EndUpdateUIthread()
     m_updateSMARTparameterValuesThread.WaitForTermination();
     SetCurrentAction(AfterWaitForSMARTupd8ThreadTerm);
     ///Enable get S.M.A.R.T. values loop.
-    AtomicExchange( (long *) & s_updateSMARTvalues, 1);
-    AtomicExchange( (long *) & GetSMARTvalsAndUpd8UIthreadID, 0);
+    TU_Bln361095::CPU::atomicXchg( (long *) & s_updateSMARTvalues, 1);
+    TU_Bln361095::CPU::atomicXchg( (long *) & GetSMARTvalsAndUpd8UIthreadID, 0);
 #if directSMARTaccess
     if(getsSMARTdataDrctly() )
       ChangeConnectionState(endedDrctSMART);
@@ -290,7 +294,7 @@ bool getRealValue(const std::string & stdstrUnit, const uint64_t SMARTrawVal,
       case '8':
       case '9':
         if(! isNumber){
-//          ar_chUnitBegin = ar_chUnit + idx;
+//          ar_chUnitBegin = ar_chUnit + unitCharStrIdx;
           isNumber = true;
           currNum = 0;
         }
@@ -301,31 +305,31 @@ bool getRealValue(const std::string & stdstrUnit, const uint64_t SMARTrawVal,
         break;
       default:
         if(isNumber){
-//          ar_chUnitEnd = ar_chUnit + idx;
+//          ar_chUnitEnd = ar_chUnit + unitCharStrIdx;
           isNumber = false;
         }
         switch(ch){
           case 'B':///Needs to be contained for not to be in "default" branch.
             break;
-          case 'G':
+          case 'G':///giga=10^9
             currNum *= 1000000000;
             break;
-          case 'h':
+          case 'h':///1 hour=60min/h*60s/min=3600 s 
             currNum *= 3600000;
             break;
-          case 's':
+          case 's':///1 second=1000 ms
             currNum *= 1000;
             break;
          case -62:/// '°' in UTF-8 = -61 -80
-          if(idx != 0)
+          if(unitCharStrIdx != 0)
             error = true;
           break;
          case -80:/// '°' in UTF-8 = -61 -80
-          if(idx != 1)
+          if(unitCharStrIdx != 1)
             error = true;
           break;
          case 'C':/// '°' in UTF-8 = -61 -80
-          if(idx != 2)
+          if(unitCharStrIdx != 2)
             error = true;
           else
             currNum = 1;

@@ -1,32 +1,40 @@
 /* wxSMARTmonitorApp.hpp
  *  Created on: 26.11.2013
- *  Author: Stefan Gebauer, M. Sc. Comp. Sc. */
+ * (c) from 26.11.2013 Stefan Gebauer(Computer Science Master from TU Berlin)
+ * @author Stefan Gebauer(TU Berlin matriculation number 361095) */
 
 #ifndef WXSMARTMONITORAPP_HPP_
 #define WXSMARTMONITORAPP_HPP_
 
-/** Include at 1st in Windows build to avoid:
- * "#warning Please include winsock2.h before windows.h" */
-#include <client/SMARTmonitorClient.h>///base class SMARTmonitorClient
+///_This_ project's repository (header) files:
+ /** Include at 1st in Windows build to avoid:
+  * "#warning Please include winsock2.h before windows.h" */
+ #include <client/SMARTmonitorClient.h>///base class SMARTmonitorClient
+
+///Stefan Gebauer's(TU Berlin matricul. num. 361095) ~"cmnSrc" repository files:
+ ///TU_Bln361095disableUseSecC_RunTimeStrFnWarn
+ #include <compiler/C,C++/useSecureC_RunTimeStrFuncsWarn.h>
 
 ///wxWidgets header files:
  /**Avoid Microsoft Visual Studio compiler warnings like :
   * "include\wx / wxcrt.h(213, 14) warning C4996 : 'strcpy' : This function
   * or variable may be unsafe.Consider using strcpy_s instead.To disable
   * deprecation, use _CRT_SECURE_NO_WARNINGS.See online help for details." */
- #pragma warning(disable:4996)
-#include <wx/app.h> //Base class wxApp
-#include <wx/dialog.h> //class wxDialog
-#include <wx/icon.h> //class wxIcon
-#include <wx/timer.h> //class wxTimer
- #pragma warning(enable:4996)
+ TU_Bln361095disableUseSecC_RunTimeStrFnWarn
+ #include <wx/app.h>///This class' base class "wxApp"
+ #include <wx/dialog.h>///class wxDialog
+ #include <wx/icon.h>///class wxIcon
+ #include <wx/timer.h>///class wxTimer
+ TU_Bln361095enableUseSecC_RunTimeStrFnWarn
 
 //#include "wxSMARTmonitorTaskBarIcon.hpp"
 //#include <SMARTmonitorBase.hpp> //base class SMARTmonitorBase
 
 //#include <libATA_SMART/SMARTaccess.hpp>
 //typedef libatasmart::SMARTaccess SMARTaccess_type;
-#include "wxSMARTmonitorDialog.hpp"///class SMARTdialog
+
+///_This_ project's repository (header) files:
+ #include "wxSMARTmonitorDialog.hpp"///class SMARTdialog
 
 /*static*/ extern SMARTdialog * gs_dialog;
 
@@ -76,7 +84,14 @@ public:
   bool OnInit();
   void OnTimer(wxTimerEvent& event);
 //  int OnRun();
-  bool GetIcon(wxIcon & icon, wxString iconFileName, char * inMemoryIcon [] );
+  bool GetIcon(wxIcon & icon, wxString & iconFileName, char * inMemoryIcon []);
+  bool GetIcon(wxIcon& icon, const wxChar iconFileName[],
+    char* inMemoryIcon[])
+  {
+    wxString wxstrIconFileName(iconFileName);
+    return GetIcon(icon, wxstrIconFileName, inMemoryIcon);
+  }
+
   ///Gets the minimal FoNT SIZe in unit "PoinT".
   int GetMinFntSizInPt() const {return 6;}
   bool GetSMARTokayIcon(wxIcon & icon);

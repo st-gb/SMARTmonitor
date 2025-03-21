@@ -22,9 +22,10 @@
   #define TU_Bln361095SMARTmon_SMARTattrDefAccess_hpp
 
 ///_this_ repository's header files:
-#include "SMARTattrDef.hpp"///class SMARTattrDef
- ///numDifferentSMART_IDsPlus1,TU_Bln361095dataCarrierNumNVMeSMART_IDsPlus1
-#include "SMARTuniqueIDandValues.hpp"
+ #include "SMARTattrDef.hpp"///class SMARTattrDef
+ /**TU_Bln361095numMaxATA_SMART_IDsPlus1,
+  * TU_Bln361095dataCarrierNumNVMeSMART_IDsPlus1 */
+ #include "SMARTuniqueIDandValues.hpp"
 
 /** @brief Puts all SMARTattrDef accessing functions into a class.
 * You may subclass from this to make functions belong to other class.*/
@@ -40,7 +41,7 @@ protected:
 //  SMARTattrDefContType SMARTattrDefs;
   /**If SMART attribute definitions are in an array, access to it is very fast*/
   /**Array for (S)ATA S.M.A.R.T. The first definition is stored at index 1*/
-  static SMARTattrDef SMARTattrDefs[numDifferentSMART_IDsPlus1];
+  static SMARTattrDef SMARTattrDefs[TU_Bln361095numMaxATA_SMART_IDsPlus1];
   ///NVMe S.M.A.R.T. attribute names differ from ATA S.M.A.R.T. attribute names.
   static SMARTattrDef NVMeSMARTattrDefs[
     TU_Bln361095dataCarrierNumNVMeSMART_IDsPlus1];
@@ -51,7 +52,9 @@ static void Add(const SMARTattrDef & sMARTattrDef,
 {
   SMARTattrDefArr[sMARTattrDef.GetAttributeID()] = sMARTattrDef;
 }
-static void Set(const fastestUnsignedDataType attrID, const char attrName [])
+static void Set(
+  const TU_Bln361095::CPU::faststUint attrID,
+  const char attrName [])
 {
   SMARTattrDef sMARTattrDef(attrID, attrName);
   SMARTattrDefs[attrID] = sMARTattrDef;
@@ -60,19 +63,23 @@ static void Set(const fastestUnsignedDataType attrID, const char attrName [])
 static void clearSMARTattrDefs()
 {
 //  SMARTattrDefs.clear();
-  for(fastestUnsignedDataType idx = 0; idx < numDifferentSMART_IDsPlus1; idx++){
-    SMARTattrDefs[idx].SetAttributeID(0);
-    SMARTattrDefs[idx].SetName("");
-    SMARTattrDefs[idx].SetCritical(false);
+  for(TU_Bln361095::CPU::faststUint SMARTattrDefIdx = 0; SMARTattrDefIdx <
+    TU_Bln361095numMaxATA_SMART_IDsPlus1; SMARTattrDefIdx++)
+  {
+    SMARTattrDefs[SMARTattrDefIdx].SetAttributeID(0);
+    SMARTattrDefs[SMARTattrDefIdx].SetName("");
+    SMARTattrDefs[SMARTattrDefIdx].SetCritical(false);
   }
 }
 
 static int GetNumSMARTattrDefs()
 {
-  fastestUnsignedDataType numSMARTattrDefs = 0;
+  TU_Bln361095::CPU::faststUint numSMARTattrDefs = 0;
 //  numSMARTattrDefs = SMARTattrDefs.size();
-  for(fastestUnsignedDataType idx = 0;idx < numDifferentSMART_IDsPlus1; idx++){
-    if(SMARTattrDefs[idx].GetAttributeID() != 0)
+  for(TU_Bln361095::CPU::faststUint SMARTattrDefIdx = 0;SMARTattrDefIdx <
+    TU_Bln361095numMaxATA_SMART_IDsPlus1; SMARTattrDefIdx++)
+  {
+    if(SMARTattrDefs[SMARTattrDefIdx].GetAttributeID() != 0)
       numSMARTattrDefs++;
   }
   return numSMARTattrDefs;

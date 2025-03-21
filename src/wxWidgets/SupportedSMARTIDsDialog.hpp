@@ -9,14 +9,19 @@
  * "#warning Please include winsock2.h before windows.h" */
 #include <client/SMARTmonitorClient.h> //class SMARTmonitorClient
 
+///Stefan Gebauer's(TU Berlin matricul. num.361095) ~"cmnSrc" repository files:
+ /** TU_Bln361095disableUseSecC_RunTimeStrFnWarn,
+  *  TU_Bln361095enableUseSecC_RunTimeStrFnWarn */
+ #include <compiler/C,C++/useSecureC_RunTimeStrFuncsWarn.h>
+
 ///wxWidgets library header files:
  /**Avoid Microsoft Visual Studio compiler warnings like :
   * "include\wx / wxcrt.h(213, 14) warning C4996 : 'strcpy' : This function
   * or variable may be unsafe.Consider using strcpy_s instead.To disable
   * deprecation, use _CRT_SECURE_NO_WARNINGS.See online help for details." */
- #pragma warning(disable:4996)
-#include <wx/dialog.h> //base class wxDialog
- #pragma warning(enable:4996)
+ TU_Bln361095disableUseSecC_RunTimeStrFnWarn
+ #include <wx/dialog.h>///base class wxDialog
+ TU_Bln361095enableUseSecC_RunTimeStrFnWarn
 
 ///Standard C/C++ includes
 #include <vector>///class std::vector

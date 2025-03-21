@@ -60,7 +60,7 @@ public:
   static fastestUnsignedDataType s_UIthreadID;
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
   static fastestUnsignedDataType s_charPosOAttrNameBegin[colIndices::byndLast];
-  static char * s_columnAttriuteNames [];
+  static const char * const s_columnAttributeNames[];
   
   static enum TU_Bln361095::SMARTmon::SMARTvals::Rating::E
     s_entireSMARTstatus;

@@ -31,12 +31,7 @@
 #endif
 
 ///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
-#include <compiler/GCC/enable_disable_warning.h>
-GCC_DIAG_OFF(write-strings)
-//#include "warning.xpm"
-//#include "smile.xpm"
-GCC_DIAG_ON(write-strings)
-#ifndef TU_Bln361095TmCntDfnd
+ #ifndef TU_Bln361095TmCntDfnd
   #define TU_Bln361095TmCntDfnd
   typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
   typedef long double TimeCountInNanosec_type;///for GetTimeCountInNanoSeconds(...)
@@ -44,10 +39,13 @@ GCC_DIAG_ON(write-strings)
 #include <Controller/time/GetTickCount.hpp>
 #include <hardware/CPU/atomic/AtomicExchange.h>
 #include <hardware/CPU/atomic/memory_barrier.h>
-#include <preprocessor_macros/logging_preprocessor_macros.h>
 ///wxWidgets::GetwxString_Inline
 #include <wxWidgets/charStr/wxStringHelper.hpp>
 #include <wxWidgets/UI/About.hpp>///class wxWidgets::AboutDlg
+ ///TU_Bln361095::OpSys::GetCurrThreadNum()
+ #include <OperatingSystem/multithread/getCurrThreadNum.h>
+ ///LOGN(...),LOGN_DEBUG(...)
+ #include <preprocessor_macros/logging_preprocessor_macros.h>
 
 //extern wxSMARTmonitorApp theApp;
 /** Static (class) variables. */
@@ -260,10 +258,10 @@ void SMARTdialog::CreatePerDiskUIctrls(wxSizer * p_sizer)
 {
   LOGN_DEBUG("begin--evtID2SMARTuniqueID size:" << wxGetApp().
     m_evtID2SMARTuniqueID.size() )
-  std::set<SMARTuniqueIDandValues> & SMARTuniqueIDsAndValues = wxGetApp().
-    GetSMARTuniqueIDsAndVals();
-  std::set<SMARTuniqueIDandValues>::const_iterator SMARTuniqueIDandValuesIter =
-    SMARTuniqueIDsAndValues.begin();
+  std::set<TU_Bln361095::SMARTmon::SMARTuniqueIDandValues> &
+    SMARTuniqueIDsAndValues = wxGetApp().GetSMARTuniqueIDsAndVals();
+  std::set<TU_Bln361095::SMARTmon::SMARTuniqueIDandValues>::const_iterator
+    SMARTuniqueIDandValuesIter = SMARTuniqueIDsAndValues.begin();
 
   /** The map may contain invalid SMART unique IDs e.g. if direct SMART access
    * at first and from server later. So empty it.*/
@@ -545,7 +543,7 @@ void SMARTdialog::ShowMessage(
 /** Rebuilds the lines for SMART IDs and parameter names. */
 void SMARTdialog::ReBuildUserInterface()
 {
-  if(OperatingSystem::GetCurrentThreadNumber() == wxGetApp().s_UIthreadID){
+  if(TU_Bln361095::OpSys::GetCurrThreadNum() == wxGetApp().s_UIthreadID){
   //TODO remove all PerDataCarrierIDpanel instances.
 //  unsigned itemCount;
 //  while( (itemCount = p_sMARTinfoSizer->GetItemCount() ) > 1)
@@ -638,7 +636,7 @@ void SMARTdialog::OnShowSupportedSMART_IDs(wxCommandEvent & event)
 void SMARTdialog::EndAllThreadsAndCloseAllOtherTopLevelWindows()
 {
   wxGetApp().EndUpdateUIthread();
-  if(OperatingSystem::GetCurrentThreadNumber() == wxGetApp().s_UIthreadID)
+  if(TU_Bln361095::OpSys::GetCurrThreadNum() == wxGetApp().s_UIthreadID)
   {
     /** This code should only be executed in UI thread! */
     for( std::set<wxTopLevelWindow *>::iterator iter = 

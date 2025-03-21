@@ -120,7 +120,7 @@ include_directories(${INCLUDE_DIRS})
 
 #message("include directories: ${INCLUDE_DIRS}")
 include(${cmnSrcDir}/compiler/C,C++/printInclDirs.cmake)
-printInclDirs(5)
+TU_Bln361095printCmplrInclDirs("CMakeLists.txt")
 
 if(${EXE_TYPE} STREQUAL "UNIX_service")
   include(server/BSD_sockets.cmake)#sets "BSD_sockets_srcFiles"
@@ -204,8 +204,9 @@ endif()
 if(NOT ${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")
   include(${cmnSrcDir}/CMake/writeItemsToFile.cmake)
   Set(srcFilePathsFileName ${EXE_TYPE}_source_file_paths.txt)
+  message("Writing source file paths to file \"${srcFilePathsFileName}\".")
   #For debugging purposes
-  #write1ItemPerLneToFile(${EXE_TYPE}_source_file_paths.txt "${SOURCE_FILE_PATHS}")
+  write1ItemPerLneToFile(${srcFilePathsFileName} "${SOURCE_FILE_PATHS}")
 endif()
 message("If you didn't explicitely set some of the variables, then they may\
 come from a previous call to cmake. If you don't want these settings, delete \

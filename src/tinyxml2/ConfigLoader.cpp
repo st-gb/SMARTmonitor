@@ -1,15 +1,24 @@
 /** File:  ConfigLoader.cpp
  * Author: Stefan Gebauer,M.Sc.Comp.Sc./Informatik (TU Berlin)
  * Created on 27. Dezember 2016, 20:14 */
-#include <stdlib.h>
 
-#include "ConfigLoader.hpp"///this class's tinyxml2::ConfigLoader declaration
-///FileSystem::GetAbsolutePathA(...)
-#include <FileSystem/File/GetAbsoluteFilePath.hpp>
-#include <dataType/charStr/ConvertStdStringToTypename.hpp>
-#include <tinyxml2.h>///class tinyxml2::XMLElement
-#include <SMARTmonitorBase.hpp>
-#include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
+///Standard C(++) library files:
+ #include <stdlib.h>///NULL?
+
+///This project's repository header files:
+ ///class TU_Bln361095::SMARTmon::ModelAndFirmware
+ #include <attributes/ModelAndFirmware.hpp>
+ #include "ConfigLoader.hpp"///this class's tinyxml2::ConfigLoader declaration
+ #include <SMARTmonitorBase.hpp>///class SMARTmonitorBase
+
+///Stefan Gebauer's(TU Berlin matr. # 361095) ~"cmnSrc" repository header files:
+ ///ConvertCharStringToTypename(...)
+ #include <dataType/charStr/ConvertStdStringToTypename.hpp>
+ ///TU_Bln361095::FileSys::GetAbsPathA(...)
+ #include <FileSystem/File/GetAbsoluteFilePath.hpp>
+
+///TinyXML header file(s):
+ #include <tinyxml2.h>///classes tinyxml2::XMLDocument,tinyxml2::XMLElement
 
 namespace tinyxml2
 {
@@ -94,7 +103,7 @@ void ConfigLoader::GetSMARTattributesToObserve(
     return;
   //TODO better make a copy of the array (else it is being changed)?
   /*const*/ char * SMARTparamsToObs = (char *) p_tinyxml2XMLele->GetText();
-  const int SMARTparamsToObserveCharLen = strlen(SMARTparamsToObs);
+  const /*int*/size_t SMARTparamsToObserveCharLen = strlen(SMARTparamsToObs);
   char * SMARTparamsToObsNumBgn = SMARTparamsToObs;
   int SMARTattributeID;
   std::istringstream std_iss;
@@ -115,7 +124,7 @@ void ConfigLoader::GetSMARTattributesToObserve(
             << " as SMART parameter to observe/monitor")
         m_r_SMARTmonitorBase.m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
 
-        if(SMARTattrIDtoObsIdx < numDifferentSMART_IDs)
+        if(SMARTattrIDtoObsIdx < TU_Bln361095dataCarrierNumSATA_SMARTattrIDs)
           m_r_SMARTmonitorBase.m_SMARTattrIDsToObs[SMARTattrIDtoObsIdx++] = 
             SMARTattributeID;
         }
@@ -123,7 +132,7 @@ void ConfigLoader::GetSMARTattributesToObserve(
       SMARTparamsToObsNumBgn = SMARTparamsToObs + charIndex + 1;
     }
   }
-  if(SMARTattrIDtoObsIdx < numDifferentSMART_IDs)
+  if(SMARTattrIDtoObsIdx < TU_Bln361095dataCarrierNumSATA_SMARTattrIDs)
     m_r_SMARTmonitorBase.m_SMARTattrIDsToObs[SMARTattrIDtoObsIdx] = 0;
 }
 
@@ -301,7 +310,7 @@ bool ConfigLoader::ReadSMARTdataCarrierDefs(
 //      "maxTeraBytesWritten", NULL);
     const int maxTeraBytesWritten = p_dataCarrierXMLele->IntAttribute(
       "maxTeraBytesWritten", -1);
-    ModelAndFirmware modelAndFirmware;
+    TU_Bln361095::SMARTmon::ModelAndFirmware modelAndFirmware;
     if(p_chModel && p_chFirmware){///<=>"model" and "firmware" are in XML data
       if(maxTeraBytesWritten != -1)
         modelAndFirmware.setMaxTeraBytesWritten(maxTeraBytesWritten);

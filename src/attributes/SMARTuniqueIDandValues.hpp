@@ -14,7 +14,7 @@
 
 ///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
 #include <hardware/dataCarrier/ATA3Std.h>///ATA3Std_NrmlzdValTyp
-#include <hardware/CPU/fastest_data_type.h>
+ #include <hardware/CPU/fastest_data_type.h>///TU_Bln361095::CPU::faststUint
 
 //class SMARTaccessBase;
 
@@ -146,8 +146,8 @@ public:
   void setSMART_IDsToReadFromSuccSMARTrawValUpd8(){
     fastestUnsignedDataType SMART_IDsToReadArrIdx = 0;
     for(fastestUnsignedDataType sMARTvalsIdx = 1; sMARTvalsIdx <
-      numDifferentSMART_IDs; sMARTvalsIdx++)
       if(m_SMARTvalues[sMARTvalsIdx].m_successfullyReadSMARTrawValue)
+      TU_Bln361095dataCarrierNumSATA_SMARTattrIDs; sMARTvalsIdx++)
         m_SMARTuniqueID.m_SMART_IDsToRd[SMART_IDsToReadArrIdx++] = sMARTvalsIdx;
     m_SMARTuniqueID.m_SMART_IDsToRd[SMART_IDsToReadArrIdx] = 0;
   }

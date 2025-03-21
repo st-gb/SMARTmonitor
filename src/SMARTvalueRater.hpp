@@ -15,17 +15,26 @@
 #include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 #include <attributes/SMARTuniqueIDandValues.hpp>///class SMARTuniqueIDandValues
 
-//TODO encapsulate in own namespace?
+///Encapsulate in own namespace
 TU_Bln361095SMARTmonNmSpcBgn
 ///Use plural because the rating affects multiple S.M.A.R.T. values.
 namespace SMARTvals{
 ///val=VALue: 
 ///Rtg=RaTinG: http://www.abbreviations.com/abbreviation/rating
+#if __cplusplus >= 201103L
+  enum class Rating
+#else
   namespace Rating{
     enum E
-  {///first letter should be uppercase?
-    OK=0,atLeast1Warn,noCriticalVal,unknown};
+#endif
+  {
+    /**The rating as floating point value is from [1...-1] where 1 is best
+     * rating (optimal), 0 is warning and -1 worst rating (error).*/
+    ///first letter should be uppercase?
+    error=-1, atLeast1Warn=0, OK=1, noCriticalVal, unknown};
+#if __cplusplus < 201103L
 }
+#endif
 }///end namespace
 TU_Bln361095SMARTmonNmSpcEnd
 
@@ -46,7 +55,7 @@ typedef/**If type is quotient between current value and threshold:use floating
  *   associated with higher failure rates."
  *  -page 6:"Figure 4: Distribution of average temperatures and failures rates."
  *   failures increase at ca. < 25 °C */
-#define maxWarnTempInDegC 25
+#define TU_Bln361095dataCarrierMaxWarnTempInDegC 25
 /**http://en.wikipedia.org/wiki/Solid-state_drive#Hard_disk_drives 24 Sep 2022:
  * "A Facebook study found that at operating temperatures above 40 °C (104 °F),
  * the failure rate among SSDs increases with temperature."*/
@@ -55,25 +64,26 @@ typedef/**If type is quotient between current value and threshold:use floating
  *   trend"
  *  -page 6:"Figure 4: Distribution of average temperatures and failures rates."
  *   failures increase at ca. > 46/47 °C */
-#define minWarnTempInDegC 46
-#define minCritTempInDegC 69
+#define TU_Bln361095dataCarrierMinWarnTempInDegC 46
+#define TU_Bln361095dataCarrierMinCritTempInDegC 69
 
-///Mfr=ManuFactureR:http://www.abbreviations.com/abbreviation/Manufacturer
-///Rtg=RaTinG:http://www.abbreviations.com/abbreviation/rating
+/**Mfr=ManuFactureR:http://www.abbreviations.com/abbreviation/Manufacturer
+ * Rtg=RaTinG:http://www.abbreviations.com/abbreviation/rating */
 namespace MfrRtg{
 /**Curr=CURRent:http://www.abbreviations.com/abbreviation/Current
  * Val=VALue: http://www.abbreviations.com/abbreviation/Value
  * Thresh=THRESHold: http://www.allacronyms.com/threshold/abbreviated */
 namespace nrmlzdCurrValAndThresh{
-///Mns=MiNuS
-///Rng=RaNGe:http://www.abbreviations.com/abbreviation/range
 inline float Get1ToMns1Rng(
   const unsigned SMARTattrID,
   const long int nrmlzdCurrVal,
   const long int nrmlzdThresh)
+/**Gets S.M.A.R.T. attribute value rating in [-1...1] range
+ * Mns=MiNuS
+ * Rng=RaNGe: http://www.abbreviations.com/abbreviation/range */
 {
-  long maxNrmlzdVal = SMARTvalue::maxNrmlzdVals[SMARTattrID];
-  maxNrmlzdVal = SMARTvalue::getNxtGtrMaxNrmlzdVal(maxNrmlzdVal,
+  long maxNrmlzdVal = SMARTattr::maxNrmlzdVals[SMARTattrID];
+  maxNrmlzdVal = SMARTattr::getNxtGtrMaxNrmlzdVal(maxNrmlzdVal,
     nrmlzdCurrVal, nrmlzdThresh);
   const long int divident = maxNrmlzdVal-nrmlzdThresh;
   if(divident == 0)///Avoid division by 0
@@ -149,6 +159,85 @@ public:
     else///Optimal temperature range
       return 1.0f;
   }
+
+  template<typename realCircaValTyp> static inline SMARTvalRatngTyp
+    NVMe_SMART_rtg(
+    const TU_Bln361095::CPU::FaststUint SMARTattrID,
+    const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
+    const realCircaValTyp & realCircaValue,
+    const ModelAndFirmware * p_modelAndFirmware)
+  {
+    switch((enum TU_Bln361095::dataCarrier::NVMe::SMART::Attr::ID) SMARTattrID)
+    {
+    case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::AvailableSpare:
+      {
+      const SMARTattr & sMARTval = SMARTuniqueIDandVals.m_SMARTattrs[
+        TU_Bln361095::dataCarrier::NVMe::SMART::Attr::AvailableSpareThreshold];
+        //TU_Bln361095::ByteArray byteArr;
+        TU_Bln361095::CPU::FaststUint availSpareThresh;
+        sMARTval.getRawVal(/*byteArr*/availSpareThresh, SMARTattrID,
+          SMARTuniqueIDandVals.getSMARTuniqueID() );
+        const float availSpareRatio = (float)availSpareThresh /
+          (float)realCircaValue;
+        return availSpareRatio;
+      break;
+      }
+    case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::MediaErrors:
+    case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::ErrorInfoLogEntryCount:
+      if(realCircaValue == 0)
+        return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::OK;
+      else
+        return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::atLeast1Warn;
+    }
+    return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
+  }
+
+  /**mfr=ManuFactuRer http://www.abbreviations.com/abbreviation/manufacturer
+   * rtg=RaTinG: http://www.abbreviations.com/abbreviation/rating */
+  static TU_Bln361095frcInln SMARTvalRatngTyp mfrRtg(
+    const TU_Bln361095::CPU::faststUint SMARTattrID,
+    const SMARTuniqueIDandValues & SMARTdataCarrierAndVals)
+  {
+    const SMARTattr & currSMARTval = SMARTdataCarrierAndVals.m_SMARTattrs[
+      SMARTattrID];
+    const TU_Bln361095::CPU::faststUint nrmlzdCurrVal = currSMARTval.
+      GetNrmlzdCurrVal();
+    const TU_Bln361095::CPU::faststUint nrmlzdThresh = currSMARTval.
+      GetNrmlzdThresh();
+    const SMARTvalRatngTyp scaledQuotient = MfrRtg::nrmlzdCurrValAndThresh::
+      Get1ToMns1Rng(SMARTattrID, nrmlzdCurrVal, nrmlzdThresh);
+    return scaledQuotient;
+  }
+
+  /**@brief does the S.M.A.R.T. attribute value rating for ATA S.M.A.R.T. data
+   *  according to manufacturer(S.M.A.R.T. attribute normalized and threshold
+   *  value:see
+http://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology
+#ATA_S.M.A.R.T._attributes) or via \p realCircaValue
+   * @param realCircaValue from S.M.A.R.T. attribute raw value*/
+  template<typename realCircaValTyp> static inline SMARTvalRatngTyp ATA_SMART_rtg(
+    const TU_Bln361095::CPU::faststUint SMARTattrID,
+    const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
+    const /*uint64_t*/ realCircaValTyp & realCircaValue,
+    const ModelAndFirmware * p_modelAndFirmware)
+  {
+    bool useManufacturerRtg = true;
+	  switch((enum TU_Bln361095::dataCarrier::SMART::Attr::ID) SMARTattrID)
+	  {
+      ///temperatures for OK or warning depends on whether HDD or SSD
+     case TU_Bln361095::dataCarrier::SMART::Attr::DevTemp:
+  /**In regard of temperatures some manufacturers like Intel for model
+   * "INTEL SSDSC2BF240A5H REF", firmware "LWDi" don't follow the semantics that
+   * lower normalized current values mean a worse rating: for
+   * "INTEL SSDSC2BF240A5H REF" the normalized current value is simply the
+   * temperature in °C. So use an own rating for temperatures.*/
+       useManufacturerRtg = false;
+	  }
+	  if(useManufacturerRtg)
+      return mfrRtg(SMARTattrID, SMARTuniqueIDandVals);
+    return  ATA_SMART_own_Rtg(SMARTattrID, realCircaValue, p_modelAndFirmware);
+  }
+
   /** @brief get rating for @see param SMARTattrID according to current
    *   normalized value or @see realCircaRawValue
    * Is called often: for every S.M.A.R.T. ID of every data carrier in an
@@ -247,6 +336,14 @@ http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info
 //      case PwrCycleCnt:
       //TODO If ratio between power cycle count (diff) and power-on-hours (diff)
       // is too high then warn
+      case TU_Bln361095::hardware::bus::NVMe:
+        return NVMe_SMART_rtg(SMARTattrID, SMARTuniqueIDandVals, realCircaValue,
+          p_modelAndFirmware);
+        break;
+      default:
+        return ATA_SMART_rtg(SMARTattrID, SMARTuniqueIDandVals, realCircaValue,
+          p_modelAndFirmware);
+        break;
     }
     return TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
   }

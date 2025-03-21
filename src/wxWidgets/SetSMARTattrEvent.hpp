@@ -5,9 +5,11 @@
 #ifndef SETSMARTATTREVENT_HPP
 #define SETSMARTATTREVENT_HPP
 
-#include <attributes/SMARTuniqueID.hpp>///class SMARTuniqueID
-#include <UserInterface/columnIndices.hpp>///enum ColumnIndices::columnIndices
-#include <SMARTvalueRater.hpp>///SMARTvalRatngTyp
+///Stefan Gebauer's(TU Berlin matric. number 361095) SMARTmonitor header files:
+ #include <attributes/SMARTuniqueID.hpp>///class SMARTuniqueID
+ ///enum TU_Bln361095::SMARTmon::colIndices::columnIndices
+ #include <UserInterface/columnIndices.hpp>
+ #include <SMARTvalueRater.hpp>///SMARTvalRatngTyp
 
 class SMARTattrs{
 private:

@@ -21,6 +21,9 @@
  ! defined TU_Bln361095SMARTmon_OpSys_MS_Win_hardware_dataCarrier_SMARTaccess_h
    #define TU_Bln361095SMARTmon_OpSys_MS_Win_hardware_dataCarrier_SMARTaccess_h
 
+///C(++) standard header files:
+ #include <sstream>///std::ostringstream
+
 ///_This_ repository's files:
 #include <SMARTaccessBase.hpp>///base class SMARTaccessBase
  /**TU_Bln361095SMARTmon_OpSysWindowsNmSpcBgn,
@@ -30,6 +33,13 @@
 ///Stefan Gebauer's(TU Berlin matr.#361095)~"common_sourcecode"repository files:
 #include <hardware/bus/busType.h>///enum TU_Bln361095::hardware::bus::Type
 #include <hardware/dataCarrier/NVMe/NVMe_SMART_attr.h>
+#ifndef TU_Bln361095TmCntDfnd
+  #define TU_Bln361095TmCntDfnd
+  ///for OperatingSystem::GetUptimeInS(...)
+  typedef uint64_t TU_Bln361095tmCntInNsTyp;
+  typedef double TimeCountInSecType;
+#endif
+#include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
  ///TU_Bln361095::hardware::bus::UnifyType()
 #include <OperatingSystem/Windows/hardware/busType.h>
  ///TU_Bln361095hardwareDataCarrierUse(GetPath)
@@ -42,12 +52,6 @@
 #include <OperatingSystem/Windows/hardware/dataCarrier/getStorageDvcInfo.h>
 #include <OperatingSystem/Windows/hardware/NVMe/getSMARTvals.h>
 
-#ifndef TU_Bln361095TmCntDfnd
-  #define TU_Bln361095TmCntDfnd
-  typedef uint64_t TimeCountInNanosec_type;
-  typedef double TimeCountInSecType;
-#endif
-#include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
 
 TU_Bln361095SMARTmon_OpSysWindowsNmSpcBgn
 
@@ -104,8 +108,8 @@ public:
     if(SMARTuniqueID::isEmpty(sMARTuniqueID.getSupportedSMART_IDs() ) )
     {
       suppSMART_IDsType suppSMARTattrNamesAndIDs;
-      for(TU_Bln361095::CPU::FaststUint SMARTattrID = TU_Bln361095::
-        dataCarrier::NVMe::SMART::Attr::TotalDataRead;
+      for(TU_Bln361095::CPU::faststUint SMARTattrID = TU_Bln361095::
+        dataCarrier::NVMe::SMART::Attr::CriticalWarning;
         SMARTattrID <= TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
         ErrorInfoLogEntryCount; SMARTattrID++)
       {
@@ -124,6 +128,7 @@ public:
     {
       const TU_Bln361095::CPU::FaststUint SMART_ID = sMARTuniqueID.
         m_SMART_IDsToRd[SMART_IDsToReadArrIdx];
+      SMARTattr & sMARTattr = sMARTuniqueIDandVals.m_SMARTattrs[SMART_ID];
   /**See
 http://media.kingston.com/support/downloads/MKP_521.6_SMART-DCP1000_attribute.pdf
    * : "ByteIndex": "47:32" -> 16 byte S.M.A.R.T. attribute raw values beginning
@@ -131,13 +136,29 @@ http://media.kingston.com/support/downloads/MKP_521.6_SMART-DCP1000_attribute.pd
       if(SMART_ID >= TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
         TotalDataRead)
       {
-        SMARTvalue & sMARTval = sMARTuniqueIDandVals.m_SMARTvalues[SMART_ID];
         const uint8_t * const SMARTrawValAddr =( (uint8_t*) pNMVeHealthInfoLog->
           DataUnitRead) + TU_Bln361095dataCarrierNVMeSMARTattrNumRawValB * 
           (SMART_ID - TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
             TotalDataRead);
-        sMARTval.SetRawVal(SMARTrawValAddr,
+        sMARTattr.setRawVal(SMARTrawValAddr,
           TU_Bln361095dataCarrierNVMeSMARTattrNumRawValB, uptimeInSeconds);
+      }
+      else if(SMART_ID < TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
+        AvailableSpare)///1 or 2 byte data type
+      {
+      }
+      /**see <nvme.h>:S.M.A.R.T. attribute ID >= AvailableSpare
+       *  && S.M.A.R.T. attribute ID < TotalDataRead <=>1 byte data type */
+      else
+      {
+        const uint8_t * const SMARTrawValAddr =( (uint8_t*) & pNMVeHealthInfoLog
+          ->AvailableSpare) +
+          TU_Bln361095dataCarrierNVMeSMARTattrNum1stAttrsRawValB * (SMART_ID -
+          TU_Bln361095::dataCarrier::NVMe::SMART::Attr::AvailableSpare);
+        sMARTattr.setRawVal(
+          SMARTrawValAddr,
+          TU_Bln361095dataCarrierNVMeSMARTattrNum1stAttrsRawValB,
+          uptimeInSeconds);
       }
     }
     free(pDvcIOctlBuf);

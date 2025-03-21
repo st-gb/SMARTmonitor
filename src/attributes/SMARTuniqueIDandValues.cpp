@@ -2,10 +2,14 @@
  *  Created on: 05.08.2016
  *  Author: Stefan Gebauer, M.Sc.Comp.Sc.(TU Berlin) */
 
-#include <attributes/SMARTuniqueIDandValues.hpp>
-#include <hardware/CPU/fastest_data_type.h>
-#include "hardware/CPU/atomic/AtomicExchange.h"
-#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN())
+///_This_ project's (repository) (header) files:
+ #include <attributes/SMARTuniqueIDandValues.hpp>
+///Stefan Gebauer's(TU Berlin matriculation number 361095) ~"cmnSrc" files:
+ #include <hardware/CPU/fastest_data_type.h>///TU_Bln361095::CPU::faststUint
+ ///TU_Bln361095::CPU::atomicXchg(...)
+ #include <hardware/CPU/atomic/AtomicExchange.h>
+ ///LOGN(...),LOGN_DEBUG(...),LOGN_WARNING(...)
+ #include <preprocessor_macros/logging_preprocessor_macros.h>
 
 ///Static (class) variables definitions:
 /** E.g. 32 bit Linux: size of long int is 4 bytes*/
@@ -89,8 +93,9 @@ void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
       numBitsToShift = //(8 - s_sizeOfLongIntInBytes) * 8;
         s_sizeOfLongIntInBytes * i * 8;
       liRawSMARTattrValue = (long int) (rawSMARTattrValue >> numBitsToShift);
-      AtomicExchange( (long int *) (m_rawValue) + i 
-        //(s_sizeOfLongIntInBytes * i)//long * Target
+      TU_Bln361095::CPU::atomicXchg( (//long int
+        TU_Bln361095::hardware::CPU::atomicXchgTyp *) (m_rawValue) + i
+        //(s_sizeOfLongIntInBytes * idx)//long * Target
         , //* (long int *) //SMARTattributesToObserveIter->pretty_value /*raw*/ /*long val*/
         liRawSMARTattrValue );
       LOGN_DEBUG("SMART raw value part (" 
@@ -103,7 +108,7 @@ void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
   {
 //    liRawSMARTattrValue = rawSMARTattrValue;
     //TODO atomic necessary?
-    AtomicExchange( (long int *) m_rawValue, rawSMARTattrValue);
+    TU_Bln361095::CPU::atomicXchg( (long int *) m_rawValue, rawSMARTattrValue);
     m_rawValueCheckSum = rawSMARTattrValue;
   }
 }
@@ -111,12 +116,14 @@ void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
 ///TODO AtomicExchange(...) necessary?
 bool SMARTvalue::GetRetrievalTime(uint64_t & uptimeInMs) const{
   long int liTimePart, timeCheckSum = m_timeStampOfRetrieval;
-  AtomicExchange( (long int *) & uptimeInMs, m_timeStampOfRetrieval);
   for(fastestUnsignedDataType idx = 1; idx < 
     SMARTvalue::s_numTimesLongIntFitsInto8Bytes; ++idx)
+  TU_Bln361095::CPU::atomicXchg( (long int *) & uptimeInMs,
+    m_timeStampOfRetrieval);
   {
     liTimePart = * ( ((long int *) & m_timeStampOfRetrieval) + idx);
-    AtomicExchange( ((long int *) & uptimeInMs) + idx, liTimePart);
+    TU_Bln361095::CPU::atomicXchg( ((long int *) & uptimeInMs) + idx,
+      liTimePart);
     /** ServiceBasse::BeforeWait() may read this value while it is written in
     .*  the SMARTaccesBase-derived class. Therefore the checksum.*/
     timeCheckSum ^= liTimePart;
@@ -136,14 +143,14 @@ void SMARTvalue::SetRetrievalTime(const long double & uptimeInSeconds){
   long int liTimePart;
   //TODO make as generic algorithm also for SetRawValue(...)
   liTimePart = uptimeInMs;
-  AtomicExchange( (long int *) & m_timeStampOfRetrieval, liTimePart);
+  TU_Bln361095::CPU::atomicXchg( (long int *) & m_timeStampOfRetrieval, liTimePart);
   //TODO Really needs atomic Compare-And-Swap?
-  AtomicExchange( & m_timeCheckSum, liTimePart);
+  TU_Bln361095::CPU::atomicXchg( & m_timeCheckSum, liTimePart);
   for(fastestUnsignedDataType idx = 1; idx < 
     SMARTvalue::s_numTimesLongIntFitsInto8Bytes; ++idx)
   {
     liTimePart = * ( ((long int *) & uptimeInMs) + idx);
-    AtomicExchange( ((long int *) & m_timeStampOfRetrieval) +idx, liTimePart);
+    TU_Bln361095::CPU::atomicXchg( ((long int *) & m_timeStampOfRetrieval) +idx, liTimePart);
     /** ServiceBasse::BeforeWait() may read this value while it is written in
      *  the SMARTaccesBase-derived class. Therefore the checksum.*/
     m_timeCheckSum ^= liTimePart;
@@ -175,10 +182,11 @@ bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
 //    liRawSMARTattrValue = liRawSMARTattrValue >> (8 - 
 //      s_sizeOfLongIntInBytes);
     fastestUnsignedDataType numBitsToShift;
-    for( fastestSignedDataType i = numTimesLongIntFitsInto8Bytes - 1; i > -1; --i)
+    for(TU_Bln361095::CPU::faststUint rawValPartIdx =
+      s_numTimesLongIntFitsInto8Bytes - 1; rawValPartIdx > -1; --rawValPartIdx)
     {
-      numBitsToShift = s_sizeOfLongIntInBytes * i * 8;
-      liRawSMARTattrValue = m_rawValue[i]; //>> numBitsToShift;
+      numBitsToShift = s_sizeOfLongIntInBytes * rawValPartIdx * 8;
+      liRawSMARTattrValue = m_rawValue[rawValPartIdx]; //>> numBitsToShift;
       rawValueCheckSum ^= liRawSMARTattrValue;
       rawValue |=
         /** Must be unsigned before assigning/copying to "rawValue"/uint64_t.
@@ -189,9 +197,9 @@ bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
       rawValue <<= numBitsToShift;
       LOGN_DEBUG("SMART raw value part (" 
         << s_sizeOfLongIntInBytes << "B) #" << 
-        i << ":" << liRawSMARTattrValue)
+        rawValPartIdx << ":" << liRawSMARTattrValue)
       LOGN_DEBUG("SMART raw value after iteration #" << 
-        (numTimesLongIntFitsInto8Bytes - i) << ":" << rawValue)
+        (s_numTimesLongIntFitsInto8Bytes - rawValPartIdx) << ":" << rawValue)
     }
   }
   else
@@ -217,8 +225,8 @@ SMARTuniqueIDandValues::SMARTuniqueIDandValues (const SMARTuniqueID & _SMARTuniq
 SMARTuniqueIDandValues::SMARTuniqueIDandValues( const SMARTuniqueIDandValues & obj)
 {
   m_SMARTuniqueID = obj.getSMARTuniqueID();
-  for(fastestUnsignedDataType arrayIndex = 0; arrayIndex <
-    numDifferentSMART_IDsPlus1; arrayIndex ++)
+  for(TU_Bln361095::CPU::faststUint arrayIndex = 0; arrayIndex <
+    TU_Bln361095numMaxATA_SMART_IDsPlus1; arrayIndex ++)
   {
     m_SMARTvalues[arrayIndex] = obj.m_SMARTvalues[arrayIndex];
   }

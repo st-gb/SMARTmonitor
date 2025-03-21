@@ -3,8 +3,9 @@
 #ifndef CONFIGLOADER_HPP
 #define CONFIGLOADER_HPP
 
-#include <ConfigLoader/ConfigurationLoaderBase.hpp>///base class
-#include <attributes/SMARTattrDefsType.hpp>///typedef SMARTattrDefType
+///This project's repository header files:
+ #include <attributes/SMARTattrDefsType.hpp>///typedef SMARTattrDefType
+ #include <ConfigLoader/ConfigurationLoaderBase.hpp>///base class
 
 /** Forward declarations (compiles faster than #including header file(s). */
 namespace tinyxml2

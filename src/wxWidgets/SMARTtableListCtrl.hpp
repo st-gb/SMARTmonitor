@@ -11,6 +11,10 @@
 #include <client/SMARTmonitorClient.h>
 #include <UserInterface/SMARTparamTblHdrWStr.h>///enColHdrWstrs
 
+///Stefan Gebauer's(TU Berlin matricul. num. 361095) ~"cmnSrc" repository files:
+ ///TU_Bln361095disableUseSecC_RunTimeStrFnWarn
+ #include <compiler/C,C++/useSecureC_RunTimeStrFuncsWarn.h>
+
 ///wxWidgets library header files:
 /** (needs package "libwxgtk<<version>>-dev", "libwxbase<<version>>-dbg" under
  * Linux?) */
@@ -18,15 +22,16 @@
   * "include\wx / wxcrt.h(213, 14) warning C4996 : 'strcpy' : This function
   * or variable may be unsafe.Consider using strcpy_s instead.To disable
   * deprecation, use _CRT_SECURE_NO_WARNINGS.See online help for details." */
- #pragma warning(disable:4996)
 #include <wx/dcclient.h>///class wxClientDC
 #include <wx/listctrl.h>///Base class wxListCtrl
 #include <wx/settings.h>///wxSystemSettings
- #pragma warning(enable:4996)
+ TU_Bln361095disableUseSecC_RunTimeStrFnWarn
+ TU_Bln361095enableUseSecC_RunTimeStrFnWarn
 
 ///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
-#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
-
+ #include <hardware/CPU/fastest_data_type.h>///TU_Bln361095::CPU::faststUint
+ ///TU_Bln361095dataCarrierNumSATA_SMARTattrIDs
+ #include <hardware/dataCarrier/ATA3Std.h>
 //enum SMARTmonitorClient::SMARTvalueRating;
 
 namespace wxWidgets
@@ -40,8 +45,9 @@ private:
 public:
   wxClientDC clientDC;
   /*static*/ bool setColWdthAccHdrStrWdth = /*true*/false;
-  fastestUnsignedDataType m_maxSMARTattrNmStrWdthInPx;
-  fastestUnsignedDataType m_SMARTattribIDtoLineNumber[numDifferentSMART_IDs+1];
+  TU_Bln361095::CPU::faststUint m_maxSMARTattrNmStrWdthInPx;
+  TU_Bln361095::CPU::faststUint m_SMARTattribIDtoLineNumber[
+    TU_Bln361095dataCarrierNumSATA_SMARTattrIDs+1];
   SMARTtableListCtrl(
     wxWindow * parent,
     wxWindowID id = wxID_ANY,
@@ -56,8 +62,8 @@ public:
    * inserted.*/
   void CreateLines(const SMARTuniqueID &);
   void SetSMARTattribValue(
-    fastestUnsignedDataType SMARTattributeID,
-    fastestUnsignedDataType columnIndex,
+    TU_Bln361095::CPU::faststUint SMARTattributeID,
+    TU_Bln361095::CPU::faststUint columnIndex,
     const wxString & wxstrValue,
     const SMARTvalRatngTyp);
   virtual

@@ -31,34 +31,41 @@
 //#include "smile.xpm"
 
 ///wxWidgets header files:
-#include <wx/filefn.h> //wxFILE_SEP_PATH
-#include <wx/log.h>///class wxLogNull
-#include <wx/taskbar.h>
+ #include <wx/filefn.h>///wxFILE_SEP_PATH
+ #include <wx/log.h>///class wxLogNull
+ #include <wx/taskbar.h>///wxTaskBarIcon::IsAvailable()
 
 ///Stefan Gebauer's "common_sourcecode" repository header files:
-///GCC_DIAG_ON(...), GCC_DIAG_OFF(...) preprocessor macros
-#include "compiler/GCC/enable_disable_warning.h"
-#include <FileSystem/File/FileException.hpp>
-#include <FileSystem/PathSeperatorChar.hpp>///dirSeperatorCharW
-#include <OperatingSystem/multithread/GetCurrentThreadNumber.hpp>
+ /**TU_Bln361095GCCenableWarn(...), TU_Bln361095GCCdisableWarn(...) preprocessor
+  * macros */
+ #include <compiler/C,C++/enableAndDisableWarn.h>
+ ///class TU_Bln361095::FileSys::FileException
+ #include <FileSystem/File/FileException.hpp>
+ ///TU_Bln361095::FileSys::DirSepCharW
+ #include <FileSystem/PathSeperatorChar.hpp>
+ ///TU_Bln361095::OpSys::GetCurrThreadNum()
+ #include <OperatingSystem/multithread/getCurrThreadNum.h>
 #ifdef __MINGW32__
 #include <OperatingSystem/Windows/HideMinGWconsoleWindow.h>
 #endif
-#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(..)
-#include <wxWidgets/charStr/wxStringHelper.hpp>
+ ///LOGN(...),LOGN_DEBUG(...)
+ #include <preprocessor_macros/logging_preprocessor_macros.h>
+ /**TU_Bln361095::wxWidgets::GetStdString_inln(...),
+  * TU_Bln361095::wxWidgets::GetwxString_inln(...) */
+ #include <wxWidgets/charStr/wxStringHelper.hpp>
 
-///This repository's header files:
-/** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
- *  to ‘char*’" when including the "xpm" file */
-GCC_DIAG_OFF(write-strings)
-#include "../icons/S.M.A.R.T._OK.xpm"
-#include "../icons/S.M.A.R.T._unknown.xpm"
-#include "../icons/S.M.A.R.T._warning.xpm"
-GCC_DIAG_ON(write-strings)
-#include "SetSMARTattrEvent.hpp"///class SetSMARTattrEvent
-#include "ConnectToServerDialog.hpp"
-#include <ConfigLoader/ConfigurationLoaderBase.hpp> //class ConfigurationLoaderBase
-//#include "libConfig/ConfigurationLoader.hpp"
+///_This_ project's (repository) (header) files:
+ /** Prevent GCC/g++ warning "warning: deprecated conversion from string constant 
+  *  to ‘char*’" when including the "xpm" file */
+ TU_Bln361095GCCdisableWarn(write-strings)
+ #include "../icons/S.M.A.R.T._OK.xpm"///S_M_A_R_T__OK_xpm
+ #include "../icons/S.M.A.R.T._unknown.xpm"///S_M_A_R_T__unknown_xpm
+ #include "../icons/S.M.A.R.T._warning.xpm"///S_M_A_R_T__warning_xpm
+ TU_Bln361095GCCenableWarn(write-strings)
+ #include "SetSMARTattrEvent.hpp"///class SetSMARTattrEvent
+ #include "ConnectToServerDialog.hpp"///class ConnectToServerDialog
+ ///class ConfigurationLoaderBase
+ #include <ConfigLoader/ConfigurationLoaderBase.hpp>
 
 ///Standard C(++) header files:
 #include <iostream> //class std::cerr
@@ -119,7 +126,7 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
 #endif
   , m_wxtimer(this, TIMER_ID)
 {
-  s_UIthreadID = OperatingSystem::GetCurrentThreadNumber();
+  s_UIthreadID = TU_Bln361095::OpSys::GetCurrThreadNum();
 #ifdef multithread
   I_Thread::SetCurrentThreadName("UI");
 #endif
@@ -186,7 +193,7 @@ void wxSMARTmonitorApp::BeforeWait()
 void wxSMARTmonitorApp::ChangeConnectionState(enum serverConnectionState newState)
 {
   //TODO ensure to/must be called in GUI thread
-  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID){
+  if(TU_Bln361095::OpSys::GetCurrThreadNum() == s_UIthreadID){
     gs_dialog->SetState(newState);
     m_srvrCnnctnState = newState;
   }
@@ -235,7 +242,7 @@ void wxSMARTmonitorApp::CreateCommandLineArgsArrays()
     LOGN( (index+1) << ". program argument:" << m_ar_stdwstrCmdLineArgs[index])
     m_cmdLineArgStrings[index] = m_ar_stdwstrCmdLineArgs[index].c_str();
   }
-  m_commandLineArgs.Set(argc, (wchar_t **) m_cmdLineArgStrings);
+  m_commandLineArgs.set(argc, (wchar_t **) m_cmdLineArgStrings);
 }
 
 /** http://docs.wxwidgets.org/trunk/classwx_app_console.html#a99953775a2fd83fa2456e390779afe15 : 
@@ -333,9 +340,9 @@ bool wxSMARTmonitorApp::OnInit()
     }
   }
   /** Thrown by mp_configurationLoader->LoadConfiguration(..:) */
-  catch(const FileException & fe) 
+  catch(const TU_Bln361095::FileSys::FileException & fileExc)
   {
-    TCHAR * filePath = fe.GetFilePath();
+    TCHAR * filePath = fileExc.GetFilePath();
     wxMessageBox(wxT("failed to open file: ") + TU_Bln361095::wxWidgets::
      GetwxString_inln(
       //GetStdWstring( ))
@@ -358,9 +365,11 @@ inline void createIconFilePath(wxString & iconFilePath, const wxString &
   iconFilePath += wxString(wxT("icons") ) + wxFILE_SEP_PATH + iconFileName;
 }
 
+/**@param iconFileName in: without file name extension
+ *   out: with file name extension */
 bool wxSMARTmonitorApp::GetIcon(
   wxIcon & icon,
-  wxString iconFileName, 
+  wxString & iconFileName,
   char * inMemoryIcon [] )
 {
   /** http://docs.wxwidgets.org/trunk/classwx_bitmap.html:
@@ -402,9 +411,9 @@ bool wxSMARTmonitorApp::GetIcon(
     /**The 1st program argument Is not always the _full_ path of the executable
      * ?, e.g. no directory when in "PATH" environment variable?
      * Alternative: OperatingSystem::Process::GetCurrExePath(); */
-    std::wstring exeFilePath = m_commandLineArgs.GetProgramPath();
+    std::wstring exeFilePath = m_commandLineArgs.getProgPath();
     std::wstring exeFileDir = exeFilePath.substr(0,
-      exeFilePath.rfind(FileSystem::dirSeperatorCharW) +1);
+      exeFilePath.rfind(TU_Bln361095::FileSys::DirSepCharW) +1);
     wxString iconFilePathFromExe = TU_Bln361095::wxWidgets::GetwxString_inln(
       exeFileDir);
     createIconFilePath(iconFilePathFromExe, iconFileName);
@@ -453,7 +462,7 @@ void wxSMARTmonitorApp::SetAttribute(
   //should avoid 2 times a pointer dereference -> performs better or in 
   //SMARTmonitorDialog as param. "sMARTuniqueID" needs to be taken into account
   
-  if(OperatingSystem::GetCurrentThreadNumber() != s_UIthreadID){
+  if(TU_Bln361095::OpSys::GetCurrThreadNum() != s_UIthreadID){
     SMARTattrs _SMARTattrs(
       sMARTuniqueID,
       SMARTattributeID,
@@ -544,7 +553,7 @@ void wxSMARTmonitorApp::ShowConnectionState(const char * const pchServerAddress,
   int connectTimeOutInSeconds)
 {
 #ifdef _DEBUG
-  int currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
+  int currentThreadNumber = TU_Bln361095::OpSys::GetCurrThreadNum();
   if(currentThreadNumber = s_UIthreadID)
     ;
 #endif
@@ -566,7 +575,7 @@ void wxSMARTmonitorApp::OnShowCurrentAction(wxCommandEvent & evt)
 
 void wxSMARTmonitorApp::SetCurrentAction(enum CurrentAction currAction)
 {
-  if(OperatingSystem::GetCurrentThreadNumber() == s_UIthreadID)
+  if(TU_Bln361095::OpSys::GetCurrThreadNum() == s_UIthreadID)
     gs_dialog->ShowCurrentAction(currAction);
   else{
     /** To execute in UI thread.
@@ -591,10 +600,11 @@ void wxSMARTmonitorApp::ShowMessage(
   const char * const message, 
   enum MessageType::messageTypes msgType) const
 {
-  unsigned currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
+  const TU_Bln361095::OpSys::ThreadNumTyp currThreadNum = TU_Bln361095::OpSys::
+    GetCurrThreadNum();
   /** Only call UI functions in UI thread, else gets SIGABORT error when calling
    *  "wxMessageBox(...)" . */
-  if(currentThreadNumber == s_UIthreadID)
+  if(currThreadNum == s_UIthreadID)
   {
     wxString wxstrMessage = TU_Bln361095::wxWidgets::GetwxString_inln(message);
     gs_dialog->ShowMessage(wxstrMessage, msgType);
@@ -614,10 +624,11 @@ void wxSMARTmonitorApp::ShowMessage(
 // const char * const str, MessageType::info) than to implement the same!?
 void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 {
-  unsigned currentThreadNumber = OperatingSystem::GetCurrentThreadNumber();
+  const TU_Bln361095::OpSys::ThreadNumTyp currThreadNum = TU_Bln361095::
+    OpSys::GetCurrThreadNum();
   /** Only call UI functions in UI thread, else gets SIGABORT error when calling
    *  "wxMessageBox(...)" . */
-  if( currentThreadNumber == s_UIthreadID )
+  if(currThreadNum == s_UIthreadID)
   {
     wxString wxstrMessage = TU_Bln361095::wxWidgets::GetwxString_inln(str);
 //    wxMessageBox(wxstrMessage, m_appName );

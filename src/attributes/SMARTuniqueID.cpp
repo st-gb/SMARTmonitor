@@ -11,13 +11,15 @@
 
 ///Stefan Gebauer's(TU Berlin mat.#361095)~"common_sourcecode" repository files:
  ///TU_Bln361095::CstdLib::strcmp::EqlStrs
-#include <C_standard_library/string_compare_return_codes.h>
+#include <CstdLib/strcmpRtrnCds.h>
  /**TU_Bln361095hardwareSMARTnumFWbytes, TU_Bln361095hardwareSMARTnumModelBytes,
   * TU_Bln361095hardwareSMARTnumSNbytes, numDifferentSMART_IDs */
 #include <hardware/dataCarrier/ATA3Std.h>
 
-bool operator < (const SMARTuniqueID & left,
-                 const SMARTuniqueID & right)
+TU_Bln361095SMARTmonNmSpcBgn
+
+bool operator < (const TU_Bln361095::SMARTmon::SMARTuniqueID & left,
+                 const TU_Bln361095::SMARTmon::SMARTuniqueID & right)
 {
   int retVal = strcmp(left.m_modelName, right.m_modelName);
   if( retVal < 0 )
@@ -68,10 +70,13 @@ bool operator < (const SMARTuniqueID & left,
   }*/
 
 //TODO add parameter for max items?
-void SMARTuniqueID::copyArr(const fastestUnsignedDataType orig [],
-  fastestUnsignedDataType cpy [])
+void SMARTuniqueID::copyArr(
+  const TU_Bln361095::CPU::faststUint orig [],
+  TU_Bln361095::CPU::faststUint cpy [])
 {
-  for(fastestUnsignedDataType idx = 0; idx < numDifferentSMART_IDs ; idx++ ){
+  for(TU_Bln361095::CPU::faststUint idx = 0;idx < m_numDiffrntSMARTattrIDs;
+    idx++)
+  {
     cpy[idx] = orig[idx];
     if(orig[idx] == 0)
       break;
@@ -94,3 +99,5 @@ SMARTuniqueID & SMARTuniqueID::operator = (const SMARTuniqueID & orig)
   m_busType = orig.getBusType();
   return *this;
 }
+
+TU_Bln361095SMARTmonNmSpcEnd

@@ -4,6 +4,11 @@
 
 include(${SMARTmonSrcDir}/setCmnSrcDir.cmake)
 
+set(currFileName 
+##see http://cmake.org/cmake/help/latest/variable/CMAKE_CURRENT_SOURCE_DIR.html
+ ${CMAKE_CURRENT_SOURCE_DIR}
+ "clientSrvSrcFiles.cmake")
+
 if(UNIX)
   #Linux (e.g. Lubuntu) has tinyxml2 in its package manager
   #"apt-get install libtinyxml"
@@ -15,6 +20,15 @@ endif()
 #include(${cmnSrcDir}/CMake/getAbsPath.cmake)
 #getAbsPath(${TINYXML2_ROOT_PATH} "${SMARTmonSrcDir}/../../../tinyxml2-master")
 message("TINYXML2_ROOT_PATH: \"${TINYXML2_ROOT_PATH}\"")
+
+if(DEFINED BoostRootDir)
+  message("${currFileName}--BoostRootDir defined: ${BoostRootDir}")
+  set(InclDirs
+    ${InclDirs}
+    ${BoostRootDir})
+ #set(TU_Bln361095useBoostMultiprecisionCppInt TRUE)
+ add_compile_definitions(TU_Bln361095useBoostMultiprecisionCppInt)
+endif()
 
 if(DEFINED resourcesFSpath)
   message("resourcesFSpath defined:value${resourcesFSpath}")
@@ -35,9 +49,9 @@ else()
   message("directSMARTaccess NOT defined")
 endif()
 
-set( CXX_DEFINITIONS ${CXX_DEFINITIONS}
-  -DUSE_OWN_LOGGER
-  -DCOMPILE_WITH_LOG
+set(CXX_DEFINITIONS ${CXX_DEFINITIONS}
+  -DTU_Bln361095useOwnLogger
+  -DTU_Bln361095buildWithLogging
   -DUNICODE
 )
 
@@ -51,6 +65,7 @@ set(ATTRIBUTE_DATA_SOURCE_FILES
   #Make as CMake variable "SMARTattrSrcFiles" ?
   ${SMARTmonSrcDir}/attributes/SMARTattributeNameAndID.cpp
   ${SMARTmonSrcDir}/attributes/SMARTattrDef.cpp
+  ${SMARTmonSrcDir}/attributes/SMARTattrVal.cpp
   ${SMARTmonSrcDir}/attributes/SMARTattrDefAccss.cpp
   ${SMARTmonSrcDir}/attributes/SMARTuniqueID.cpp
   ${SMARTmonSrcDir}/attributes/SMARTuniqueIDandValues.cpp
@@ -75,9 +90,9 @@ if(WIN32)#https://cmake.org/cmake/help/v3.0/variable/WIN32.html
   include(${SMARTmonSrcDir}/Windows/Windows.cmake)
 endif()
 
-set(CmnSrcLogger ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
-##Sets CMake variable "defaultLoggerSrcFilePaths".
-include(${CmnSrcLogger}/defaultLoggerFiles.cmake)
+set(TU_Bln361095cmnSrcLoggerDir ${cmnSrcDir}/Controller/Logger)
+##Sets CMake variable "TU_Bln361095cmnSrcDfltLoggerSrcFilePaths".
+include(${TU_Bln361095cmnSrcLoggerDir}/defaultLoggerFiles.cmake)
 
 set(CfgRdrSrcfiles
   ${TINYXML2_ROOT_PATH}/tinyxml2.cpp
@@ -86,7 +101,7 @@ set(CfgRdrSrcfiles
 
 set(CLIENT_SERVER_BASE_SOURCE_FILES
   ${CLIENT_SERVER_BASE_SOURCE_FILES}
-  ${defaultLoggerSrcFilePaths}
+  ${TU_Bln361095cmnSrcDfltLoggerSrcFilePaths}
   ${SMARTmonSrcDir}/UserInterface/UserInterface.cpp
   ${SMARTmonSrcDir}/SMARTmonitorBase.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/dataType/charStr/stdtstr.cpp
@@ -135,8 +150,9 @@ if(DEFINED ${CMAKE_BUILD_TYPE} AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 endif()
 
 set(InclDirs
+  ${InclDirs}
   ${SMARTmonSrcDir}
-  ${cmnSrcDir} 
+  ${cmnSrcDir}
   ${TINYXML2_ROOT_PATH}
   )
 
@@ -148,3 +164,9 @@ endif()
 # or -std=gnu++11"
 include(${cmnSrcDir}/CMake/useCpp11.cmake)
 use_cxx11()
+
+#From https://stackoverflow.com/questions/5403705/cmake-add-definitions-and-compile-definitions-how-to-see-them
+#: Output variable set with "add_definitions(...)"
+get_directory_property(CompDefs COMPILE_DEFINITIONS)
+message("${currFileName} end--COMPILE_DEFINITIONS (set with "
+  "\"add_definitions(...)\"): ${CompDefs}")

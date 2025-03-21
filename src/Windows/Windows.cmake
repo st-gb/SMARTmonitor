@@ -21,3 +21,14 @@ if(${EXE_TYPE} STREQUAL "wxGUI")
 endif()
 ## http://wiki.wxwidgets.org/Microsoft_Visual_C%2B%2B_Guide#Project_properties :
 add_definitions("-DWXUSINGDLL")
+message("TU_Bln361095useBSDskt defined?:${TU_Bln361095useBSDskt}")
+if(DEFINED TU_Bln361095useBSDskt)
+  message("Setting Microsoft Windows BSD sockets libraries")
+  set(LIBRARIES
+   ${LIBRARIES}
+   ##WSACleanup(...),WSAGetLastError(...) :
+##http://docs.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-wsagetlasterror
+ ## : "Library  Ws2_32.lib"
+   ws2_32
+   )
+endif()

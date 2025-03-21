@@ -9,7 +9,8 @@ set(SOURCE_FILE_PATHS
   ${SMARTmonSrcDir}/UserInterface/SMARTparamTblHdrWStr.c
 )
 
-if(DEFINED TU_Bln361095useBSDskt)
+#if(DEFINED TU_Bln361095useBSDskt AND TU_Bln361095useBSDskt EQUAL TRUE)
+if(TU_Bln361095useBSDskt)##variable defined and not false
  message("${SGR_Blue}UI should use BSD sockets${SGR_ColourReset}")
  set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}

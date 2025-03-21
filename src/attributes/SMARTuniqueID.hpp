@@ -1,9 +1,9 @@
- *  Created on: 05.08.2016
 /**(c) from 2016 by Stefan Gebauer(Computer Science Master from TU Berlin)
+ * Created on: 05.08.2016
  * @author:Stefan Gebauer(TU Berlin matriculation number 361095)*/
 
-#ifndef ATTRIBUTES_SMARTUNIQUEID_HPP_
-#define ATTRIBUTES_SMARTUNIQUEID_HPP_
+#ifndef TU_Bln361095SMARTmon_Attr_DataCarrier_hpp
+#define TU_Bln361095SMARTmon_Attr_DataCarrier_hpp
 
 ///C/C++ standard library header files:
 #include <iostream>///class std::ostream
@@ -15,30 +15,41 @@
 
 ///Stefan Gebauer's(TU Berlin mat.#361095)~"common_sourcecode" repository files:
  ///enum TU_Bln361095::hardware::bus::Type
-#include <hardware/bus/busType.h>
+ #include <hardware/bus/busType.h>
 #include <hardware/CPU/fastest_data_type.h>///fastestUnsignedDataType
-#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
- /**TU_Bln361095hardwareSMARTnumSNbytes, TU_Bln361095hardwareSMARTnumFWbytes, 
-  * TU_Bln361095hardwareSMARTnumModelBytes, numDifferentSMART_IDs */
-#include <hardware/dataCarrier/ATA3Std.h>
- ///enum TU_Bln361095SMARTattrNm
-#include <hardware/dataCarrier/SMARTattributeNames.h>
+ ///TU_Bln361095::CPU::atomicXchng(...)
+ #include <hardware/CPU/atomic/AtomicExchange.h>
+ /**TU_Bln361095hardwareSMARTnumSNbytes, TU_Bln361095hardwareSMARTnumFWbytes,
+  * TU_Bln361095hardwareSMARTnumModelBytes,
+  * TU_Bln361095dataCarrierNumSATA_SMARTattrIDs */
+ #include <hardware/dataCarrier/ATA3Std.h>
+ ///enum TU_Bln361095::dataCarrier::SMART::Attr::ID
+ #include <hardware/dataCarrier/SMARTattributeNames.h>
+ ///TU_Bln361095::dataCarrier::NVMe::SMART::Attr::ID
+ #include <hardware/dataCarrier/NVMe/NVME_SMART_attr.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h>///LOGN_ERROR(...)
 
 ///This repository's header files:
-#include "SMARTattributeNameAndID.hpp"///class SMARTattributeNameAndID
+ #include "SMARTattributeNameAndID.hpp"///class SMARTattributeNameAndID
+ #include <SMARTmon_ID_prefix.h>///TU_Bln361095SMARTmonNmSpcBgn
 
 ///So the last SMART attrubute ID (254) can be used to index (255 items array)
 ///Does not need so many items? # supported SMART attributes = 30?
-#define numItems (numDifferentSMART_IDs+1)
+#define numItems (/*numDifferentSMART_IDs*/\
+  TU_Bln361095dataCarrierNumSATA_SMARTattrIDs+1)
 ///Could also make it inline functions for type safety?
 #define GetBitMaskForMostSignificantBit(value) (1L << (sizeof(value)*8-1) )
 #define removeBits(value, bits) (value & ~bits)
 /// Should be output to ">" (in User Interface)
 #define setGreaterBit(value) (value |= GetBitMaskForMostSignificantBit(value) );
 
-/** Same structure as SkIdentifyParsedData in Linux' "atasmart.h" */
-struct SMARTuniqueID
+TU_Bln361095SMARTmonNmSpcBgn
+
+/** Same structure as SkIdentifyParsedData in Linux' "atasmart.h"
+ * http://www.scs.stanford.edu/11wi-cs140/pintos/specs/ata-3-std.pdf : "The
+ *  combination of Serial number (Words 10-19) and Model number (Words 27-46)
+ * shall be unique" */
+struct SMARTuniqueID///rename to "DataCarrier="?
 //TODO: derive this class from class "ModelAndFirmware"  because this also
 // contains the needed member variables for model and firmware?
 // : public ModelAndFirmware
@@ -48,25 +59,49 @@ struct SMARTuniqueID
   char m_firmWareName[TU_Bln361095hardwareSMARTnumFWbytes+1];
   char m_modelName[TU_Bln361095hardwareSMARTnumModelBytes+1];
   enum TU_Bln361095::hardware::bus::Type m_busType;
+  //TODO initialize with appropriate number (is different between SATA and NVMe)
+  ///NUMber of DIFFeReNT SMART ATTRibute IDS
+  TU_Bln361095::CPU::faststUint m_numDiffrntSMARTattrIDs;
+//public:
   char * getModelNameAddr() const{ return (char *) m_modelName;}
   char * getSerialNumberAddr() const{ return (char *) m_serialNumber;}
   char * getFirmWareNameAddr() const{ return (char *) m_firmWareName;}
   void setBusType(const enum TU_Bln361095::hardware::bus::Type busType)
     { m_busType = busType;}
   enum TU_Bln361095::hardware::bus::Type getBusType() const { return m_busType;}
-
+  /**place this function here because it depends on the bus type which is stored
+   * here.*/
+  TU_Bln361095::CPU::FaststUint getNumSMARTattrRawValB(
+    const TU_Bln361095::CPU::FaststUint attrID) const
+  {
+    if(m_busType == TU_Bln361095::hardware::bus::NVMe)
+    {
+      if(attrID > TU_Bln361095::dataCarrier::NVMe::SMART::Attr::PercentageUsed)
+        return TU_Bln361095dataCarrierNVMeSMARTattrNumRawValB;
+      if(attrID == TU_Bln361095::dataCarrier::NVMe::SMART::Attr::CompositeTemperature)
+        return TU_Bln361095dataCarrierNVMeSMARTattrNumCompTempRawValB;
+      return TU_Bln361095dataCarrierNVMeSMARTattrNum1stAttrsRawValB;
+    }
+    else
+      return TU_Bln361095hardwareATA_SMARTnumSMARTrawValB;
+  }
+//protected:
   //TODO # supported SMART IDs may only be 30->less space needed
-  fastestUnsignedDataType supportedSMART_IDs[numDifferentSMART_IDs];// = {0};
+  TU_Bln361095::CPU::faststUint supportedSMART_IDs[
+    TU_Bln361095dataCarrierNumSATA_SMARTattrIDs];// = {0};
   
   ///Source code for unit detection follows.
-  typedef fastestUnsignedDataType SMART_IDsToReadType;
+  typedef TU_Bln361095::CPU::FaststUint SMARTattrIDsToReadTyp;
   /** SMART IDs are fetched in an interval->make access fast. Must be sorted
   * ascending for the algorithms to work.*/
-  fastestUnsignedDataType m_SMART_IDsToRd[numDifferentSMART_IDs];
-  bool SMART_IDsToReadNotEnd(const fastestUnsignedDataType SMART_IDsToReadIdx)
-    const{
+  TU_Bln361095::CPU::faststUint m_SMART_IDsToRd[
+    TU_Bln361095dataCarrierNumSATA_SMARTattrIDs];
+  bool SMART_IDsToReadNotEnd(
+    const TU_Bln361095::CPU::faststUint SMART_IDsToReadIdx)
+    const
+  {
     return m_SMART_IDsToRd[SMART_IDsToReadIdx] !=0
-      && SMART_IDsToReadIdx < numDifferentSMART_IDs;
+      && SMART_IDsToReadIdx < TU_Bln361095dataCarrierNumSATA_SMARTattrIDs;
   }
   bool noSMARTattrsToRead() const{ return ! SMART_IDsToReadNotEnd(0); }
   
@@ -99,7 +134,7 @@ struct SMARTuniqueID
    * -\p SMARTrawVal has increased in this function for the 1st time */
   uint64_t m_otherMetricVal[numItems];
   uint64_t m_SMARTrawValDiffs[numItems];
-  fastestUnsignedDataType state[numItems];
+  TU_Bln361095::CPU::faststUint state[numItems];
 //  fastestUnsignedDataType numSamples[numItems];//Not needed?
   //TODO values may wrap especially for # bytes read/written since OS start->
   // units get wrong?
@@ -117,6 +152,7 @@ struct SMARTuniqueID
    * guessUnit(...)*/
   unitDataType upperUnitBound[numItems];
   uint64_t numBwrittenSinceOSstart;//TODO use this value.
+  ///
   SMARTuniqueID & operator = (const SMARTuniqueID & l);
   void initAttrVals(){
     supportedSMART_IDs[0] = 0;///Means:array is empty
@@ -152,23 +188,24 @@ struct SMARTuniqueID
     ///Value bitwise ANDed with inverted most significant bit
     return t & ~bitMaskForMostSignificantBit;
   }
-  const fastestUnsignedDataType * getSupportedSMART_IDs() const{
+  const TU_Bln361095::CPU::faststUint * getSupportedSMART_IDs() const{
     return supportedSMART_IDs;
   }
   inline static bool isEmpty(const TU_Bln361095::CPU::FaststUint * array){
     return array[0] == 0;}
 
-  void copyArr(const fastestUnsignedDataType orig [],
-    fastestUnsignedDataType cpy []);
+  void copyArr(const TU_Bln361095::CPU::faststUint orig [],
+    TU_Bln361095::CPU::faststUint cpy []);
   void setSupportedSMART_IDs(suppSMART_IDsType & suppSMARTattrNamesAndIDs)
   {
     //TODO replace by copyArr();
     int idx = 0;
     for(suppSMART_IDsType::const_iterator iter=suppSMARTattrNamesAndIDs.begin();
-      iter != suppSMARTattrNamesAndIDs.end() && idx < numDifferentSMART_IDs;
+      iter != suppSMARTattrNamesAndIDs.end() && idx <
+      TU_Bln361095dataCarrierNumSATA_SMARTattrIDs;
       iter++)
       supportedSMART_IDs[idx++] = iter->GetID();
-    if(idx < numDifferentSMART_IDs)
+    if(idx < TU_Bln361095dataCarrierNumSATA_SMARTattrIDs)
       supportedSMART_IDs[idx] = 0;
   }
   
@@ -178,12 +215,14 @@ struct SMARTuniqueID
   void SetSMART_IDsToRead(
     const suppSMART_IDsType & suppSMARTattrNamesAndIDs,
     /**Sorted ascending, last entry has value 0.*/
-    const fastestUnsignedDataType SMART_IDsToRead[])
+    const TU_Bln361095::CPU::faststUint SMART_IDsToRead[])
   {
     if(SMART_IDsToRead[0] == 0){///Empty->read all supported S.M.A.R.T. IDs
       ///Prevent stack overflow.
-      if(suppSMARTattrNamesAndIDs.size() <= numDifferentSMART_IDs){
-      fastestUnsignedDataType SMART_IDsToReadIdx = 0;
+      if(suppSMARTattrNamesAndIDs.size() <=
+        TU_Bln361095dataCarrierNumSATA_SMARTattrIDs)
+      {
+      TU_Bln361095::CPU::faststUint SMART_IDsToReadIdx = 0;
       for(suppSMART_IDsType::const_iterator iter = 
         suppSMARTattrNamesAndIDs.begin(); iter !=suppSMARTattrNamesAndIDs.end();
         iter++)
@@ -191,16 +230,17 @@ struct SMARTuniqueID
         m_SMART_IDsToRd[SMART_IDsToReadIdx++] = iter->GetID();
       }
       ///Prevent stack overflow.
-      if(suppSMARTattrNamesAndIDs.size() < numDifferentSMART_IDs)
+      if(suppSMARTattrNamesAndIDs.size() <
+        TU_Bln361095dataCarrierNumSATA_SMARTattrIDs)
         m_SMART_IDsToRd[SMART_IDsToReadIdx] = 0;///Mark last entry
       }
 //      else///return error code
     }
     else{
-      fastestUnsignedDataType sMART_IDtoRead, suppSMART_ID;
-      fastestUnsignedDataType SMART_IDsToReadIdx = 0;
+      TU_Bln361095::CPU::faststUint sMART_IDtoRead, suppSMART_ID;
+      TU_Bln361095::CPU::faststUint SMART_IDsToReadIdx = 0;
       ///Intersection of supported SMART IDs and SMART IDs to read array index.
-      fastestUnsignedDataType SMART_IDsToObsIdx = 0;
+      TU_Bln361095::CPU::faststUint SMART_IDsToObsIdx = 0;
       for(suppSMART_IDsType::const_iterator iter =
         suppSMARTattrNamesAndIDs.begin();
         iter !=suppSMARTattrNamesAndIDs.end(); iter++
@@ -224,17 +264,17 @@ struct SMARTuniqueID
         }
         else if(sMART_IDtoRead < suppSMART_ID)
           SMART_IDsToReadIdx++;
-        }while(SMART_IDsToReadIdx < numDifferentSMART_IDs &&
-           sMART_IDtoRead < suppSMART_ID);
+        }while(SMART_IDsToReadIdx < TU_Bln361095dataCarrierNumSATA_SMARTattrIDs
+          && sMART_IDtoRead < suppSMART_ID);
       }
-      if(SMART_IDsToReadIdx < numDifferentSMART_IDs)
+      if(SMART_IDsToReadIdx < TU_Bln361095dataCarrierNumSATA_SMARTattrIDs)
         m_SMART_IDsToRd[SMART_IDsToObsIdx] = 0;
     }
   }
   
   inline void logCalc_dSMARTattrRawValUntVrtn(
     const unitDataType calc_dSMARTattrRawValUntBnd[numItems],
-    const fastestUnsignedDataType SMARTattrID,
+    const TU_Bln361095::CPU::faststUint SMARTattrID,
     const double calc_dSMARTattrRawValUntVrtn,
     unitDataType calc_dSMARTattrRawValUnit,
     const uint64_t otherMetricDiff,
@@ -272,7 +312,7 @@ struct SMARTuniqueID
    *  Can be called with value directly from device or delivered to client/
    *  SMARTvalueProcessorBase(-derived).*/
   void guessUnit(
-    const fastestUnsignedDataType SMARTattrID,
+    const TU_Bln361095::CPU::faststUint SMARTattrID,
     const uint64_t & SMARTrawVal,
     const uint64_t otherVal///E.g. # B written to data carrier since OS start
     )
@@ -302,7 +342,7 @@ struct SMARTuniqueID
         /**Show in column "~unit range" as "> lowerUnitBound[SMARTattrID]" if
          *  no upper unit bound.*/
         lowerUnitBound[SMARTattrID] = unit;
-        AtomicExchange(&units[SMARTattrID], unit);
+        TU_Bln361095::CPU::atomicXchg(&units[SMARTattrID], unit);
         ///Increased for the 1st time->now memorize the values
         m_otherMetricVal[SMARTattrID] = otherVal;
         m_prevSMARTrawVals[SMARTattrID] = SMARTrawVal;
@@ -312,7 +352,7 @@ struct SMARTuniqueID
         /**Value is likely not the ~unit because we didn't regard the S.M.A.R.T.
         * value increase ("t1" from "diagram" above). So set the greater bit.*/
         setGreaterBit(unit);
-        AtomicExchange(&units[SMARTattrID], unit);
+        TU_Bln361095::CPU::atomicXchg(&units[SMARTattrID], unit);
       }
       break;
       case getUnitTillValInc:
@@ -337,7 +377,7 @@ struct SMARTuniqueID
         lowerUnitBound[SMARTattrID] = unit;
         upperUnitBound[SMARTattrID] = unit;
 //        }
-        AtomicExchange(&units[SMARTattrID], unit);
+        TU_Bln361095::CPU::atomicXchg(&units[SMARTattrID], unit);
       }
       else{
         long int unit = otherVal - m_otherMetricVal[SMARTattrID];
@@ -348,7 +388,7 @@ struct SMARTuniqueID
          * know the unit is > ("t1" from "diagram" above). So set the greater
          * bit.*/
         setGreaterBit(unit) //if(unit > units[SMARTattrID])
-        AtomicExchange(&units[SMARTattrID], unit);
+        TU_Bln361095::CPU::atomicXchg(&units[SMARTattrID], unit);
       }
       break;
       /**SMART raw value increased for at least the 3rd time*/
@@ -455,7 +495,8 @@ struct SMARTuniqueID
             * but is a bit slower because it hase 1 more arithmetic operation.*/
             lowerUnitBound[SMARTattrID] +
             (upperUnitBound[SMARTattrID] - lowerUnitBound[SMARTattrID]) / 2;
-          AtomicExchange(&units[SMARTattrID], calc_dSMARTattrRawValUnit);
+          TU_Bln361095::CPU::atomicXchg(&units[SMARTattrID],
+            calc_dSMARTattrRawValUnit);
         }
       }
 #ifdef _DEBUG
@@ -488,7 +529,9 @@ struct SMARTuniqueID
     dataCarrierID2supportedSMARTattrMap_type;
 typedef std::map<SMARTuniqueID,std::string> dataCarrierID2devicePath_type;
 
-  bool operator < (const SMARTuniqueID & left,
-                   const SMARTuniqueID & right);
+  bool operator < (const struct SMARTuniqueID & left,
+                   const struct SMARTuniqueID & right);
 
-#endif /* ATTRIBUTES_SMARTUNIQUEID_HPP_ */
+TU_Bln361095SMARTmonNmSpcEnd
+
+#endif///Include guard

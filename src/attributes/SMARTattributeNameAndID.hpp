@@ -1,12 +1,14 @@
 /** SMARTattributeNameAndID.hpp
+ * (c) Stefan Gebauer(TU Berlin matriculation number 361095)
  *  Created on: 28.10.2016
- *  Author: Stefan Gebauer, M.Sc.Comp.Sc. (TU Berlin) */
+ * @author: Stefan Gebauer(Computer Science Master from TU Berlin) */
 
 #ifndef ATTRIBUTES_SMARTATTRIBUTENAMEANDID_HPP_
 #define ATTRIBUTES_SMARTATTRIBUTENAMEANDID_HPP_
 
-#include <string> //class std::string
-#include <set>///class std::set
+///C(++) standard library header files:
+ #include <set>///class std::set
+ #include <string>///class std::string
 
 class SMARTattributeNameAndID
 {

@@ -9,7 +9,12 @@
 
 /** Include at 1st in Windows build to avoid:
  * "#warning Please include winsock2.h before windows.h" */
-#include <wxWidgets/SupportedSMARTIDsDialog.hpp>
+///_This_ (project's) repository header files:
+ #include <wxWidgets/SupportedSMARTIDsDialog.hpp>
+ #include "wxSMARTmonitorApp.hpp"///wxGetApp()
+
+///C(++) standard library files:
+ #include <sstream>///class std::ostringstream
 
 ///wxWidgets library header files:
 #include <wx/button.h>///class wxButton
@@ -17,11 +22,14 @@
 #include <wx/sizer.h> // class wxBoxSizer
 #include <wx/defs.h> //wxID_ANY
 
-#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
-#include <wxWidgets/charStr/wxStringHelper.hpp>
 #include "wxSMARTmonitorApp.hpp" //wxGetApp()
-#include <sstream>///class std::ostringstream
 //#include <attributes/SMARTuniqueID.hpp>
+///Stefan Gebauer's(TU Berlin matr. # 361095) ~"cmnSrc" repository header files:
+ #include <hardware/CPU/fastest_data_type.h>///TU_Bln361095::CPU::faststUint
+ ///TU_Bln361095dataCarrierNumSATA_SMARTattrIDs
+ #include <hardware/dataCarrier/ATA3Std.h>
+ ///TU_Bln361095::wxWidgets::GetwxString_inln(...)
+ #include <wxWidgets/charStr/wxStringHelper.hpp>
 
 BEGIN_EVENT_TABLE(SupportedSMART_IDsDialog, wxDialog)
   EVT_CLOSE(SupportedSMART_IDsDialog::OnCloseWindow)
@@ -120,18 +128,19 @@ void SupportedSMART_IDsDialog::FillGUI(
   ,const bool create
   )
 {
-  fastestUnsignedDataType SMART_ID;
+  TU_Bln361095::CPU::faststUint SMART_ID;
 //  m_pwxlistctrl->SetItemCount(SMARTattributeNamesAndIDs.size() );
   
   const SMARTuniqueIDandValues * p_sMARTuniqueIDandValues = NULL;
 
 #ifdef directSMARTaccess
   //TODO # supported SMART IDs is 30? -> less space
-  fastestUnsignedDataType sMARTattrIDsToRead[numDifferentSMART_IDs];
-  fastestUnsignedDataType arrIdx = 0;
-  for(; arrIdx < numDifferentSMART_IDs; arrIdx++)
+  TU_Bln361095::CPU::faststUint sMARTattrIDsToRead[
+    TU_Bln361095dataCarrierNumSATA_SMARTattrIDs];
+  TU_Bln361095::CPU::faststUint arrIdx = 0;
+  for(; arrIdx < TU_Bln361095dataCarrierNumSATA_SMARTattrIDs; arrIdx++)
     sMARTattrIDsToRead[arrIdx] = arrIdx + 1;
-  if(arrIdx < numDifferentSMART_IDs)
+  if(arrIdx < TU_Bln361095dataCarrierNumSATA_SMARTattrIDs)
     sMARTattrIDsToRead[arrIdx] = 0;
   
   //Get supported SMART IDs for data carrier identifier
@@ -151,14 +160,15 @@ void SupportedSMART_IDsDialog::FillGUI(
 #endif
   SMARTmonitorBase::SMARTuniqueIDandValsContType::const_iterator
     sMARTuniqueIDandValsIter = wxGetApp().GetSMARTuniqueIDsAndVals().find(
-    SMARTuniqueIDandValues(sMARTuniqueID) );
+    TU_Bln361095::SMARTmon::SMARTuniqueIDandValues(sMARTuniqueID) );
   if(sMARTuniqueIDandValsIter != wxGetApp().GetSMARTuniqueIDsAndVals().end() )
     p_sMARTuniqueIDandValues = &*sMARTuniqueIDandValsIter;
 #ifdef directSMARTaccess
   }
 #endif
   
-  for(fastestUnsignedDataType lineNumber = 0; lineNumber < numDifferentSMART_IDs
+  for(TU_Bln361095::CPU::faststUint lineNumber = 0; lineNumber <
+    TU_Bln361095dataCarrierNumSATA_SMARTattrIDs
     && sMARTuniqueID.supportedSMART_IDs[lineNumber] != 0; ++ lineNumber)
   {
     SMART_ID = sMARTuniqueID.supportedSMART_IDs[lineNumber];

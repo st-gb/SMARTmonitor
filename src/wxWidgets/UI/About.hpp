@@ -13,7 +13,7 @@
  ! defined TU_Bln361095SMARTmon_wx_UI_about_hpp
    #define TU_Bln361095SMARTmon_wx_UI_about_hpp
 
-///Standard C(++) header files:
+///C(++) Standard library header files:
 #include <sstream>///class std::ostringstream
 
 ///wxWidgets header files:
@@ -24,7 +24,7 @@
 #include <wx/textctrl.h>///class wxTextCtrl
 
 ///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
-///FileSystem::GetCurrentWorkingDir
+///TU_Bln361095::FileSys::GetCurrentWorkingDir
 #include <FileSystem/GetCurrentWorkingDir.hpp>
 ///OperatingSystem::Process::GetCurrExePath(...)
 #include <OperatingSystem/Process/FileSys/GetCurrExePath.hpp>
