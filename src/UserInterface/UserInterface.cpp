@@ -12,6 +12,8 @@
 ///Stefan Gebauer's(TU Berlin mat.#361095) ~"common_sourcecode"repository files:
 #include <hardware/CPU/fastest_data_type.h>///fastestUnsignedDataType
 
+TU_Bln361095SMARTmonNmSpcBgn
+
 /**numChars(abbreviated weekday)=3 + numChars(day)=2 +
  * numChars(abbreviated month)=3 + numChars("HH:MM:SS")=8 + 3 space chars = 19
  * + character string terminating '\0' character = 20 */
@@ -165,3 +167,5 @@ void UserInterface::FormatTime(
   FmtViaOSS(timeInMs, timeFormatString);
 //  timeFormatString += " uptime";///" pure runtime after bootup"
 }
+
+TU_Bln361095SMARTmonNmSpcEnd

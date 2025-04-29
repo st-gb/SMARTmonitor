@@ -5,11 +5,18 @@
 #ifndef USERINTERFACE_USERINTERFACE_HPP_
 #define USERINTERFACE_USERINTERFACE_HPP_
 
-#include <string> //class std::string
-#include <stdint.h>///uint64_t
+///C(++) standard header files:
+ #include <string>///class std::string
+ #include <stdint.h>///uint64_t
+
+///_This_ (Stefan Gebauer's) ("SMARTmon") repository files:
+ ///TU_Bln361095SMARTmonNmSpcBgn, TU_Bln361095SMARTmonNmSpcEnd
+ #include <SMARTmon_ID_prefix.h>
 
 /** Forward declarations */
 struct tm;
+
+TU_Bln361095SMARTmonNmSpcBgn
 
 class UserInterface
 {
@@ -32,5 +39,7 @@ public:
     const uint64_t timeInMs, 
     std::string & timeFormatString);
 };
+
+TU_Bln361095SMARTmonNmSpcEnd
 
 #endif /* USERINTERFACE_USERINTERFACE_HPP_ */

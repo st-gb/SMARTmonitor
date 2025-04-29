@@ -103,7 +103,10 @@ void ConfigLoader::GetSMARTattributesToObserve(
     return;
   //TODO better make a copy of the array (else it is being changed)?
   /*const*/ char * SMARTparamsToObs = (char *) p_tinyxml2XMLele->GetText();
-  const /*int*/size_t SMARTparamsToObserveCharLen = strlen(SMARTparamsToObs);
+  const /*int*/
+    /**Use same data type as in strlen(...) to avoid compiler warning/error
+     * for conversion.*/
+    size_t SMARTparamsToObserveCharLen = strlen(SMARTparamsToObs);
   char * SMARTparamsToObsNumBgn = SMARTparamsToObs;
   int SMARTattributeID;
   std::istringstream std_iss;

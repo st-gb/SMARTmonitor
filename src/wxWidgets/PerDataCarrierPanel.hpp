@@ -134,11 +134,20 @@ public:
 
   void SetSMARTdriveID(const SMARTuniqueID & sMARTuniqueID)
   {
-    std::ostringstream oss;
-    oss << "model:" << sMARTuniqueID.m_modelName;
-    oss << " firmware:" << sMARTuniqueID.m_firmWareName;
-    oss << " serial:" << sMARTuniqueID.m_serialNumber;
-    const std::string mediaInfo = oss.str();
+    std::ostringstream stdoss;
+    stdoss << "model:" << std::string(sMARTuniqueID.m_modelName,
+      /**The length of the character string must be limited if it does not 
+       * end with a terminating \0 character.*/
+      TU_Bln361095hardwareSMARTnumModelBytes);
+    stdoss << " firmware:" << std::string(sMARTuniqueID.m_firmWareName,
+      /**The length of the character string must be limited if it does not
+       * end with a terminating \0 character.*/
+      TU_Bln361095hardwareSMARTnumFWbytes);
+    stdoss << " serial:" << std::string(sMARTuniqueID.m_serialNumber,
+      /**The length of the character string must be limited if it does not
+       * end with a terminating \0 character.*/
+      TU_Bln361095hardwareSMARTnumSNbytes);
+    const std::string mediaInfo = stdoss.str();
     const wxString & label = TU_Bln361095::wxWidgets::GetwxString_inln(mediaInfo);
     SetDataCarrierLabel(label);
     m_busType = sMARTuniqueID.getBusType();

@@ -122,43 +122,74 @@ public:
       sMARTuniqueID.SetSMART_IDsToRead(suppSMARTattrNamesAndIDs, 
         IDsOfSMARTattrsToRd);
     }
-    for(TU_Bln361095::CPU::FaststUint SMART_IDsToReadArrIdx = 0;
+    for(TU_Bln361095::CPU::faststUint SMART_IDsToReadArrIdx = 0;
       sMARTuniqueID.SMART_IDsToReadNotEnd(SMART_IDsToReadArrIdx);
       SMART_IDsToReadArrIdx++)
     {
-      const TU_Bln361095::CPU::FaststUint SMART_ID = sMARTuniqueID.
+      const TU_Bln361095::CPU::faststUint SMARTattrID = sMARTuniqueID.
         m_SMART_IDsToRd[SMART_IDsToReadArrIdx];
-      SMARTattr & sMARTattr = sMARTuniqueIDandVals.m_SMARTattrs[SMART_ID];
+      SMARTattr & sMARTattr = sMARTuniqueIDandVals.m_SMARTattrs[SMARTattrID];
   /**See
 http://media.kingston.com/support/downloads/MKP_521.6_SMART-DCP1000_attribute.pdf
-   * : "ByteIndex": "47:32" -> 16 byte S.M.A.R.T. attribute raw values beginning
-   * with NVMe S.M.A.R.T. attribute ID "Data Units Read".*/
-      if(SMART_ID >= TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
+   * : column "Byte Index": "47:32",
+https://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#Known_NVMe_S.M.A.R.T._attributes
+   * : column "Length",
+   * <nvme.h>, NVME_HEALTH_INFO_LOG struct:
+   * -> 16 byte S.M.A.R.T. attribute raw values beginning
+   * with NVMe S.M.A.R.T. attribute ID "Data" (" ") "Unit"("s") (" ") "Read".*/
+      if(SMARTattrID >= TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
         TotalDataRead)
       {
         const uint8_t * const SMARTrawValAddr =( (uint8_t*) pNMVeHealthInfoLog->
           DataUnitRead) + TU_Bln361095dataCarrierNVMeSMARTattrNumRawValB * 
-          (SMART_ID - TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
+          (SMARTattrID - TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
             TotalDataRead);
         sMARTattr.setRawVal(SMARTrawValAddr,
           TU_Bln361095dataCarrierNVMeSMARTattrNumRawValB, uptimeInSeconds);
       }
-      else if(SMART_ID < TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
-        AvailableSpare)///1 or 2 byte data type
-      {
-      }
-      /**see <nvme.h>:S.M.A.R.T. attribute ID >= AvailableSpare
-       *  && S.M.A.R.T. attribute ID < TotalDataRead <=>1 byte data type */
-      else
+      else///S.M.A.R.T. attribute ID < TotalDataRead
+        if(SMARTattrID >= TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
+          AvailableSpare)
       {
         const uint8_t * const SMARTrawValAddr =( (uint8_t*) & pNMVeHealthInfoLog
           ->AvailableSpare) +
-          TU_Bln361095dataCarrierNVMeSMARTattrNum1stAttrsRawValB * (SMART_ID -
-          TU_Bln361095::dataCarrier::NVMe::SMART::Attr::AvailableSpare);
+          /**see
+http://media.kingston.com/support/downloads/MKP_521.6_SMART-DCP1000_attribute.pdf
+           * : column "Byte Index",
+https://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#Known_NVMe_S.M.A.R.T._attributes
+           * : column "Length",
+           * <nvme.h>, NVME_HEALTH_INFO_LOG struct:
+           * S.M.A.R.T. attribute ID < "Data" (" ") "Unit"("s") "Read" and
+           * S.M.A.R.T. attribute ID >= "Available" (" ") "Spare" <=> 1 byte
+           *  data type */
+          TU_Bln361095dataCarrierNVMeSMARTattrNum1stAttrsRawValB * (SMARTattrID -
+            TU_Bln361095::dataCarrier::NVMe::SMART::Attr::AvailableSpare);
         sMARTattr.setRawVal(
           SMARTrawValAddr,
+          /**see <nvme.h>, NVME_HEALTH_INFO_LOG struct:
+           * S.M.A.R.T. attribute ID < "Data" (" ") "Unit"("s") (" ") "Read" and
+           * S.M.A.R.T. attribute ID >= "Available" (" ") "Spare" <=> 1 byte
+           *  data type */
           TU_Bln361095dataCarrierNVMeSMARTattrNum1stAttrsRawValB,
           uptimeInSeconds);
+      }
+      else///S.M.A.R.T. attribute ID < AvailableSpare
+      {
+        const uint8_t * const SMARTrawValAddr = ( (uint8_t *) &
+          pNMVeHealthInfoLog->CriticalWarning.AsUchar) + SMARTattrID - 1;
+        sMARTattr.setRawVal(SMARTrawValAddr,
+        /**See
+http://media.kingston.com/support/downloads/MKP_521.6_SMART-DCP1000_attribute.pdf
+          * : column "Byte Index",
+https://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology#Known_NVMe_S.M.A.R.T._attributes
+          * : column "Length",
+          * see <nvme.h>, NVME_HEALTH_INFO_LOG struct:
+          * S.M.A.R.T. attribute ID < "Available" (" ") "Spare" => 1 or 2 byte
+          *  data type:
+          * - S.M.A.R.T. attribute ID 1: 1 byte
+          * - S.M.A.R.T. attribute ID 2: 2 bytes */
+          SMARTattrID
+          , uptimeInSeconds);
       }
     }
     free(pDvcIOctlBuf);
