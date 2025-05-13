@@ -1,16 +1,20 @@
 ///@author:Stefan Gebauer(TU Berlin matriculation number 361095)
 
 ///C,C++ standard library header files:
-#include <stdio.h> //snprintf(...)
+#include <stdio.h>///snprintf(...)
 #include <string.h>///strcat(...)
 #include <sstream>///class std::ostringstream
 #include <time.h>///strftime(...)
 
-///This repository's header files:
-#include "UserInterface.hpp"///class UserInterface
 
 ///Stefan Gebauer's(TU Berlin mat.#361095) ~"common_sourcecode"repository files:
-#include <hardware/CPU/fastest_data_type.h>///fastestUnsignedDataType
+ #include <hardware/CPU/fastest_data_type.h>///TU_Bln361095::CPU::faststUint
+ /**TU_Bln361095timeSecsPerDay,TU_Bln361095timeSecsPerHour,
+  * TU_Bln361095timeSecsPerMin */
+ #include <time/timeConstants.h>
+
+///_This_ project's (repository) header files:
+ #include "UserInterface.hpp"///class TU_Bln361095::SMARTmon::UserInterface
 
 TU_Bln361095SMARTmonNmSpcBgn
 
@@ -43,41 +47,71 @@ std::string UserInterface::GetTimeAsString(const struct tm & time)
   return std::string(buffer);
 }
 
-///86400s=60s/min*60min/h*24h/d=3600s/h*24h=1 day
-#define sPerDay 86400
-#define sPerH 3600
-#define sPerMin 60
+/**@param timeInMilliSecs should be the uptime (time since the Operating System
+ *  was started. 1 day has 86 400 000 milliseconds. With 32 bits (max. integer:
+ *  = 2^32 = 4 294 967 296
+ *  4 294 967 296 / 86 400 000 = 49,7102696180 period 5 => after ca. 49,7 days
+ *  the value wraps to 0 */
+typedef uint64_t uptimeInMilliSecsType;
 
-inline void UserInterface::FmtViaOSS(const uint64_t timeInMs,
+inline void UserInterface::FmtViaOSS(const uptimeInMilliSecsType timeInMilliSecs,
   std::string & str)
 {
-  if(timeInMs){
-  fastestUnsignedDataType timeInS = timeInMs / 1000;
+  if(timeInMilliSecs)
+  {
+  TU_Bln361095::CPU::faststUint timeInSecs = timeInMilliSecs / 1000;
   std::ostringstream oss;
-  fastestUnsignedDataType days = timeInS/sPerDay;
+  ///"number of" is not ambiguous (instead of "count"): only 1 meaning
+  TU_Bln361095::CPU::faststUint numberOfDays = timeInSecs/
+    TU_Bln361095timeSecsPerDay;
+  uptimeInMilliSecsType timeÍnMilliSecsMinusPrintedTime = timeInMilliSecs;
   ///Philosophy:show as few characters as possible:only time attribute if > 0.
   ///Quality assurance: compare each attribute with Linux' "uptime" command.
-  if(days > 0)
+  if(numberOfDays > 0)
   {
-    oss << days << "d";
+    oss << numberOfDays << "d";
+    timeÍnMilliSecsMinusPrintedTime -= numberOfDays * 
+      TU_Bln361095timeSecsPerDay * 1000;
   }
-  const fastestUnsignedDataType timeInSminusDays = timeInS - (days * sPerDay);
-  fastestUnsignedDataType hours = timeInSminusDays/sPerH;
-  if(hours > 0)
+  const TU_Bln361095::CPU::faststUint timeInSecsMinusDays = timeInSecs -
+    (numberOfDays * TU_Bln361095timeSecsPerDay);
+  TU_Bln361095::CPU::faststUint timeOfDayNumberOfHoursPart =
+    timeInSecsMinusDays / TU_Bln361095timeSecsPerHour;
+  if(timeOfDayNumberOfHoursPart > 0)
   {
-    oss << hours << "h";
+    oss << timeOfDayNumberOfHoursPart << "h";
+    timeÍnMilliSecsMinusPrintedTime -= timeOfDayNumberOfHoursPart *
+      TU_Bln361095timeSecsPerHour * 1000;
   }
-//  const fastestUnsignedDataType timeInSminusH = timeInSminusDays - (hours * sPerH);
-//  fastestUnsignedDataType min = timeInSminusH/sPerMin;
-  fastestUnsignedDataType min = timeInMs/60000%60;
-  if(min > 0)//TODO min differs by 26 from "uptime" command (after 9 days)
+//  const TU_Bln361095::CPU::faststUint timeInSecsMinusHours =
+//    timeInSecsMinusDays - (timeOfDayNumberOfHoursPart *
+//    TU_Bln361095timeSecsPerHour);
+//  TU_Bln361095::CPU::faststUint timeOfDayNumberOfMinutesPart =
+//    timeInSecsMinusHours/TU_Bln361095timeSecsPerMin;
+  const TU_Bln361095::CPU::faststUint timeOfDayMinutesPart = //timeInMilliSecs/
+    timeÍnMilliSecsMinusPrintedTime /
+    /** number of milliseconds divided by 1000 = number of seconds
+     * number of seconds divided by 1000 = number of minutes */
+    60000
+    ///
+    //%60
+    ;
+  //TODO minutes part in time of day differs by 26 from "uptime" command (after
+  // 9 days)
+  if(timeOfDayMinutesPart > 0)
   {
-    oss << min << "min";
+    oss << timeOfDayMinutesPart << "min";
+    timeÍnMilliSecsMinusPrintedTime -= timeOfDayMinutesPart * 60 * 1000;
   }
-  if(timeInS % 60)
-    oss << (timeInS % 60) << "s";
-  if(timeInMs % 1000)
-    oss << (timeInMs % 1000) << "ms";
+  /**"timeOfDaySecondsPart" is more precise than "number of seconds" because
+   * number of seconds can also mean "whole time in number of seconds".*/
+  const TU_Bln361095::CPU::faststUint timeOfDaySecondsPart = timeInSecs % 60;
+  if(timeOfDaySecondsPart != 0)
+    oss << timeOfDaySecondsPart << "s";
+  const TU_Bln361095::CPU::faststUint timeOfDayMilliSecsPart = timeInMilliSecs
+    % 1000;
+  if(timeOfDayMilliSecsPart != 0)
+    oss << timeOfDayMilliSecsPart << "ms";
   str = oss.str();
   }
   else
@@ -108,45 +142,53 @@ inline void UserInterface::FmtViaOSS(const uint64_t timeInMs,
 void FmtVia_snprintf(const unsigned long timeInMs, std::string & stdstrTimeFormat)
 {
   char formattedString[maxCharsForFormattedStr];
-  float fTimeInS = (float) timeInMs / 1000.f;
-  fastestUnsignedDataType timeInS = (fastestUnsignedDataType) fTimeInS;
+  float fTimeInSecs = (float) timeInMilliSecs / 1000.f;
+  TU_Bln361095::CPU::faststUint timeInSecs = (TU_Bln361095::CPU::faststUint)
+    fTimeInSecs;
   
-  const fastestUnsignedDataType days = timeInS/sPerDay;
+  const TU_Bln361095::CPU::faststUint numberOfDays = timeInSecs/
+    TU_Bln361095timeSecsPerDay;
   char formatString[maxCharsForFormatStr];
   const void * snprintfPtrs[numTimeAttrs];
-  fastestUnsignedDataType fmtStrIdx = 0;
+  TU_Bln361095::CPU::faststUint fmtStrIdx = 0;
   ///Quality assurance:compare with Linux' "uptime" command.
   ///An if-then-else with snprinf() for each number of time attributes?
-  if(days > 0)
+  if(numberOfDays > 0)
   {
+    /**Concatenate first parameter character string with second parameter
+     * character string.*/
     strcat(formatString, "%dd");
-    snprintfPtrs[fmtStrIdx++] = & days;
+    snprintfPtrs[fmtStrIdx++] = & numberOfDays;
+    timeInSecs -= numberOfDays * TU_Bln361095timeSecsPerDay;
   }
-  timeInS -= days * sPerDay;
-  const fastestUnsignedDataType hours = timeInS/sPerH;
-  if(timeInS >= sPerH)
+  const TU_Bln361095::CPU::faststUint numberOfHours = timeInSecs/
+    TU_Bln361095timeSecsPerHour;
+  if(timeInSecs >= TU_Bln361095timeSecsPerHour)
   {
     strcat(formatString, "%dh");
-    snprintfPtrs[fmtStrIdx++] = & hours;
+    snprintfPtrs[fmtStrIdx++] = & numberOfHours;
+    timeInSecs -= numberOfHours * TU_Bln361095timeSecsPerHour;
   }
-  timeInS -= hours * sPerH;
-  const fastestUnsignedDataType min = timeInS / sPerMin;
-  if(timeInS >= sPerMin)
+  const TU_Bln361095::CPU::faststUint timeOfDayNumberOfMinutesPart =
+    timeInSecs / TU_Bln361095timeSecsPerMin;
+  if(timeInSecs >= TU_Bln361095timeSecsPerMin)
   {
     strcat(formatString, "%dmin");
-    snprintfPtrs[fmtStrIdx++] = & min;
+    snprintfPtrs[fmtStrIdx++] = & timeOfDayNumberOfMinutesPart;
+    timeInSecs -= timeOfDayNumberOfMinutesPart * TU_Bln361095timeSecsPerMin;
   }
-  timeInS -= min * sPerMin;
   
   strcat(formatString, "%ds%dms");
-  snprintfPtrs[fmtStrIdx++] = & timeInS;
-  const fastestUnsignedDataType ms = timeInMs % 1000;
-  snprintfPtrs[fmtStrIdx] = & ms;
+  snprintfPtrs[fmtStrIdx++] = & timeInSecs;
+  const TU_Bln361095::CPU::faststUint timeOfDayNumberOfMilliSecs =
+    timeInMilliSecs % 1000;
+  snprintfPtrs[fmtStrIdx] = & timeOfDayNumberOfMilliSecs;
   
-  if(0){
-  strcat(formatString, "%.3fs");
-  const float fSec = timeInS + float (timeInMs % 1000) / 1000.f;
-  snprintfPtrs[fmtStrIdx] = & fSec;
+  if(0)
+  {
+    strcat(formatString, "%.3fs");
+    const float fSecsPart = timeInSecs + float (timeInMilliSecs % 1000) / 1000.f;
+    snprintfPtrs[fmtStrIdx] = & fSecsPart;
   }
   snprintf(formattedString, maxCharsForFormattedStr, formatString,
     snprintfPtrs[0],

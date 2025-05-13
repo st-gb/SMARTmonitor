@@ -7,13 +7,16 @@
 
 #include <tinyxml2.h>///tinyxml2::XMLElement etc.
 
-///Forward declarations
-class SMARTuniqueIDandValues;
+///Forward declarations(compiles faster than to #include the declaration)
+TU_Bln361095SMARTmonNmSpcBgn
+  class SMARTuniqueIDandValues;
+TU_Bln361095SMARTmonNmSpcEnd
 
 void GetSMARTrawValues(
   tinyxml2::XMLElement *,
-  SMARTuniqueIDandValues &);
-void GetSMARTuniqueID(tinyxml2::XMLElement *, SMARTuniqueIDandValues &);
+  TU_Bln361095SMARTmonNmSpc::SMARTuniqueIDandValues &);
+void GetSMARTuniqueID(tinyxml2::XMLElement *,
+  TU_Bln361095SMARTmonNmSpc::SMARTuniqueIDandValues &);
 tinyxml2::XMLElement * getXMLdoc(
   uint8_t SMARTdataXML[],
   fastestSignedDataType numBytesToRead,
@@ -28,8 +31,8 @@ class SrvDataProcessor
 public:
   bool Begin(const uint8_t SMARTdataXML[],
     fastestSignedDataType numBytesToRead);
-  void GetSMARTrawValues(SMARTuniqueIDandValues &);
-  void GetSMARTuniqueID(SMARTuniqueIDandValues &);
+  void GetSMARTrawValues(TU_Bln361095SMARTmonNmSpc::SMARTuniqueIDandValues &);
+  void GetSMARTuniqueID(TU_Bln361095SMARTmonNmSpc::SMARTuniqueIDandValues &);
 };
 }
 
