@@ -10,6 +10,8 @@
 #include <attributes/SMARTattributeNameAndID.hpp> //class SMARTattributeNameAndID
 #include <attributes/SMARTattrDefAccss.hpp>///base class SMARTattrDefAccss
 
+TU_Bln361095SMARTmonNmSpcBgn
+
 //http://www.samsung.com/global/business/semiconductor/products/SSD/downloads/ds_SS805_NSSD_100_SLC_SATA_II_rev11.pdf
 
 //TODO Is the base class of direct SMART access? Then rename to 
@@ -66,5 +68,7 @@ public:
     const char * const device,
     suppSMART_IDsType & SMARTattributeNamesAndIDs){return unset;}
 };
+
+TU_Bln361095SMARTmonNmSpcEnd
 
 #endif /* SMARTACCESSBASE_HPP_ */

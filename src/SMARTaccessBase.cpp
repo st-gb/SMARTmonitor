@@ -10,7 +10,15 @@
 #include <OperatingSystem/hardware/dataCarrier/getNumBwrittenSinceOSstart.h>
 ///dataCarrier::getNumB_readSinceOSstart(...)
 #include <OperatingSystem/hardware/dataCarrier/getNumB_readSinceOSstart.h>
-#include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
+
+ ///for Windows' GetTimeCountInSeconds(...) in "GetTimeCount.h"
+ typedef double TU_Bln361095tmCntInSecTyp;///TiMe CouNT IN SEConds TYPe
+ ///for GetTimeCountInNanoSeconds(...)
+ typedef long double TU_Bln361095tmCntInNsTyp;///TiMe CouNT IN NanoSeconds TYPe
+ ///OperatingSystem::GetUptimeInNs(...)
+ #include <OperatingSystem/time/GetUpTime.h>
+
+TU_Bln361095SMARTmonNmSpcBgn
 
 /** E.g. 32 bit Linux: size of long int is 4 bytes*/
 fastestUnsignedDataType SMARTaccessBase::s_sizeOfLongIntInBytes = sizeof(long int);
@@ -38,7 +46,7 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
   case TU_Bln361095::dataCarrier::SMART::Attr::PowerOnTime:{
     /** "long int" may not be sufficient for uptime in ns (especially for 32
      * bit) */
-    uint64_t uptimeInNs;
+    TU_Bln361095tmCntInNsTyp uptimeInNs;
     OperatingSystem::GetUptimeInNs(uptimeInNs);
     sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, uptimeInNs
       /**to ms*//1000000);
@@ -95,3 +103,5 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
     break;
   }
 }
+
+TU_Bln361095SMARTmonNmSpcEnd

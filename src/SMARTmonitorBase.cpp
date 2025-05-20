@@ -11,21 +11,26 @@
   ///TU_Bln361095::OpSys::BSD::skt::End()
   #include <OperatingSystem/BSD/socket/socket.h>
 #endif
+ #include <dataType/charStr/stringize.h>///TU_Bln361095expandAndStringize(...)
 #include <dataType/charStr/stdtstr.hpp>///GetStdWstring(...)
 #include <Controller/Logger/LogFileAccessException.hpp>
 #ifndef TU_Bln361095TmCntDfnd
   #define TU_Bln361095TmCntDfnd
-  typedef double TimeCountInSecType;///for GetTimeCountInSeconds(...)
-  typedef long double TimeCountInNanosec_type;///for GetTimeCountInNanoSeconds(...)
+  ///for OperatingSystem::GetTimeCountInSeconds(...)
+  typedef double TU_Bln361095tmCntInSecTyp;
+  ///for OperatingSystem::GetTimeCountInNanoSeconds(...)
+  typedef long double TU_Bln361095tmCntInNsTyp;
 #endif
 #include <Controller/time/GetTickCount.hpp>
+ #include <dataType/charStr/makeWchar.h>///TU_Bln361095charStrMakeWide(...)
 #include <FileSystem/File/GetAbsoluteFilePath.hpp>///GetAbsoluteFilePath(...)
 ///TU_Bln361095::OpSys::Process::FileSys::GetCurrWorkngDirA_inln(...)
 #include <FileSystem/GetCurrentWorkingDir.hpp>
 #include <FileSystem/PathSeperatorChar.hpp>///FileSystem::dirSeperatorChar
 #include <FileSystem/path_seperator.h>///PATH_SEPERATOR_CHAR_STRING
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
-#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+ ///LOGN(...), "extern Logger g_logger;" #ifdef TU_Bln361095useOwnLogger
+ #include <preprocessor_macros/logging_preprocessor_macros.h>
 ///OperatingSystem::GetCurrentTime(...)
 #include <OperatingSystem/time/GetCurrentTime.hpp>
 /**TU_Bln361095::OpSys::suspendExecInS(...),
@@ -41,8 +46,8 @@
 /** Static/Class members must be defined once in a source file. Do this here */
 dataCarrierID2devicePath_type SMARTmonitorBase::s_dataCarrierID2devicePath;
 unsigned SMARTmonitorBase::s_numberOfMilliSecondsToWaitBetweenSMARTquery = 10000;
-AtomicExchType SMARTmonitorBase::s_updateSMARTvalues = 1;
-extern const char FileSystem::dirSeperatorChar;
+TU_Bln361095::CPU::atomicXchgTyp SMARTmonitorBase::s_updateSMARTvalues = 1;
+extern const char TU_Bln361095::FileSys::DirSepChar;
 SMARTmonitorBase * gp_SMARTmon;
 
 ///Is filled with log levels.
@@ -113,14 +118,6 @@ SMARTmonitorBase::~SMARTmonitorBase() {
   if( m_ar_stdwstrCmdLineArgs)
     delete [] m_ar_stdwstrCmdLineArgs;
 }
-
-//https://gcc.gnu.org/onlinedocs/cpp/Stringification.html#Stringification
-#define xstringify(s) stringify(s)
-#define stringify(s) #s
-
-///from https://stackoverflow.com/questions/14421656/is-there-widely-available-wide-character-variant-of-file
-#define makeWchar_concat(x) L##x
-#define makeWchar(x) makeWchar_concat(x)
 
 /**@brief sets the default English S.M.A.R.T. parameter names.
  *  These may not apply for a model or may be named too generally (the same
@@ -233,14 +230,17 @@ void SMARTmonitorBase::SetCommandLineArgs(int argc, char ** argv) {
     LOGN((index + 1) << ". program argument:" << m_ar_stdwstrCmdLineArgs[index])
     m_cmdLineArgStrings[index] = m_ar_stdwstrCmdLineArgs[index].c_str();
   }
-  m_commandLineArgs.Set(argc, (wchar_t **) m_cmdLineArgStrings);
+  m_commandLineArgs.set(argc, (wchar_t **) m_cmdLineArgStrings);
 }
 
 /** Return the file name part (without folder names) of this executable. */
 std::wstring GetExeFileName(const wchar_t * const ar_wchFullProgramPath) {
   std::wstring stdwstrFullProgramPath(ar_wchFullProgramPath);
-  int charIndexOfLastDirSepChar = stdwstrFullProgramPath.rfind(FileSystem::
-    dirSeperatorChar);
+  const
+    /**Use same data type as in std::wstring::rfind(...) to prevent compiler
+     * warnings of mismatching types or loss of precision. */
+    std::wstring::size_type charIndexOfLastDirSepChar =
+    stdwstrFullProgramPath.rfind(TU_Bln361095::FileSys::DirSepCharW);
   if (charIndexOfLastDirSepChar != std::wstring::npos) {
     return stdwstrFullProgramPath.substr(charIndexOfLastDirSepChar + 1);
   }
@@ -262,7 +262,10 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
     const SMARTuniqueIDandValues & SMARTuniqueIDandValues = *iter;
     LOGN_DEBUG("address of SMARTuniqueIDandValues obj:" << &SMARTuniqueIDandValues)
     for (int SMARTattributeID = 0; SMARTattributeID <
-      numDifferentSMART_IDsPlus1; SMARTattributeID++) {
+      /**Use max. ATA S.M.A.R.T. IDs even for NVMe because it has more IDs: so
+       * no distinction among the bus types has to be done to be on safe side.*/
+      TU_Bln361095numMaxATA_SMART_IDsPlus1; SMARTattributeID++)
+    {
       //    SMARTattributesToObserve.insert();
       if(SMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID].
            m_successfullyReadSMARTrawValue)
@@ -324,7 +327,7 @@ void SMARTmonitorBase::GetCmdLineOptionNameAndValue(
   std::wstring & cmdLineOptionValue
   )
 {
-  const wchar_t * pwchCmdLineOption = m_commandLineArgs.GetArgument(
+  const wchar_t * pwchCmdLineOption = m_commandLineArgs.getArg(
     programArgumentIndex);
   std::wstring std_wstrCmdLineOption = pwchCmdLineOption;
   //  std::wstring cmdLineOptionName;
@@ -359,7 +362,7 @@ std::wstring SMARTmonitorBase::GetCommandOptionName(std::wstring & cmdLineArg) {
 std::wstring SMARTmonitorBase::GetCommandOptionValue(//const wchar_t * const str
         unsigned programArgumentIndex) {
   //const int index = m_commandLineArgs.contains(str);
-  std::wstring cmdLineOptionName = m_commandLineArgs.GetArgument(
+  std::wstring cmdLineOptionName = m_commandLineArgs.getArg(
           programArgumentIndex);
   //  int charPosOfEqualSign = cmdLineOptionName.find('=');
   //  if( charPosOfEqualSign != std::wstring::npos )
@@ -373,7 +376,7 @@ std::wstring SMARTmonitorBase::GetCommandOptionValue(//const wchar_t * const str
     CommandLineOption & commandLineOption = s_commandLineOptions[cmdLineOptionIndex];
 
     if (GetStdString_Inline(cmdLineOptionName) == commandLineOption.optionName) {
-      return m_commandLineArgs.GetArgument(programArgumentIndex + 1);
+      return m_commandLineArgs.getArg(programArgumentIndex + 1);
     }
   }
 
@@ -412,17 +415,17 @@ void SMARTmonitorBase::HandleLogFileFolderProgramOption(
   if (stdwstrLogfilepathCmdLineArg.size() > 0) {
     const wchar_t lastChar = stdwstrLogfilepathCmdLineArg.at(
             stdwstrLogfilepathCmdLineArg.size() - 1);
-    if (lastChar != FileSystem::dirSeperatorChar)
-      stdwstrLogfilepathCmdLineArg += FileSystem::dirSeperatorChar;
+    if (lastChar != TU_Bln361095::FileSys::DirSepCharW)
+      stdwstrLogfilepathCmdLineArg += TU_Bln361095::FileSys::DirSepCharW;
   }
   m_stdstrLogFilePath = GetStdString_Inline(stdwstrLogfilepathCmdLineArg);
   m_stdstrLogFilePath += GetStdString_Inline(//m_stdwstrProgramePath);
-    GetExeFileName(m_commandLineArgs.GetProgramPath()) );
+    GetExeFileName(m_commandLineArgs.getProgPath() ) );
 }
 
 fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
 {
-  unsigned programArgumentCount = m_commandLineArgs.GetArgumentCount();
+  unsigned programArgumentCount = m_commandLineArgs.getArgCnt();
   bool showUsage = false;
   fastestUnsignedDataType retVal = sccssfllyParsedAllCmdLneArgs;
   if (programArgumentCount > 1)
@@ -437,7 +440,7 @@ fastestUnsignedDataType SMARTmonitorBase::ProcessCommandLineArgs()
     for (unsigned programArgumentIndex =
       /** Start with the 2nd argument as the 1st one is the executable path 
        * and thus can't be a program option. */
-      CommandLineArgs<wchar_t>::FirstProgramArg;
+      TU_Bln361095::OpSys::Process::CmdLneArgs::FirstIdx;
       programArgumentIndex < programArgumentCount;
       /* programArgumentIndex += 2 */)
     {
@@ -492,7 +495,7 @@ bool SMARTmonitorBase::InitializeLogger() {
   if( m_stdstrLogFilePath.empty() )
   {
     //std::string stdstrLogFilePath("SMARTmonitor.txt");
-    m_stdwstrProgramePath = GetExeFileName(m_commandLineArgs.GetProgramPath());
+    m_stdwstrProgramePath = GetExeFileName(m_commandLineArgs.getProgPath() );
     m_stdwstrProgramePath += L"_log.txt";
     m_stdstrLogFilePath += GetStdString_Inline(m_stdwstrProgramePath);
   }
@@ -566,7 +569,10 @@ void  SMARTmonitorBase::EnsureSMARTattrToObsExist()
 //    mp_SMARTaccess->GetSupportedSMART_IDs(device, SMARTattributeNamesAndIDs);
 #else
     for(int SMARTattributeID = 0; SMARTattributeID <
-      numDifferentSMART_IDsPlus1; SMARTattributeID++) {
+      /**Use max. ATA S.M.A.R.T. IDs even for NVMe because it has more IDs: so
+       * no distinction among the bus types has to be done to be on safe side.*/
+      TU_Bln361095numMaxATA_SMART_IDsPlus1; SMARTattributeID++)
+    {
       m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);
       LOGN_DEBUG("adding SMART attribute ID " << SMARTattributeID)
     }
@@ -909,7 +915,8 @@ bool SMARTmonitorBase::tryCfgFilePaths(
 ///The GUI and its ressources may also be installed to the "/usr" directory.
 #if defined( __linux__)// && defined(buildService)
   std::wstring stdwstrWorkDirWithCfgFilePrefix =//L"/usr/local/SMARTmonitor";
-    makeWchar(xstringify(resourcesFSpath));
+    TU_Bln361095charStrMakeWide(TU_Bln361095expandAndStringize(resourcesFSpath)
+    );
 #else
   std::wstring stdwstrWorkDirWithCfgFilePrefix;
 #endif

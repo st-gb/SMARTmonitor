@@ -64,13 +64,13 @@ inline void UserInterface::FmtViaOSS(const uptimeInMilliSecsType timeInMilliSecs
   ///"number of" is not ambiguous (instead of "count"): only 1 meaning
   TU_Bln361095::CPU::faststUint numberOfDays = timeInSecs/
     TU_Bln361095timeSecsPerDay;
-  uptimeInMilliSecsType timeÍnMilliSecsMinusPrintedTime = timeInMilliSecs;
+  uptimeInMilliSecsType timeInMilliSecsMinusPrintedTime = timeInMilliSecs;
   ///Philosophy:show as few characters as possible:only time attribute if > 0.
   ///Quality assurance: compare each attribute with Linux' "uptime" command.
   if(numberOfDays > 0)
   {
     oss << numberOfDays << "d";
-    timeÍnMilliSecsMinusPrintedTime -= numberOfDays * 
+    timeInMilliSecsMinusPrintedTime -= numberOfDays * 
       TU_Bln361095timeSecsPerDay * 1000;
   }
   const TU_Bln361095::CPU::faststUint timeInSecsMinusDays = timeInSecs -
@@ -80,7 +80,7 @@ inline void UserInterface::FmtViaOSS(const uptimeInMilliSecsType timeInMilliSecs
   if(timeOfDayNumberOfHoursPart > 0)
   {
     oss << timeOfDayNumberOfHoursPart << "h";
-    timeÍnMilliSecsMinusPrintedTime -= timeOfDayNumberOfHoursPart *
+    timeInMilliSecsMinusPrintedTime -= timeOfDayNumberOfHoursPart *
       TU_Bln361095timeSecsPerHour * 1000;
   }
 //  const TU_Bln361095::CPU::faststUint timeInSecsMinusHours =
@@ -89,7 +89,7 @@ inline void UserInterface::FmtViaOSS(const uptimeInMilliSecsType timeInMilliSecs
 //  TU_Bln361095::CPU::faststUint timeOfDayNumberOfMinutesPart =
 //    timeInSecsMinusHours/TU_Bln361095timeSecsPerMin;
   const TU_Bln361095::CPU::faststUint timeOfDayMinutesPart = //timeInMilliSecs/
-    timeÍnMilliSecsMinusPrintedTime /
+    timeInMilliSecsMinusPrintedTime /
     /** number of milliseconds divided by 1000 = number of seconds
      * number of seconds divided by 1000 = number of minutes */
     60000
@@ -101,7 +101,7 @@ inline void UserInterface::FmtViaOSS(const uptimeInMilliSecsType timeInMilliSecs
   if(timeOfDayMinutesPart > 0)
   {
     oss << timeOfDayMinutesPart << "min";
-    timeÍnMilliSecsMinusPrintedTime -= timeOfDayMinutesPart * 60 * 1000;
+    timeInMilliSecsMinusPrintedTime -= timeOfDayMinutesPart * 60 * 1000;
   }
   /**"timeOfDaySecondsPart" is more precise than "number of seconds" because
    * number of seconds can also mean "whole time in number of seconds".*/

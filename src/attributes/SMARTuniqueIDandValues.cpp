@@ -11,6 +11,8 @@
  ///LOGN(...),LOGN_DEBUG(...),LOGN_WARNING(...)
  #include <preprocessor_macros/logging_preprocessor_macros.h>
 
+TU_Bln361095SMARTmonNmSpcBgn
+
 ///Static (class) variables definitions:
 /** E.g. 32 bit Linux: size of long int is 4 bytes*/
 fastestUnsignedDataType SMARTvalue::s_sizeOfLongIntInBytes = sizeof(long int);
@@ -47,9 +49,16 @@ SMARTvalue::SMARTvalue(const SMARTvalue & copyFrom)
   copyAttrs(copyFrom);
 }
 
-//TODO is this sufficient? psrts of the raw value may have been changed
-void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
-  an 8 byte type here */ uint64_t & rawSMARTattrValue)
+//TODO is this sufficient? parts of the raw value may have been changed
+/**@param rawSMARTattrValue : An ATA S.M.A.R.T. attribute raw value has 6 bytes:
+ http://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology
+  #Known_NVMe_S.M.A.R.T._attributes : 
+ * "[...]the raw value since in reality it has 48 bits". ,
+ * #Known_NVMe_S.M.A.R.T._attributes  
+ *  an NVMe 16 bytes.
+ * So use at least an 8 byte type here.*/
+/*template<typename rawValTyp>*/void SMARTattr::setRawVal(const /*uint64_t*/
+  rawValTyp & rawSMARTattrValue)
 {
   LOGN_DEBUG("for raw value:" << rawSMARTattrValue)
   /** important:-1.Use same datatype as atomic functions because of its size 
@@ -78,8 +87,6 @@ void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
      *    0xFF FF FF FF.and then changes to 0x01 00 00 00 00 while copying the
      *     value here in this function, it finally may become
      *    0x01 FF FF FF FF  */
-    fastestUnsignedDataType numTimesLongIntFitsInto8Bytes = 8/
-      s_sizeOfLongIntInBytes;
     fastestUnsignedDataType numBitsToShift;
     /** Save the highmost bytes because they are more comprehensive:
       For e.g. the Power-on hours a value was on a 32 bit Linux:
@@ -88,7 +95,8 @@ void SMARTvalue::SetRawValue(const /** A SMART raw value has 6 bytes. So use
      * So if only using the highmost bits it would be: */
 //    liRawSMARTattrValue = m_rawValue >> ( (8 - 
 //      s_sizeOfLongIntInBytes) * 8 );
-    for( fastestUnsignedDataType i = 0; i < numTimesLongIntFitsInto8Bytes; ++i)
+    for(TU_Bln361095::CPU::faststUint i = 0; i <
+      s_numTimesLongIntFitsInto8Bytes; ++i)
     {
       numBitsToShift = //(8 - s_sizeOfLongIntInBytes) * 8;
         s_sizeOfLongIntInBytes * i * 8;
@@ -172,8 +180,6 @@ bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
   if(s_sizeOfLongIntInBytes < 8 )
   {
     rawValue = 0;
-    fastestUnsignedDataType numTimesLongIntFitsInto8Bytes = 8/
-      s_sizeOfLongIntInBytes;
     /** Save the highmost bytes because they are more comprehensive:
       For e.g. the Power-on hours a value was on a 32 bit Linux:
      * 43441200000_dec ms = A1D4C1B80_hex ms ^= 12067 h as uint64_t and
@@ -249,3 +255,5 @@ bool operator < (const SMARTuniqueIDandValues & left,
 {
   return left.getSMARTuniqueID() < right.getSMARTuniqueID();
 }
+
+TU_Bln361095SMARTmonNmSpcEnd

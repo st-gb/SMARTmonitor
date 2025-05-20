@@ -11,15 +11,18 @@
 ///_This_ repository's files:
 //#include "SMARTaccessBase.hpp"
 #include "SMARTuniqueID.hpp"///struct SMARTuniqueID
+ ///TU_Bln361095SMARTmonNmSpcBgn, TU_Bln361095SMARTmonNmSpcEnd
+ #include "SMARTmon_ID_prefix.h"
 
 ///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
-#include <hardware/dataCarrier/ATA3Std.h>///ATA3Std_NrmlzdValTyp
  #include <hardware/CPU/fastest_data_type.h>///TU_Bln361095::CPU::faststUint
+ ///TU_Bln361095hardwareATA_SMARTnumSMARTrawValB
+ #include <hardware/dataCarrier/ATA3Std.h>
+ ///TU_Bln361095dataCarrierNVMeSMARTattrNumRawValB
+ #include <hardware/dataCarrier/NVMe/NVMe_SMART_attr.h>
 
 //class SMARTaccessBase;
 
-///+1 to enable a 1-based array index
-#define numDifferentSMART_IDsPlus1 (numDifferentSMART_IDs + 1)
 ///+1 to enable a 1-based array index
 #define TU_Bln361095dataCarrierNumNVMeSMART_IDsPlus1\
   (TU_Bln361095dataCarrierNumNVMeSMART_IDs+1)
@@ -119,6 +122,7 @@ private:
    *  100*24*60*60*1000=8640000000=8640M */
   uint64_t m_timeStampOfRetrieval;///Only access via Set|Get(TimeOfRetrieval);
 };
+TU_Bln361095SMARTmonNmSpcBgn
 
 class SMARTuniqueIDandValues
 {
@@ -157,4 +161,6 @@ public:
 bool operator < (const SMARTuniqueIDandValues & left,
                  const SMARTuniqueIDandValues & right);
 
-#endif /* ATTRIBUTES_SMARTUNIQUEIDANDVALUES_HPP_ */
+TU_Bln361095SMARTmonNmSpcEnd
+
+#endif///include guard

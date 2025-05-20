@@ -9,17 +9,21 @@
 #include <set>///class std::set
 #include <string>///class std::wstring
 
-///common_sourcecode repository header files:
-#include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchType
-///typedef nativeEvent_type
 #include <OperatingSystem/multithread/nativeEvent_type.hpp>
 #ifdef multithread
-///typedef nativeThread_type
 #include <OperatingSystem/multithread/nativeThreadType.hpp>
 #endif
-#include <OperatingSystem/Process/CommandLineArgs.hpp> //class CommandLineArgs
-///struct CommandLineOption
-#include <OperatingSystem/Process/CommandLineOption.hpp>
+///Stefan Gebauer's(TU Berlin matr. # 361095) ~"cmnSrc" repository header files:
+ ///TU_Bln361095::CPU::atomicXchgTyp
+ #include <hardware/CPU/atomic/AtomicExchange.h>
+ ///typedef TU_Bln361095::OpSys::nativeEvntTyp
+ ///typedef TU_Bln361095::OpSys::nativeThreadTyp
+ ///class TU_Bln361095::OpSys::Process::CmdLineArgs
+ #include <OperatingSystem/Process/cmdLineArgs.h>
+ ///struct CommandLineOption
+ #include <OperatingSystem/Process/CommandLineOption.hpp>
+
+///_This_("SMARTmon") project's (repository) (header) files:
 
 #include <attributes/ModelAndFirmware.hpp>///class ModelAndFirmware
 #include <attributes/SMARTattrDefAccss.hpp>///base class SMARTattrDefAccss
@@ -27,19 +31,21 @@
 //#include "libConfig/ConfigurationLoader.hpp"
 #include <SMARTvalueProcessorBase.hpp> //
 #include <UserInterface/UserInterface.hpp>///base class UserInterface
+ ///tinyxml2::ConfigLoader, TU_Bln361095::SMARTmon::CfgLoader::funcParamTyp
+ #include <tinyxml2/ConfigLoader.hpp>
 
-#include <tinyxml2/ConfigLoader.hpp>///tinyxml2::ConfigLoader, loaderParamType
 typedef tinyxml2::ConfigLoader CfgLoaderType;
 
 typedef bool (CfgLoaderType::*loadFuncType)(
   std::string & errorMsg,///Reference param. must be before default arguments
   std::wstring * stdwstrWorkingDirWithConfigFilePrefix,
   std::string * stdstrFullConfigFilePath,
-  loaderParamType,
+  TU_Bln361095::SMARTmon::CfgLoader::funcParamTyp,
   void * p_additionalParam);
 
 #if directSMARTaccess
-  #include <SMARTaccType.hpp>///typedef SMARTaccess_type
+  ///typedef TU_Bln361095::SMARTmon::SMARTaccessTyp
+  #include <SMARTaccType.hpp>
 #endif
 
 /** Forward declarations: */
@@ -92,7 +98,7 @@ public:
 protected:
   SMARTuniqueIDandValsContType SMARTuniqueIDsAndValues;
   bool asynCnnct = true;
-  nativeEvent_type waitOrSignalEvt;
+  TU_Bln361095::OpSys::nativeEvntTyp waitOrSignalEvt;
   static std::string s_strAllLogLevels;
 public:
   SMARTmonitorBase();
@@ -129,7 +135,7 @@ protected:
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
 public:
 #ifdef multithread
-  nativeThread_type connectThread;
+  TU_Bln361095::OpSys::nativeThreadTyp connectThread;
 #endif
   virtual void startSrvCnnctCntDown(){};
   fastestUnsignedDataType m_cnnctTimeOutInSec;
@@ -201,7 +207,8 @@ public:
     }
   /* Use same data type as AtomExchange function from common_sourcecode repo
    * to avoid adress sanitizer errors. */
-  static /*fastestSignedDataType*/ AtomicExchType s_updateSMARTvalues;
+  static /*fastestSignedDataType*/ TU_Bln361095::CPU::atomicXchgTyp
+    s_updateSMARTvalues;
   static CommandLineOption/*<char>*/ s_commandLineOptions [] ;
   /*DWORD*/ uint64_t m_arSMARTrawValue[255]; //provide space for up t 255 SMART attribute values
 //  long int m_arSMART_ID[255]; //provide space for up t 255 SMART attribute values
@@ -221,12 +228,14 @@ public:
   // attributes list (via direct S.M.A.R.T. access). And the supported 
   // S.M.A.R.T. IDs differ between drives.
   SMARTattrToObsType m_IDsOfSMARTattrsToObserve;
-  fastestUnsignedDataType m_SMARTattrIDsToObs[numDifferentSMART_IDs];
   fastestUnsignedDataType GetNumSMARTattrToObs(){return m_IDsOfSMARTattrsToObserve.size(); }
   void SetSMARTattributesToObserve(std::set<SMARTuniqueIDandValues> & );
+  TU_Bln361095::CPU::faststUint m_SMARTattrIDsToObs[
+    TU_Bln361095dataCarrierNumSATA_SMARTattrIDs];
   void OutputUsage();
   virtual void SetGetSMARTvalMode(enum GetSMARTvalsMode){};
-  CommandLineArgs<wchar_t> GetCommandLineArgs() const { return m_commandLineArgs;}
+  TU_Bln361095::OpSys::Process::CmdLineArgs<wchar_t> GetCommandLineArgs() const
+    { return m_commandLineArgs;}
   
   std::wstring GetCommandLineOptionValue(const wchar_t * const cmdLineOptionName);
   void GetCmdLineOptionNameAndValue(
@@ -252,9 +261,10 @@ protected:
    *  libATAsmart's SMART access class. So create the config loader on heap.*/
 //  libConfig::ConfigurationLoader configurationLoader;
   CfgLoaderType m_cfgLoader;
-  CommandLineArgs</*charType*/ wchar_t> m_commandLineArgs;
 #ifdef multithread
-  nativeThread_type m_updateSMARTparameterValuesThread;
+  TU_Bln361095::OpSys::Process::CmdLineArgs</*charType*/ wchar_t>
+    m_commandLineArgs;
+  TU_Bln361095::OpSys::nativeThreadTyp m_updateSMARTparameterValuesThread;
 #endif
   //std::wstring m_cmdLineArgVector;
 private:
