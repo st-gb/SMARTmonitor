@@ -9,15 +9,15 @@
 #include <set>///class std::set
 #include <string>///class std::wstring
 
-#include <OperatingSystem/multithread/nativeEvent_type.hpp>
-#ifdef multithread
-#include <OperatingSystem/multithread/nativeThreadType.hpp>
-#endif
 ///Stefan Gebauer's(TU Berlin matr. # 361095) ~"cmnSrc" repository header files:
  ///TU_Bln361095::CPU::atomicXchgTyp
  #include <hardware/CPU/atomic/AtomicExchange.h>
  ///typedef TU_Bln361095::OpSys::nativeEvntTyp
+ #include <OperatingSystem/multithread/nativeEvent_type.hpp>
+ #ifdef TU_Bln361095SMARTmonMultithread
  ///typedef TU_Bln361095::OpSys::nativeThreadTyp
+  #include <OperatingSystem/multithread/nativeThreadType.hpp>
+ #endif
  ///class TU_Bln361095::OpSys::Process::CmdLineArgs
  #include <OperatingSystem/Process/cmdLineArgs.h>
  ///struct CommandLineOption
@@ -43,7 +43,10 @@ typedef bool (CfgLoaderType::*loadFuncType)(
   TU_Bln361095::SMARTmon::CfgLoader::funcParamTyp,
   void * p_additionalParam);
 
-#if directSMARTaccess
+///If the compiler definition exits.
+#ifdef \
+  /**<=>Build with direct S.M.A.R.T. access */\
+  TU_Bln361095SMARTmonDrctSMARTaccss
   ///typedef TU_Bln361095::SMARTmon::SMARTaccessTyp
   #include <SMARTaccType.hpp>
 #endif
@@ -134,7 +137,7 @@ protected:
    *  -or from config file */
   static std::wstring s_programOptionValues[beyondLastProgramOptionName];
 public:
-#ifdef multithread
+#ifdef TU_Bln361095SMARTmonMultithread
   TU_Bln361095::OpSys::nativeThreadTyp connectThread;
 #endif
   virtual void startSrvCnnctCntDown(){};
@@ -176,13 +179,13 @@ public:
   /** Must be declared virtual, else it cannot be overriden in a(n) (indirect) 
    *  subclass?! */
   virtual void ShowMessage(const char * const msg, UserInterface::MessageType::messageTypes) const;
-#ifdef directSMARTaccess
-  SMARTaccess_type * mp_SMARTaccess;
-  SMARTaccess_type m_SMARTaccess;
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
+  TU_Bln361095::SMARTmon::SMARTaccessTyp * mp_SMARTaccess;
+  TU_Bln361095::SMARTmon::SMARTaccessTyp m_SMARTaccess;
   SMARTvalueProcessorBase m_SMARTvalueProcessor;
 #endif
   void SetCommandLineArgs(int argc, char ** argv);
-#ifdef multithread
+#ifdef TU_Bln361095SMARTmonMultithread
   ///Should be usable by different targets, e.g. service, wxWidgets or curses
   /// client. Therefore the parameters.
   void StartAsyncUpdateThread(
@@ -197,7 +200,7 @@ public:
 #endif
   bool tryCfgFilePaths(const wchar_t fileName[], loadFuncType,
     void * p_additionalParam);
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
   fastestUnsignedDataType Upd8SMARTvalsDrctlyThreadSafe();
 #endif
   virtual void BeforeWait() { }
@@ -261,9 +264,9 @@ protected:
    *  libATAsmart's SMART access class. So create the config loader on heap.*/
 //  libConfig::ConfigurationLoader configurationLoader;
   CfgLoaderType m_cfgLoader;
-#ifdef multithread
   TU_Bln361095::OpSys::Process::CmdLineArgs</*charType*/ wchar_t>
     m_commandLineArgs;
+#ifdef TU_Bln361095SMARTmonMultithread
   TU_Bln361095::OpSys::nativeThreadTyp m_updateSMARTparameterValuesThread;
 #endif
   //std::wstring m_cmdLineArgVector;

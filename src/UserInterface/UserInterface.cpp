@@ -139,7 +139,9 @@ inline void UserInterface::FmtViaOSS(const uptimeInMilliSecsType timeInMilliSecs
 ///5 time attribute:days,hours,minutes,seconds,milliseconds
 #define numTimeAttrs 5
 
-void FmtVia_snprintf(const unsigned long timeInMs, std::string & stdstrTimeFormat)
+void FmtVia_snprintf(
+  const unsigned long timeInMilliSecs,
+  std::string & stdstrTimeFormat)
 {
   char formattedString[maxCharsForFormattedStr];
   float fTimeInSecs = (float) timeInMilliSecs / 1000.f;

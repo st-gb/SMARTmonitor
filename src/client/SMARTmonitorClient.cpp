@@ -25,7 +25,7 @@ using namespace TU_Bln361095SMARTmonNmSpc;///for SMARTuniqueID
 /** Static/class variable defintion: */
 fastestUnsignedDataType SMARTmonitorClient::s_UIthreadID;
 fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
-#ifdef multithread
+#ifdef TU_Bln361095SMARTmonMultithread
 //nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
 #endif
 enum SMARTvals::Rating::E SMARTmonitorClient::
@@ -70,7 +70,7 @@ SMARTmonitorClient::SMARTmonitorClient(const SMARTmonitorClient& orig) {
 SMARTmonitorClient::~SMARTmonitorClient() {
 }
 
-#ifdef multithread
+#ifdef TU_Bln361095SMARTmonMultithread
 void SMARTmonitorClient::EndUpdateUIthread()
 {
   if(m_updateSMARTparameterValuesThread.IsRunning() )
@@ -93,7 +93,7 @@ void SMARTmonitorClient::EndUpdateUIthread()
     ///Enable get S.M.A.R.T. values loop.
     TU_Bln361095::CPU::atomicXchg( (long *) & s_updateSMARTvalues, 1);
     TU_Bln361095::CPU::atomicXchg( (long *) & GetSMARTvalsAndUpd8UIthreadID, 0);
-#if directSMARTaccess
+#if TU_Bln361095SMARTmonDrctSMARTaccss
     if(getsSMARTdataDrctly() )
       ChangeConnectionState(endedDrctSMART);
     else

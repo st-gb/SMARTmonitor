@@ -36,17 +36,19 @@ if(DEFINED resourcesFSpath)
 endif()
 
 #Source files needed for both client/GUI and server builds.
-if(DEFINED multithread)
-  message("multithread defined:value=${multithread}")
-  set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -Dmultithread")
+if(DEFINED TU_Bln361095SMARTmonMultithread)
+  message("TU_Bln361095SMARTmonMultithread defined:value="
+    "${TU_Bln361095SMARTmonMultithread}")
+  set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DTU_Bln361095SMARTmonMultithread")
 else()
-  message("multithread NOT defined")
+  message("TU_Bln361095SMARTmonMultithread NOT defined")
 endif()
-if(DEFINED directSMARTaccess)
-  message("directSMARTaccess defined:value=${directSMARTaccess}")
-  set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DdirectSMARTaccess")
+if(DEFINED TU_Bln361095SMARTmonDrctSMARTaccss)
+  message("TU_Bln361095SMARTmonDrctSMARTaccss defined:value="
+    "${TU_Bln361095SMARTmonDrctSMARTaccss}")
+  set(CXX_DEFINITIONS "${CXX_DEFINITIONS} -DTU_Bln361095SMARTmonDrctSMARTaccss")
 else()
-  message("directSMARTaccess NOT defined")
+  message("TU_Bln361095SMARTmonDrctSMARTaccss NOT defined")
 endif()
 
 set(CXX_DEFINITIONS ${CXX_DEFINITIONS}
@@ -108,7 +110,7 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
   ${COMMON_SOURCECODE_ROOT_PATH}/FileSystem/PathSeperatorChar.cpp
 )
 
-if(directSMARTaccess)
+if(TU_Bln361095SMARTmonDrctSMARTaccss)
   set(CLIENT_SERVER_BASE_SOURCE_FILES
     ${CLIENT_SERVER_BASE_SOURCE_FILES}
     #Only needed for direct S.M.A.R.T. access
@@ -116,7 +118,7 @@ if(directSMARTaccess)
   )
 endif()
 
-if(multithread)
+if(TU_Bln361095SMARTmonMultithread)
   set(CXX_DEFINITIONS
     ${CXX_DEFINITIONS}
     -DCOMPILE_LOGGER_MULTITHREAD_SAFE)

@@ -138,7 +138,7 @@ public:
   void GetSMARTvaluesAndUpdateUI();
   static DWORD GetSMARTvaluesAndUpdateUIthreadFn(void *);
 #endif
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
   bool getsSMARTdataDrctly() const{
     return m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction ==
       & SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe;

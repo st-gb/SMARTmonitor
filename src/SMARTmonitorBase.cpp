@@ -26,7 +26,8 @@
 #include <FileSystem/File/GetAbsoluteFilePath.hpp>///GetAbsoluteFilePath(...)
 ///TU_Bln361095::OpSys::Process::FileSys::GetCurrWorkngDirA_inln(...)
 #include <FileSystem/GetCurrentWorkingDir.hpp>
-#include <FileSystem/PathSeperatorChar.hpp>///FileSystem::dirSeperatorChar
+ ///TU_Bln361095::FileSys::DirSepCharW
+ #include <FileSystem/PathSeperatorChar.hpp>
 #include <FileSystem/path_seperator.h>///PATH_SEPERATOR_CHAR_STRING
 #include <hardware/CPU/atomic/AtomicExchange.h>///AtomicExchange(...)
  ///LOGN(...), "extern Logger g_logger;" #ifdef TU_Bln361095useOwnLogger
@@ -83,7 +84,7 @@ SMARTmonitorBase::SMARTmonitorBase()
     m_cmdLineArgStrings(NULL),
     m_ar_stdwstrCmdLineArgs(NULL),
   m_cnnctTimeOutInSec(30)
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
   , m_SMARTaccess(SMARTuniqueIDsAndValues)
 #endif
 {
@@ -92,7 +93,7 @@ SMARTmonitorBase::SMARTmonitorBase()
   SMARTvalue::setMaxNrmlzdVals();
   /** For calling ::UpdateSMARTparameterValuesThreadFunc(void *) */
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
   mp_SMARTaccess = & m_SMARTaccess;
 #endif
   setDfltSMARTattrDef();
@@ -563,7 +564,7 @@ void  SMARTmonitorBase::EnsureSMARTattrToObsExist()
 {
   if(m_IDsOfSMARTattrsToObserve.empty() )
   {
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
     //TODO add supported S.M.A.R.T. IDs to IDs of S.M.A.R.T. attributes to 
     // observe;multiple devices should be possible
 //    mp_SMARTaccess->GetSupportedSMART_IDs(device, SMARTattributeNamesAndIDs);
@@ -580,7 +581,7 @@ void  SMARTmonitorBase::EnsureSMARTattrToObsExist()
   }
 }
 
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
 ///Reads directly from the devices
 fastestUnsignedDataType SMARTmonitorBase::Upd8SMARTvalsDrctlyThreadSafe()
 {
@@ -697,7 +698,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   struct GetSMARTvaluesFunctionParams * p_getSMARTvalsFnParams =
     (struct GetSMARTvaluesFunctionParams *) p_v;
   try{
-#ifdef multithread
+#ifdef TU_Bln361095SMARTmonMultithread
   I_Thread::SetCurrentThreadName("upd8 SMART");
 #endif
 //  SMARTmonitorBase * p_SMARTmonitorBase = (SMARTmonitorBase *) p_v;
@@ -762,7 +763,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
   return 0;
 }
 
-#ifdef multithread
+#ifdef TU_Bln361095SMARTmonMultithread
 void SMARTmonitorBase::StartAsyncUpdateThread(
   GetSMARTvaluesFunctionParams::GetSMARTvaluesFunctionType
     getSMARTvaluesFunctionType
@@ -971,7 +972,7 @@ fastestUnsignedDataType SMARTmonitorBase::InitializeSMART(){
     //      return false;
     //    }
     //if( smartReader.m_oSMARTDetails.size())
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
     DWORD dwRetVal = mp_SMARTaccess->ReadSMARTValuesForAllDrives(
       m_SMARTattrIDsToObs, s_dataCarrierID2devicePath);
     switch (dwRetVal) {

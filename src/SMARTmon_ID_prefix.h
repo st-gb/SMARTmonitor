@@ -24,6 +24,10 @@
   #define TU_Bln361095SMARTmon_ID_prefix_h
 
 #ifdef __cplusplus
+/**The following definitions can/should also be used in C++ because so one can
+ * see whether the namespace exists(in an IDE via highlighting) and ensure that
+ * everywhere the same namespace is used without a typo.*/
+
   #define TU_Bln361095SMARTmonNmSpc TU_Bln361095::SMARTmon
   #define TU_Bln361095SMARTmonNmSpcBgn namespace TU_Bln361095{namespace \
   SMARTmon{

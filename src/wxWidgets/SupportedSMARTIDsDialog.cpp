@@ -133,7 +133,7 @@ void SupportedSMART_IDsDialog::FillGUI(
   
   const SMARTuniqueIDandValues * p_sMARTuniqueIDandValues = NULL;
 
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss_
   //TODO # supported SMART IDs is 30? -> less space
   TU_Bln361095::CPU::faststUint sMARTattrIDsToRead[
     TU_Bln361095dataCarrierNumSATA_SMARTattrIDs];
@@ -163,7 +163,7 @@ void SupportedSMART_IDsDialog::FillGUI(
     TU_Bln361095::SMARTmon::SMARTuniqueIDandValues(sMARTuniqueID) );
   if(sMARTuniqueIDandValsIter != wxGetApp().GetSMARTuniqueIDsAndVals().end() )
     p_sMARTuniqueIDandValues = &*sMARTuniqueIDandValsIter;
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss_
   }
 #endif
   

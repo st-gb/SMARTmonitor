@@ -27,11 +27,15 @@
 #ifdef /*_WIN32*/TU_Bln361095MicroSoftWindows
   ///class TU_Bln361095::(SMARTmon::)OpSys::Windows::SMARTaccess
   #include <Windows/SMARTaccess.h>
-  typedef TU_Bln361095::SMARTmon::OpSys::Windows::SMARTaccess SMARTaccess_type;
+  TU_Bln361095SMARTmonNmSpcBgn
+  typedef TU_Bln361095::SMARTmon::OpSys::Windows::SMARTaccess
+    ///Typ=TYPe
+    SMARTaccessTyp;
+  TU_Bln361095SMARTmonNmSpcEnd
 #endif
 #ifdef __linux__
   #include <libATA_SMART/SMARTaccess.hpp>
-  typedef libatasmart::SMARTaccess SMARTaccess_type;
+  typedef libatasmart::SMARTaccess SMARTaccessTyp;
 #endif
 
 #endif///include guard

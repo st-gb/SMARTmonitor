@@ -33,15 +33,17 @@
 ///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
  #ifndef TU_Bln361095TmCntDfnd
   #define TU_Bln361095TmCntDfnd
-  typedef double TimeCountInSecType;///for Windows' GetTimeCountInSeconds(...)
-  typedef long double TimeCountInNanosec_type;///for GetTimeCountInNanoSeconds(...)
 #endif
-#include <Controller/time/GetTickCount.hpp>
-#include <hardware/CPU/atomic/AtomicExchange.h>
-#include <hardware/CPU/atomic/memory_barrier.h>
 ///wxWidgets::GetwxString_Inline
 #include <wxWidgets/charStr/wxStringHelper.hpp>
 #include <wxWidgets/UI/About.hpp>///class wxWidgets::AboutDlg
+  /////for MicroSoft Windows' GetTimeCountInSeconds(...)
+  //typedef double TU_Bln361095tmCntInSecTyp;
+  /////for GetTimeCountInNanoSeconds(...)
+  //typedef long double TU_Bln361095tmCntInNsTyp;
+ //#include <Controller/time/GetTickCount.hpp>
+ //#include <hardware/CPU/atomic/AtomicExchange.h>
+ //#include <hardware/CPU/atomic/memory_barrier.h>
  ///TU_Bln361095::OpSys::GetCurrThreadNum()
  #include <OperatingSystem/multithread/getCurrThreadNum.h>
  ///LOGN(...),LOGN_DEBUG(...)
@@ -90,7 +92,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION wxUpdateSMARTparameterValuesThreadFunc(
       wxGetApp().GetSMARTuniqueIDsAndVals();
     do
     {
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
       if( getSMARTvaluesDirectly )
       {
         /*p_myDialog->*/wxGetApp().Upd8SMARTvalsDrctlyThreadSafe();
@@ -310,7 +312,7 @@ SMARTdialog::SMARTdialog(
 //  , m_SMARTvalueProcessor( (wxWidgets::wxSMARTvalueProcessor &) SMARTvalueProcessor)
 //  , m_SMARTaccess(SMARTvalueProcessor.getSMARTaccess() )
   , m_wxCloseMutex()
-  #ifdef directSMARTaccess
+  #ifdef TU_Bln361095SMARTmonDrctSMARTaccss
   , m_p_directSMARTaccesBtn(NULL)
   #endif
   //, m_wxCloseCondition(m_wxCloseMutex)
@@ -347,7 +349,7 @@ void SMARTdialog::buildUI()
   wxSizer * const sizerBtns = new wxBoxSizer(wxHORIZONTAL);
   sizerBtns->Add(new wxButton(this, wxID_ABOUT, wxT("&About")), flags);
   sizerBtns->Add(new wxButton(this, options, wxT("&Options")), flags);
-  #ifdef directSMARTaccess
+  #ifdef TU_Bln361095SMARTmonDrctSMARTaccss
     //TODO only add if sufficient access rights: if(directSMARTaccessAvailable)
     m_p_directSMARTaccesBtn = new wxButton(this, directSMARTdata,
       wxT("&direct S.M.A.R.T.") );
@@ -677,7 +679,8 @@ void SMARTdialog::StartAsyncDrctUpd8Thread()
   if(wxGetApp().GetNumSMARTattrToObs() > 0)
   {// && wxGetApp().GetNumSMARTattrDefs() > 0
     //ReadSMARTvaluesAndUpdateUI();
-#if defined(multithread) && defined(directSMARTaccess)
+#if defined(TU_Bln361095SMARTmonMultithread) && \
+    defined(TU_Bln361095SMARTmonDrctSMARTaccss)
 //    wxGetApp().s_updateSMARTparameterValuesThread.start(
 //      wxUpdateSMARTparameterValuesThreadFunc, this);
     wxGetApp().StartAsyncUpdateThread(& SMARTmonitorBase::
@@ -690,7 +693,7 @@ void SMARTdialog::StartAsyncDrctUpd8Thread()
     wxMessageBox(wxT("no S.M.A.R.T. attributes to observe defined"));
 }
 
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
 void SMARTdialog::ReadSMARTvaluesAndUpdateUI()
 {
   DWORD dwRetVal = wxGetApp().mp_SMARTaccess->ReadSMARTValuesForAllDrives(

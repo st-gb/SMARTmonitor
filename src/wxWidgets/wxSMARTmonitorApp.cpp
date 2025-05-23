@@ -127,7 +127,7 @@ wxSMARTmonitorApp::wxSMARTmonitorApp()
   , m_wxtimer(this, TIMER_ID)
 {
   s_UIthreadID = TU_Bln361095::OpSys::GetCurrThreadNum();
-#ifdef multithread
+#ifdef TU_Bln361095SMARTmonMultithread
   I_Thread::SetCurrentThreadName("UI");
 #endif
   //InitializeLogger(); 
@@ -316,7 +316,7 @@ bool wxSMARTmonitorApp::OnInit()
       wxCommandEvent cnnctToSrvrEvt(CnnctToSrvrEvtType );
       wxPostEvent(this, cnnctToSrvrEvt);
     }
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
     else
       if( initSMARTresult == SMARTaccessBase::success)
     {
@@ -648,7 +648,7 @@ void wxSMARTmonitorApp::ShowMessage(const char * const str) const
 void wxSMARTmonitorApp::ShowIcon(const wxIcon & icon, const wxString & message )
 {
   wxString tooltip;
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
   if(/*serviceLocation == wxT("")*/ getsSMARTdataDrctly() )
     tooltip = wxString::Format(wxT("data via direct (local) SMART access:\n%s"),
       message);

@@ -17,8 +17,10 @@ cmake -G "Visual Studio 17 2022" ^
 -DwxWidgets_ROOT_DIR=D:\wxWidgets\3.2.2\VC14xReleaseDLLx64 ^
 -DwxLibDir=D:\wxWidgets\3.2.2\VC14xReleaseDLLx64\lib\vc14x_x64_dll ^
 -DwxLibs="wxbase32ud.lib;wxmsw32ud_adv.lib;wxmsw32ud_core.lib" ^
--Dmultithread=ON -DCMAKE_BUILD_TYPE=Debug -DSetwxPathsManually=TRUE ^
--DdirectSMARTaccess=TRUE ^
+-DTU_Bln361095SMARTmonMultithread=ON ^
+-DCMAKE_BUILD_TYPE=Debug ^
+-DSetwxPathsManually=TRUE ^
+-DTU_Bln361095SMARTmonDrctSMARTaccss=TRUE ^
 -DBoostRootDir=D:\Boost1.81.0\boost_1_81_0 ^
 .
 

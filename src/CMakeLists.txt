@@ -124,7 +124,7 @@ TU_Bln361095printCmplrInclDirs("CMakeLists.txt")
 
 if(${EXE_TYPE} STREQUAL "UNIX_service")
   include(server/BSD_sockets.cmake)#sets "BSD_sockets_srcFiles"
-  #set(directSMARTaccess TRUE)
+  #set(TU_Bln361095SMARTmonDrctSMARTaccss TRUE)
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
     ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/daemon/daemon.cpp

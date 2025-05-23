@@ -149,7 +149,7 @@ wxString wxSMARTmonitorApp::GetTitleInclDataSrc()
     GetwxString_inln(m_stdstrServiceHostName);
   
   wxString title;
-#ifdef directSMARTaccess
+#ifdef TU_Bln361095SMARTmonDrctSMARTaccss
   if(getsSMARTdataDrctly() )
   {
     title = wxString("wxSMARTmonitor--direct S.M.A.R.T. data");

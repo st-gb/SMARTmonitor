@@ -37,7 +37,7 @@
   #define TU_Bln361095TmCntDfnd
   ///for OperatingSystem::GetUptimeInS(...)
   typedef uint64_t TU_Bln361095tmCntInNsTyp;
-  typedef double TimeCountInSecType;
+  typedef double TU_Bln361095tmCntInSecTyp;
 #endif
 #include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
  ///TU_Bln361095::hardware::bus::UnifyType()
