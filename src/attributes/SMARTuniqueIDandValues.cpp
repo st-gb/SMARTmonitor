@@ -4,6 +4,8 @@
 
 ///_This_ project's (repository) (header) files:
  #include <attributes/SMARTuniqueIDandValues.hpp>
+ #include "SMARTattr.hpp"///class TU_Bln361095::SMARTmon::SMARTattr
+
 ///Stefan Gebauer's(TU Berlin matriculation number 361095) ~"cmnSrc" files:
  #include <hardware/CPU/fastest_data_type.h>///TU_Bln361095::CPU::faststUint
  ///TU_Bln361095::CPU::atomicXchg(...)
@@ -15,22 +17,22 @@ TU_Bln361095SMARTmonNmSpcBgn
 
 ///Static (class) variables definitions:
 /** E.g. 32 bit Linux: size of long int is 4 bytes*/
-fastestUnsignedDataType SMARTvalue::s_sizeOfLongIntInBytes = sizeof(long int);
-fastestUnsignedDataType SMARTvalue::s_numTimesLongIntFitsInto8Bytes = 8/
+TU_Bln361095::CPU::faststUint SMARTattr::s_sizeOfLongIntInBytes = sizeof(long int);
+TU_Bln361095::CPU::faststUint SMARTattr::s_numTimesLongIntFitsInto8Bytes = 8/
   s_sizeOfLongIntInBytes;
-ATA3Std_NrmlzdValTyp SMARTvalue::maxNrmlzdVals[];
+ATA3Std_NrmlzdValTyp SMARTattr::maxNrmlzdVals[];
 
 /**\brief does all copy operations necessary for assignment operator or copy
  * constructor */
-void SMARTvalue::copyAttrs(const SMARTvalue & copyFrom){
+void SMARTattr::copyAttrs(const SMARTattr & copyFrom){
   m_timeStampOfRetrieval = copyFrom.m_timeStampOfRetrieval;
   m_timeCheckSum = copyFrom.m_timeCheckSum;
   m_successfullyReadSMARTrawValue = copyFrom.m_successfullyReadSMARTrawValue;
-  SetRawValue( * (uint64_t *) copyFrom.m_rawValue);
+  setRawVal( /* *(uint64_t *)*/ copyFrom.m_rawValue);
 }
 
 ///https://en.wikibooks.org/wiki/C%2B%2B_Programming/Operators/Operator_Overloading#Assignment_operator
-SMARTvalue & SMARTvalue::operator = (const SMARTvalue & copyFrom)
+SMARTattr & SMARTattr::operator = (const SMARTattr & copyFrom)
 {
   LOGN_DEBUG("begin")
   copyAttrs(copyFrom);
@@ -43,7 +45,7 @@ SMARTvalue & SMARTvalue::operator = (const SMARTvalue & copyFrom)
  *   1.A newly-created object is initialized to the value of an existing object.
  *   2.An object is passed to a function as a non-reference parameter.
  *   3.An object is returned from a function." */
-SMARTvalue::SMARTvalue(const SMARTvalue & copyFrom)
+SMARTattr::SMARTattr(const SMARTattr & copyFrom)
 {
   LOGN_DEBUG("begin")
   copyAttrs(copyFrom);
@@ -87,7 +89,8 @@ SMARTvalue::SMARTvalue(const SMARTvalue & copyFrom)
      *    0xFF FF FF FF.and then changes to 0x01 00 00 00 00 while copying the
      *     value here in this function, it finally may become
      *    0x01 FF FF FF FF  */
-    fastestUnsignedDataType numBitsToShift;
+
+    TU_Bln361095::CPU::faststUint numBitsToShift;
     /** Save the highmost bytes because they are more comprehensive:
       For e.g. the Power-on hours a value was on a 32 bit Linux:
      * 43441200000_dec ms = A1D4C1B80_hex ms ^= 12067 h as uint64_t and
@@ -122,12 +125,12 @@ SMARTvalue::SMARTvalue(const SMARTvalue & copyFrom)
 }
 
 ///TODO AtomicExchange(...) necessary?
-bool SMARTvalue::GetRetrievalTime(uint64_t & uptimeInMs) const{
+bool SMARTattr::GetRetrievalTime(uint64_t & uptimeInMs) const{
   long int liTimePart, timeCheckSum = m_timeStampOfRetrieval;
   for(fastestUnsignedDataType idx = 1; idx < 
-    SMARTvalue::s_numTimesLongIntFitsInto8Bytes; ++idx)
   TU_Bln361095::CPU::atomicXchg( (long int *) & uptimeInMs,
     m_timeStampOfRetrieval);
+    SMARTattr::s_numTimesLongIntFitsInto8Bytes; ++idx)
   {
     liTimePart = * ( ((long int *) & m_timeStampOfRetrieval) + idx);
     TU_Bln361095::CPU::atomicXchg( ((long int *) & uptimeInMs) + idx,
@@ -146,7 +149,7 @@ bool SMARTvalue::GetRetrievalTime(uint64_t & uptimeInMs) const{
 #endif
 }
 
-void SMARTvalue::SetRetrievalTime(const long double & uptimeInSeconds){
+void SMARTattr::SetRetrievalTime(const long double & uptimeInSeconds){
   uint64_t uptimeInMs = (uint64_t) (uptimeInSeconds * 1000.0);
   long int liTimePart;
   //TODO make as generic algorithm also for SetRawValue(...)
@@ -155,7 +158,7 @@ void SMARTvalue::SetRetrievalTime(const long double & uptimeInSeconds){
   //TODO Really needs atomic Compare-And-Swap?
   TU_Bln361095::CPU::atomicXchg( & m_timeCheckSum, liTimePart);
   for(fastestUnsignedDataType idx = 1; idx < 
-    SMARTvalue::s_numTimesLongIntFitsInto8Bytes; ++idx)
+    SMARTattr::s_numTimesLongIntFitsInto8Bytes; ++idx)
   {
     liTimePart = * ( ((long int *) & uptimeInMs) + idx);
     TU_Bln361095::CPU::atomicXchg( ((long int *) & m_timeStampOfRetrieval) +idx, liTimePart);
@@ -171,7 +174,7 @@ void SMARTvalue::SetRetrievalTime(const long double & uptimeInSeconds){
  *    __sync_lock_test_and_set() when using GCC/g++).
  *   So a "check sum" is calcutated using the RAW value parts stored in this 
  *    class. If the raw value then matches */
-bool SMARTvalue::IsConsistent(uint64_t & rawValue) const
+bool SMARTattr::IsConsistent(uint64_t & rawValue) const
 {
   /** important:-1.Use same datatype as atomic functions because of its size 
      -2. use an unsigned type else there were miscalculations. */
@@ -234,7 +237,7 @@ SMARTuniqueIDandValues::SMARTuniqueIDandValues( const SMARTuniqueIDandValues & o
   for(TU_Bln361095::CPU::faststUint arrayIndex = 0; arrayIndex <
     TU_Bln361095numMaxATA_SMART_IDsPlus1; arrayIndex ++)
   {
-    m_SMARTvalues[arrayIndex] = obj.m_SMARTvalues[arrayIndex];
+    m_SMARTattrs[arrayIndex] = obj.m_SMARTattrs[arrayIndex];
   }
 }
 
@@ -243,10 +246,12 @@ SMARTuniqueIDandValues::~SMARTuniqueIDandValues ()
   // TODO Auto-generated destructor stub
 }
 
-int SMARTuniqueIDandValues::GetSMARTentry(
-  fastestUnsignedDataType SMART_ID, SMARTvalue & sMARTvalue)
+int SMARTuniqueIDandValues::getSMARTattr(
+  const TU_Bln361095::CPU::faststUint SMARTattrID,
+  TU_Bln361095::SMARTmon::SMARTattr & sMARTattr)
 {
-  sMARTvalue = m_SMARTvalues[SMART_ID];
+  //TODO copies instead of pointer assignment
+  sMARTattr = m_SMARTattrs[SMARTattrID];
   return 0;
 }
 

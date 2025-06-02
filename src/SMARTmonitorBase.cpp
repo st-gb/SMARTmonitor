@@ -90,7 +90,7 @@ SMARTmonitorBase::SMARTmonitorBase()
 {
   //TODO also called in service_main.cpp: test if no error in Linux service
   LogLevel::CreateLogLevelStringToNumberMapping();
-  SMARTvalue::setMaxNrmlzdVals();
+  TU_Bln361095::SMARTmon::SMARTattr::setMaxNrmlzdVals();
   /** For calling ::UpdateSMARTparameterValuesThreadFunc(void *) */
   m_getSMARTvaluesFunctionParams.p_SMARTmonitorBase = this;
 #ifdef TU_Bln361095SMARTmonDrctSMARTaccss
@@ -268,7 +268,7 @@ void SMARTmonitorBase::SetSMARTattributesToObserve(
       TU_Bln361095numMaxATA_SMART_IDsPlus1; SMARTattributeID++)
     {
       //    SMARTattributesToObserve.insert();
-      if(SMARTuniqueIDandValues.m_SMARTvalues[SMARTattributeID].
+      if(SMARTuniqueIDandValues.m_SMARTattrs[SMARTattributeID].
            m_successfullyReadSMARTrawValue)
       {
         m_IDsOfSMARTattrsToObserve.insert(SMARTattributeID);

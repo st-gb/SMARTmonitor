@@ -269,8 +269,11 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
   LOGN_DEBUG("end")
 }
 
-bool getRealValue(const std::string & stdstrUnit, const uint64_t SMARTrawVal,
-  uint64_t & realCircaValue)
+template<typename SMARTattrRawValTyp, typename realCircaSMARTattrRawValTyp> bool
+  getRealValue(
+  const std::string & stdstrUnit,
+  const SMARTattrRawValTyp & SMARTattrRawVal,
+  realCircaSMARTattrRawValTyp & realCircaSMARTattrRawVal)
 {
   bool error = false;
   uint64_t currNum = 0;
@@ -488,19 +491,20 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
 //  SMARTattrDef * p_sMARTattrDef = SMARTattrDefAccss::getSMARTattrDef(
 //    SMARTattrID);
 //  if(p_sMARTattrDef){
-  const SMARTvalue & sMARTvalue = SMARTuniqueIDandVals.m_SMARTvalues[
-    SMARTattrID];
+  const TU_Bln361095::SMARTmon::SMARTattr & sMARTattr = SMARTuniqueIDandVals.
+    m_SMARTattrs[SMARTattrID];
   const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandVals.
     getSMARTuniqueID();
-  if(sMARTvalue.m_successfullyReadSMARTrawValue){
   bool isConsistent = sMARTvalue.IsConsistent(SMARTrawVal);
+  if(sMARTattr.m_successfullyReadSMARTrawValue)
+  {
 //      memory_barrier(); //TODO: not really necessary??
-  int successfullyUpdatedSMART = sMARTvalue.m_successfullyReadSMARTrawValue;
+  int successfullyUpdatedSMART = sMARTattr.m_successfullyReadSMARTrawValue;
 
   uint64_t upTimeOfRetrievalInMs;
   /** Also fails if client wants attribute ID but service did not send raw
    * S.M.A.R.T. values. */
-  if(! sMARTvalue.GetRetrievalTime(upTimeOfRetrievalInMs) )
+  if(! sMARTattr.GetRetrievalTime(upTimeOfRetrievalInMs) )
     upTimeOfRetrievalInMs = 0;
   //memory_barrier(); //TODO: not really necessary??
   if( /*successfullyUpdatedSMART*/ isConsistent && upTimeOfRetrievalInMs)
@@ -540,28 +544,16 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
         stdstrHumanReadableRawVal,
         p_modelAndFirmware);
     std::ostringstream std_ossRawSMARTval;
-    switch(SMARTattrID)
+    switch(sMARTuniqueID.getBusType() )
     {
-     case TU_Bln361095::dataCarrier::SMART::Attr::GiB_Erased:
-    /** https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
-     *  : "Value is equal to (100-temp. °C)"*/
-     case TU_Bln361095::dataCarrier::SMART::Attr::TempDiffOrAirflowTemp:
-    /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
-     * 9 Jul 2020: "Lowest byte of the raw value contains the exact temperature
-     * value (Celsius degrees)"*/
-     case TU_Bln361095::dataCarrier::SMART::Attr::DevTemp:
-     case TU_Bln361095::dataCarrier::SMART::Attr::HW_ECC_Recovered:
-    /**https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
-     * 9 Jul 2020: "Decoded as: byte 0-1-2 = average erase count (big endian)
-     * and byte 3-4-5 = max erase count (big endian).*/
-     case TU_Bln361095::dataCarrier::SMART::Attr::AvgEraseCntAndMaxEraseCnt:
-     case TU_Bln361095::dataCarrier::SMART::Attr::HeadFlyingHours:
-       std_ossRawSMARTval << std::hex << /**To better differentiate between number and
-       * base*/std::uppercase << SMARTrawVal << "h";
-       break;
-     default:
-       std_ossRawSMARTval << SMARTrawVal;
-     }
+    case TU_Bln361095::hardware::bus::NVMe:
+      TU_Bln361095::SMARTmon::NVMe::SMART::AttrVal::fmtRawVal(SMARTattrID,
+        SMARTattrRawVal, std_ossRawSMARTval);
+      break;
+    default:
+      TU_Bln361095::SMARTmon::ATA::SMART::AttrVal::fmtRawVal(SMARTattrID,
+        SMARTattrRawVal, std_ossRawSMARTval);
+    }
     stdstrUnit = std_ossUnit.str();
     std::ostringstream std_ossNrmlzdCurrSMARTval, std_ossNrmlzdThreshVal;
     /**According to struct "NVME_HEALTH_INFO_LOG" in file "nvme.h" (see
@@ -569,8 +561,8 @@ http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info
      * ) S.M.A.R.T. via NVMe does not have normalized current, worst and
      * threshold values per attribute ID.*/
     if(sMARTuniqueID.getBusType() != TU_Bln361095::hardware::bus::NVMe){
-      std_ossNrmlzdCurrSMARTval << sMARTvalue.GetNrmlzdCurrVal();
-      std_ossNrmlzdThreshVal << sMARTvalue.GetNrmlzdThresh();
+      std_ossNrmlzdCurrSMARTval << sMARTattr.GetNrmlzdCurrVal();
+      std_ossNrmlzdThreshVal << sMARTattr.GetNrmlzdThresh();
     }
     //TODO pass warning or OK fpr critical SMART IDs to function
     //e.g. use highmost bits of SMARTattributeID for that purpose
@@ -654,7 +646,7 @@ http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info
   }
   }///
 //  if(upTimeOfRetrievalInMs == 0)///0 means: "not read" / "not send by server"
-  else///sMARTvalue.m_successfullyReadSMARTrawValue
+  else///sMARTattr.m_successfullyReadSMARTrawValue
   {
     sMARTvalueRating = TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
     SetAttribute(
