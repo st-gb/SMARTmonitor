@@ -282,10 +282,13 @@ template<typename SMARTattrRawValTyp, typename realCircaSMARTattrRawValTyp> bool
 //  const char * ar_chUnitBegin = NULL, * ar_chUnitEnd = NULL;
   bool isNumber = false;
   char ch;
-  realCircaValue = 0;
-  for(fastestUnsignedDataType idx = 0; idx < numChars; idx++){
-    ch = ar_chUnit[idx];
-    switch(ar_chUnit[idx]){
+  realCircaSMARTattrRawVal = 0;
+  for(TU_Bln361095::CPU::faststUint unitCharStrIdx = 0; unitCharStrIdx <
+    numChars; unitCharStrIdx++)
+  {
+    ch = ar_chUnit[unitCharStrIdx];
+    switch(ar_chUnit[unitCharStrIdx])
+    {
       case '0':
       case '1':
       case '2':
@@ -341,18 +344,26 @@ template<typename SMARTattrRawValTyp, typename realCircaSMARTattrRawValTyp> bool
             error = true;
         }
         //if(! error)
-        realCircaValue += SMARTrawVal * currNum;
+        realCircaSMARTattrRawVal += SMARTattrRawVal * currNum;
     }
   }
   return error;
 }
 
-inline void useDeterminedUnits(
+
+/**@tparam SMARTattrRawValTyp may be boost::multiprecision for NVMe 16 byte
+ *  S.M.A.R.T. raw value
+ * @brief gets the real circa S.M.A.R.T. attribute raw value by using the
+ *   determined S.M.A.R.T. attribute raw value unit */
+template<typename SMARTattrRawValTyp, typename realCircaSMARTattrRawValTyp>
+ inline void
+ useDeterminedUnits(
   const SMARTuniqueID & sMARTuniqueID,
   const fastestUnsignedDataType SMARTattrID,
-  const uint64_t SMARTrawVal,
+  const SMARTattrRawValTyp & SMARTattrRawVal,
   long & unit,
-  uint64_t & realCircaValue,
+  realCircaSMARTattrRawValTyp & realCircaSMARTattrRawVal,
+  //TODO data types should be realCircaSMARTattrRawValTyp/SMARTattrRawValTyp?!
   double & accuracy,
   double & lowerUnitLimit,
   double & upperLimit,
@@ -376,102 +387,68 @@ inline void useDeterminedUnits(
       if(lowerUnitLimit != 0.0)/** Lower unit bound set*/{
         std::string humanReadableAccuracy = SMARTvalueFormatter::
           //TODO also show percentage of TBW if upper unit bound is unknown?
-          FormatHumanReadable(SMARTattrID, lowerUnitLimit, true, NULL);
+          FmtHumanReadable(sMARTuniqueID, SMARTattrID, 
+            (TU_Bln361095::SMARTmon::SMARTattr::rawValTyp) lowerUnitLimit, true,
+            NULL);
         std_ossUnitAccuracy << ">=~" << humanReadableAccuracy;
         ///Value can get high: 16230×3618000 = 58720140000
-        realCircaValue = SMARTrawVal * (uint64_t) lowerUnitLimit;
+        realCircaSMARTattrRawVal = SMARTattrRawVal * (uint64_t) lowerUnitLimit;
       }
       else
         ///Value can get high: 16230×3618000 = 58720140000
-        realCircaValue = SMARTrawVal * (uint64_t) unit;
+        realCircaSMARTattrRawVal = SMARTattrRawVal * (uint64_t) unit;
     }
     else{
       std_ossUnit << "~";
       stdstrHumanReadableRawVal = "~";
       ///Value can get high: 16230×3618000 = 58720140000
-      realCircaValue = SMARTrawVal * (uint64_t) unit;
+      realCircaSMARTattrRawVal = SMARTattrRawVal * (uint64_t) unit;
       upperLimit = (double) sMARTuniqueID.upperUnitBound[SMARTattrID];
       if(upperLimit != 0.0)///Prevent division by 0.
         accuracy = lowerUnitLimit / upperLimit;
     }
-    std_ossUnit << SMARTvalueFormatter::FormatHumanReadable(SMARTattrID,unit,
-      true, NULL);
+    std_ossUnit << SMARTvalueFormatter::FmtHumanReadable(sMARTuniqueID,
+      SMARTattrID, unit, true, NULL);
 
     stdstrHumanReadableRawVal += SMARTvalueFormatter::
-      FormatHumanReadable(SMARTattrID, realCircaValue, true,
-        p_currModelAndFirmware);
+      FmtHumanReadable(sMARTuniqueID, SMARTattrID, realCircaSMARTattrRawVal,
+        true, p_currModelAndFirmware);
     if(accuracy != 0.0){
       std::string humanReadableAccuracy = SMARTvalueFormatter::
-        FormatHumanReadable(SMARTattrID, lowerUnitLimit, true, NULL);
+        FmtHumanReadable(sMARTuniqueID, SMARTattrID,
+          (TU_Bln361095::SMARTmon::SMARTattr::rawValTyp) lowerUnitLimit, true,
+          NULL);
       std_ossUnitAccuracy << " " << std::fixed << humanReadableAccuracy <<
         "-";/** "..." */
-      humanReadableAccuracy = SMARTvalueFormatter::FormatHumanReadable(
-        SMARTattrID, upperLimit, true, NULL);
+      humanReadableAccuracy = SMARTvalueFormatter::FmtHumanReadable(
+        sMARTuniqueID, SMARTattrID,
+        (TU_Bln361095::SMARTmon::SMARTattr::rawValTyp) upperLimit, true, NULL);
       std_ossUnitAccuracy << std::fixed << /* "]" */ humanReadableAccuracy;
     }
   }
   else{///Unknown unit/use default unit
-    uint64_t numForHumanReadableFormat;
-    switch(SMARTattrID)
+    /*uint64_t*/ SMARTattrRawValTyp numForHumanReadableFormat;
+    switch(sMARTuniqueID.getBusType() )
     {
-     case TU_Bln361095::dataCarrier::SMART::Attr::DevTemp:
-      numForHumanReadableFormat = SMARTrawVal;
-       std_ossUnit << "°C?";
-      realCircaValue = CurrTemp(SMARTrawVal);
+    case TU_Bln361095::hardware::bus::NVMe:
+      TU_Bln361095::SMARTmon::NVMe::SMART::AttrVal::useDefaultUnit(SMARTattrID,
+        realCircaSMARTattrRawVal, SMARTattrRawVal, std_ossUnit,
+        numForHumanReadableFormat);
+      stdstrHumanReadableRawVal = TU_Bln361095::SMARTmon::NVMe::SMART::AttrVal::
+        FmtHumanReadable(
+          SMARTattrID,
+          //(uint8_t*) &numForHumanReadableFormat
+          /*SMARTattrRawVal*/ numForHumanReadableFormat, false, NULL);
       break;
-     case TU_Bln361095::dataCarrier::SMART::Attr::PowerOnTime:
-       numForHumanReadableFormat = SMARTrawVal * /**h to ms*/3600000ULL;
-     case TU_Bln361095::dataCarrier::SMART::Attr::HeadFlyingHours:
-       numForHumanReadableFormat = (SMARTrawVal & 0xFFFFFF) * /**h to ms*/
-         3600000ULL;
-       std_ossUnit << "~h?";
-       break;
-     case TU_Bln361095::dataCarrier::SMART::Attr::SpinUpTime:
-       std_ossUnit << "ms?";
-       numForHumanReadableFormat = SMARTrawVal;
+    default:
+      TU_Bln361095::SMARTmon::ATA::SMART::AttrVal::useDefaultUnit(SMARTattrID,
+        realCircaSMARTattrRawVal, SMARTattrRawVal, std_ossUnit,
+        numForHumanReadableFormat);
+      stdstrHumanReadableRawVal = TU_Bln361095::SMARTmon::ATA::SMART::AttrVal::
+        FmtHumanReadable(
+          SMARTattrID, numForHumanReadableFormat, false, NULL);
       break;
-     default:
-      numForHumanReadableFormat = SMARTrawVal;
-      switch(SMARTattrID)
-      {
-        ///S.M.A.R.T. parameter ID 4
-      case TU_Bln361095::dataCarrier::SMART::Attr::StrtStpCnt:
-        ///S.M.A.R.T. parameter ID 5
-      case TU_Bln361095::dataCarrier::SMART::Attr::ReallocSectorsCnt:
-        ///S.M.A.R.T. parameter ID 10
-      case TU_Bln361095::dataCarrier::SMART::Attr::SpinUpRetryCnt:
-      ///S.M.A.R.T. parameter ID 11
-      case TU_Bln361095::dataCarrier::SMART::Attr::
-       RecalibRetriesOrCalibrRetryCnt:
-        ///S.M.A.R.T. parameter ID 12
-      case TU_Bln361095::dataCarrier::SMART::Attr::PwrCycleCnt:
-        ///S.M.A.R.T. parameter ID 196
-      case TU_Bln361095::dataCarrier::SMART::Attr::ReallocEvtCnt:
-        ///S.M.A.R.T. parameter ID 197
-      case TU_Bln361095::dataCarrier::SMART::Attr::CurrPendSecCnt:
-        ///S.M.A.R.T. parameter ID 198
-      case TU_Bln361095::dataCarrier::SMART::Attr::UncorrSecCnt:
-        ///S.M.A.R.T. parameter ID 199
-      case TU_Bln361095::dataCarrier::SMART::Attr::UDMA_CRCerrorCnt:
-      case TU_Bln361095::dataCarrier::SMART::Attr::FreeFallEvtCnt:
-        ///S.M.A.R.T. param ID 200
-      case TU_Bln361095::dataCarrier::SMART::Attr::MultiZoneErrorRate:
-      ///S.M.A.R.T. param ID 201
-      case TU_Bln361095::dataCarrier::SMART::Attr::
-       SoftReadErrorRateOrTACnterDetected:
-        std_ossUnit << "#?";
-        break;
-      case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataWritten:
-      case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataRead:
-        std_ossUnit << ">=1sector?";
-        break;
-  default:
-        std_ossUnit << "?";
-      }
-      realCircaValue = SMARTrawVal;
     }
-    stdstrHumanReadableRawVal = SMARTvalueFormatter::
-      FormatHumanReadable(SMARTattrID, numForHumanReadableFormat, false, NULL);
   }
 }
 
@@ -498,6 +475,17 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
   bool isConsistent = sMARTvalue.IsConsistent(SMARTrawVal);
   if(sMARTattr.m_successfullyReadSMARTrawValue)
   {
+  /**Make a copy of the raw value because it may be changed by the "get 
+   * S.M.A.R.T. values" thread*/
+    const TU_Bln361095::CPU::faststUint numSMARTattrRawValB = sMARTuniqueID.
+      getNumSMARTattrRawValB(SMARTattrID);
+
+#ifdef TU_Bln361095useBoostMultiprecisionCppInt
+#endif
+    SMARTattr::rawValTyp SMARTattrRawVal;
+    sMARTattr.getRawVal(/*(uint8_t*)&SMARTattrRawVal, numSMARTattrRawValB*/
+      SMARTattrRawVal);
+
 //      memory_barrier(); //TODO: not really necessary??
   int successfullyUpdatedSMART = sMARTattr.m_successfullyReadSMARTrawValue;
 
@@ -516,7 +504,12 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
   // SMARTmonitorClient-derived
     std::ostringstream std_ossUnit, std_ossUnitAccuracy;
     long unit = sMARTuniqueID.units[SMARTattrID];
-    uint64_t realCircaValue;
+    /**The real value can get bigger than the raw value because if the unit 
+     * prefix is greater than 1 then the raw value is multiplied by it.
+     * So use a data type that can be bigger than uint64_t */
+#ifdef TU_Bln361095useBoostMultiprecisionCppInt
+    /*uint64_t*/boost::multiprecision::cpp_int realCircaSMARTattrRawVal;
+#endif
     double accuracy = 0.0;
     double lowerUnitLimit = 0.0, upperLimit;
     std::string stdstrUnit;
@@ -526,18 +519,20 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
       stdstrUnit = p_modelAndFirmware->getParamUnit(SMARTattrID);
       if( stdstrUnit != "" )
       {
-        if(! getRealValue(stdstrUnit, SMARTrawVal, realCircaValue) ){
+        if(! getRealValue(stdstrUnit, SMARTattrRawVal, realCircaSMARTattrRawVal)
+          )
+        {
           std_ossUnit << p_modelAndFirmware->getParamUnit(SMARTattrID);
           useDeterminedUnit = false;
           stdstrHumanReadableRawVal += SMARTvalueFormatter::
-            FormatHumanReadable(SMARTattrID, realCircaValue, true,
-              p_modelAndFirmware);
+            FmtHumanReadable(sMARTuniqueID, SMARTattrID,
+              realCircaSMARTattrRawVal, true, p_modelAndFirmware);
         }
       }
     }
     if(useDeterminedUnit)
-      useDeterminedUnits(sMARTuniqueID, SMARTattrID, SMARTrawVal,
-        unit, realCircaValue,
+      useDeterminedUnits(sMARTuniqueID, SMARTattrID, SMARTattrRawVal,
+        unit, realCircaSMARTattrRawVal,
         accuracy,
         lowerUnitLimit, upperLimit,
         std_ossUnit, std_ossUnitAccuracy,
@@ -569,7 +564,7 @@ http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info
       //std::numeric_limits<>::min();
 //          SMARTattributeID &= 2 << (numSMARTattributeIDbits - 1)
     sMARTvalueRating = s_SMARTvalueRater.GetSMARTvalueRating(SMARTattrID,
-      SMARTuniqueIDandVals, realCircaValue, p_modelAndFirmware);
+      SMARTuniqueIDandVals, realCircaSMARTattrRawVal, p_modelAndFirmware);
     /**According to struct "NVME_HEALTH_INFO_LOG" in file "nvme.h" (see
 http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info_log
      * ) S.M.A.R.T. via NVMe does not have normalized current, worst and
