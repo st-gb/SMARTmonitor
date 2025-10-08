@@ -20,41 +20,75 @@
 
 #ifdef __cplusplus
   /**Col=COLumn:http://www.abbreviations.com/abbreviation/Column*/
-  #define TU_Bln361095SMARTmonColIdxsNmSpcBgn namespace colIndices{
-  #define TU_Bln361095SMARTmonColIdxsNmSpcEnd }
-  #define TU_Bln361095SMARTmonColIdxsDef(suffix) suffix
-  #define TU_Bn361095SMARTmonColIdxsUse(suffix) colIndices :: suffix
+  #define TU_Bln361095SMARTmonATA_SMARTattrColIdxNmSpcBgn \
+    TU_Bln361095SMARTmonNmSpcBgn namespace ATA_SMARTattrTblColIdx{
+  #define TU_Bln361095SMARTmonATA_SMARTattrColIdxNmSpcEnd \
+    TU_Bln361095SMARTmonNmSpcEnd }
+  #define TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(suffix) suffix
+  #define TU_Bln361095SMARTmonATA_SMARTattrColIdxUse(suffix) \
+    TU_Bln361095SMARTmonNmSpc :: ATA_SMARTattrTblColIdx :: suffix
+
+  #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpc \
+    TU_Bln361095SMARTmonNmSpc :: NVMeSMARTattrColIdx
+  #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpcBgn \
+    TU_Bln361095SMARTmonNmSpcBgn namespace NVMeSMARTattrColIdx{
+  #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpcEnd \
+    TU_Bln361095SMARTmonNmSpcEnd }
+  #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(suffix) suffix
+  #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxUse(suffix) \
+    TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpc :: suffix
 #else
-  #define TU_Bln361095SMARTmonColIdxsNmSpcBgn
-  #define TU_Bln361095SMARTmonColIdxsNmSpcEnd
-  #define TU_Bln361095SMARTmonColIdxsDef(suffix) \
-    TU_Bn361095SMARTmonColIdxs##suffix
-  #define TU_Bn361095SMARTmonColIdxsUse(suffix) \
-    TU_Bn361095SMARTmonColIdxs##suffix
+  #define TU_Bln361095SMARTmonATA_SMARTattrColIdxNmSpcBgn
+  #define TU_Bln361095SMARTmonATA_SMARTattrColIdxNmSpcEnd
+  #define TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(suffix) \
+    TU_Bln361095SMARTmonColIdxs##suffix
+  #define TU_Bln361095SMARTmonATA_SMARTattrColIdxUse(suffix) \
+    TU_Bln361095SMARTmonColIdxs##suffix
+
+  #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpcBgn
+  #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpcEnd
+  #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(suffix) \
+    TU_Bln361095SMARTmonNVMeSMARTattrColIdx ## suffix
 #endif
 
 TU_Bln361095SMARTmonNmSpcBgn
-TU_Bln361095SMARTmonColIdxsNmSpcBgn
+TU_Bln361095SMARTmonATA_SMARTattrColIdxNmSpcBgn
 
 /**Declare in a seperate header file and not in class's SMARTmonClient header
  * file because the whole class declaration of "SMARTmonitorClient" is not
  * needed when this enum is used by source code not derived from
  * "SMARTmonitorClient" such as wxWidgets::SMARTtableListCtrl.*/
-enum columnIndices{
-  TU_Bln361095SMARTmonColIdxsDef(SMART_ID) = 0,
-  TU_Bln361095SMARTmonColIdxsDef(SMARTparameterName),
+enum TU_Bln361095SMARTmonDef(ATA_SMARTattrTblColIdcs)
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(ID) = 0,
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(Name),
 ///Curr=CURRent:http://www.abbreviations.com/abbreviation/Current
-  TU_Bln361095SMARTmonColIdxsDef(nrmlzdCurrVal),
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(NrmlzdCurrVal),
 ///thresh=threshold:http://www.allacronyms.com/threshold/abbreviated
-  TU_Bln361095SMARTmonColIdxsDef(nrmlzdThresh),
-  TU_Bln361095SMARTmonColIdxsDef(rawValue),
-  TU_Bln361095SMARTmonColIdxsDef(humanReadableRawVal),
-  TU_Bln361095SMARTmonColIdxsDef(unit),
-  TU_Bln361095SMARTmonColIdxsDef(unitRange),
-  TU_Bln361095SMARTmonColIdxsDef(lastUpdate),
-  TU_Bln361095SMARTmonColIdxsDef(byndLast)};
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(NrmlzdThresh),
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(RawVal),
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(HumanReadableRawVal),
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(Unit),
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(UnitRange),
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(LastUpdate),
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxDef(ByndLast)
+  };
 
-TU_Bln361095SMARTmonColIdxsNmSpcEnd
-TU_Bln361095SMARTmonNmSpcEnd
+TU_Bln361095SMARTmonATA_SMARTattrColIdxNmSpcEnd
+
+TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpcBgn
+
+enum TU_Bln361095SMARTmonDef(NVMeSMARTcolIdx)
+{
+  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(ID) = 0,
+  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(Name),
+  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(RawVal),
+  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(HumanReadableRawVal),
+  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(Unit),
+  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(UnitRange),
+  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(LastUpdate),
+  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(ByndLast)
+};
+
+TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpcEnd
 
 #endif///! defined TU_Bln361095SMARTmon_UI_ColIndices_hpp

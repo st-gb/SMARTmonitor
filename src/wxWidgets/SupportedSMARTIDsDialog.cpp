@@ -81,10 +81,12 @@ void SupportedSMART_IDsDialog::create2ColListCtrl()
   m_pwxlistctrl->InsertColumn(COL_IDX_SMARTparameterName, col1);
 }
 
-void SupportedSMART_IDsDialog::cr8ListCtrl()
+void SupportedSMART_IDsDialog::cr8ListCtrl(const SMARTuniqueID & dataCarrierID)
 {
 //  create2ColListCtrl();
-  m_pwxlistctrl = new wxWidgets::SMARTtableListCtrl( (wxWindow *) this, 
+  m_pwxlistctrl = new wxWidgets::SMARTtableListCtrl(
+    (wxWindow *) this,
+    dataCarrierID,
     wxID_ANY, wxDefaultPosition, wxDefaultSize);
 }
 
@@ -116,7 +118,7 @@ wxSizer * SupportedSMART_IDsDialog::CreateGUI(
     0,
     wxEXPAND, 0);
 
-  cr8ListCtrl();
+  cr8ListCtrl(dataCarrierID);
 
   sizerTop->Add( m_pwxlistctrl, 1, wxEXPAND, 0);
   return sizerTop;

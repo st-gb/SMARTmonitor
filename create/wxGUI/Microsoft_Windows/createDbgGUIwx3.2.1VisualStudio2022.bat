@@ -1,5 +1,10 @@
 @REM Disable output ("echoing") of commands.
 @echo off
+echo You must run this script from within the file system directory that
+echo contains the "CMakeLists.txt" file.
+echo Therefore change to this file system directory and from there prepend the
+echo file system directory of THIS file like:
+echo "..\create\wxGUI\Microsoft_Windows\createDbgGUIwx3.2.1VisualStudio2022.bat"
 
 set additionalCMakeArgs=%1
 echo additionalCMakeArgs: %additionalCMakeArgs%
@@ -8,7 +13,7 @@ REM Customize this file for Microsoft Visual Studio (under Microsoft Windows)
 REM  to fit your file systems directories/paths and library names.
 REM Call this file from "src" subdirectory.
 cmake -G "Visual Studio 17 2022" ^
--DCOMMON_SOURCECODE_ROOT_PATH=D:\SrcCdMgmt\common_sourcecode ^
+-DTU_Bln361095cmnSrcRootDir=D:\SrcCdMgmt\common_sourcecode ^
 -DTINYXML2_ROOT_PATH=D:/Libs/tinyxml2/tinyxml2-master ^
 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ^
 -DEXE_TYPE:STRING=wxGUI ^

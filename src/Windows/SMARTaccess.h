@@ -42,6 +42,8 @@
 #include <OperatingSystem/time/GetUpTime.h>///OperatingSystem::GetUptimeInS(...)
  ///TU_Bln361095::hardware::bus::UnifyType()
 #include <OperatingSystem/Windows/hardware/busType.h>
+ ///TU_Bln361095hardwareDataCarrierUse(GetBusTyp)
+#include <OperatingSystem/Windows/hardware/dataCarrier/getBusType.h>
  ///TU_Bln361095hardwareDataCarrierUse(GetPath)
 #include <OperatingSystem/Windows/hardware/dataCarrier/getDataCarrierPath.h>
  ///Get the interface type (NVMe/SATA/IDE etc.)
@@ -50,7 +52,10 @@
 #include <OperatingSystem/Windows/hardware/dataCarrier/openDataCarrier.h>
  ///TU_Bln361095::hardware::dataCarrier::GetStorageDvcInfo(...)
 #include <OperatingSystem/Windows/hardware/dataCarrier/getStorageDvcInfo.h>
-#include <OperatingSystem/Windows/hardware/NVMe/getSMARTvals.h>
+ ///TU_Bln361095hardwareDataCarrierNVMeUse(GetSMARTvals)(...)
+ #include <OperatingSystem/Windows/hardware/NVMe/getSMARTvals.h>
+ ///TU_Bln361095hardwareDataCarrierNVMeUse(EnSMARTattrNames)
+ #include <hardware/dataCarrier/NVMe/SMARTattrNames.h>
 
 
 TU_Bln361095SMARTmon_OpSysWindowsNmSpcBgn
@@ -62,16 +67,71 @@ public:
   SMARTaccess(SMARTuniqueIDandValsContType & sMARTuniqueIDsandVals)
     : SMARTaccessBase(sMARTuniqueIDsandVals)
   {}
-  void fill(HANDLE deviceHandle, SMARTuniqueID & sMARTuniqueID)
+  void fill(HANDLE dataCarrierHandle, SMARTuniqueID & sMARTuniqueID)
   {
   	TU_Bln361095::hardware::dataCarrier::getIdentity::Rslt
       getDataCarrierIdentityRslt = TU_Bln361095::hardware::dataCarrier::
         GetIdentity(
-          deviceHandle,
+          dataCarrierHandle,
           (uint8_t *) sMARTuniqueID.getModelNameAddr(),///manufacturer,
           (uint8_t *) sMARTuniqueID.getSerialNumberAddr(),///serNo,
           (uint8_t *) sMARTuniqueID.getFirmWareNameAddr()///firmWare
 		  );
+
+    enum TU_Bln361095::hardware::bus::Type busType;
+    TU_Bln361095hardwareDataCarrierUse(GetBusTypA)(//device
+      dataCarrierHandle, &busType);
+    sMARTuniqueID.setBusType(busType);
+  }
+
+#ifdef __cplusplus
+//  typedef SuppSMARTattrNamesAndIDsCntnerTyp
+  /**@brief Can be called for both (S)ATA and NVMe S.M.A.R.T.
+   * @param TU_Bln361095hardwareDataCarrierEnSMARTattrName pass (S)ATA and NVMe
+   *   S.M.A.R.T. attribute name */
+  TU_Bln361095frcInln void AddSuppSMARTattrNamesAndIDs(
+    /*SuppSMARTattrNamesAndIDsCntnerTyp*/suppSMART_IDsType *
+      p_suppSMARTattrNamesAndIDs,
+    const TU_Bln361095::CPU::faststUint SMARTattrID,
+    const char * const TU_Bln361095hardwareDataCarrierEnSMARTattrName
+    )
+  {
+    (*p_suppSMARTattrNamesAndIDs).insert(SMARTattributeNameAndID(
+      TU_Bln361095hardwareDataCarrierEnSMARTattrName,
+      SMARTattrID)
+      );
+  }
+#else
+#endif
+
+  TU_Bln361095frcInln int GetSuppSMARTattrIDs(
+    HANDLE dataCarrierHandle,
+    suppSMART_IDsType & suppSMARTattrNamesAndIDs)
+  {
+    enum TU_Bln361095::hardware::bus::Type busType;
+    TU_Bln361095hardwareDataCarrierUse(GetBusTypA)(//device
+      dataCarrierHandle, &busType);
+    switch (busType)
+    {
+    case TU_Bln361095hardwareBusUse(NVMe):
+      for (TU_Bln361095::CPU::faststUint SMARTattrID = TU_Bln361095::
+        dataCarrier::NVMe::SMART::Attr::CriticalWarning;
+        SMARTattrID < TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
+        ErrorInfoLogEntryCount; SMARTattrID++)
+      {
+        /**Only needs to be done for the 1st time to create the intersection
+         * of supported and SMART IDs to read from the configuration file.*/
+        AddSuppSMARTattrNamesAndIDs(
+          & suppSMARTattrNamesAndIDs, 
+          SMARTattrID,
+          TU_Bln361095hardwareDataCarrierNVMeUse(EnSMARTattrNames)[SMARTattrID]
+          /*TU_Bln361095::hardware::dataCarrier::NVMe::EnSMARTattrNames[
+            SMARTattrID]*/
+          //TU_Bln361095hardwareDataCarrierNVMeEnSMARTattrNames[SMARTattrID]
+          );
+      }
+    }
+    return SMARTaccessBase::success;
   }
 
   ///@param dataCarrierHandle must be open
@@ -79,7 +139,7 @@ public:
     HANDLE dataCarrierHandle,
     SMARTuniqueIDandValues & sMARTuniqueIDandVals,
     ///For reading different IDs (either all or a subset of supported IDs) 
-    const TU_Bln361095::CPU::FaststUint IDsOfSMARTattrsToRd[]
+    const TU_Bln361095::CPU::faststUint IDsOfSMARTattrsToRd[]
     )
   {
     uint8_t * pDvcIOctlBuf;
@@ -101,23 +161,14 @@ public:
     }
 
     long double uptimeInSeconds;
-    OperatingSystem::GetUptimeInS(uptimeInSeconds);
+    TU_Bln361095OpSysUse(GetUptimeInS)(uptimeInSeconds);
 
     SMARTuniqueID & sMARTuniqueID = sMARTuniqueIDandVals.getSMARTuniqueID();
 
     if(SMARTuniqueID::isEmpty(sMARTuniqueID.getSupportedSMART_IDs() ) )
     {
       suppSMART_IDsType suppSMARTattrNamesAndIDs;
-      for(TU_Bln361095::CPU::faststUint SMARTattrID = TU_Bln361095::
-        dataCarrier::NVMe::SMART::Attr::CriticalWarning;
-        SMARTattrID <= TU_Bln361095::dataCarrier::NVMe::SMART::Attr::
-        ErrorInfoLogEntryCount; SMARTattrID++)
-      {
-        /**Only needs to be done for the 1st time to create the intersection
-         * of supported and SMART IDs to read from the configuration file.*/
-        suppSMARTattrNamesAndIDs.insert(SMARTattributeNameAndID("", SMARTattrID)
-          );
-      }
+      GetSuppSMARTattrIDs(dataCarrierHandle, suppSMARTattrNamesAndIDs);
       sMARTuniqueID.setSupportedSMART_IDs(suppSMARTattrNamesAndIDs);
       sMARTuniqueID.SetSMART_IDsToRead(suppSMARTattrNamesAndIDs, 
         IDsOfSMARTattrsToRd);

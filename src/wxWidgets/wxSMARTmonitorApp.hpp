@@ -97,11 +97,14 @@ public:
   bool GetSMARTokayIcon(wxIcon & icon);
   bool GetSMARTstatusUnknownIcon(wxIcon & icon);
   bool GetSMARTwarningIcon(wxIcon & icon);
+  /**@param colIdx use an integer data type because column index may be either:
+   *  - ~"TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx" enum for NVMe
+   *  - ~"TU_Bln361095::SMARTmon::NVMeSMARTattrTblColIdx" enum for (S)ATA */
   void SetAttribute(
     const SMARTuniqueID &,
-    fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
-    //TODO exchange enum with fastestUnsignedDataType for performance?
-    const enum colIndices::columnIndices &,/**Usually the column (number) */
+    TU_Bln361095::CPU::faststUint SMARTattrID,/** Usually the line (number) */
+    //const enum ATA_SMARTattrColIdx::ATA_SMARTattrTblColIdcs colIdx,
+    TU_Bln361095::CPU::faststUint colIdx,
     const std::string &,
     const SMARTvalRatngTyp, void * data);
   void SetCurrentAction(enum CurrentAction currAction);

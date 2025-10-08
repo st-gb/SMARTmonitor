@@ -1,7 +1,7 @@
 ##Author:Stefan Gebauer(TU Berlin matriculation number 361095)
 
 ##${SGR_Yellow},${SGR_Blue},${SGR_ColourReset}
-include(${cmnSrcDir}/CMake/SGR_terminalColours.cmake)
+include(${TU_Bln361095cmnSrcRootDir}/CMake/SGR_terminalColours.cmake)
 
 #see http://stackoverflow.com/questions/8934295/add-source-in-a-subdirectory-to-a-cmake-project
 

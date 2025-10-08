@@ -449,8 +449,8 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
 
 void wxSMARTmonitorApp::SetAttribute(
   const SMARTuniqueID & sMARTuniqueID,
-  fastestUnsignedDataType SMARTattributeID,
-  const enum colIndices::columnIndices & columnIndex,
+  TU_Bln361095::CPU::faststUint SMARTattributeID,
+  TU_Bln361095::CPU::faststUint columnIndex,
   const std::string & std_strValue,
   const SMARTvalRatngTyp SMARTvalRatng,
   void * data/** Which list control to use (for supported S.M.A.R.T. IDs dialog

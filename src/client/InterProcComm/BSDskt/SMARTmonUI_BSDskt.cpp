@@ -651,7 +651,7 @@ void SMARTmonitorClient::GetSMARTvaluesAndUpdateUI()
 //  else
 //    UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
 #else
-    UpdateSMARTparameterValuesThreadFunc(&m_getSMARTvaluesFunctionParams);
+    UpdateSMARTattrValsThreadFunc(&m_getSMARTvaluesFunctionParams);
 #endif
 //      ((SMARTmonitorBase *)this)->StartAsyncUpdateThread(SMARTmonitorBase::UpdateSMARTvaluesThreadSafe);
   }

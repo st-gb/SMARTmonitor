@@ -14,6 +14,8 @@
  #include <hardware/CPU/atomic/AtomicExchange.h>
  ///typedef TU_Bln361095::OpSys::nativeEvntTyp
  #include <OperatingSystem/multithread/nativeEvent_type.hpp>
+ ///TU_Bln361095OpSysThrdFnctnCllngCnvntn
+ #include <OperatingSystem/multithread/thread_function_calling_convention.h>
  #ifdef TU_Bln361095SMARTmonMultithread
  ///typedef TU_Bln361095::OpSys::nativeThreadTyp
   #include <OperatingSystem/multithread/nativeThreadType.hpp>
@@ -277,9 +279,10 @@ private:
   void ConstructConfigFilePathFromExeFilePath(
     const std::wstring & stdwstrAbsoluteFilePath,
     const std::wstring & stdwstrThisExecutable_sFilePath);
-};
-DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
-  void * p_v);
+};///End class
+DWORD TU_Bln361095OpSysThrdFnctnCllngCnvntn
+  UpdateSMARTattrValsThreadFunc(
+    void * p_v);
 
 extern SMARTmonitorBase * gp_SMARTmon;
 

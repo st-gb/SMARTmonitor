@@ -1,6 +1,6 @@
-/** SMARTuniqueID.cpp
+/**(c) Stefan Gebauer(Computer Science Master 2019 from TU Berlin)
  * Created on: 05.08.2016
- * Author:Stefan Gebauer, M.Sc.Comp.Sc.*/
+ * @author:Stefan Gebauer (TU Berlin matriculation number 361095) */
 
 ///C/C++ standard library files:
 #include <sstream>///class std::ostringstream
@@ -18,20 +18,29 @@
 
 TU_Bln361095SMARTmonNmSpcBgn
 
+/**This function is useful/necessary for Standard Template Library (STL)
+ * containers like std::set.*/
 bool operator < (const TU_Bln361095::SMARTmon::SMARTuniqueID & left,
                  const TU_Bln361095::SMARTmon::SMARTuniqueID & right)
 {
   int retVal = strcmp(left.m_modelName, right.m_modelName);
-  if( retVal < 0 )
+  /**If left character string is lexicographically less than right character
+   * string.*/
+  if(retVal < TU_Bln361095::CstdLib::strcmp::EqlStrs)
     return true;
   else if( retVal == TU_Bln361095::CstdLib::strcmp::EqlStrs )
   {
     retVal = strcmp(left.m_firmWareName, right.m_firmWareName);
-    if( retVal < 0)
+    /**If left character string is lexicographically less than right character
+     * string.*/
+    if(retVal < TU_Bln361095::CstdLib::strcmp::EqlStrs)
       return true;
     else if( retVal == TU_Bln361095::CstdLib::strcmp::EqlStrs)
     {
-      if( strcmp(left.m_serialNumber, right.m_serialNumber) < 0)
+      if(strcmp(left.m_serialNumber, right.m_serialNumber)
+        /**If left character string is lexicographically less than right
+         * character string.*/
+        < TU_Bln361095::CstdLib::strcmp::EqlStrs)
         return true;
     }
   }

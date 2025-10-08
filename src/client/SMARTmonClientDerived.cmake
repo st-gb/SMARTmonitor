@@ -6,7 +6,10 @@ set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
   ${SMARTattrValProcSrcFilePaths}
   ${SMARTmonSrcDir}/client/SMARTmonitorClient.cpp
-  ${SMARTmonSrcDir}/UserInterface/SMARTparamTblHdrWStr.c
+  #${TU_Bln361095cmnSrcRootDir}/hardware/dataCarrier/NVMe/enSMARTattrNames.c
+  ${TU_Bln361095cmnSrcRootDir}/hardware/dataCarrier/NVMe/enSMARTattrNames.cpp
+  #${SMARTmonSrcDir}/UserInterface/SMARTparamTblHdrWStr.c
+  ${SMARTmonSrcDir}/UserInterface/SMARTattrTblHdrWStr.cpp
 )
 
 #if(DEFINED TU_Bln361095useBSDskt AND TU_Bln361095useBSDskt EQUAL TRUE)
@@ -22,7 +25,7 @@ if(TU_Bln361095useBSDskt)##variable defined and not false
     -DTU_Bln361095useInterProcComm")
   add_definitions(${compDefs})
   message("adding comp. defs:${compDefs}")
-  include(${cmnSrcDir}/OperatingSystem/BSD/socket/set_IPv.cmake)
+  include(${TU_Bln361095cmnSrcRootDir}/OperatingSystem/BSD/socket/set_IPv.cmake)
 endif()
 if(DEFINED TU_Bln361095useClntSrv)
  set(SOURCE_FILE_PATHS

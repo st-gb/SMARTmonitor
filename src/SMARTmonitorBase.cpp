@@ -691,7 +691,7 @@ inline void SMARTmonitorBase::WaitForTimeout(
 /// needs some milliseconds->blocks the UI in this time.
 /// SMARTmonitorBase::BeforeWait(...) can be used to display the values
 /// (asynchronously in the UI thread via messages etc.).
-DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTparameterValuesThreadFunc(
+DWORD THREAD_FUNCTION_CALLING_CONVENTION UpdateSMARTattrValsThreadFunc(
   void * p_v)
 {
   LOGN_DEBUG("begin")
@@ -775,7 +775,7 @@ void SMARTmonitorBase::StartAsyncUpdateThread(
     m_getSMARTvaluesFunctionParams.p_getSMARTvaluesFunction = 
       getSMARTvaluesFunctionType;
     m_updateSMARTparameterValuesThread.start(
-      UpdateSMARTparameterValuesThreadFunc, /*this*/
+      UpdateSMARTattrValsThreadFunc, /*this*/
       & m_getSMARTvaluesFunctionParams
       );
   }
@@ -797,7 +797,7 @@ void SMARTmonitorBase::StartAsyncUpdateThread(
 //    struct GetSMARTvaluesFunctionParams
 //      getSMARTvaluesFunctionParams = {this, getSMARTvaluesFunctionType };
     m_updateSMARTparameterValuesThread.start(
-      UpdateSMARTparameterValuesThreadFunc, /*this*/
+      UpdateSMARTattrValsThreadFunc, /*this*/
       & getSMARTvaluesFunctionParams
       );
   }

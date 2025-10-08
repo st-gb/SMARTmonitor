@@ -52,7 +52,7 @@ public:
   enum columnIndices { COL_IDX_SMART_ID = 0 , COL_IDX_SMARTparameterName};
   
   void create2ColListCtrl();
-  inline void cr8ListCtrl();
+  inline void cr8ListCtrl(const SMARTuniqueID & dataCarrierID);
   wxSizer * CreateGUI(const SMARTuniqueID & dataCarrierID);
   void FillGUI(SMARTuniqueID &, SMARTmonitorClient &, const bool create);
   void SetTitleFromDataCarrierID(const SMARTuniqueID & dataCarrierID);

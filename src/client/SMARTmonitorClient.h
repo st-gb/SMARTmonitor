@@ -15,7 +15,8 @@
 
 ///This repository's files:
 #include "../SMARTmonitorBase.hpp"
-///enum TU_Bln361095::SMARTmon::colIndices::ColIndices
+/**enum TU_Bln361095::SMARTmon::TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdcs
+ */
 #include <UserInterface/columnIndices.hpp>
 #include <SMARTvalueRater.hpp>///class SMARTvalueRater
 #include <tinyxml2/ProcessSMARTdata.hpp>///class tinyxml2::SrvDataProcessor
@@ -59,7 +60,8 @@ public:
   ///To check whether we need to run UI operations in another thread or not.
   static fastestUnsignedDataType s_UIthreadID;
   static fastestUnsignedDataType s_maxNumCharsNeededForDisplay[];
-  static fastestUnsignedDataType s_charPosOAttrNameBegin[colIndices::byndLast];
+  static TU_Bln361095::CPU::faststUint s_charPosOAttrNameBegin[
+    TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ByndLast];
   static const char * const s_columnAttributeNames[];
   
   static enum TU_Bln361095::SMARTmon::SMARTvals::Rating::E
@@ -188,11 +190,14 @@ public:
      *  and a long uptime in ms.*/
     const uint64_t timeStampOfRetrieval, void * data);
   /*virtual*/ void UpdateSMARTvaluesUI();
+  /**@param SMARTattrTblColIdx: don't use an enum for S.M.A.R.T. attribute 
+   *  table column indices because 2 different enums for NVMe and (S)ATA
+   *  exist. So instead use an integer data type.*/
   virtual void SetAttribute(
     const SMARTuniqueID &,
-    fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
+    TU_Bln361095::CPU::faststUint SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
-    const enum colIndices::columnIndices &,/**Usually the column (number) */
+    TU_Bln361095::CPU::faststUint SMARTattrTblColIdx,
     const std::string &,
     const SMARTvalRatngTyp,
     /**e.g. pointer to list ctrl */void * data){}

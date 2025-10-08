@@ -16,7 +16,7 @@ endif()
 message("createExeName.cmake: EXE_NAME: ${EXE_NAME}")
 set(EXE_NAME_WOUT_EXT ${EXE_NAME} PARENT_SCOPE)
 set(EXE_NAME ${EXE_NAME}_${CMAKE_BUILD_TYPE})
-include(${cmnSrcDir}/dataType/charStr/suffixExeFileExt.cmake)
+include(${TU_Bln361095cmnSrcRootDir}/dataType/charStr/suffixExeFileExt.cmake)
 suffixExeFileExt(EXE_NAME)
 
 set(exeFileNames ${exeFileNames} /usr/${exeInstallDir}/${EXE_NAME} PARENT_SCOPE)

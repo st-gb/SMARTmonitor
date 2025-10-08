@@ -7,7 +7,7 @@
 
 ///Stefan Gebauer's(TU Berlin matric. number 361095) SMARTmonitor header files:
  #include <attributes/SMARTuniqueID.hpp>///class SMARTuniqueID
- ///enum TU_Bln361095::SMARTmon::colIndices::columnIndices
+ ///enum TU_Bln361095::SMARTmon::ATA_SMARTattrColIdx::ATA_SMARTattrTblColIdcs
  #include <UserInterface/columnIndices.hpp>
  #include <SMARTvalueRater.hpp>///SMARTvalRatngTyp
 
@@ -15,7 +15,7 @@ class SMARTattrs{
 private:
   SMARTuniqueID m_SMARTuniqueID;
   fastestUnsignedDataType m_SMARTattributeID;
-  enum colIndices::columnIndices m_columnIndices;
+  TU_Bln361095::CPU::faststUint m_SMARTattrTblColIdx;
   SMARTvalRatngTyp m_SMARTvalRating;
   std::string m_str;
   void * m_data;
@@ -25,13 +25,13 @@ public:
     fastestUnsignedDataType SMARTattributeID, /**Usually the line (number) */
     //TODO exchange enum with fastestUnsignedDataType for performance?
     /**Usually the column (number) */
-    const enum colIndices::columnIndices & colIndices,
+    TU_Bln361095::CPU::faststUint SMARTattrTblColIdx,
     const std::string & str,
     const SMARTvalRatngTyp SMARTvalRating,
     /**e.g. pointer to list ctrl */void * data)
    : m_SMARTuniqueID(_SMARTuniqueID),
      m_SMARTattributeID(SMARTattributeID),
-     m_columnIndices(colIndices),
+     m_SMARTattrTblColIdx(SMARTattrTblColIdx),
      m_str(str),
      m_SMARTvalRating(SMARTvalRating),
      m_data(data)

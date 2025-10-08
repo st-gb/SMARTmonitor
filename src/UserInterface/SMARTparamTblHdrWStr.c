@@ -1,37 +1,111 @@
 /** SMARTparamTblHdrWStr.c
  *  Created on: 25.09.2022 by Stefan Gebauer*/
 
-#include <wchar.h>///wchar_t
+///Standard/ISO C++ header files:
+ #include <wchar.h>///wchar_t
 
 ///Stefan Gebauer's(TU Berlin matr.#361095)"common_sourcecode" repository files:
-#include <preprocessor_macros/stringize.h>///stringize(...)
+ #include <dataType/charStr/stringize.h>///TU_Bln361095XpndAndMakeWcharStr(...)
 
 ///_This_ repository's files:
-#include <UserInterface/enLiterals.h>///English literal defines
-#include <UserInterface/columnIndices.hpp>///enum columnIndices
+ #include <SMARTmon_ID_prefix.h>///TU_Bln361095SMARTmonDef(...)
+ #include "SMARTparamTblHdrWStr.h"///TU_Bln361095SMARTmonWidestAttrATA[...]
+ /** English S.M.A.R.T. attributes(-related) values column header ASCII literal
+  *  preprocessor definitions. ("TU_Bln361095SMARTmonSMARTattrTblEn[...]") */
+ #include <UserInterface/enLiterals.h>
+ /**enum TU_Bln361095SMARTmonUse(ATA_SMARTattrTblColIdcs),
+  * TU_Bn361095SMARTmonATA_SMARTattrColIdxsUse(ByndLast) */
+ #include <UserInterface/columnIndices.hpp>
 
-///English Column Header Wide Strings
-wchar_t * enColHdrWstrs[] = {
-  (wchar_t *)MakeWcharStr(enID_ASCIIlit),
-  (wchar_t *)MakeWcharStr(enParamNmASCIIlit),
-  (wchar_t *)MakeWcharStr(enNrmlzdCurrValASCIIlit),
-  (wchar_t *)MakeWcharStr(enNrmlzdThresValASCIIlit),
-  (wchar_t *)MakeWcharStr(enRawValASCIIlit),
-  (wchar_t *)MakeWcharStr(enHumanReadableRawValASCIIlit),
-  (wchar_t *)MakeWcharStr(enRawValUnitASCIIlit),
-  (wchar_t *)MakeWcharStr(enRawValUnitRngASCIIlit),
-  (wchar_t *)MakeWcharStr(enLastUpdateAsUptimeASCIIlit)
-  };
+/**Also for C++: if a C++ source(.cpp, .cxx,...) file (indirectly) includes
+ * _this_ file. */
+TU_Bln361095SMARTmonNmSpcBgn
 
-unsigned maxColValStrWdthInPx[/*10*/TU_Bn361095SMARTmonColIdxsUse(byndLast)];
-wchar_t * widestColValStr[] ={
-  L"000",///ID
+/**These character string apply to (S)ATA S.M.A.R.T., not to NVMe S.M.A.R.T.!
+ * Name comes from: ENglish ATA SMART ATTRibute TaBLe COLumn HeaDeR Wide STRings
+ */
+const wchar_t * const TU_Bln361095SMARTmonDef(EnATA_SMARTattrTblColHdrWstrs)[] =
+{
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnID_ASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnParamNmASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnNrmlzdCurrValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnNrmlzdThresValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnRawValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnHumanReadableRawValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnRawValUnitASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnRawValUnitRngASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnLastUpdateAsUptimeASCIIlit)
+};
+
+/**These character string apply to NVMe S.M.A.R.T., not to (S)ATA S.M.A.R.T.!
+ * Name comes from:ENglish NVMe SMART ATTRibute TaBLe COLumn HeaDeR Wide STRings
+ */
+const wchar_t * const TU_Bln361095SMARTmonDef(EnNVMeSMARTattrTblColHdrWchrStrs)
+  [] =
+{
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnID_ASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnParamNmASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnRawValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnHumanReadableRawValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnRawValUnitASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnRawValUnitRngASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonSMARTattrTblEnLastUpdateAsUptimeASCIIlit)
+};
+
+///MAXimum COLumn VALue STRing WiDTH IN PiXels
+unsigned TU_Bln361095SMARTmonDef(MaxSMARTattrTblColValStrWdthInPx)[/*10*/
+  TU_Bln361095SMARTmonATA_SMARTattrColIdxUse(ByndLast) ];
+
+/**Identifier mame comes from: WIDEST ATA S.M.A.R.T. ATTRibute COLumn Wide
+ *  CHaRacter STRingS */
+const wchar_t * const TU_Bln361095SMARTmonDef(WidestATA_SMARTattrTblColWchrStrs)
+  [] =
+{
+  TU_Bln361095XpndAndMakeWcharStr(TU_Bln361095SMARTmonWidestSMARTattrIDvalASCIIlit),
   L""/*p_SMARTattrNmWithMaxPx*/,///parameter name
   L"200",///normalized current value
   L"200",///normalized threshold
-  L"AABBCCDDEEFFh",///raw value
-  L">=~9999d3h59min59s999ms",///human readable raw value
-  L">=~1h59min59s999ms",///human readable raw value unit
-  L"~1h09min59s999ms-~1h59min59s999ms",///human readable raw value unit range
-  L"99d23h59min59s999ms"///last update as uptime
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonWidestAttrATArawValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonWidestAttrATAhumanReadableRawValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonWidestSMARTattrHumanReadableRawValUnitASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonWidestSMARTattrHumanReadableRawValUnitRngASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonMax2DecDigitsDaysOpSysUptimeASCIIlit)
+};
+
+wchar_t * TU_Bln361095SMARTmonWidestNVMeSMARTattrColWcharStrs[] ={
+  TU_Bln361095XpndAndMakeWcharStr(TU_Bln361095SMARTmonWidestSMARTattrIDvalASCIIlit),
+  L""/*p_SMARTattrNmWithMaxPx*/,///parameter name
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonWidestNVMeSMARTattrRawValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonWidestNVMeSMARTattrHumanReadableRawValASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonWidestSMARTattrHumanReadableRawValUnitASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonWidestSMARTattrHumanReadableRawValUnitRngASCIIlit),
+  TU_Bln361095XpndAndMakeWcharStr(
+    TU_Bln361095SMARTmonMax2DecDigitsDaysOpSysUptimeASCIIlit)
   };
+
+TU_Bln361095SMARTmonNmSpcEnd

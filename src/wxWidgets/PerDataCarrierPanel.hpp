@@ -26,7 +26,10 @@ class PerDataCarrierPanel
   TU_Bln361095::hardware::bus::Type m_busType;
 public:
   SMARTtableListCtrl * m_pwxlistctrl;
-  PerDataCarrierPanel(wxWindow * parent, const wxWindowID windowID)
+  PerDataCarrierPanel(
+    wxWindow * parent,
+    const wxWindowID windowID,
+    const SMARTuniqueID & sMARTuniqueID)
     : wxPanel(parent)
   {
     wxSizer * const sizerTop = new wxBoxSizer(wxVERTICAL);
@@ -54,7 +57,9 @@ public:
     diskIDsizer->Add( m_p_showSupportedSMART_IDs, 0, wxSTRETCH_NOT, 0);
     sizerTop->Add( diskIDsizer, 0, wxEXPAND, 0);
 
-    m_pwxlistctrl = new SMARTtableListCtrl(this//, wxID_ANY, wxDefaultPosition,
+    m_pwxlistctrl = new SMARTtableListCtrl(this,
+      sMARTuniqueID
+      //, wxID_ANY, wxDefaultPosition,
       //wxDefaultSize, wxLC_REPORT
       );
 
@@ -83,7 +88,7 @@ public:
     wxString label = wxString::Format(wxT("%u"), SMARTattrID);
     m_pwxlistctrl->SetSMARTattribValue(
       SMARTattrID,
-      colIndices::SMART_ID,
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ID,
       label,
       SMARTvals::Rating::noCriticalVal
       );
@@ -112,7 +117,7 @@ public:
     label = TU_Bln361095::wxWidgets::GetwxString_inln(stdstrSMARTattrName),
     m_pwxlistctrl->SetSMARTattribValue(
       SMARTattrID,
-      colIndices::SMARTparameterName,
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::Name,
       label,
       SMARTvals::Rating::noCriticalVal
       );

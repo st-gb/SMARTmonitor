@@ -92,7 +92,7 @@ if(WIN32)#https://cmake.org/cmake/help/v3.0/variable/WIN32.html
   include(${SMARTmonSrcDir}/Windows/Windows.cmake)
 endif()
 
-set(TU_Bln361095cmnSrcLoggerDir ${cmnSrcDir}/Controller/Logger)
+set(TU_Bln361095cmnSrcLoggerDir ${TU_Bln361095cmnSrcRootDir}/Controller/Logger)
 ##Sets CMake variable "TU_Bln361095cmnSrcDfltLoggerSrcFilePaths".
 include(${TU_Bln361095cmnSrcLoggerDir}/defaultLoggerFiles.cmake)
 
@@ -154,17 +154,20 @@ endif()
 set(InclDirs
   ${InclDirs}
   ${SMARTmonSrcDir}
-  ${cmnSrcDir}
+  ${TU_Bln361095cmnSrcRootDir}
   ${TINYXML2_ROOT_PATH}
   )
 
 if(NOT WIN32)
-  set(InclDirs ${InclDirs} ${cmnSrcDir}/Controller/MSVC_adaption)#tchar.h etc.
+  set(InclDirs
+    ${InclDirs}
+    ${TU_Bln361095cmnSrcRootDir}/Controller/MSVC_adaption ##"tchar.h" etc.
+    )
 endif()
 
 #Avoid GCC "warning: extended initializer lists only available with -std=c++11
 # or -std=gnu++11"
-include(${cmnSrcDir}/CMake/useCpp11.cmake)
+include(${TU_Bln361095cmnSrcRootDir}/CMake/useCpp11.cmake)
 use_cxx11()
 
 #From https://stackoverflow.com/questions/5403705/cmake-add-definitions-and-compile-definitions-how-to-see-them

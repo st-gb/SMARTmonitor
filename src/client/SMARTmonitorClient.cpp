@@ -133,10 +133,12 @@ void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
   LOGN_DEBUG("end")
 }
 
-///\param data: For supported S.M.A.R.T. IDs dialog list control
+/**\param data: For supported S.M.A.R.T. IDs dialog list control
+ * The table column index for SMART attribute ID and name is identical for
+ * (S)ATA and NVMe */
 void SMARTmonitorClient::setIDandLabel(
   const SMARTuniqueID & sMARTuniqueID,
-  const fastestUnsignedDataType SMARTattrID,
+  const TU_Bln361095::CPU::faststUint SMARTattrID,
   void * data)
 {
   std::ostringstream std_oss;
@@ -144,7 +146,8 @@ void SMARTmonitorClient::setIDandLabel(
   SetAttribute(
     sMARTuniqueID,
     SMARTattrID,
-    colIndices::SMART_ID,
+    (TU_Bln361095::CPU::faststUint)
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ID,
     std_oss.str(),
     TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::noCriticalVal,
     data
@@ -172,7 +175,8 @@ void SMARTmonitorClient::setIDandLabel(
   SetAttribute(
     sMARTuniqueID,
     SMARTattrID,
-    colIndices::SMARTparameterName,
+    (TU_Bln361095::CPU::faststUint)
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::Name,
     stdstrSMARTattrName,
     TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::noCriticalVal
     ,data
@@ -188,10 +192,17 @@ void SMARTmonitorClient::UpdateTimeOfSMARTvalueRetrieval(
   UserInterface::FormatTime(
     timeStampOfRetrievalInMs, 
     timeFormatString);
+  TU_Bln361095::CPU::faststUint SMARTattrTblLastUpdateColIdx;
+  if(sMARTuniqueID.getBusType() == TU_Bln361095::hardware::bus::NVMe)
+    SMARTattrTblLastUpdateColIdx = (TU_Bln361095::CPU::faststUint)
+      TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::LastUpdate;
+  else
+    SMARTattrTblLastUpdateColIdx = (TU_Bln361095::CPU::faststUint)
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::LastUpdate;
   SetAttribute(
     sMARTuniqueID,
     SMARTattributeID,
-    colIndices::lastUpdate /** column #/ index */,
+    SMARTattrTblLastUpdateColIdx /** column #/ index */,
     timeFormatString,
     TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::noCriticalVal,
     data
@@ -359,7 +370,7 @@ template<typename SMARTattrRawValTyp, typename realCircaSMARTattrRawValTyp>
  inline void
  useDeterminedUnits(
   const SMARTuniqueID & sMARTuniqueID,
-  const fastestUnsignedDataType SMARTattrID,
+  const TU_Bln361095::CPU::faststUint SMARTattrID,
   const SMARTattrRawValTyp & SMARTattrRawVal,
   long & unit,
   realCircaSMARTattrRawValTyp & realCircaSMARTattrRawVal,
@@ -473,6 +484,7 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
   const SMARTuniqueID & sMARTuniqueID = SMARTuniqueIDandVals.
     getSMARTuniqueID();
   bool isConsistent = sMARTvalue.IsConsistent(SMARTrawVal);
+  unsigned SMARTattrTblLastUpdateColIdx;
   if(sMARTattr.m_successfullyReadSMARTrawValue)
   {
   /**Make a copy of the raw value because it may be changed by the "get 
@@ -565,56 +577,88 @@ http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info
 //          SMARTattributeID &= 2 << (numSMARTattributeIDbits - 1)
     sMARTvalueRating = s_SMARTvalueRater.GetSMARTvalueRating(SMARTattrID,
       SMARTuniqueIDandVals, realCircaSMARTattrRawVal, p_modelAndFirmware);
+
+    TU_Bln361095::CPU::faststUint SMARTattrTblRawValColIdx;
+    TU_Bln361095::CPU::faststUint SMARTattrTblHumanReadableRawValColIdx;
+    TU_Bln361095::CPU::faststUint SMARTattrTblUnitColIdx;
+    TU_Bln361095::CPU::faststUint SMARTattrTblUnitRngColIdx;
+
     /**According to struct "NVME_HEALTH_INFO_LOG" in file "nvme.h" (see
 http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info_log
      * ) S.M.A.R.T. via NVMe does not have normalized current, worst and
      * threshold values per attribute ID.*/
-    if(sMARTuniqueID.getBusType() != TU_Bln361095::hardware::bus::NVMe)
+    if(sMARTuniqueID.getBusType() == TU_Bln361095::hardware::bus::NVMe)
+    {
+      SMARTattrTblRawValColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::RawVal;
+      SMARTattrTblHumanReadableRawValColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::HumanReadableRawVal;
+      SMARTattrTblUnitColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::Unit;
+      SMARTattrTblUnitRngColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::UnitRange;
+      SMARTattrTblLastUpdateColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::LastUpdate;
+    }
+    else
     {
       SetAttribute(
         sMARTuniqueID,
         SMARTattrID,
-        colIndices::nrmlzdCurrVal/**column #/index*/,
+        (TU_Bln361095::CPU::faststUint)
+          TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::NrmlzdCurrVal,
         std_ossNrmlzdCurrSMARTval.str(),
         sMARTvalueRating,
         data);
       SetAttribute(
         sMARTuniqueID,
         SMARTattrID,
-        colIndices::nrmlzdThresh/**column #/index*/,
+        (TU_Bln361095::CPU::faststUint)
+          TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::NrmlzdThresh,
         std_ossNrmlzdThreshVal.str(),
         sMARTvalueRating,
         data);
+
+      SMARTattrTblRawValColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::RawVal;
+      SMARTattrTblHumanReadableRawValColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::HumanReadableRawVal;
+      SMARTattrTblUnitColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::Unit;
+      SMARTattrTblUnitRngColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::UnitRange;
+      SMARTattrTblLastUpdateColIdx = (TU_Bln361095::CPU::faststUint)
+        TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::LastUpdate;
     }
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      colIndices::rawValue /** column #/ index */,
+      SMARTattrTblRawValColIdx/** column #/ index */,
       std_ossRawSMARTval.str(),
       sMARTvalueRating,
       data);
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      colIndices::humanReadableRawVal,
+      SMARTattrTblHumanReadableRawValColIdx,
       stdstrHumanReadableRawVal,
       sMARTvalueRating,
       data);
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      colIndices::unit,
+      SMARTattrTblUnitColIdx,
       stdstrUnit,
       sMARTvalueRating,
       data);
-    if(! std_ossUnitAccuracy.str().empty() )
-    SetAttribute(
-      sMARTuniqueID,
-      SMARTattrID,
-      colIndices::unitRange,
-      std_ossUnitAccuracy.str(),
-      sMARTvalueRating,
-      data);
+    if(!std_ossUnitAccuracy.str().empty() )
+      SetAttribute(
+        sMARTuniqueID,
+        SMARTattrID,
+        SMARTattrTblUnitRngColIdx,
+        std_ossUnitAccuracy.str(),
+        sMARTvalueRating,
+        data);
 
         /** https://cboard.cprogramming.com/c-programming/115586-64-bit-integers-printf.html
         *   : "%llu": Linux %llu, "%I64u": Windows */
@@ -647,7 +691,7 @@ http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info
     SetAttribute(
       sMARTuniqueID,
       SMARTattrID,
-      colIndices::lastUpdate,
+      SMARTattrTblLastUpdateColIdx,
       /*"error:uptime is 0"*/"not read yet",
       sMARTvalueRating,
       data);

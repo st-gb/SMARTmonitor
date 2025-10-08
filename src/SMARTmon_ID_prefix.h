@@ -28,13 +28,19 @@
  * see whether the namespace exists(in an IDE via highlighting) and ensure that
  * everywhere the same namespace is used without a typo.*/
 
+  #define TU_Bln361095SMARTmonDef(suffix) suffix
   #define TU_Bln361095SMARTmonNmSpc TU_Bln361095::SMARTmon
   #define TU_Bln361095SMARTmonNmSpcBgn namespace TU_Bln361095{namespace \
-  SMARTmon{
+    SMARTmon{
   #define TU_Bln361095SMARTmonNmSpcEnd }}
-#else
+  #define TU_Bln361095SMARTmonUse(suffix) TU_Bln361095SMARTmonNmSpc :: suffix
+#else///File is compiled with a C compiler.
+  #define TU_Bln361095SMARTmonDef(suffix) TU_Bln361095SMARTmon ## suffix
   #define TU_Bln361095SMARTmonNmSpcBgn
   #define TU_Bln361095SMARTmonNmSpcEnd
+  /**Using the preprocessor macro for definition in the usage ensures that both
+   * declaration and usage have the identical name.*/
+  #define TU_Bln361095SMARTmonUse(suffix) TU_Bln361095SMARTmonDef(suffix)
 #endif
 
 #endif///include guard

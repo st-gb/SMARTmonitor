@@ -277,7 +277,7 @@ void SMARTdialog::CreatePerDiskUIctrls(wxSizer * p_sizer)
       getSMARTuniqueID();
 
     PerDataCarrierPanel * p_perDataCarrierPanel = new PerDataCarrierPanel(this,
-      windowID);
+      windowID, sMARTuniqueID);
     p_sizer->Add(p_perDataCarrierPanel,
       1/*wxEXPAND*/,///"proportion"
       wxEXPAND, 0);
@@ -573,7 +573,8 @@ void SMARTdialog::ReBuildUserInterface()
       getSMARTuniqueID();
     PerDataCarrierPanel * p_perDataCarrierPanel;
     if(iter == m_SMARTuniqueID2perDataCarrierPanel.end() ){
-      p_perDataCarrierPanel = new PerDataCarrierPanel(this, windowID);
+      p_perDataCarrierPanel = new PerDataCarrierPanel(this, windowID,
+        sMARTuniqueID);
       p_sMARTinfoSizer->Insert(0, p_perDataCarrierPanel, 1, wxEXPAND, 0);
       m_SMARTuniqueID2perDataCarrierPanel.insert(std::make_pair(
         sMARTuniqueID, p_perDataCarrierPanel) );

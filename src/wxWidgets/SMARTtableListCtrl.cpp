@@ -18,7 +18,8 @@
 
 //This repository's header files:
 #include <wxWidgets/SMARTtableListCtrl.hpp>//This class.
-#include <UserInterface/columnIndices.hpp> //enum columnIndices
+ ///TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdcs enum (values)
+ #include <UserInterface/columnIndices.hpp>
 ///enCtxMenuLwrFntSzASCIIlit,enCtxMenuHghrFntSzASCIIlit
 #include <UserInterface/enLiterals.h>
 //wxGetApp().m_IDsOfSMARTattributesToObserve
@@ -47,19 +48,51 @@ END_EVENT_TABLE()
     , m_maxSMARTattrNmStrWdthInPx(0)
     ///http://forums.wxwidgets.org/viewtopic.php?t=17143
     , clientDC(this)
+    , m_r_dataCarrier(dataCarrierID)
   {
     SetToolTip(wxT(enRghtClckTooltip) );
 //	colHdrStrs[enColStrsIdx][en] = enColHdrStrs;
 
     getSMARTAttrNmWithMaxPx();///For width of parameter name column
-    createCols();
+    createCols(dataCarrierID);
   }
 
-  void SMARTtableListCtrl::createCols()
+  inline void SMARTtableListCtrl::createATAcols()
   {
 //    this->GetDC
 //    unsigned numpixels = textControlFont.GetWidth("255");
+    /** Adapted from
+     * http://wiki.wxwidgets.org/WxListCtrl#Minimal_example_to_get_started */
+    wxListItem column;
 
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::
+      ID);
+
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::
+      NrmlzdCurrVal);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::
+      NrmlzdThresh);
+
+    column.SetId(TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::Name);
+    column.SetText(wxT("parameter name"));
+    column.SetWidth(200);
+    InsertColumn(TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::Name, column);
+
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::
+      RawVal);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::
+      HumanReadableRawVal);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::
+      Unit);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::
+      UnitRange);
+    //TODO calculate width needed for the last update time string
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::
+      LastUpdate);
+  }
+
+  inline void SMARTtableListCtrl::createNVMeCols()
+  {
     /** Adapted from
      * http://wiki.wxwidgets.org/WxListCtrl#Minimal_example_to_get_started */
     wxListItem column;
@@ -68,22 +101,38 @@ END_EVENT_TABLE()
      * is 0 under Windows.*/
 //    const int letterWidth = textControlFont.GetPixelSize().x;
 //    column.SetWidth(50/*letterWidth * 4*/);
-    setColHdrAndInsCol(column, colIndices::SMART_ID);
 
-    setColHdrAndInsCol(column, colIndices::nrmlzdCurrVal);
-    setColHdrAndInsCol(column, colIndices::nrmlzdThresh);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::ID);
 
-    column.SetId(colIndices::SMARTparameterName);
-    column.SetText(wxT("parameter name") );
+    column.SetId(TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::Name);
+    column.SetText(wxT("parameter name"));
     column.SetWidth(200);
-    InsertColumn(colIndices::SMARTparameterName, column);
+    InsertColumn(TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::Name, column);
 
-    setColHdrAndInsCol(column, colIndices::rawValue);
-    setColHdrAndInsCol(column, colIndices::humanReadableRawVal);
-    setColHdrAndInsCol(column, colIndices::unit);
-    setColHdrAndInsCol(column, colIndices::unitRange);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::
+      RawVal);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::
+      HumanReadableRawVal);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::
+      Unit);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::
+      UnitRange);
     //TODO calculate width needed for the last update time string
-    setColHdrAndInsCol(column, colIndices::lastUpdate);
+    setColHdrAndInsCol(column, TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::
+      LastUpdate);
+  }
+
+  void SMARTtableListCtrl::createCols(const SMARTuniqueID & dataCarrierID)
+  {
+//    this->GetDC
+//    unsigned numpixels = textControlFont.GetWidth("255");
+
+    if(m_r_dataCarrier.getBusType() == TU_Bln361095::hardware::bus::NVMe)
+      createNVMeCols();
+    else
+    {
+      createATAcols();
+    }
   }
 
 inline void GetClrAccordng1toMns1Rng(const SMARTvalRatngTyp SMARTvalRatng,

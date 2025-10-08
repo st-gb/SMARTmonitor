@@ -64,8 +64,10 @@ public:
     return m_SMARTuniqueIDsandVals;
   }
   
+  /**@param ID: after/from opening a data carrier via
+   *  TU_Bln361095hardwareDataCarrierUse(Open) */
   virtual int GetSupportedSMART_IDs(
-    const char * const device,
+    const TU_Bln361095hardwareDataCarrierUse(IDtyp) ID,
     suppSMART_IDsType & SMARTattributeNamesAndIDs){return unset;}
 };
 

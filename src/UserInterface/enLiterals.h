@@ -9,22 +9,29 @@
 #endif
 #if defined TU_Bln361095usePrgmInclGrd || \
   /**Include guard supported by (nearly) all industry compilers:*/\
-  ! defined TU_Berlin361095SMARTmon_UI_enLiterals_h
-  #define TU_Berlin361095SMARTmon_UI_enLiterals_h
+ /**UI=User Interface
+  * en=ENglish */\
+ ! defined TU_Berlin361095SMARTmon_UI_enLiterals_h
+   #define TU_Berlin361095SMARTmon_UI_enLiterals_h
 
 ///lit=LITeral:http://www.allacronyms.com/literal/abbreviated
-///table header ASCII strings:
-#define enID_ASCIIlit "ID"
-#define enParamNmASCIIlit "parameter name"
-#define enNrmlzdCurrValASCIIlit "current value(normalized)"
-#define enNrmlzdThresValASCIIlit "threshold value(normalized)"
-#define enRawValASCIIlit "raw value"
-#define enHumanReadableRawValASCIIlit "human readable raw value"
+///ATTRibute TaBLe header ASCII string LITerals: for (S)ATA & NVMe
+#define TU_Bln361095SMARTmonSMARTattrTblEnID_ASCIIlit "ID"
+#define TU_Bln361095SMARTmonSMARTattrTblEnParamNmASCIIlit "parameter name"
+#define TU_Bln361095SMARTmonSMARTattrTblEnNrmlzdCurrValASCIIlit \
+"current value(normalized)"
+#define TU_Bln361095SMARTmonSMARTattrTblEnNrmlzdThresValASCIIlit \
+"threshold value(normalized)"
+#define TU_Bln361095SMARTmonSMARTattrTblEnRawValASCIIlit "raw value"
+#define TU_Bln361095SMARTmonSMARTattrTblEnHumanReadableRawValASCIIlit \
+"human readable raw value"
 ///VaL=VALue:http://www.abbreviations.com/abbreviation/value
-#define enRawValUnitASCIIlit "raw value unit"
+#define TU_Bln361095SMARTmonSMARTattrTblEnRawValUnitASCIIlit "raw value unit"
 ///Rng=RaNGe:http://www.abbreviations.com/abbreviation/Range
-#define enRawValUnitRngASCIIlit "raw value ~unit range"
-#define enLastUpdateAsUptimeASCIIlit "last update[uptime]"
+#define TU_Bln361095SMARTmonSMARTattrTblEnRawValUnitRngASCIIlit \
+"raw value ~unit range"
+#define TU_Bln361095SMARTmonSMARTattrTblEnLastUpdateAsUptimeASCIIlit \
+"last update[uptime]"
 
 ///context menu ASCII strings
 #define enCtxMenuLwrFntSzASCIIlit "decrease font size"

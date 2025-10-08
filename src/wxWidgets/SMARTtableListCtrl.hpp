@@ -9,7 +9,8 @@
  * "#warning Please include winsock2.h before windows.h" */
 ///enum SMARTmonitorClient::SMARTvalueRating
 #include <client/SMARTmonitorClient.h>
-#include <UserInterface/SMARTparamTblHdrWStr.h>///enColHdrWstrs
+ ///TU_Bln361095SMARTmonUse(EnATA_SMARTattrTblColHdrWstrs)
+ #include <UserInterface/SMARTparamTblHdrWStr.h>
 
 ///Stefan Gebauer's(TU Berlin matricul. num. 361095) ~"cmnSrc" repository files:
  ///TU_Bln361095disableUseSecC_RunTimeStrFnWarn
@@ -42,14 +43,17 @@ class SMARTtableListCtrl
 {
 private:
   enum evtIDs{decreaseFontSize,increaseFontSize};
+  const SMARTuniqueID & m_r_dataCarrier;
 public:
   wxClientDC clientDC;
   /*static*/ bool setColWdthAccHdrStrWdth = /*true*/false;
   TU_Bln361095::CPU::faststUint m_maxSMARTattrNmStrWdthInPx;
   TU_Bln361095::CPU::faststUint m_SMARTattribIDtoLineNumber[
     TU_Bln361095dataCarrierNumSATA_SMARTattrIDs+1];
+
   SMARTtableListCtrl(
     wxWindow * parent,
+    const SMARTuniqueID & dataCarrierID,
     wxWindowID id = wxID_ANY,
     const wxPoint& pos = wxDefaultPosition,
     const wxSize& size = wxDefaultSize//,
@@ -57,9 +61,11 @@ public:
 //      this, wxID_ANY, wxDefaultPosition,
 //      wxDefaultSize, wxLC_REPORT
     );
-  void createCols();
+  void createCols(const SMARTuniqueID & dataCarrierID);
   /** @brief Before a list item can be changed via "SetItem" it needs to be 
    * inserted.*/
+  inline void createATAcols();
+  inline void createNVMeCols();
   void CreateLines(const SMARTuniqueID &);
   void SetSMARTattribValue(
     TU_Bln361095::CPU::faststUint SMARTattributeID,
@@ -72,12 +78,26 @@ public:
   {
     const wchar_t * lbl;
 //    const unsigned numArrEles = sizeof(enColHdrWstrs)/sizeof(enColHdrWstrs[0]);
-    if(//lang < /*byndLastLang*//*numLangs &&*/
-      colID < /*byndLastCol*/colIndices::byndLast
 	/*numArrEles*/)
-      lbl = enColHdrWstrs/*[lang]*/[colID];
+    if(m_r_dataCarrier.getBusType() == TU_Bln361095::hardware::bus::NVMe)
+    {
+      if(//lang < /*byndLastLang*//*numLangs &&*/
+        colID < TU_Bln361095::SMARTmon::NVMeSMARTattrColIdx::ByndLast)
+        lbl = //TU_Bln361095SMARTmonEnNVMeSMARTattrTblColHdrWchrStrs
+          TU_Bln361095SMARTmonUse(EnNVMeSMARTattrTblColHdrWchrStrs)/*[lang]*/
+            [colID];
+      else
+        lbl = NULL;
+    }
     else
-      lbl = NULL;
+    {
+      if(//lang < /*byndLastLang*//*numLangs &&*/
+        colID < TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ByndLast)
+        lbl = //TU_Bln361095SMARTmonEnATA_SMARTattrTblColHdrWstrs/*[lang]*/
+          TU_Bln361095::SMARTmon::EnATA_SMARTattrTblColHdrWstrs)[colID];
+      else
+        lbl = NULL;
+    }
     return lbl;
   }
   /*static*/inline int getTxtWdthInPx(const wchar_t * str) const{
@@ -88,18 +108,24 @@ public:
   ///Only needs to be done once for all wxListCtrl objects? On the other hand
   /// different objects may have different font sizes.
   /**@brief gets maximum "parameter name" column width in pixel*/
-  void getSMARTAttrNmWithMaxPx(){
-    maxColValStrWdthInPx[colIndices::SMART_ID] =
-      getTxtWdthInPx(widestColValStr[colIndices::SMART_ID]);
-    maxColValStrWdthInPx[colIndices::SMARTparameterName] =
+  void getSMARTAttrNmWithMaxPx()
+  {
+    TU_Bln361095::SMARTmon::MaxSMARTattrTblColValStrWdthInPx[
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ID] =
+      getTxtWdthInPx(TU_Bln361095::SMARTmon::WidestATA_SMARTattrTblColWchrStrs[
+        TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ID]);
+    TU_Bln361095::SMARTmon::MaxSMARTattrTblColValStrWdthInPx[
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::Name] =
       m_maxSMARTattrNmStrWdthInPx;
     for(TU_Bln361095::hardware::CPU::FaststUint colID =
-      TU_Bln361095::SMARTmon::colIndices::nrmlzdCurrVal;
-      colID < TU_Bln361095::SMARTmon::colIndices::byndLast; colID++){
-      maxColValStrWdthInPx[colID] =
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::NrmlzdCurrVal;
+      colID < TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ByndLast; colID++)
+    {
+      TU_Bln361095::SMARTmon::MaxSMARTattrTblColValStrWdthInPx[colID] =
 /**Alternative:get max. value string width via SMARTmonClient::
  * upd8rawAndH_andTime(...) (simulate real output)*/
-        getTxtWdthInPx(widestColValStr[colID]);
+        getTxtWdthInPx(TU_Bln361095::SMARTmon::WidestATA_SMARTattrTblColWchrStrs
+          [colID]);
     }
   }
   inline void setColHdrAndInsCol(wxListItem & column, const long colID)
@@ -125,7 +151,8 @@ public:
         colWdthInPx += /*50*/textWidth;
       }
       else/* if(setColWdthAccMaxValStrWdth)*/
-        colWdthInPx += /*50*/maxColValStrWdthInPx[colID];
+        colWdthInPx += /*50*/TU_Bln361095::SMARTmon::
+          MaxSMARTattrTblColValStrWdthInPx[colID];
       column.SetWidth(colWdthInPx);
       InsertColumn(colID, column);
     }

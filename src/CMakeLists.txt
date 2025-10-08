@@ -56,7 +56,7 @@ if(DEFINED SMARTmonClientDerived)#define for all clients
 endif()
 
 ##${SGR_Cyan},${SGR_ColourReset}
-include(${cmnSrcDir}/CMake/SGR_terminalColours.cmake)
+include(${TU_Bln361095cmnSrcRootDir}/CMake/SGR_terminalColours.cmake)
 
 if(DEFINED WXWIDGETS)
   message("WXWIDGETS is defined")
@@ -119,7 +119,7 @@ set( INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 #message("include directories: ${INCLUDE_DIRS}")
-include(${cmnSrcDir}/compiler/C,C++/printInclDirs.cmake)
+include(${TU_Bln361095cmnSrcRootDir}/compiler/C,C++/printInclDirs.cmake)
 TU_Bln361095printCmplrInclDirs("CMakeLists.txt")
 
 if(${EXE_TYPE} STREQUAL "UNIX_service")
@@ -173,8 +173,9 @@ message("CMAKE_CXX_FLAGS_DEBUG: \"${CMAKE_CXX_FLAGS_DEBUG}\"")
 message("CFLAGS: ${CFLAGS} CXXFLAGS: ${CXXFLAGS} LDFLAGS: ${LDFLAGS}")
 message("CMAKE_EXE_LINKER_FLAGS: \"${CMAKE_EXE_LINKER_FLAGS}\"")
 
-include(${cmnSrcDir}/compiler/C,C++/printLibDirs.cmake)##printLibDirs(...)
-printLibDirs(5)
+##TU_Bln361095printCmplrLibDirs(...)
+include(${TU_Bln361095cmnSrcRootDir}/compiler/C,C++/printLibDirs.cmake)
+TU_Bln361095printCmplrLibDirs(5)
 
 #From https://stackoverflow.com/questions/5403705/cmake-add-definitions-and-compile-definitions-how-to-see-them
 #: Output variable set with "add_definitions(...)"
@@ -187,7 +188,7 @@ else()
 endif()
 
 if(cre8SrcArchive)
-  include(${CmnSrc}/CMake/cr8srcArchive.cmake)
+  include(${TU_Bln361095cmnSrcDir}/CMake/cr8srcArchive.cmake)
 endif()
 endif(cre8CmnFilesDebPkg)#"else" branch of condition
 if(UNIX)#only Unix binaries into .deb file
@@ -202,7 +203,7 @@ if(DEFINED cr8zip)#"-Dcr8zip" as cmake command line parameter
 endif()
 
 if(NOT ${EXE_TYPE} STREQUAL "cre8CmnFilesDebPkg")
-  include(${cmnSrcDir}/CMake/writeItemsToFile.cmake)
+  include(${TU_Bln361095cmnSrcRootDir}/CMake/writeItemsToFile.cmake)
   Set(srcFilePathsFileName ${EXE_TYPE}_source_file_paths.txt)
   message("Writing source file paths to file \"${srcFilePathsFileName}\".")
   #For debugging purposes
