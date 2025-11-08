@@ -41,6 +41,15 @@ http://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology
   #include <boost/multiprecision/cpp_int.hpp>///boost::multiprecision::cpp_int
 #endif
 
+#ifdef __cplusplus
+  ///val=VALue: 
+  #define TU_Bln361095SMARTmonSMARTattrValNmSpc \
+    TU_Bln361095SMARTmonNmSpc :: SMARTattrVal
+  #define TU_Bln361095SMARTmonSMARTattrValDef(suffix) suffix
+  #define TU_Bln361095SMARTmonSMARTattrValUse(suffix) \
+    TU_Bln361095SMARTmonSMARTattrValNmSpc :: suffix
+#endif
+
 #define TU_Bln361095numMaxATA_SMART_IDsPlus1\
   (TU_Bln361095dataCarrierNumSATA_SMARTattrIDs\
     /** +1 to enable a 1-based array index*/ +1)
