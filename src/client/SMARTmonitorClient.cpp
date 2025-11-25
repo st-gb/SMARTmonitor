@@ -28,8 +28,14 @@ fastestUnsignedDataType SMARTmonitorClient::s_updateUI = 1;
 #ifdef TU_Bln361095SMARTmonMultithread
 //nativeThread_type SMARTmonitorClient::s_updateSMARTparameterValuesThread;
 #endif
-enum SMARTvals::Rating::E SMARTmonitorClient::
-  s_entireSMARTstatus =TU_Bln361095SMARTmonNmSpc::SMARTvals::Rating::unknown;
+
+///"static"/class variable definition:
+enum //SMARTvals::Rating::E
+  TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::Rslt
+  //TU_Bln361095::SMARTmon::
+  SMARTmonitorClient::
+  s_entireSMARTstatus =//TU_Bln361095::SMARTmon::SMARTvals::Rating::Unknown;
+  TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::Rslt::Unknown;
 fastestUnsignedDataType SMARTmonitorClient::s_maxNumCharsNeededForDisplay [] =
  { 3, 30, 15, 20, 40};
 fastestUnsignedDataType SMARTmonitorClient::s_charPosOAttrNameBegin [] =
@@ -137,7 +143,7 @@ void SMARTmonitorClient::SetSMARTattribIDandNameLabel()
  * The table column index for SMART attribute ID and name is identical for
  * (S)ATA and NVMe */
 void SMARTmonitorClient::setIDandLabel(
-  const SMARTuniqueID & sMARTuniqueID,
+  const TU_Bln361095::SMARTmon::SMARTuniqueID & sMARTuniqueID,
   const TU_Bln361095::CPU::faststUint SMARTattrID,
   void * data)
 {
@@ -243,8 +249,8 @@ void SMARTmonitorClient::UpdateSMARTvaluesUI()
       getSMARTuniqueID();
     LOGN("SMART unique ID and values object " << &(*SMARTuniqueIDandValuesIter) )
     
-    const ModelAndFirmware * p_currModelAndFirmware = getDataCarrierAttrDefs(
-      sMARTuniqueID);
+    const TU_Bln361095::SMARTmon::ModelAndFirmware * p_currModelAndFirmware =
+      getDataCarrierAttrDefs(sMARTuniqueID);
 
     const fastestUnsignedDataType * SMART_IDsToRd = sMARTuniqueID.
       m_SMART_IDsToRd;
@@ -418,14 +424,15 @@ template<typename SMARTattrRawValTyp, typename realCircaSMARTattrRawValTyp>
       if(upperLimit != 0.0)///Prevent division by 0.
         accuracy = lowerUnitLimit / upperLimit;
     }
-    std_ossUnit << SMARTvalueFormatter::FmtHumanReadable(sMARTuniqueID,
-      SMARTattrID, unit, true, NULL);
+    std_ossUnit << TU_Bln361095::SMARTmon::SMARTattrVal::FmtHumanReadable(
+      sMARTuniqueID, SMARTattrID, unit, true, NULL);
 
-    stdstrHumanReadableRawVal += SMARTvalueFormatter::
+    stdstrHumanReadableRawVal += TU_Bln361095::SMARTmon::SMARTattrVal::
       FmtHumanReadable(sMARTuniqueID, SMARTattrID, realCircaSMARTattrRawVal,
         true, p_currModelAndFirmware);
-    if(accuracy != 0.0){
-      std::string humanReadableAccuracy = SMARTvalueFormatter::
+    if(accuracy != 0.0)
+    {
+      std::string humanReadableAccuracy = TU_Bln361095::SMARTmon::SMARTattrVal::
         FmtHumanReadable(sMARTuniqueID, SMARTattrID,
           (TU_Bln361095::SMARTmon::SMARTattr::rawValTyp) lowerUnitLimit, true,
           NULL);
@@ -463,13 +470,20 @@ template<typename SMARTattrRawValTyp, typename realCircaSMARTattrRawValTyp>
   }
 }
 
-/** \param data e.g. a list control. A "void" pointer (alternative: subclassung)
- * to enable different UI control classes .*/
-SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
-  const fastestUnsignedDataType SMARTattrID,
-  const SMARTuniqueIDandValues & SMARTuniqueIDandVals,
+/**@brief updates:
+ *  -S.M.A.R.T. attribute raw value
+ *  -S.M.A.R.T. attribute human readable raw value
+ *  -S.M.A.R.T. attribute raw value unit
+ *  -S.M.A.R.T. attribute raw value unit range
+ *  -time in user interface (UI)
+ * @param data for example a list control. A "void" pointer (alternative?:
+ *  base class as pointer and subclassing from it) to enable different UI
+ *  control classes .*/
+TU_Bln361095::SMARTmon::SMARTattrValRtgTyp SMARTmonitorClient::upd8rawAndH_andTime(
+  const TU_Bln361095::CPU::faststUint SMARTattrID,
+  const TU_Bln361095::SMARTmon::SMARTuniqueIDandValues & SMARTuniqueIDandVals,
   void * data,
-  const ModelAndFirmware * p_modelAndFirmware)
+  const TU_Bln361095::SMARTmon::ModelAndFirmware * p_modelAndFirmware)
 {
   LOGN_DEBUG("begin--S.M.A.R.T. attribute ID:" << SMARTattrID)
   SMARTvalRatngTyp sMARTvalueRating;
@@ -536,7 +550,7 @@ SMARTvalRatngTyp SMARTmonitorClient::upd8rawAndH_andTime(
         {
           std_ossUnit << p_modelAndFirmware->getParamUnit(SMARTattrID);
           useDeterminedUnit = false;
-          stdstrHumanReadableRawVal += SMARTvalueFormatter::
+          stdstrHumanReadableRawVal += TU_Bln361095::SMARTmon::SMARTattrVal::
             FmtHumanReadable(sMARTuniqueID, SMARTattrID,
               realCircaSMARTattrRawVal, true, p_modelAndFirmware);
         }
@@ -575,8 +589,8 @@ http://learn.microsoft.com/en-us/windows/win32/api/nvme/ns-nvme-nvme_health_info
     //e.g. use highmost bits of SMARTattributeID for that purpose
       //std::numeric_limits<>::min();
 //          SMARTattributeID &= 2 << (numSMARTattributeIDbits - 1)
-    sMARTvalueRating = s_SMARTvalueRater.GetSMARTvalueRating(SMARTattrID,
-      SMARTuniqueIDandVals, realCircaSMARTattrRawVal, p_modelAndFirmware);
+    sMARTvalueRating = TU_Bln361095::SMARTmon::GetSMARTattrValRtng(SMARTattrID,
+      & SMARTuniqueIDandVals, realCircaSMARTattrRawVal, p_modelAndFirmware);
 
     TU_Bln361095::CPU::faststUint SMARTattrTblRawValColIdx;
     TU_Bln361095::CPU::faststUint SMARTattrTblHumanReadableRawValColIdx;

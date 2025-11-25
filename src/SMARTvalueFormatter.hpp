@@ -1,6 +1,8 @@
 /**(c) from 2017 by Stefan Gebauer(Computer Science Master from TU Berlin)
  * @author Stefan Gebauer(TU Berlin matriculation number 361095)
- * Created on 2. Januar 2017, 23:13 */
+ * Created on 2. Januar 2017, 23:13 
+ * This file should be in Unicode / UTF-8 format for the "degrees" character?
+ * Check this with appropriate application programs like "Notepad++". */
 
 #ifndef TU_Bln361095SMARTmon_SMARTvalFormatter_hpp
 #define TU_Bln361095SMARTmon_SMARTvalFormatter_hpp
@@ -8,16 +10,23 @@
 ///C,C++ standard header files:
  #include <stdint.h>///uint64_t
  #include <string>///class std::string
+ #include <sstream>///class std::ostringstream
 
 ///Stefan Gebauer's(TU Berlin matricul.numb.361095) ~"cmnSrc" repository files:
  #include <hardware/CPU/fastest_data_type.h>///TU_Bln361095::CPU::faststUint
  ///TU_Bln361095dataCarrierATA_SMARTgetCurrTemp()
  #include <hardware/dataCarrier/ATA3Std.h>
+ ///TU_Bln361095hardwareATA_SMARTattrValUse(GetDegCfromCurrMinMax)
+ #include <hardware/dataCarrier/(S)ATA/(S)ATA_SMART.h>
+ ///TU_Bln361095use(GetMectricPrefixSymbolAndRemainder)
+ #include <math/decNumCalcHighestPrefix.h>
  #include <time/timeConstants.h>///TU_Bln361095timeMilliSecsPerHour
 
 ///_this_ repository's (header) files:
  ///TU_Bln361095SMARTmonNmSpcBgn, TU_Bln361095SMARTmonNmSpcEnd
  #include <SMARTmon_ID_prefix.h>
+ ///class TU_Bln361095::SMARTmon::ModelAndFirmware
+ #include <attributes/ModelAndFirmware.hpp>
  ///TU_Bln361095SMARTmonNmSpc::SMARTattr::rawValTyp
  #include "attributes/SMARTattr.hpp"
  #include <UserInterface/UserInterface.hpp>///UserInterface::FormatTime(...)
@@ -30,7 +39,76 @@ TU_Bln361095SMARTmonNmSpcEnd
 
 TU_Bln361095SMARTmonNmSpcBgn
 
-extern char unitPrefixes[];
+/**@tparam divisionDataTyp may be boost::multiprecision::cpp_int for 16 byte
+ *  NVMe S.M.A.R.T. attribute values */
+  template<typename divisionDataTyp> //static
+std::string TU_Bln361095SMARTmonDef(GetNumberWithSIprefix)(
+  const divisionDataTyp& SMARTattrRawVal)
+{
+  divisionDataTyp remainder = SMARTattrRawVal;
+  divisionDataTyp unitPrefixFactor = SMARTattrRawVal;
+  char unitPrefixChar;
+  std::ostringstream stdoss;
+  do
+  {
+    unitPrefixChar = TU_Bln361095use(GetMectricPrefixSymbolAndRemainder)
+      (remainder, unitPrefixFactor);
+    if(unitPrefixChar == ' ')
+      stdoss << unitPrefixFactor;
+    else
+      stdoss << unitPrefixFactor << unitPrefixChar;
+  }while(unitPrefixChar != ' ');
+  return stdoss.str();
+}
+
+/**@brief Name comes from:ForMaT TOTAL DATA ReaD WRite
+ *  Formats S.M.A.R.T. attribute value for "total data read" or "total data
+ *  written". Can be used for (S)ATA or NVMe S.M.A.R.T. */
+template <typename SMARTattrRawValTyp>
+//static
+std::string
+TU_Bln361095SMARTmonDef(FmtTotalDataRdWr)(
+  //const uint8_t SMARTattrRawVal[],
+  //unsigned numB,
+  const SMARTattrRawValTyp & SMARTattrRawVal,
+  const bool unitKnown,
+  const TU_Bln361095::SMARTmon::ModelAndFirmware * p_modelAndFirmware)
+{
+  //if(/*TU_Bln361095::SMARTmon::*/SMARTattr::highBytesSet(SMARTattrRawVal, numB) )
+  //  return "";
+  std::string numWithSIprefix = /*SMARTvalueFormatter::*/GetNumberWithSIprefix(
+    SMARTattrRawVal);
+  if (unitKnown)
+    numWithSIprefix += "B";///Only append "B" for "Bytes" if unit is known!
+  if(p_modelAndFirmware)
+  {
+    const unsigned maxTeraBytesWritten = p_modelAndFirmware->
+      GetMaxTeraBytesWritten();
+  //  if (maxTeraBytesWritten > 0)
+  //  {
+  //    const double percent = /* (double)*( (uint64_t*)SMARTattrRawVal)*/
+  //      SMARTattrRawVal / (double)
+  //      maxTeraBytesWritten
+  //      / 10000000000.0 /** 1 tera / 100 */;
+
+  //    //TODO idea: use an enum "unitDeterminationType" with values as in
+  //    // the following "case" statements rather than evaluating
+  //    // the "greater" bit etc. in the unit -> clearer / easier:
+  //    /*switch(unitDeterminationType){
+  //      case getLowerUnitBound:///Only lower unit bound available
+  //        numWithSIprefix +=
+  //          ///real unit value is probably higher, so percentage of "value /
+  //          /// max. TBW" is
+  //          " >=~" + convertToStdString(percent) + "%";
+  //      case getValRespMakeMoreAccurate:*/
+
+  //    numWithSIprefix += " " + TU_Bln361095::charStr::convertToStdString(
+  //      percent) + "%";
+  ////          }
+  //  }
+  }
+  return numWithSIprefix;
+}
 
 namespace ATA{///ATA and SATA
 namespace SMART{
@@ -38,23 +116,43 @@ namespace AttrVal{///"Attr"="ATTRibute" "Val"="VALue"
 
 //TODO move to "cmnSrc"?!
 ///Inline to avoid multiple definitions compiler error.
-/**Specific to (S)ATA S.M.A.R.T. */
-inline std::string TU_Bln361095hardwareATA_SMARTattrValDef(GetDegCfromCurrMinMax)(
-  const uint64_t & SMARTrawValue)
-{
-  std::ostringstream stdoss;
-  const TU_Bln361095::CPU::faststUint maxVal = (SMARTrawValue >> 32) & 0xFFFF;
-  const TU_Bln361095::CPU::faststUint minVal = (SMARTrawValue >> 16) & 0xFFFF;
 
-  stdoss << (SMARTrawValue & 0xFFFF) << "�C";
+/**@brief ForMaTs output in DEGrees Celsius of CURRent, MINimal and MAXimal
+ *  temperature.
+ * Is specific to (S)ATA S.M.A.R.T.
+ * @tparam ostreamTyp set to std::wostringstream(wide character) for the
+ *  degrees('°') character because it is not inside ANSI character set?
+ * Could also use a std::basicstring<> (std::string or std::wstring) type 
+ * together with std::basicstring::+ (character string concatenation) and
+ * TU_Bln361995::CvtToChrStr<dataTyp>(...). here. */
+template <typename ostreamTyp>
+inline
+//std::string
+void TU_Bln361095SMARTmonDef(FmtDegC_forCurrAndMinAndMax)
+  (
+  const uint64_t & SMARTattrRawVal,
+  ostreamTyp & ostream)
+{
+  TU_Bln361095CPUuse(faststUint) currTempInDegC;
+  TU_Bln361095CPUuse(faststUint) minTempInDegC;
+  TU_Bln361095CPUuse(faststUint) maxTempInDegC;
+
+  TU_Bln361095hardwareATA_SMARTattrValUse(GetDegCfromCurrMinMax)(
+    SMARTattrRawVal,
+    & minTempInDegC,
+    & maxTempInDegC,
+    & currTempInDegC
+    );
+
+  ostream << currTempInDegC << "°C";
   /** Does not work for a model:ST9500420AS firmware:0003SDM1 (serial:5VJ1WXTF) :
-   * highmost byte is 12, lowmost byte: �C, other bytes 0. So check if both
+   * highmost byte is 12, lowmost byte: °C, other bytes 0. So check if both
    * values are non-0. */
-  if(minVal && maxVal)
-    stdoss << "["
-      << minVal << "�C..."
-      << maxVal << "�C]";
-  return stdoss.str();
+  if(minTempInDegC && maxTempInDegC)
+    ostream << "["
+      << minTempInDegC << "°C..."
+      << maxTempInDegC << "°C]";
+  //return ostream.str();
 }
 
 /**@brief formats ATA S.M.A.R.T. value human readable
@@ -114,17 +212,23 @@ inline std::string TU_Bln361095hardwareATA_SMARTattrValDef(GetDegCfromCurrMinMax
       *TU_Bln361095::SMARTmon::SMARTattr::getDataPtr(SMARTattrRawVal));
 
   case TU_Bln361095::dataCarrier::SMART::Attr::DevTemp:
+    {
+      std::ostringstream std_oss;
     //     if(SMARTrawVal > 1000)///Assume unit milliKelvin if value is large
-    return TU_Bln361095::SMARTmon::ATA::SMART::AttrVal::GetDegCfromCurrMinMax(
-      *TU_Bln361095::SMARTmon::SMARTattr::getDataPtr(SMARTattrRawVal));
+      TU_Bln361095::SMARTmon::ATA::SMART::AttrVal::FmtDegC_forCurrAndMinAndMax(
+        *TU_Bln361095::SMARTmon::SMARTattr::getDataPtr(SMARTattrRawVal),
+        std_oss);
+      return std_oss.str();
+    }
   case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataWritten:
   case TU_Bln361095::dataCarrier::SMART::Attr::TotalDataRead:
-    return SMARTvalueFormatter::fmtTotalDataRdWr( //(uint8_t *) &SMARTattrRawVal
+    return TU_Bln361095::SMARTmon::FmtTotalDataRdWr(
+      //(uint8_t *) &SMARTattrRawVal
       SMARTattrRawVal, //6, 
       unitKnown, p_modelAndFirmware);
   default:
   {
-    return SMARTvalueFormatter::GetNumberWithSIprefix(
+    return TU_Bln361095::SMARTmon::GetNumberWithSIprefix(
       /**Get data as 64 bit/8 byte number if data type is
        * "boost::multiprecision::cpp_int" */
       *TU_Bln361095::SMARTmon::SMARTattr::getDataPtr(SMARTattrRawVal)
@@ -252,8 +356,18 @@ https://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology
 #Known_NVMe_S.M.A.R.T._attributes */
 namespace SMART{
 namespace AttrVal{
+
 /**"SMARTattrRawValTyp" may be "boost::multiprecision::cpp_int" or "uint64_t"
  *  for example. */
+template<typename SMARTattrRawValTyp, typename stdostreamTyp> inline void
+fmtRawVal(
+  const TU_Bln361095::CPU::faststUint SMARTattrID, 
+  const /*uint64_t*/SMARTattrRawValTyp SMARTattrRawVal,
+  stdostreamTyp & std_ostreamSMARTattrDecRawVal)
+{
+    std_ostreamSMARTattrDecRawVal << SMARTattrRawVal;
+}
+
 /**@brief Uses the default unit for S.M.A.R.T. attribute identifier
  *  \p SMARTattrID. Also sets \p realCircaSMARTattrRawVal and \p std_ossUnit
  *  according to this unit.
@@ -261,18 +375,22 @@ namespace AttrVal{
  *  (from boost.org) or "uint64_t" () for example.
  * @tparam SMARTattrRawValTyp may be "boost::multiprecision::cpp_int" or "uint64_t"
  *  for example.
+ * @tparam std_basic_ostreamTyp for the degrees sign ("°"), which is not an ANSI
+ *   character and so depending on the codepage. So a std::wostreamstream
+ *   (string of wide[more than 1 byte for a character] character) is safe.
  * @param[in] SMARTattrRawVal : The raw value retrieved (unchanged) from data
  *  carrier
  * @param[out] realCircaSMARTattrRawVal The real raw value to calculate/set for
  *  \p SMARTattrID
  * @param[out] std_ossUnit : The unit to set for \p SMARTattrID */
-template<typename realCircaSMARTattrRawValTyp, typename SMARTattrRawValTyp>
+template<typename realCircaSMARTattrRawValTyp, typename SMARTattrRawValTyp,
+  typename std_basic_ostreamTyp>
  inline void
  useDefaultUnit(
   const TU_Bln361095::CPU::faststUint SMARTattrID,
   /*SMARTattr::rawValTyp*/ realCircaSMARTattrRawValTyp & realCircaSMARTattrRawVal,
   const /*SMARTattr::rawValTyp*/ SMARTattrRawValTyp & SMARTattrRawVal,
-  std::ostringstream & std_ossUnit,
+  /*std::ostringstream*/ std_basic_ostreamTyp & std_ossUnit,
   /*SMARTattr::rawValTyp*/ SMARTattrRawValTyp & numForHumanReadableFormat
   )
 {
@@ -281,7 +399,8 @@ template<typename realCircaSMARTattrRawValTyp, typename SMARTattrRawValTyp>
   {
     case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::CompositeTemperature:
     numForHumanReadableFormat = SMARTattrRawVal;
-    std_ossUnit << "�C?";
+    std_ossUnit << //"°C?"
+      "K";
     {
     const TU_Bln361095::CPU::faststUint tempInKelvin = *SMARTattr::getDataPtr(
       SMARTattrRawVal);
@@ -315,19 +434,21 @@ template<typename realCircaSMARTattrRawValTyp, typename SMARTattrRawValTyp>
     case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::AvailableSpare:
       ///S.M.A.R.T. parameter ID 5
     case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::AvailableSpareThreshold:
-      ///S.M.A.R.T. parameter ID 10
+      ///NVMe S.M.A.R.T. parameter ID 5
     case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::PercentageUsed:
       std_ossUnit << "%?";
       break;
     case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::TotalDataWritten:
     case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::TotalDataRead:
-      if(std::is_same_v<decltype(numForHumanReadableFormat), uint64_t>)
+#if __cplusplus >= 201103L ///std::is_same() since C++ 11
+      if(std::is_same<decltype(numForHumanReadableFormat), uint64_t>::value)
         /**Only multipy if there are enough bits for multiplying.
          * 2^64/512000=36,028,797,018,963.968
          * =0010 0000 1100 0100 1001 1011 1010 0101 1110 0011 0101 0011 binary
          * (5*8+2=42 bits/6 bytes used) */
         if (SMARTattr::highBytesSet((const uint8_t*) & SMARTattrRawVal, 6))
           numForHumanReadableFormat *= 512000;
+#endif
 #ifdef TU_Bln361095useBoostMultiprecisionCppInt
       //if(std::is_same_v<decltype(numForHumanReadableFormat),
       //  boost::multiprecision:://cpp_int
@@ -373,10 +494,10 @@ std::string FmtHumanReadable(
       TU_Bln361095::dataCarrier::NVMe::SMART::Attr::GetTempInDegC(
         (uint8_t*)SMARTattr::getDataPtr(SMARTattrVal)
       );
-#endif
       std::ostringstream oss;
-      oss << tempInDegC;
+      oss << tempInDegC << " °C";
       return oss.str();
+#endif
     }
     ///see nvme.h: 16 byte value.
   case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::PowerOnHours:
@@ -393,11 +514,12 @@ std::string FmtHumanReadable(
   }
   case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::TotalDataWritten:
   case TU_Bln361095::dataCarrier::NVMe::SMART::Attr::TotalDataRead:
-    return SMARTvalueFormatter::fmtTotalDataRdWr(
+    return TU_Bln361095::SMARTmon::FmtTotalDataRdWr(
       SMARTattrVal, //16, 
-      unitKnown, p_modelAndFirmware);
+      //unitKnown
+      true, p_modelAndFirmware);
   default:
-    return SMARTvalueFormatter::GetNumberWithSIprefix(SMARTattrVal);
+    return TU_Bln361095::SMARTmon::GetNumberWithSIprefix(SMARTattrVal);
   }
   return "";
 }
@@ -406,152 +528,57 @@ std::string FmtHumanReadable(
 }///namespace SMART
 }///Namespace NVMe
 
+TU_Bln361095SMARTmonNmSpcEnd
+
+TU_Bln361095SMARTmonSMARTattrValNmSpcBgn
+
+/**@brief Formats \p SMARTattrRawVal human readable, for example large number
+ *  with SI metric prefixes like "k" for thousand, "M" for million.
+ * @param SMARTattrRawVal raw value read from S.M.A.R.T. attribute */
+template<typename SMARTattrRawValTyp>
+inline static
+std::string
+  ///Fmt=ForMaT
+//TU_Bln361095SMARTmonDef
+TU_Bln361095SMARTmonSMARTattrValDef(FmtHumanReadable)(
+  const TU_Bln361095SMARTmonUse(SMARTuniqueID) & sMARTuniqueID,
+  TU_Bln361095::CPU::faststUint SMARTattrID,
+  const SMARTattrRawValTyp
+   //TU_Bln361095::SMARTmon::SMARTattr::rawValTyp
+   & SMARTattrRawVal,
+  const bool unitKnown,
+  const TU_Bln361095::SMARTmon::ModelAndFirmware* p_modelAndFirmware)
+{
+  switch(sMARTuniqueID.getBusType() )
+  {
+  case TU_Bln361095::hardware::bus::NVMe:
+    return TU_Bln361095::SMARTmon::NVMe::SMART::AttrVal::FmtHumanReadable(
+      SMARTattrID,
+      SMARTattrRawVal,
+      unitKnown,
+      p_modelAndFirmware
+      );
+    break;
+  default:
+    return TU_Bln361095::SMARTmon::ATA::SMART::AttrVal::FmtHumanReadable(
+      SMARTattrID,
+      SMARTattrRawVal,
+      unitKnown,
+      p_modelAndFirmware
+      );
+  }
+}
+
+TU_Bln361095SMARTmonSMARTattrValNmSpcEnd
+
+TU_Bln361095SMARTmonNmSpcBgn
+
 class SMARTvalueFormatter
 {
 public:
   SMARTvalueFormatter();
   SMARTvalueFormatter(const SMARTvalueFormatter& orig);
   virtual ~SMARTvalueFormatter();
-
-  /**@brief Formats \p SMARTattrRawVal human readable, for example large number
-   *  with SI metric prefixes like "k" for thousand, "M" for million.
-   * @param SMARTattrRawVal raw value read from S.M.A.R.T. attribute */
-  template<typename SMARTattrRawValTyp>
-inline static std::string
-    ///Fmt=ForMaT
-    FmtHumanReadable(
-      const SMARTuniqueID & sMARTuniqueID,
-      TU_Bln361095::CPU::faststUint SMARTattrID,
-      const SMARTattrRawValTyp
-       //TU_Bln361095::SMARTmon::SMARTattr::rawValTyp
-       & SMARTattrRawVal,
-      const bool unitKnown,
-      const ModelAndFirmware * p_modelAndFirmware)
-  {
-    switch(sMARTuniqueID.getBusType() )
-    {
-    case TU_Bln361095::hardware::bus::NVMe:
-      return TU_Bln361095::SMARTmon::NVMe::SMART::AttrVal::FmtHumanReadable(
-        SMARTattrID,
-        SMARTattrRawVal,
-        unitKnown,
-        p_modelAndFirmware
-        );
-      break;
-    default:
-      return TU_Bln361095::SMARTmon::NVMe::SMART::AttrVal::FmtHumanReadable(
-        SMARTattrID,
-        SMARTattrRawVal,
-        unitKnown,
-        p_modelAndFirmware
-        );
-    }
-  }
-
-/**@brief formats S.M.A.R.T. attribute value for "total data read" or "total data
- *  written". Can be used for ATA or NVMe S.M.A.R.T. */
-template <typename SMARTattrRawValTyp> static std::string fmtTotalDataRdWr(
-  //const uint8_t SMARTattrRawVal[],
-  //unsigned numB,
-  const SMARTattrRawValTyp & SMARTattrRawVal,
-  const bool unitKnown,
-  const TU_Bln361095::SMARTmon::ModelAndFirmware* p_modelAndFirmware)
-{
-  //if(/*TU_Bln361095::SMARTmon::*/SMARTattr::highBytesSet(SMARTattrRawVal, numB) )
-  //  return "";
-  std::string numWithSIprefix = /*SMARTvalueFormatter::*/GetNumberWithSIprefix(
-    SMARTattrRawVal);
-  if (unitKnown)
-    numWithSIprefix += "B";///Only append "B" for "Bytes" if unit is known!
-  if (p_modelAndFirmware)
-  {
-    const unsigned maxTeraBytesWritten = p_modelAndFirmware->
-      GetMaxTeraBytesWritten();
-  //  if (maxTeraBytesWritten > 0)
-  //  {
-  //    const double percent = /* (double)*( (uint64_t*)SMARTattrRawVal)*/
-  //      SMARTattrRawVal / (double)
-  //      maxTeraBytesWritten
-  //      / 10000000000.0 /** 1 tera / 100 */;
-
-  //    //TODO idea: use an enum "unitDeterminationType" with values as in
-  //    // the following "case" statements rather than evaluating
-  //    // the "greater" bit etc. in the unit -> clearer / easier:
-  //    /*switch(unitDeterminationType){
-  //      case getLowerUnitBound:///Only lower unit bound available
-  //        numWithSIprefix +=
-  //          ///real unit value is probably higher, so percentage of "value /
-  //          /// max. TBW" is
-  //          " >=~" + convertToStdString(percent) + "%";
-  //      case getValRespMakeMoreAccurate:*/
-
-  //    numWithSIprefix += " " + TU_Bln361095::charStr::convertToStdString(
-  //      percent) + "%";
-  ////          }
-  //  }
-  }
-  return numWithSIprefix;
-}
-
-/**@tparam divisionDataTyp may be boost::multiprecision::cpp_int for 16 byte
- *  NVMe S.M.A.R.T. attribute values */
-template<typename divisionDataTyp> inline static char
- calcUnitPrefixFactorAndRemainder(
-  divisionDataTyp & remainder,
-  divisionDataTyp & unitPrefixFactor)
-{
-  LOGN_DEBUG("begin--number:" << remainder)
-  divisionDataTyp remainderCopy = remainder;
-  divisionDataTyp one1kPower = 1;
-  TU_Bln361095::CPU::faststUint One_kExp = 0;
-  while(remainderCopy > 1000ULL)
-  {
-    remainderCopy /= 1000ULL;
-    one1kPower *= 1000ULL;
-    One_kExp++;
-  }
-  unsigned One_kExpCopy = One_kExp;
-  remainderCopy = 1ULL;
-  while(One_kExpCopy > 0)
-  {
-    remainderCopy *= 1000ULL;
-    One_kExpCopy--;
-  }
-  if(remainderCopy > 1)
-  {
-    unitPrefixFactor = remainder / /*remainderCopy*/ one1kPower;
-    remainder = remainder - unitPrefixFactor * remainderCopy;
-  }
-  else
-  {
-    unitPrefixFactor = remainder;
-    remainder = 0;
-  }
-  LOGN_DEBUG("prefix factor:" << unitPrefixFactor
-    << " remainder:" << remainder << " 1k's exponent:" << One_kExp)
-  return unitPrefixes[One_kExp];
-}
-
-/**@tparam divisionDataTyp may be boost::multiprecision::cpp_int for 16 byte
- *  NVMe S.M.A.R.T. attribute values */
-template<typename divisionDataTyp> static std::string GetNumberWithSIprefix(
-  const divisionDataTyp & SMARTattrRawVal)
-{
-  divisionDataTyp remainder = SMARTattrRawVal;
-  divisionDataTyp unitPrefixFactor = SMARTattrRawVal;
-  char unitPrefixChar;
-  std::ostringstream stdoss;
-  do
-  {
-    unitPrefixChar = calcUnitPrefixFactorAndRemainder(remainder,
-      unitPrefixFactor);
-    if(unitPrefixChar == ' ')
-      stdoss << unitPrefixFactor;
-    else
-      stdoss << unitPrefixFactor << unitPrefixChar;
-  } while(unitPrefixChar != ' ');
-  return stdoss.str();
-}
 
   ///ForMaT NVMe VALue HUMAN READABLE
   ///For (S)ATA (and not NVMe) S.M.A.R.T.:
@@ -565,6 +592,6 @@ private:
 
 };
 
-#endif///include guard
-
 TU_Bln361095SMARTmonNmSpcEnd
+
+#endif///include guard

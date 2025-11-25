@@ -45,6 +45,10 @@ http://en.wikipedia.org/wiki/Self-Monitoring,_Analysis_and_Reporting_Technology
   ///val=VALue: 
   #define TU_Bln361095SMARTmonSMARTattrValNmSpc \
     TU_Bln361095SMARTmonNmSpc :: SMARTattrVal
+  #define TU_Bln361095SMARTmonSMARTattrValNmSpcBgn \
+    TU_Bln361095SMARTmonNmSpcBgn namespace SMARTattrVal{
+  #define TU_Bln361095SMARTmonSMARTattrValNmSpcEnd \
+    TU_Bln361095SMARTmonNmSpcEnd }
   #define TU_Bln361095SMARTmonSMARTattrValDef(suffix) suffix
   #define TU_Bln361095SMARTmonSMARTattrValUse(suffix) \
     TU_Bln361095SMARTmonSMARTattrValNmSpc :: suffix

@@ -64,13 +64,12 @@ public:
     TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ByndLast];
   static const char * const s_columnAttributeNames[];
   
-  static enum TU_Bln361095::SMARTmon::SMARTvals::Rating::E
+  static enum TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::Rslt
     s_entireSMARTstatus;
 //  static nativeThread_type s_updateSMARTparameterValuesThread;
   static fastestUnsignedDataType s_updateUI;
   dataCarrierID2supportedSMARTattrMap_type
     dataCarrierIDandSMARTidsContainer;
-  static SMARTvalueRater s_SMARTvalueRater;
   
   enum serverConnectionState {cnnctdToSrv, uncnnctdToSrv, connectToSrv,
     /**to diplay the (local) time of last S.M.A.R.T. value update*/ valUpd8,
@@ -178,9 +177,9 @@ public:
   void setIDandLabel(const SMARTuniqueID &,
     const fastestUnsignedDataType SMARTattrID, void * data);
   virtual void setUI(const enum serverConnectionState) = 0;
-  SMARTvalRatngTyp upd8rawAndH_andTime(
+  TU_Bln361095SMARTmonUse(SMARTattrValRtgTyp) upd8rawAndH_andTime(
     const fastestUnsignedDataType SMARTattrID,
-    const SMARTuniqueIDandValues &,
+    const TU_Bln361095::SMARTmon::SMARTuniqueIDandValues &,
     void * data,
     const ModelAndFirmware *);
   inline void UpdateTimeOfSMARTvalueRetrieval(
@@ -199,10 +198,11 @@ public:
     //TODO exchange enum with fastestUnsignedDataType for performance?
     TU_Bln361095::CPU::faststUint SMARTattrTblColIdx,
     const std::string &,
-    const SMARTvalRatngTyp,
+    const TU_Bln361095SMARTmonUse(SMARTattrValRtgTyp),
     /**e.g. pointer to list ctrl */void * data){}
   virtual void ShowStateAccordingToSMARTvalues(
-    const enum TU_Bln361095::SMARTmon::SMARTvals::Rating::E){}
+    const enum TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::Rslt//::E
+      ){}
   std::string m_stdstrServerAddress;
 protected:
   tinyxml2::SrvDataProcessor srvDataProcessor;

@@ -108,6 +108,7 @@ set(CLIENT_SERVER_BASE_SOURCE_FILES
   ${SMARTmonSrcDir}/SMARTmonitorBase.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/dataType/charStr/stdtstr.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/FileSystem/PathSeperatorChar.cpp
+  ${SMARTmonSrcDir}/SMARTattrValRtng.cpp
 )
 
 if(TU_Bln361095SMARTmonDrctSMARTaccss)
