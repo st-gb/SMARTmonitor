@@ -71,6 +71,8 @@ const wchar_t * const TU_Bln361095SMARTmonDef(EnNVMeSMARTattrTblColHdrWchrStrs)
 ///MAXimum COLumn VALue STRing WiDTH IN PiXels
 unsigned TU_Bln361095SMARTmonDef(MaxSMARTattrTblColValStrWdthInPx)[/*10*/
   TU_Bln361095SMARTmonATA_SMARTattrColIdxUse(ByndLast) ];
+unsigned TU_Bln361095SMARTmonDef(MaxNVMeSMARTattrTblColValChrStrWdthInPx)[
+  TU_Bln361095SMARTmonNVMeSMARTattrTblColIdxUse(ByndLast) ];
 
 /**Identifier mame comes from: WIDEST ATA S.M.A.R.T. ATTRibute COLumn Wide
  *  CHaRacter STRingS */
@@ -93,7 +95,10 @@ const wchar_t * const TU_Bln361095SMARTmonDef(WidestATA_SMARTattrTblColWchrStrs)
     TU_Bln361095SMARTmonMax2DecDigitsDaysOpSysUptimeASCIIlit)
 };
 
-wchar_t * TU_Bln361095SMARTmonWidestNVMeSMARTattrColWcharStrs[] ={
+/**Identifier mame comes from: WIDEST NVMe S.M.A.R.T. ATTRibute TaBLe COLumn
+ *  Wide CHaRacter STRingS */
+const wchar_t * const TU_Bln361095SMARTmonDef(WidestNVMeSMARTattrTblColWchrStrs)[] =
+{
   TU_Bln361095XpndAndMakeWcharStr(TU_Bln361095SMARTmonWidestSMARTattrIDvalASCIIlit),
   L""/*p_SMARTattrNmWithMaxPx*/,///parameter name
   TU_Bln361095XpndAndMakeWcharStr(

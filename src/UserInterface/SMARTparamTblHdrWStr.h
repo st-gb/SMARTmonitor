@@ -63,6 +63,11 @@ extern const wchar_t * const //TU_Bln361095SMARTmonEnATA_SMARTattrTblColHdrWstrs
 extern const wchar_t * const
   //TU_Bln361095SMARTmonEnNVMeSMARTattrTblColHdrWchrStrs
   TU_Bln361095SMARTmonDef(EnNVMeSMARTattrTblColHdrWchrStrs)[];
+
+/**Name comes from:MAXimum NVMe S.M.A.R.T. ATTRibute TaBLe COLumn VALue
+ * CHaRacter STRing WiDTH IN PiXel.*/
+extern unsigned TU_Bln361095SMARTmonDef(MaxNVMeSMARTattrTblColValChrStrWdthInPx)
+  [];
 extern unsigned TU_Bln361095SMARTmonDef(MaxSMARTattrTblColValStrWdthInPx)[];
 extern const wchar_t * const TU_Bln361095SMARTmonDef(
   WidestATA_SMARTattrTblColWchrStrs)[];

@@ -168,13 +168,13 @@ void wxSMARTmonitorApp::ReBuildUserInterface(){
 }
 
 void wxSMARTmonitorApp::ShowStateAccordingToSMARTvalues(
-  const SMARTvals::Rating::E entireSMARTvalRating)
+  const TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::Rslt entireSMARTvalRating)
 {
   switch(entireSMARTvalRating){
-   case SMARTvals::Rating::atLeast1Warn:
+   case TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::Rslt::AtLeast1Warn:
     ShowSMARTwarningIcon();
     break;
-   case SMARTvals::Rating::OK:
+   case TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::Rslt::OK:
     ShowSMARTokIcon();
     break;
   }
@@ -447,6 +447,8 @@ bool wxSMARTmonitorApp::GetSMARTwarningIcon(wxIcon & icon)
   return GetIcon(icon, wxT("S.M.A.R.T._warning."), S_M_A_R_T__warning_xpm);
 }
 
+/**@param columnIndex don't use an enum because it may be either NVMe or (S)ATA
+ *  column which are different enums. */
 void wxSMARTmonitorApp::SetAttribute(
   const SMARTuniqueID & sMARTuniqueID,
   TU_Bln361095::CPU::faststUint SMARTattributeID,

@@ -70,8 +70,10 @@ inline void UserInterface::FmtViaOSS(const uptimeInMilliSecsType timeInMilliSecs
   if(numberOfDays > 0)
   {
     oss << numberOfDays << "d";
-    timeInMilliSecsMinusPrintedTime -= numberOfDays * 
-      TU_Bln361095timeSecsPerDay * 1000;
+    timeInMilliSecsMinusPrintedTime -=
+      ///Gets > 2^32 for > 48 days
+      (uptimeInMilliSecsType)numberOfDays *
+      (uptimeInMilliSecsType)(TU_Bln361095timeSecsPerDay * 1000);
   }
   const TU_Bln361095::CPU::faststUint timeInSecsMinusDays = timeInSecs -
     (numberOfDays * TU_Bln361095timeSecsPerDay);

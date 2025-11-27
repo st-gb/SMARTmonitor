@@ -90,7 +90,7 @@ public:
       SMARTattrID,
       TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ID,
       label,
-      SMARTvals::Rating::noCriticalVal
+      TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::NoCriticalVal
       );
 
     /** Now get the attribute name belonging to SMART ID */
@@ -119,7 +119,7 @@ public:
       SMARTattrID,
       TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::Name,
       label,
-      SMARTvals::Rating::noCriticalVal
+      TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::NoCriticalVal
       );
     m_pwxlistctrl->setMaxSMARTattrNmStrWdthInPx(label);
   }

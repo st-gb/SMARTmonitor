@@ -14,7 +14,7 @@ if(NOT DEFINED TU_Bln361095cmnSrcRootDir OR TU_Bln361095cmnSrcRootDir STREQUAL
   )
 endif()
 #https://stackoverflow.com/questions/39027269/cmake-convert-relative-path-to-absolute-path-with-build-directory-as-current-d
-get_filename_component(absPath ${cmnSrcDir} ABSOLUTE)
+get_filename_component(absFileSysDirPath ${TU_Bln361095cmnSrcRootDir} ABSOLUTE)
 #get_filename_component(absPath "${cmnSrcDir}"
 #  REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
 set(COMMON_SOURCECODE_ROOT_PATH ${absPath})

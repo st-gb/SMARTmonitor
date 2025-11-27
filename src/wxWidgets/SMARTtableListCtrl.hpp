@@ -94,7 +94,7 @@ public:
       if(//lang < /*byndLastLang*//*numLangs &&*/
         colID < TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ByndLast)
         lbl = //TU_Bln361095SMARTmonEnATA_SMARTattrTblColHdrWstrs/*[lang]*/
-          TU_Bln361095::SMARTmon::EnATA_SMARTattrTblColHdrWstrs)[colID];
+          TU_Bln361095::SMARTmon::EnATA_SMARTattrTblColHdrWstrs[colID];
       else
         lbl = NULL;
     }
@@ -107,8 +107,37 @@ public:
   }
   ///Only needs to be done once for all wxListCtrl objects? On the other hand
   /// different objects may have different font sizes.
-  /**@brief gets maximum "parameter name" column width in pixel*/
-  void getSMARTAttrNmWithMaxPx()
+  /**@brief Name comes from: GET MAXimum NVMe S.M.A.R.T. ATTRibute TaBLe VALue
+   *  CHaR STRing WiDTH IN PiXel */
+  void getMaxNVMeSMARTattrTblColValChrStrWdthInPx()
+  {
+    ///Gets maximal text width for ID.
+    TU_Bln361095::SMARTmon::MaxSMARTattrTblColValStrWdthInPx[
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ID] =
+      getTxtWdthInPx(TU_Bln361095::SMARTmon::WidestATA_SMARTattrTblColWchrStrs[
+        TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ID]);
+
+    TU_Bln361095::SMARTmon::MaxSMARTattrTblColValStrWdthInPx[
+      TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::Name] =
+      m_maxSMARTattrNmStrWdthInPx;
+
+    /**Gets widest text width for remaining(except ID and parameter name)
+     * columns */
+    for(TU_Bln361095::hardware::CPU::FaststUint colID =
+      TU_Bln361095::SMARTmon::NVMeSMARTattrTblColIdx::RawVal;
+      colID < TU_Bln361095::SMARTmon::NVMeSMARTattrTblColIdx::ByndLast; colID++)
+    {
+      TU_Bln361095::SMARTmon::MaxNVMeSMARTattrTblColValChrStrWdthInPx[colID] =
+  /**Alternative:get max. value string width via SMARTmonClient::
+   * upd8rawAndH_andTime(...) (simulate real output)*/
+        getTxtWdthInPx(TU_Bln361095::SMARTmon::WidestNVMeSMARTattrTblColWchrStrs
+          [colID]);
+    }
+  }
+
+  /**@brief Name comes from: GET MAXimum ATA S.M.A.R.T. ATTRibute TaBLe VALue
+   *  CHaR STRing WiDTH IN PiXel */
+  void getMaxATA_SMARTattrTblValChrStrWdthInPx()
   {
     TU_Bln361095::SMARTmon::MaxSMARTattrTblColValStrWdthInPx[
       TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::ID] =
@@ -128,6 +157,8 @@ public:
           [colID]);
     }
   }
+
+  ///Name comes from:SET COLumn HeaDeR and INSert COLumn
   inline void setColHdrAndInsCol(wxListItem & column, const long colID)
   {
     column.SetId(colID);//TODO is "SetId" needed at all?
@@ -151,8 +182,14 @@ public:
         colWdthInPx += /*50*/textWidth;
       }
       else/* if(setColWdthAccMaxValStrWdth)*/
-        colWdthInPx += /*50*/TU_Bln361095::SMARTmon::
-          MaxSMARTattrTblColValStrWdthInPx[colID];
+      {
+        if(m_r_dataCarrier.getBusType() == TU_Bln361095::hardware::bus::NVMe)
+          colWdthInPx += TU_Bln361095::SMARTmon::
+            MaxNVMeSMARTattrTblColValChrStrWdthInPx[colID];
+        else
+          colWdthInPx += /*50*/TU_Bln361095::SMARTmon::
+            MaxSMARTattrTblColValStrWdthInPx[colID];
+      }
       column.SetWidth(colWdthInPx);
       InsertColumn(colID, column);
     }

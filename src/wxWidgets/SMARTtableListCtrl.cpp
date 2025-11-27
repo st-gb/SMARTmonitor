@@ -53,7 +53,12 @@ END_EVENT_TABLE()
     SetToolTip(wxT(enRghtClckTooltip) );
 //	colHdrStrs[enColStrsIdx][en] = enColHdrStrs;
 
-    getSMARTAttrNmWithMaxPx();///For width of parameter name column
+    if(dataCarrierID.getBusType() == TU_Bln361095::hardware::bus::NVMe)
+      getMaxNVMeSMARTattrTblColValChrStrWdthInPx();
+    else
+    {
+      getMaxATA_SMARTattrTblValChrStrWdthInPx();
+    }
     createCols(dataCarrierID);
   }
 
@@ -167,10 +172,10 @@ inline void GetClrAccordng1toEnum(const enum SMARTvalueRating SMARTvalRatng,
   wxColour & color)
 {
   switch(SMARTvalRatng){
-   case SMARTvals::Rating::OK:
+   case TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::OK:
     color = *wxGREEN;
     break;
-   case SMARTvals::Rating::atLeast1Warn:
+   case TU_Bln361095::SMARTmon::SMARTattrVal::Rtg::AtLeast1Warn:
     color = *wxYELLOW;
     break;
 //    default:
@@ -191,8 +196,14 @@ void SMARTtableListCtrl::SetSMARTattribValue(
     wxstrValue);
   wxColour color;
   GetClrAccordng1toMns1Rng(SMARTvalRatng, color);
+  TU_Bln361095::CPU::faststUint rawValColID;
+  if(m_r_dataCarrier.getBusType() == TU_Bln361095::hardware::bus::NVMe)
+    rawValColID = TU_Bln361095::SMARTmon::NVMeSMARTattrTblColIdx::RawVal;
+  else
+    rawValColID = TU_Bln361095::SMARTmon::ATA_SMARTattrTblColIdx::RawVal;
+
   ///Only do it once/for 1 attribute/column
-  if(columnIndex == colIndices::rawValue)
+  if(columnIndex == rawValColID)
   {
     //http://docs.wxwidgets.org/3.1.0/classwx_list_item.html
 /*  wxListItem wxListItem;

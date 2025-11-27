@@ -37,7 +37,7 @@ SMARTaccessBase::~SMARTaccessBase ()
 }
 
 void SMARTaccessBase::possiblyAutoDetectUnit(
-  const fastestUnsignedDataType SMARTattrID,
+  const TU_Bln361095::CPU::faststUint SMARTattrID,
   const uint64_t & SMARTrawVal,
   SMARTuniqueID & sMARTuniqueID,
   const std::string & stdstrDataCarrierPath)
@@ -47,7 +47,7 @@ void SMARTaccessBase::possiblyAutoDetectUnit(
     /** "long int" may not be sufficient for uptime in ns (especially for 32
      * bit) */
     TU_Bln361095tmCntInNsTyp uptimeInNs;
-    OperatingSystem::GetUptimeInNs(uptimeInNs);
+    TU_Bln361095::OpSys::GetUptimeInNs(uptimeInNs);
     sMARTuniqueID.guessUnit(SMARTattrID, SMARTrawVal, uptimeInNs
       /**to ms*//1000000);
     }

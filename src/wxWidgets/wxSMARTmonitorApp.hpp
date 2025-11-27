@@ -121,8 +121,8 @@ public:
   wxIcon ShowSMARTstatusUnknownIcon();
   wxIcon ShowSMARTwarningIcon();
   void ShowIcon(const wxIcon & icon, const wxString & message );
-  void ShowStateAccordingToSMARTvalues(const enum SMARTvals::Rating::E
-    entireSMARTvalRating);
+  void ShowStateAccordingToSMARTvalues(const enum TU_Bln361095::SMARTmon::
+    SMARTattrVal::Rtg::Rslt entireSMARTvalRating);
 #ifdef TU_Bln361095useClntSrv
   ///Timeout/interval before attempting to connect to server.
   void startSrvCnnctCntDown();

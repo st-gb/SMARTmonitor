@@ -503,7 +503,8 @@ void SMARTdialog::SetState(enum SMARTmonitorClient::serverConnectionState
       /** So "s_atLeast1CriticalNonNullValue != smartValueRating" in
        * SMARTmonitorClient::UpdateSMARTvaluesUI() after next processing
        * S.M.A.R.T. values->(task bar) icon is updated to "warning" or "OK" */
-      wxGetApp().s_entireSMARTstatus = SMARTvals::Rating::unknown;
+      wxGetApp().s_entireSMARTstatus = TU_Bln361095::SMARTmon::SMARTattrVal::
+        Rtg::Unknown;
       wxGetApp().ShowSMARTstatusUnknownIcon();
       break;
   }

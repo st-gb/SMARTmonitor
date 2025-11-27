@@ -86,11 +86,11 @@ class SMARTaccess
             const SkIdentifyParsedData & skIDparsedData = 
               *p_SkIdentifyParsedData;
             strncpy(sMARTuniqueID.m_firmWareName, skIDparsedData.firmware,
-              numSMART_FWbytes+1);
+              TU_Bln361095hardwareSMARTnumFWbytes+1);
             strncpy(sMARTuniqueID.m_modelName, skIDparsedData.model,
-              numSMARTmodelBytes+1);
+              TU_Bln361095hardwareSMARTnumModelBytes+1);
             strncpy(sMARTuniqueID.m_serialNumber, skIDparsedData.serial,
-              numSMART_SNbytes+1);
+              TU_Bln361095hardwareSMARTnumSNbytes+1);
           }
         }
       }

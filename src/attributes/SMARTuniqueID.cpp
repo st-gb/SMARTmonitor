@@ -23,21 +23,39 @@ TU_Bln361095SMARTmonNmSpcBgn
 bool operator < (const TU_Bln361095::SMARTmon::SMARTuniqueID & left,
                  const TU_Bln361095::SMARTmon::SMARTuniqueID & right)
 {
-  int retVal = strcmp(left.m_modelName, right.m_modelName);
+  int retVal =
+  /**To not compare with characters beyond the array size either:
+   * -end the character string with string terminating '\0' character and use
+   *  strcmp(...)
+   * -use strncmp(...) */
+    strncmp(left.m_modelName, right.m_modelName,
+      TU_Bln361095hardwareSMARTnumModelBytes);
   /**If left character string is lexicographically less than right character
    * string.*/
   if(retVal < TU_Bln361095::CstdLib::strcmp::EqlStrs)
     return true;
   else if( retVal == TU_Bln361095::CstdLib::strcmp::EqlStrs )
   {
-    retVal = strcmp(left.m_firmWareName, right.m_firmWareName);
+    retVal =
+    /**To not compare with characters beyond the array size either:
+     * -end the character string with string terminating '\0' character and use
+     *  strcmp(...)
+     * -use strncmp() */
+      strncmp(left.m_firmWareName, right.m_firmWareName,
+        TU_Bln361095hardwareSMARTnumFWbytes);
     /**If left character string is lexicographically less than right character
      * string.*/
     if(retVal < TU_Bln361095::CstdLib::strcmp::EqlStrs)
       return true;
     else if( retVal == TU_Bln361095::CstdLib::strcmp::EqlStrs)
     {
-      if(strcmp(left.m_serialNumber, right.m_serialNumber)
+      if(
+    /**To not compare with characters beyond the array size either:
+     * -end the character string with string terminating '\0' character and use
+     *  strcmp(...)
+     * -use strncmp() */
+        strncmp(left.m_serialNumber, right.m_serialNumber,
+          TU_Bln361095hardwareSMARTnumSNbytes)
         /**If left character string is lexicographically less than right
          * character string.*/
         < TU_Bln361095::CstdLib::strcmp::EqlStrs)

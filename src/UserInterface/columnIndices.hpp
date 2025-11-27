@@ -49,6 +49,9 @@
   #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpcEnd
   #define TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(suffix) \
     TU_Bln361095SMARTmonNVMeSMARTattrColIdx ## suffix
+  ///ATTRibute TaBLe COLumn InDeX
+  #define TU_Bln361095SMARTmonNVMeSMARTattrTblColIdxUse(suffix) \
+    TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(suffix)
 #endif
 
 TU_Bln361095SMARTmonNmSpcBgn
@@ -77,13 +80,13 @@ TU_Bln361095SMARTmonATA_SMARTattrColIdxNmSpcEnd
 
 TU_Bln361095SMARTmonNVMeSMARTattrColIdxNmSpcBgn
 
-enum TU_Bln361095SMARTmonDef(NVMeSMARTcolIdx)
+enum TU_Bln361095SMARTmonDef(NVMeSMARTattrTblColIdcs)
 {
   TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(ID) = 0,
   TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(Name),
   TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(RawVal),
+  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(RawValUnit),
   TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(HumanReadableRawVal),
-  TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(Unit),
   TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(UnitRange),
   TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(LastUpdate),
   TU_Bln361095SMARTmonNVMeSMARTattrColIdxDef(ByndLast)
